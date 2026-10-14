@@ -45,6 +45,10 @@ The strict-photo and genus×cell populations show **no source within-family maxT
 
 These are numerical checks on **historically exposed original photographs**, not new independently photographed plants or correction for selecting scopes post hoc. Exact original ZIPs and source geographical moments remain outside publicly distributed mois data; photo licence/geoprivacy clearance and a persistent anonymous reviewer-data deposit are still missing.
 
+## Single-genus influence bound (same source; no new causal claim)
+
+For the broad original climate26 genus-equal model, we removed each of **1,934** source genera one at a time. The **photographic white** coefficient remained **positive** throughout for rainfall BIO12 (**+2.174 to +2.339 pp/source SD**) and annual vapour pressure (**+3.843 to +4.068**). This checks influence of any **one** genus, not image-quality, multi-genus, phylogenetic or geographic transport. [Aggregate-only audit](results/mois_world_primary_moisture_single_genus_influence_20261014.json) and [uncertainty/rights caveat](docs/MOIS_GEB_ORIGINAL_WORLD_MOISTURE_GENUS_INFLUENCE_20261014.md). The private genus-moment input is not in Git and is not an approved reviewer data archive.
+
 ## Verification in the new home
 
 `python scripts/check_mois_migration.py` checks SHA-1 of Git blobs for the original FCP scripts, numeric ledgers, source figures and receipt JSONs; tests 1,280 +576 result rows and the negative source-sensitivity verdicts without requiring raw photo/model re-estimation. The GitHub Actions workflow `.github/workflows/mois-source-audit.yml` runs this source-integrity gate for `mois`. Optional figure regeneration: `python scripts/render_mois_global_moisture.py` after installing NumPy and matplotlib; immutable historical `figures/global_moisture_colour.svg` is not rewritten.
