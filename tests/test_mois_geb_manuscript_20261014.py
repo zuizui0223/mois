@@ -137,9 +137,10 @@ def test_prediction_and_botanical_nonconfirmation():
 
 def test_figures_supplement_source_and_real_release_blockers():
     s=text()
-    assert "Figure 1." in s and "Figure 2." in s
+    assert all("Figure "+str(n)+"." in s for n in (1,2,3))
     assert (ROOT/"figures/global_moisture_colour.svg").is_file()
     assert (ROOT/"figures/mois_photo_selection_and_matched_rainfall.svg").is_file()
+    assert (ROOT/"figures/mois_environmental_transfer_and_model_form.svg").is_file()
     supplement=SI.read_text(encoding="utf8")
     for h in ("## S1","## S2","## S3","## S4","## S5","## S6"):
         assert h in supplement
