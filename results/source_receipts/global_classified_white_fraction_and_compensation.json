@@ -1,0 +1,127 @@
+{
+  "schema": "fcp_all100543_unique_source_photo_white_chromatic_balance_observational_result_v1",
+  "date_jst": "2026-10-10",
+  "role": "source-original ecological observational hypothesis test not pigment fitness",
+  "source": {
+    "original_actions_run_id": 37861582446,
+    "original_artifact_zip_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+    "breadth_photo_rows": 42111,
+    "taxon_cell_photo_rows": 85337,
+    "duplicated_source_photo_ids": 26905,
+    "unique_original_photos": 100543,
+    "original_plant_species": 42111,
+    "unique_original_4colour_classifiable_photos": 45953,
+    "original_unclassifiable_photos": 54590,
+    "source_photo_geotagged": 100348
+  },
+  "world_photo_white": {
+    "original_white_photo_count": 21574,
+    "original_classifiable_photo_white_fraction": 0.4694796857658912,
+    "missing_color_no_assumption_white_fraction_bounds": [
+      0.21457485851824593,
+      0.7575266303969446
+    ],
+    "true_photo_site_latitude": [
+      {
+        "band": "0-30",
+        "n": 19642,
+        "white_n": 9247,
+        "fraction": 0.4707769066286529
+      },
+      {
+        "band": "30-60",
+        "n": 25033,
+        "white_n": 11713,
+        "fraction": 0.4679023688730875
+      },
+      {
+        "band": "60-90",
+        "n": 1204,
+        "white_n": 590,
+        "fraction": 0.4900332225913621
+      }
+    ]
+  },
+  "ecological_compensation": {
+    "repeat_species": 8620,
+    "repeat_species_photo_rows": 29464,
+    "min_photo_per_cell": 30,
+    "evaluable_geographic_cells": 96,
+    "photos_in_test": 29117,
+    "photo_weighted_cell_whiteness_variance": 0.00260619713183053,
+    "species_compositional_component_variance": 0.001952560976886504,
+    "within_species_local_component_variance": 0.0002907471481398027,
+    "component_covariance": 0.0001814445034021115,
+    "component_correlation": 0.24081513693867038,
+    "within_species_original_photographic_label_shuffles": 999,
+    "negative_compensation_one_sided_p": 0.997,
+    "positive_coclustering_exploratory_one_sided_p": 0.004,
+    "tested_negative_compensation_supported": false
+  },
+  "ecological_environment": {
+    "between_species_equal": {
+      "n_source_species": 25028,
+      "BIO12_white_photo_linear_slope_per_full_source_1SD": 0.04780287784046537,
+      "BIO12_genus_cluster_95CI": [
+        0.0359530383569762,
+        0.059652717323954545
+      ]
+    },
+    "within_species_demeaned": {
+      "n_source_species": 8619,
+      "n_photos": 29427,
+      "BIO12_white_photo_linear_slope_per_full_source_1SD": 0.0006889272991070102,
+      "BIO12_species_cluster_95CI": [
+        -0.007861090061793443,
+        0.009238944660007464
+      ],
+      "BIO5_warmest_month_white_photo_slope": 0.01474283424213771,
+      "BIO5_species_cluster_95CI": [
+        0.0035963566793786907,
+        0.02588931180489673
+      ]
+    },
+    "common_adjustments": [
+      "photo site abs latitude",
+      "photo longitude sin/cos",
+      "photo site elevation",
+      "BIO1",
+      "BIO5",
+      "BIO12",
+      "BIO15"
+    ]
+  },
+  "robustness": {
+    "photo_depth_species_gates": [
+      2,
+      3,
+      5
+    ],
+    "cell_photo_gates": [
+      20,
+      30,
+      50,
+      100
+    ],
+    "n_reported_combinations": 12,
+    "n_supported_negative_compensation_combinations": 0,
+    "positive_component_covariance_source_photo_5plus_species_not_bootstrap_stable": true,
+    "primary_999_permutations": true,
+    "extended_199_permutations_sensitivity": true
+  },
+  "interpretive_ceiling": {
+    "photographic_half_and_latitude_similarity_reproduced": true,
+    "adaptive_equilibrium_identified": false,
+    "pigment_biosynthetic_cost_identified": false,
+    "pollinator_herbivore_payoffs_identified": false,
+    "source_white_photo_colour_ground_truth_verified": false,
+    "hard_nonclaims": [
+      "Unclassified 54590 original photos retained as missing, not assumed white or nonwhite.",
+      "Source photo classification is not heritable flower-colour allele, plant population or true individual genotype.",
+      "Positive photo-component covariance is exploratory and weakened at >=5 source classified photographs per species.",
+      "Climatic predictive/photo-white associations are not causal adaptational flower-colour benefit/cost.",
+      "Photo union draws from two differently sampled source ledgers. Original separately measured high-depth 149900 pictures are a distinct independent study population not added without overlap inspection.",
+      "Original H1/H2 and unopened 2000+730 taxa unchanged."
+    ]
+  }
+}

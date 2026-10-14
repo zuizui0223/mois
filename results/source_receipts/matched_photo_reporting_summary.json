@@ -1,0 +1,88 @@
+{
+  "schema": "fcp_np_source_matched_photo_cross_scale_bridge_20261014_v1",
+  "status": "SOURCE_ONLY_ARITHMETIC_NO_NEW_PHOTO_CLASSIFICATION_OR_MODEL_REFIT",
+  "source_authority": {
+    "original_photo_zip_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+    "categorical_original_PR": 158,
+    "categorical_original_commit": "0bc53089dc9d1baed207c2ea898b130cb7b07566",
+    "continuous_original_PR": 159,
+    "continuous_original_commit": "a26b826ae13727053b95413ca78a3713286a603e",
+    "categorical_source_file": "source_pr158_matched_species_colour_rainfall.json",
+    "continuous_source_file": "source_pr159_white_area_colour_rainfall.json"
+  },
+  "matched_photo_categorical_white": {
+    "same_original_photo_count": 21448,
+    "same_named_species_count": 6143,
+    "same_named_genera_count": 787,
+    "rainfall_source_SD_mm": 736.4156814228157,
+    "covariate_names": [
+      "wc_bio1",
+      "wc_bio5",
+      "wc_bio12",
+      "wc_bio15",
+      "wc_elevation_m",
+      "abs_latitude",
+      "lon_sin",
+      "lon_cos"
+    ],
+    "outcome": "original same white/yellow-orange/red-pink/blue-purple photo classification in both level-specific fits",
+    "between_congener_white_slope_pp_per_SD": 2.7221868942242726,
+    "between_95CI_pp": [
+      0.7047122381040706,
+      4.713829042393917
+    ],
+    "within_species_white_slope_pp_per_SD": -0.5106759199980051,
+    "within_95CI_pp": [
+      -1.436095195913609,
+      0.3351215731197277
+    ],
+    "between_minus_within_pp_per_SD": 3.232862814222278,
+    "paired_diff_95CI_pp": [
+      1.1754242864161875,
+      5.400319953158926
+    ],
+    "original_bootstrap_replicates": 1999,
+    "original_exploratory_one_sided_bootstrap_p": 0.0005,
+    "positive_within_species_white_rainfall_gradient_confirmed": false,
+    "scales_not_same_causal_estimand": true
+  },
+  "matched_photo_continuous_white_roi_fraction": {
+    "same_original_photo_count": 14667,
+    "same_named_species_count": 3351,
+    "same_named_genera_count": 489,
+    "rainfall_source_SD_mm": 717.2532986738629,
+    "outcome": "photographic segmented flower ROI fraction of 9 visible palette pixels called white",
+    "between_congener_white_area_slope_pp_per_SD": 2.2291960484677684,
+    "between_95CI_pp": [
+      0.1765278528260677,
+      4.281864244109469
+    ],
+    "within_species_white_area_slope_pp_per_SD": -0.1798933236578742,
+    "within_95CI_pp": [
+      -1.0112525358359439,
+      0.6514658885201955
+    ],
+    "between_minus_within_pp_per_SD": 2.409089372125643,
+    "paired_diff_95CI_pp": [
+      0.225243982889837,
+      4.618104362282274
+    ],
+    "original_exploratory_one_sided_bootstrap_p": 0.016,
+    "quality_restricted_between_slope_pp_per_SD": 1.1162639562067014,
+    "quality_restricted_between_95CI_pp": [
+      -1.168892036625993,
+      3.4014199490393957
+    ],
+    "strict_photo_quality_signal_not_confirmed": true,
+    "not_spectrophotometry_or_pigment_concentration": true
+  },
+  "interpretive_decision": {
+    "global_average_hue_association_is_not_a_common_within_species_photo_response": true,
+    "same_photo_source_reduces_but_does_not_remove_measurement_geography_species_history_confounding": true,
+    "source_selected_posthoc_not_independent_prospective_environment_confirm": true,
+    "source_missingness_and_exposure_not_fully_corrected": true,
+    "not_a_linked_mechanistic_fitness_test": true,
+    "do_not_pool_different_SD_different_source_populations": true,
+    "high_depth_158_species_W_remains_independent_of_this_source_model_fit": true
+  }
+}

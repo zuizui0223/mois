@@ -1,0 +1,185 @@
+{
+  "schema": "fcp_original100543_continuous_nine_colour_white_photo_area_ecology_v1",
+  "date_jst": "2026-10-10",
+  "status": "SOURCE_SHA_LOCAL_REPLAY_PASS_6_SYNTHETIC_TESTS",
+  "source_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "source": {
+    "source_actions_run": 37861582446,
+    "n_unique_photos": 100543,
+    "n_4state_classifiable": 45953,
+    "n_classified_with_all_nine_palette_fractions": 34374,
+    "n_classified_missing_nine_fractions": 11579,
+    "n_climate_and_photo_location_complete_nine_fraction_photos": 34291,
+    "n_source_species_on_analyzable_fraction_photos": 15263,
+    "n_source_genera": 4051,
+    "source_observation_date_column_present": false
+  },
+  "response": "original photograph flower-fraction-white from 9 photographed visible palette fractions, summing to 1; not biochemical pigment",
+  "common_covariates": [
+    "source latitude absolute",
+    "longitude sin and cos",
+    "true photo elevation",
+    "BIO1 annual temperature",
+    "BIO5 warmest month temperature",
+    "BIO12 annual precipitation",
+    "BIO15 precipitation seasonality",
+    "log original flower ROI pixels",
+    "original nuisance pixel fraction",
+    "source sampling panel"
+  ],
+  "source_global_BIO12_sd_mm": 717.2532986738629,
+  "models": {
+    "min2_photos_two_cells": {
+      "n_photos": 14667,
+      "n_species": 3351,
+      "n_genera": 489,
+      "between_genus": {
+        "rain_slope": 0.022291960484677686,
+        "ci95": [
+          0.0017652785282606769,
+          0.04281864244109469
+        ],
+        "p_nominal": 0.033294047524194674
+      },
+      "within_species": {
+        "rain_slope": -0.0017989332365787418,
+        "ci95": [
+          -0.010112525358359438,
+          0.006514658885201955
+        ],
+        "p_nominal": 0.6714885052141741
+      },
+      "paired_between_minus_within": {
+        "effect": 0.024090893721256435,
+        "genus_bootstrap_ci95": [
+          0.00225243982889837,
+          0.04618104362282274
+        ],
+        "one_sided_p_nonpositive": 0.016
+      }
+    },
+    "min3_photos_two_cells": {
+      "n_photos": 10898,
+      "n_species": 1896,
+      "n_genera": 311,
+      "between_genus": {
+        "rain_slope": 0.029996974023579058,
+        "ci95": [
+          0.00010461637572138291,
+          0.05988933167143673
+        ]
+      },
+      "within_species": {
+        "rain_slope": -0.002404142492010071,
+        "ci95": [
+          -0.011727519885236395,
+          0.0069192349012162525
+        ]
+      },
+      "paired_between_minus_within": {
+        "effect": 0.032401116515589155,
+        "genus_bootstrap_ci95": [
+          0.0019247180778534153,
+          0.0648624322032792
+        ],
+        "one_sided_p_nonpositive": 0.02
+      }
+    },
+    "min5_photos_two_cells": {
+      "n_photos": 5306,
+      "n_species": 572,
+      "n_genera": 111,
+      "between_genus": {
+        "rain_slope": 0.08893927507445955,
+        "ci95": [
+          0.022259739326210268,
+          0.15561881082270884
+        ]
+      },
+      "within_species": {
+        "rain_slope": 0.0068002276082812785,
+        "ci95": [
+          -0.006441035554487688,
+          0.020041490771050247
+        ]
+      },
+      "paired_between_minus_within": {
+        "effect": 0.08213904746617869,
+        "genus_bootstrap_ci95": [
+          0.015571942846618328,
+          0.16072333901740174
+        ],
+        "one_sided_p_nonpositive": 0.006
+      }
+    },
+    "quality_lenient_1000px_nuisance_max50pct": {
+      "n_photos": 12655,
+      "n_species": 2933,
+      "between_genus": {
+        "rain_slope": 0.011162639562067013,
+        "ci95": [
+          -0.01168892036625993,
+          0.034014199490393957
+        ]
+      }
+    },
+    "quality_15000px_nuisance_max50pct": {
+      "n_photos": 6971,
+      "n_species": 1821,
+      "between_genus": {
+        "rain_slope": 0.020887546311229237,
+        "ci95": [
+          -0.0064367863830883665,
+          0.04821187900554684
+        ]
+      }
+    },
+    "quality_strict_5000px_nuisance_max30pct": {
+      "n_photos": 8887,
+      "n_species": 2193,
+      "between_genus": {
+        "rain_slope": 0.009549,
+        "ci95": [
+          -0.017588785611400093,
+          0.03668715989794731
+        ]
+      }
+    },
+    "original_cell_panel_only": {
+      "n_photos": 12380,
+      "n_species": 2893,
+      "between_genus": {
+        "rain_slope": 0.031436,
+        "ci95": [
+          0.008403312351724215,
+          0.05446967790151498
+        ]
+      }
+    }
+  },
+  "robustness_diagnostic": {
+    "theory": "Benefit/cost of colour in drought would be expected to produce consistent controlled geographic and phylogenetic hue gradients",
+    "positive_between_regression_in_primary_and_min3_min5": true,
+    "within_species_photo_site_effect_significant": false,
+    "between_genus_positive_under_every_image_quality_condition": false,
+    "quality_condition_all_three_CIs_span_zero": true,
+    "three_species_depth_comparisons_nested_not_independent": true
+  },
+  "causal_claims_not_permitted": [
+    "no individual genotype or local breeding population",
+    "no flower organ botanically confirmed, 405 human labels remain 0",
+    "no flower pigment mass, UV absorption spectra, maintenance costs or reproductive fitness",
+    "no source capture date for seasonal hypothesis",
+    "phenotype subsample is photo-ROI observable and includes 11579 hue-fraction missing classified source pictures",
+    "no local fine-geodesic spatial random field fitted in this source result",
+    "genus means do not replace a dated directly-tip phylogeny",
+    "source-adaptive hypotheses remain unconfirmed"
+  ],
+  "reproduction": {
+    "local_frozen_source_complete": true,
+    "synthetic_tests": 6,
+    "local_archive": "FCP_全100543写真_連続9色面積_乾湿と種内種間_20261010.zip",
+    "human_expert_colour_reannotations": 0,
+    "main_H1H2_unchanged": true
+  }
+}

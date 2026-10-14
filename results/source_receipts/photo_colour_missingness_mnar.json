@@ -1,0 +1,340 @@
+{
+  "schema": "fcp_original100543_colour_rainfall_photo_selection_mnar_sensitivity_v1",
+  "status": "SOURCE_ORIGINAL_PHOTO_PROPENSITY_CROSSFIT_AND_MNAR_TIPPING_COMPLETED",
+  "date_jst": "2026-10-10",
+  "source_original_archive_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "all_original_unique_photo_ids": 100543,
+  "original_geolocated_rain_photo_opportunities": 100255,
+  "source_all_classifiable": 45953,
+  "source_all_unclassifiable": 54590,
+  "source_georain_classifiable": 45836,
+  "original_photo_wet_dry_unweighted": {
+    "0": {
+      "n_classifiable": 4981,
+      "n_effective": 4981.0,
+      "white_fraction": 0.41798835575185705,
+      "rain_mm_median": 265.0,
+      "yellow_orange_fraction": 0.39128689018269425
+    },
+    "9": {
+      "n_classifiable": 3904,
+      "n_effective": 3904.0,
+      "white_fraction": 0.532530737704918,
+      "rain_mm_median": 2723.0,
+      "yellow_orange_fraction": 0.28739754098360654
+    }
+  },
+  "original_photo_wet_minus_dry_unweighted": 0.11454238195306093,
+  "rain_bin_all_photo_source_counts": [
+    {
+      "rain_decile": 0,
+      "n": 10084,
+      "n_class": 4981
+    },
+    {
+      "rain_decile": 1,
+      "n": 10003,
+      "n_class": 4926
+    },
+    {
+      "rain_decile": 2,
+      "n": 10175,
+      "n_class": 5050
+    },
+    {
+      "rain_decile": 3,
+      "n": 9870,
+      "n_class": 4696
+    },
+    {
+      "rain_decile": 4,
+      "n": 10042,
+      "n_class": 4769
+    },
+    {
+      "rain_decile": 5,
+      "n": 9987,
+      "n_class": 4556
+    },
+    {
+      "rain_decile": 6,
+      "n": 10029,
+      "n_class": 4423
+    },
+    {
+      "rain_decile": 7,
+      "n": 10030,
+      "n_class": 4389
+    },
+    {
+      "rain_decile": 8,
+      "n": 10045,
+      "n_class": 4142
+    },
+    {
+      "rain_decile": 9,
+      "n": 9990,
+      "n_class": 3904
+    }
+  ],
+  "modelled_selection_missing_at_random_CROSSED": {
+    "geo_climate": {
+      "propensity_oof": {
+        "out_of_geographic_region_roc_auc": 0.5550106187534241,
+        "out_of_geographic_region_brier": 0.24591979217670418,
+        "true_global_source_photo_classifiability": 0.45719415490499227,
+        "min_probability": 0.3194581697851159,
+        "max_probability": 0.6371235103602274,
+        "fraction_clipped_0_05_or_0_95": 0.0,
+        "folds": [
+          {
+            "fold": 0,
+            "train": 80204,
+            "heldout": 20051,
+            "geographic_cells_heldout": 63
+          },
+          {
+            "fold": 1,
+            "train": 80204,
+            "heldout": 20051,
+            "geographic_cells_heldout": 63
+          },
+          {
+            "fold": 2,
+            "train": 80204,
+            "heldout": 20051,
+            "geographic_cells_heldout": 63
+          },
+          {
+            "fold": 3,
+            "train": 80204,
+            "heldout": 20051,
+            "geographic_cells_heldout": 63
+          },
+          {
+            "fold": 4,
+            "train": 80204,
+            "heldout": 20051,
+            "geographic_cells_heldout": 64
+          }
+        ]
+      },
+      "original_classified_photo_weighting": "inverse propensity from original all classified and unclassified, clipped to .05-.95",
+      "rain_extremes_ipw_fractions": {
+        "0": {
+          "n_classifiable": 4981,
+          "n_effective": 4936.145401878039,
+          "white_fraction": 0.4162837699632788,
+          "rain_mm_median": 265.0,
+          "yellow_orange_fraction": 0.3935194781283374
+        },
+        "9": {
+          "n_classifiable": 3904,
+          "n_effective": 3888.454268842724,
+          "white_fraction": 0.5307819425751441,
+          "rain_mm_median": 2723.0,
+          "yellow_orange_fraction": 0.288038588077531
+        }
+      },
+      "IPW_wet_minus_dry_photo_white_fraction": 0.11449817261186529,
+      "genus_cluster_95CI": {
+        "n_clusters": 2605,
+        "interval_95": [
+          0.0811344310967423,
+          0.14952613670408496
+        ],
+        "replicate_count": 1999,
+        "p_one_sided_nonpositive": 0.0005
+      },
+      "true_site_10degree_geo_cluster_95CI": {
+        "n_clusters": 198,
+        "interval_95": [
+          0.07520204002730911,
+          0.15586657908080406
+        ],
+        "replicate_count": 1999,
+        "p_one_sided_nonpositive": 0.0005
+      }
+    },
+    "geo_climate_plus_flower_area": {
+      "propensity_oof": {
+        "out_of_geographic_region_roc_auc": 0.7050619114496076,
+        "out_of_geographic_region_brier": 0.20624816680315886,
+        "true_global_source_photo_classifiability": 0.45719415490499227,
+        "min_probability": 0.022128999348437643,
+        "max_probability": 0.8274281341344061,
+        "fraction_clipped_0_05_or_0_95": 0.1487606603161937,
+        "folds": [
+          {
+            "fold": 0,
+            "train": 80204,
+            "heldout": 20051,
+            "geographic_cells_heldout": 63
+          },
+          {
+            "fold": 1,
+            "train": 80204,
+            "heldout": 20051,
+            "geographic_cells_heldout": 63
+          },
+          {
+            "fold": 2,
+            "train": 80204,
+            "heldout": 20051,
+            "geographic_cells_heldout": 63
+          },
+          {
+            "fold": 3,
+            "train": 80204,
+            "heldout": 20051,
+            "geographic_cells_heldout": 63
+          },
+          {
+            "fold": 4,
+            "train": 80204,
+            "heldout": 20051,
+            "geographic_cells_heldout": 64
+          }
+        ]
+      },
+      "original_classified_photo_weighting": "inverse propensity from original all classified and unclassified, clipped to .05-.95",
+      "rain_extremes_ipw_fractions": {
+        "0": {
+          "n_classifiable": 4981,
+          "n_effective": 4624.247944500395,
+          "white_fraction": 0.41468190019301115,
+          "rain_mm_median": 265.0,
+          "yellow_orange_fraction": 0.40189633363937377
+        },
+        "9": {
+          "n_classifiable": 3904,
+          "n_effective": 3462.389135404135,
+          "white_fraction": 0.5362044987623985,
+          "rain_mm_median": 2723.0,
+          "yellow_orange_fraction": 0.29664179476251634
+        }
+      },
+      "IPW_wet_minus_dry_photo_white_fraction": 0.12152259856938735,
+      "genus_cluster_95CI": {
+        "n_clusters": 2605,
+        "interval_95": [
+          0.0887671244440434,
+          0.15555078659854193
+        ],
+        "replicate_count": 1999,
+        "p_one_sided_nonpositive": 0.0005
+      },
+      "true_site_10degree_geo_cluster_95CI": {
+        "n_clusters": 198,
+        "interval_95": [
+          0.07990819947718353,
+          0.16473980514500694
+        ],
+        "replicate_count": 1999,
+        "p_one_sided_nonpositive": 0.0005
+      }
+    }
+  },
+  "original_photo_flower_region_pixel_count_quartile_diagnostic": [
+    {
+      "flower_area_quartile": 1,
+      "min_px": null,
+      "max_px": 2605.0,
+      "driest_all_photos": 2517,
+      "wettest_all_photos": 2875,
+      "driest_classifiable": 379,
+      "wettest_classifiable": 386,
+      "driest_photo_white": 0.44591029023746703,
+      "wettest_photo_white": 0.5984455958549223,
+      "wet_minus_dry_photo_white": 0.15253530561745526,
+      "driest_classifiable_rate": 0.1505760826380612,
+      "wettest_classifiable_rate": 0.13426086956521738
+    },
+    {
+      "flower_area_quartile": 2,
+      "min_px": 2605.0,
+      "max_px": 15609.0,
+      "driest_all_photos": 2518,
+      "wettest_all_photos": 2605,
+      "driest_classifiable": 1420,
+      "wettest_classifiable": 1236,
+      "driest_photo_white": 0.39507042253521124,
+      "wettest_photo_white": 0.5153721682847896,
+      "wet_minus_dry_photo_white": 0.12030174574957836,
+      "driest_classifiable_rate": 0.5639396346306592,
+      "wettest_classifiable_rate": 0.4744721689059501
+    },
+    {
+      "flower_area_quartile": 3,
+      "min_px": 15609.0,
+      "max_px": 37999.5,
+      "driest_all_photos": 2489,
+      "wettest_all_photos": 2333,
+      "driest_classifiable": 1522,
+      "wettest_classifiable": 1138,
+      "driest_photo_white": 0.385676741130092,
+      "wettest_photo_white": 0.5070298769771528,
+      "wet_minus_dry_photo_white": 0.12135313584706087,
+      "driest_classifiable_rate": 0.6114905584572118,
+      "wettest_classifiable_rate": 0.48778396913844835
+    },
+    {
+      "flower_area_quartile": 4,
+      "min_px": 37999.5,
+      "max_px": null,
+      "driest_all_photos": 2560,
+      "wettest_all_photos": 2177,
+      "driest_classifiable": 1660,
+      "wettest_classifiable": 1144,
+      "driest_photo_white": 0.4608433734939759,
+      "wettest_photo_white": 0.5541958041958042,
+      "wet_minus_dry_photo_white": 0.09335243070182825,
+      "driest_classifiable_rate": 0.6484375,
+      "wettest_classifiable_rate": 0.5254937988056959
+    }
+  ],
+  "latent_hue_missing_not_at_random_tipping_curve": {
+    "0.0": {
+      "assumed_unclassified_dry_white_fraction": 0.0,
+      "required_unclassified_wet_white_fraction_for_EQUAL_true_dry_wet_white": -0.002695986640253414,
+      "feasible_value_between_zero_and_one": false,
+      "dry_unconditional_white_if_assumed": 0.20646568821896072
+    },
+    "0.25": {
+      "assumed_unclassified_dry_white_fraction": 0.25,
+      "required_unclassified_wet_white_fraction_for_EQUAL_true_dry_wet_white": 0.20497043532975645,
+      "feasible_value_between_zero_and_one": true,
+      "dry_unconditional_white_if_assumed": 0.3329779849266164
+    },
+    "0.5": {
+      "assumed_unclassified_dry_white_fraction": 0.5,
+      "required_unclassified_wet_white_fraction_for_EQUAL_true_dry_wet_white": 0.41263685729976646,
+      "feasible_value_between_zero_and_one": true,
+      "dry_unconditional_white_if_assumed": 0.45949028163427214
+    },
+    "0.75": {
+      "assumed_unclassified_dry_white_fraction": 0.75,
+      "required_unclassified_wet_white_fraction_for_EQUAL_true_dry_wet_white": 0.6203032792697762,
+      "feasible_value_between_zero_and_one": true,
+      "dry_unconditional_white_if_assumed": 0.5860025783419278
+    },
+    "1.0": {
+      "assumed_unclassified_dry_white_fraction": 1.0,
+      "required_unclassified_wet_white_fraction_for_EQUAL_true_dry_wet_white": 0.8279697012397864,
+      "feasible_value_between_zero_and_one": true,
+      "dry_unconditional_white_if_assumed": 0.7125148750495836
+    }
+  },
+  "no_human_expert_flower_colour_truth_labels": true,
+  "no_causal_pigment_tradeoff_cost_benefit_estimated": true,
+  "classifiability_correction_identifiability": "IPW assumes missing at random given included original environmental/photograph predictors and original photo-site overlap. MNAR outcome-colour missingness is not identified.",
+  "hard_nonclaims": [
+    "Using all source photo opportunity rows to model classification does not recover the unknown true colour of unclassified photographs.",
+    "Small IPW propensity correction is only a measured-photograph, missing-at-random sensitivity, not proof of missing at random.",
+    "Flower-effective-pixels is a post-image-derived quality feature; treating it as a predictor is a diagnostic, not a causal adjustment.",
+    "Large differences between source dry and wet unknown photo colour compositions can reverse every observed classified-photo trend.",
+    "The original 405-source-photo two-expert botanical organ and hue adjudication has not occurred.",
+    "White-versus-nonwhite 4-state photographic classes do not identify UV pigment or fitness tradeoff.",
+    "Same photo species classes, original source H1/H2, and unopened 2000+730 future source taxa remain frozen."
+  ]
+}

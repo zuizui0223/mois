@@ -1,0 +1,63 @@
+{
+  "schema": "fcp_original100543_global_photo_white_broad_latitude_constancy_conditional_null_v1",
+  "source_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "n_unique_original_photos_all_states": 100543,
+  "n_original_classified_geotagged_photos": 45879,
+  "original_latitude_band_n_photos": [
+    19642,
+    25033,
+    1204
+  ],
+  "photo_white_fractions_by_original_true_site_latitude_band": [
+    0.4707769066286529,
+    0.4679023688730875,
+    0.4900332225913621
+  ],
+  "observed_range_white_percentage_points": 2.2130853718274612,
+  "latitudinal_group_band_degrees_abs": [
+    [
+      0,
+      30
+    ],
+    [
+      30,
+      60
+    ],
+    [
+      60,
+      90
+    ]
+  ],
+  "conditional_colour_photo_label_nulls": {
+    "within_species": {
+      "n_groups": 25035,
+      "n_photo_labels_shuffled": 45879,
+      "group_white_totals_preserved_exactly": true,
+      "null_mean_range_percentage_points": 2.687233367613186,
+      "null_95pct_range_percentage_points": [
+        1.5316637520200884,
+        3.8552738292430755
+      ],
+      "one_sided_p_observed_unusually_even_or_lower_range": 0.214,
+      "one_sided_p_observed_unusually_uneven_or_greater_range": 0.787,
+      "null_sample_count": 999
+    },
+    "within_genus": {
+      "n_groups": 5366,
+      "n_photo_labels_shuffled": 45879,
+      "group_white_totals_preserved_exactly": true,
+      "null_mean_range_percentage_points": 3.9074309865292074,
+      "null_95pct_range_percentage_points": [
+        1.908381434844876,
+        6.111523320778031
+      ],
+      "one_sided_p_observed_unusually_even_or_lower_range": 0.053,
+      "one_sided_p_observed_unusually_uneven_or_greater_range": 0.948,
+      "null_sample_count": 999
+    }
+  },
+  "biological_interpretation": "A small raw latitudinal spread is not a biological 50/50 pigment-cost equilibrium; matched colour composition and photo geographic opportunity are fixed in each photo label null.",
+  "alternative_photo_colour_unknown_count": 54590,
+  "source_flower_colour_human_truth_unmeasured": true,
+  "latent_adaptive_selection_equilibrium_unidentified": true
+}

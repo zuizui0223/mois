@@ -1,0 +1,203 @@
+{
+  "schema": "fcp_all100543_photo_rainfall_fourcolour_genus_within_ecology_source_replay_v1",
+  "date_jst": "2026-10-10",
+  "role": "retrospective observational photographic four-colour ecological contrast, not pigment benefit/cost or fitness",
+  "source": {
+    "original_archive_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+    "original_actions_run_id": 37861582446,
+    "original_photo_unique": 100543,
+    "original_source_species": 42111,
+    "original_4state_classified": 45953,
+    "original_unclassifiable": 54590,
+    "original_photo_opportunities_with_rainfall_and_geoposition": 100255,
+    "original_photos_classifiable_with_complete_geo_and_BIO1_BIO5_BIO12_BIO15": 45836,
+    "original_source_photo_image_pixels_retrieved": false,
+    "original_phenotype_labels_changed": false
+  },
+  "environmental_bins": {
+    "defined_on_ALL_original_photo_opportunities": true,
+    "n_bins": 10,
+    "driest": {
+      "n_all_photos": 10084,
+      "n_classifiable": 4981,
+      "classifiable_rate": 0.4939508131693772,
+      "rain_mm_median": 263,
+      "photo_fraction": {
+        "white": 0.41798835575185705,
+        "yellow_orange": 0.39128689018269425,
+        "red_pink": 0.10078297530616342,
+        "blue_purple": 0.08994177875928529
+      }
+    },
+    "wettest": {
+      "n_all_photos": 9990,
+      "n_classifiable": 3904,
+      "classifiable_rate": 0.39079079079079077,
+      "rain_mm_median": 2714,
+      "photo_fraction": {
+        "white": 0.532530737704918,
+        "yellow_orange": 0.28739754098360654,
+        "red_pink": 0.11987704918032786,
+        "blue_purple": 0.06019467213114754
+      }
+    },
+    "observed_wet_minus_dry_white_photo_fraction": 0.11454238195306093,
+    "wet_minus_dry_white_fraction_genus_cluster_bootstrap95": [
+      0.08050831712107097,
+      0.1479085555956901
+    ],
+    "genus_clusters_for_bootstrap": 2605,
+    "wet_minus_dry_white_fraction_true_10deg_cell_bootstrap95": [
+      0.07198888621070483,
+      0.16049543995599488
+    ],
+    "geographic_cells_for_bootstrap": 198,
+    "bootstrap_resamples": 1999,
+    "wet_minus_dry_classifiable_rate": -0.10316002237858642,
+    "missingness_tipping_experiment": {
+      "assumed_dry_unclassified_true_white_fraction": 0.5,
+      "equalizing_wet_unclassified_true_white_fraction": 0.4126368572997664,
+      "additional_white_missingness_difference_needed": -0.0873631427002336,
+      "interpretation": "A sensitivity scenario, not an estimate of unseen flower colours."
+    }
+  },
+  "environmental_covariates": {
+    "adjustment": [
+      "wc_bio1",
+      "wc_bio5",
+      "wc_bio12",
+      "wc_bio15",
+      "wc_elevation_m",
+      "abs_latitude",
+      "lon_sin",
+      "lon_cos"
+    ],
+    "standardized_photo_site_BIO12_sd_mm": 736.4156814228157,
+    "response": "one of four previously measured original visible photograph floral colour categories",
+    "effect_unit": "linear probability change per 1SD photographed environment; 1 point = 0.01",
+    "multiple_comparison": "Holm within 4 original colour categories of prespecified annual rain BIO12; source genus-cluster SE between and species-cluster SE within"
+  },
+  "between_source_congeners": {
+    "min3_distinct_species_per_genus": {
+      "n_species": 20694,
+      "n_genera": 1934,
+      "rainfall_BIO12_slopes": {
+        "white": {
+          "coef": 0.023832283964323603,
+          "ci95": [
+            0.013037277795650138,
+            0.03462729013299707
+          ],
+          "p_holm4": 0.00006045074348931861
+        },
+        "yellow_orange": {
+          "coef": -0.013671769780453187,
+          "ci95": [
+            -0.02266280689196314,
+            -0.004680732668943234
+          ],
+          "p_holm4": 0.008638395157145675
+        },
+        "red_pink": {
+          "coef": -0.003194799545055882,
+          "ci95": [
+            -0.009348899048665723,
+            0.00295929995855396
+          ],
+          "p_holm4": 0.30892368286665717
+        },
+        "blue_purple": {
+          "coef": -0.006965714638814539,
+          "ci95": [
+            -0.012610701928689596,
+            -0.001320727348939483
+          ],
+          "p_holm4": 0.03116704413926109
+        }
+      }
+    },
+    "sensitivity_min_distinct_species_per_genus": [
+      {
+        "min": 2,
+        "n": 22498,
+        "genera": 2836,
+        "white_slope": 0.023916914330138227
+      },
+      {
+        "min": 3,
+        "n": 20694,
+        "genera": 1934,
+        "white_slope": 0.023832283964323603
+      },
+      {
+        "min": 5,
+        "n": 18164,
+        "genera": 1184,
+        "white_slope": 0.022861074255387075
+      },
+      {
+        "min": 10,
+        "n": 14130,
+        "genera": 555,
+        "white_slope": 0.02819323777708168
+      }
+    ]
+  },
+  "within_source_species": {
+    "n_species": 8619,
+    "n_photos": 29427,
+    "rainfall_BIO12_white_slope": 0.0006889272991070102,
+    "rainfall_BIO12_white_ci95": [
+      -0.007861090061793443,
+      0.009238944660007464
+    ],
+    "all_four_hue_rainfall_slope_CIs_span_zero": true
+  },
+  "matched_source_photo_and_species": {
+    "n_common_original_photos": 21448,
+    "n_common_species": 6143,
+    "n_source_genera": 787,
+    "same_photo_species_name_and_colour_outcomes_for_both_scales": true,
+    "between_congener_BIO12_photo_white_slope": 0.027221868942242728,
+    "within_same_species_BIO12_photo_white_slope": -0.0051067591999800505,
+    "between_minus_within_slope": 0.03232862814222278,
+    "source_paired_genus_bootstrap_repeats": 1999,
+    "paired_genus_bootstrap95_between": [
+      0.007047122381040706,
+      0.047138290423939175
+    ],
+    "paired_genus_bootstrap95_within": [
+      -0.01436095195913609,
+      0.003351215731197277
+    ],
+    "paired_genus_bootstrap95_difference": [
+      0.011754242864161876,
+      0.054003199531589254
+    ],
+    "paired_bootstrap_one_sided_p_difference_nonpositive": 0.0005,
+    "note": "Observational slopes on same source photographs, not the same causal estimand or the distinct 14776-photo Brier increment in PR #156."
+  },
+  "checks": {
+    "source_SHA256_exact": true,
+    "original_photo_id_overlap_deduplicated": true,
+    "original_fourstate_classification_conflict_count": 0,
+    "real_source_NumericalGuard_tests_passed": 5,
+    "original_photo_unclassifiable_remains_missing": true
+  },
+  "biological_conclusions": {
+    "global_equal_fitness_equilibrium_measured": false,
+    "pigmentation_energy_cost_measured": false,
+    "pollinator_or_flower_eating_fitness_payoff_measured": false,
+    "photo_colour_rainfall_between_genus_association": true,
+    "same_species_rainfall_white_association_supported": false,
+    "gap_in_matched_scale_observational_slopes_positive": true,
+    "key_confounders": [
+      "54,590 original photo colours not classifiable, with rain-dependence in classification chance",
+      "species and genus history and phenology not fully corrected by genus categories",
+      "missing original floral organ independent human review",
+      "photo geoposition uncertainty, spatial autocorrelation, camera and observer selection",
+      "no plant individual genotype, pigments, pollen/seed reproductive fitness measured"
+    ],
+    "new_phytologist_original_H1_H2_unchanged": true
+  }
+}

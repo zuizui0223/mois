@@ -1,0 +1,355 @@
+{
+  "original_overlap": {
+    "original_photo_rows": 8120,
+    "botanically_labeled_species": 2476,
+    "botanically_labeled_genera": 1144,
+    "botanical_whites": 6005,
+    "botanical_blue_purples": 3580,
+    "overlap_white_species": 1538,
+    "overlap_blue_species": 938
+  },
+  "cases": {
+    "min3_all_photo_opportunity": {
+      "equal_species": {
+        "status": "OK_4SECTOR_FAMILY",
+        "n_pass_sectors": 4,
+        "east": {
+          "status": "OK",
+          "support": {
+            "n_genus": 58,
+            "source_photos": 2355,
+            "species_by_side": {
+              "False": 473,
+              "True": 323
+            },
+            "named_species": 670,
+            "botanical_colour_by_side": {
+              "False": {
+                "white": 265,
+                "blue_purple": 208
+              },
+              "True": {
+                "white": 186,
+                "blue_purple": 137
+              }
+            },
+            "minimum_species_each_side": 3
+          },
+          "sector": "E90_E180"
+        },
+        "east_result": {
+          "status": "OK",
+          "n_genera": 58,
+          "point": 0.020698224951557286,
+          "CI95": [
+            -0.13868608779370128,
+            0.19074187514961238
+          ],
+          "bootstrap_frac_positive": 0.6816816816816816,
+          "maxT_4sector_CI95": [
+            -0.19578908013975974,
+            0.23718553004287432
+          ],
+          "maxT_family_4_sectors": 4
+        }
+      },
+      "equal_genera": {
+        "status": "OK_4SECTOR_FAMILY",
+        "n_pass_sectors": 4,
+        "east": {
+          "status": "OK",
+          "support": {
+            "n_genus": 58,
+            "source_photos": 2355,
+            "species_by_side": {
+              "False": 473,
+              "True": 323
+            },
+            "named_species": 670,
+            "botanical_colour_by_side": {
+              "False": {
+                "white": 265,
+                "blue_purple": 208
+              },
+              "True": {
+                "white": 186,
+                "blue_purple": 137
+              }
+            },
+            "minimum_species_each_side": 3
+          },
+          "sector": "E90_E180"
+        },
+        "east_result": {
+          "status": "OK",
+          "n_genera": 58,
+          "point": 0.035550472136345004,
+          "CI95": [
+            -0.15340275658005875,
+            0.22602715254931663
+          ],
+          "bootstrap_frac_positive": 0.6186186186186187,
+          "maxT_4sector_CI95": [
+            -0.20592108375708806,
+            0.2770220280297781
+          ],
+          "maxT_family_4_sectors": 4
+        }
+      }
+    },
+    "min3_2plus_photo_opportunity": {
+      "equal_species": {
+        "status": "HOLD_COMPLETE_4SECTOR_FAMILY",
+        "n_pass_sectors": 3,
+        "east": {
+          "status": "OK",
+          "support": {
+            "n_genus": 40,
+            "source_photos": 1821,
+            "species_by_side": {
+              "False": 275,
+              "True": 187
+            },
+            "named_species": 352,
+            "botanical_colour_by_side": {
+              "False": {
+                "white": 174,
+                "blue_purple": 101
+              },
+              "True": {
+                "white": 125,
+                "blue_purple": 62
+              }
+            },
+            "minimum_species_each_side": 3
+          },
+          "sector": "E90_E180"
+        },
+        "east_result": {
+          "status": "OK",
+          "n_genera": 40,
+          "point": 0.033900277198805916,
+          "CI95": [
+            -0.13814916860001372,
+            0.2476715515701347
+          ],
+          "bootstrap_frac_positive": 0.7097097097097097
+        }
+      },
+      "equal_genera": {
+        "status": "HOLD_COMPLETE_4SECTOR_FAMILY",
+        "n_pass_sectors": 3,
+        "east": {
+          "status": "OK",
+          "support": {
+            "n_genus": 40,
+            "source_photos": 1821,
+            "species_by_side": {
+              "False": 275,
+              "True": 187
+            },
+            "named_species": 352,
+            "botanical_colour_by_side": {
+              "False": {
+                "white": 174,
+                "blue_purple": 101
+              },
+              "True": {
+                "white": 125,
+                "blue_purple": 62
+              }
+            },
+            "minimum_species_each_side": 3
+          },
+          "sector": "E90_E180"
+        },
+        "east_result": {
+          "status": "OK",
+          "n_genera": 40,
+          "point": 0.12199487245274113,
+          "CI95": [
+            -0.05923596914089039,
+            0.3292174905651255
+          ],
+          "bootstrap_frac_positive": 0.9059059059059059
+        }
+      }
+    },
+    "min2_all_photo_opportunity": {
+      "equal_species": {
+        "status": "OK_4SECTOR_FAMILY",
+        "n_pass_sectors": 4,
+        "east": {
+          "status": "OK",
+          "support": {
+            "n_genus": 112,
+            "source_photos": 3479,
+            "species_by_side": {
+              "False": 669,
+              "True": 454
+            },
+            "named_species": 931,
+            "botanical_colour_by_side": {
+              "False": {
+                "white": 386,
+                "blue_purple": 283
+              },
+              "True": {
+                "white": 278,
+                "blue_purple": 176
+              }
+            },
+            "minimum_species_each_side": 2
+          },
+          "sector": "E90_E180"
+        },
+        "east_result": {
+          "status": "OK",
+          "n_genera": 112,
+          "point": 0.08852541872322589,
+          "CI95": [
+            -0.0501278598524956,
+            0.2519634807570878
+          ],
+          "bootstrap_frac_positive": 0.8728728728728729,
+          "maxT_4sector_CI95": [
+            -0.10800785779817251,
+            0.2850586952446243
+          ],
+          "maxT_family_4_sectors": 4
+        }
+      },
+      "equal_genera": {
+        "status": "OK_4SECTOR_FAMILY",
+        "n_pass_sectors": 4,
+        "east": {
+          "status": "OK",
+          "support": {
+            "n_genus": 112,
+            "source_photos": 3479,
+            "species_by_side": {
+              "False": 669,
+              "True": 454
+            },
+            "named_species": 931,
+            "botanical_colour_by_side": {
+              "False": {
+                "white": 386,
+                "blue_purple": 283
+              },
+              "True": {
+                "white": 278,
+                "blue_purple": 176
+              }
+            },
+            "minimum_species_each_side": 2
+          },
+          "sector": "E90_E180"
+        },
+        "east_result": {
+          "status": "OK",
+          "n_genera": 112,
+          "point": 0.130317746336511,
+          "CI95": [
+            -0.023807801775027802,
+            0.30089273520472654
+          ],
+          "bootstrap_frac_positive": 0.9409409409409409,
+          "maxT_4sector_CI95": [
+            -0.08684459396282779,
+            0.3474800866358498
+          ],
+          "maxT_family_4_sectors": 4
+        }
+      }
+    },
+    "min2_2plus_photo_opportunity": {
+      "equal_species": {
+        "status": "OK_4SECTOR_FAMILY",
+        "n_pass_sectors": 4,
+        "east": {
+          "status": "OK",
+          "support": {
+            "n_genus": 91,
+            "source_photos": 2955,
+            "species_by_side": {
+              "False": 447,
+              "True": 297
+            },
+            "named_species": 561,
+            "botanical_colour_by_side": {
+              "False": {
+                "white": 275,
+                "blue_purple": 172
+              },
+              "True": {
+                "white": 198,
+                "blue_purple": 99
+              }
+            },
+            "minimum_species_each_side": 2
+          },
+          "sector": "E90_E180"
+        },
+        "east_result": {
+          "status": "OK",
+          "n_genera": 91,
+          "point": 0.06265388181406462,
+          "CI95": [
+            -0.11912022546616792,
+            0.2808976967914874
+          ],
+          "bootstrap_frac_positive": 0.7637637637637638,
+          "maxT_4sector_CI95": [
+            -0.1988593305785214,
+            0.32416709420665063
+          ],
+          "maxT_family_4_sectors": 4
+        }
+      },
+      "equal_genera": {
+        "status": "OK_4SECTOR_FAMILY",
+        "n_pass_sectors": 4,
+        "east": {
+          "status": "OK",
+          "support": {
+            "n_genus": 91,
+            "source_photos": 2955,
+            "species_by_side": {
+              "False": 447,
+              "True": 297
+            },
+            "named_species": 561,
+            "botanical_colour_by_side": {
+              "False": {
+                "white": 275,
+                "blue_purple": 172
+              },
+              "True": {
+                "white": 198,
+                "blue_purple": 99
+              }
+            },
+            "minimum_species_each_side": 2
+          },
+          "sector": "E90_E180"
+        },
+        "east_result": {
+          "status": "OK",
+          "n_genera": 91,
+          "point": 0.13493956596449508,
+          "CI95": [
+            -0.0990844585411977,
+            0.3659069608875297
+          ],
+          "bootstrap_frac_positive": 0.8848848848848849,
+          "maxT_4sector_CI95": [
+            -0.1658949687986384,
+            0.43577410072762857
+          ],
+          "maxT_family_4_sectors": 4
+        }
+      }
+    }
+  }
+}

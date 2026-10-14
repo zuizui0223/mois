@@ -1,0 +1,30 @@
+{
+  "schema": "fcp_np_unified_figure6_source_20261014_v1",
+  "role": "Figure display only; not a new analysis or source-independent test",
+  "source_notes": {
+    "panel_a": "Source-locked PR166 grouped all-abiotic Shapley global held-out genus-equal full-model Brier results; original complete-case cohorts differ",
+    "panel_b": "Source-locked PR193 decision_receipt.json global genus-equal macro direction, within-scope maxT uncertainty",
+    "panel_c": "Source-locked PR194 decision_receipt.json genus-equal identical-species B minus C paired differences, 24-contrast within-scope maxT uncertainty",
+    "panel_d": "Source-locked PR191 / unified nhm_source_verified_colour_summary.json east-vs-rest strict NHM colours with FCP original photo-site climate; nominal genus-cluster 95% interval"
+  },
+  "panels": {
+    "a": {"title": "a | Joint environment predictive gain", "xlabel": "Brier score improvement", "xlim": [-0.0018, 0.0058], "items": [
+      {"label": "26 abiotic variables (17,183 spp.)", "point": 0.0029429491669706095, "lo": 0.001749, "hi": 0.004104},
+      {"label": "All 36 variables (13,961 spp.)", "point": 0.0014316707124251914, "lo": 0.000216, "hi": 0.002755}
+    ]},
+    "b": {"title": "b | Global photographed white and BIO12", "xlabel": "White category difference (pp / BIO12 SD)", "xlim": [-6.0, 7.0], "items": [
+      {"label": "Broad genus + geography", "point": 2.254545235123587, "lo": 0.3187409730370901, "hi": 4.190349497210084},
+      {"label": "Strict image quality", "point": 1.2291617145377651, "lo": -2.045755751367926, "hi": 4.504079180443457},
+      {"label": "Genus × coarse cell", "point": 0.8079760812355011, "lo": -3.5563836455636126, "hi": 5.172335808034615}
+    ]},
+    "c": {"title": "c | Same-species spatial conditioning", "xlabel": "Broad − cell-conditioned slope (pp / BIO12 SD)", "xlim": [-4, 8], "items": [
+      {"label": "World (9,370 species)", "point": 0.5178838505256806, "lo": -1.253506959433599, "hi": 2.2892746604849603},
+      {"label": "East 90–180° (2,886 spp.)", "point": 3.1776815932594085, "lo": -0.2580350282277252, "hi": 6.613398214746542}
+    ]},
+    "d": {"title": "d | Independent botanical colour", "xlabel": "East − elsewhere white-vs-blue (pp / BIO12 SD)", "xlim": [-25, 28], "items": [
+      {"label": "Species-weighted (670 spp.)", "point": 2.0698224951557286, "lo": -13.868608779370128, "hi": 19.07418751496124},
+      {"label": "Genus-weighted (58 genera)", "point": 3.5550472136345004, "lo": -15.340275658005875, "hi": 22.602715254931663}
+    ]}
+  },
+  "display_boundaries": "Panels A and D are ordinary source-specific genus bootstrap intervals; B and C are scope-specific approx simultaneous maxT95. Panels use different phenotypes/estimands and must never be pooled or compared as causal effects. No universal adaptation or genetic polymorphism maintenance inferred."
+}
