@@ -146,7 +146,9 @@ def test_figures_supplement_source_and_real_release_blockers():
         assert h in supplement
     assert "not a common causal" not in s.lower() or "causal" in s.lower()
     assert "do not" in s.lower() or "not" in s.lower()
-    assert "not yet deposited" in s and "original raw-source photo" in s
+    assert "not been deposited in mois or any reviewer-accessible permanent archive" in s
+    assert "original camera image pixels" in s
+    assert "eight" in s.lower() and "bootstrap" in s.lower()
     assert "not submitted" in READINESS.read_text(encoding="utf8").lower()
 
 
