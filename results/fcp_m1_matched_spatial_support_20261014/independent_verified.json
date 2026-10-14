@@ -1,0 +1,11 @@
+{
+  "schema": "fcp_spatial_support_independent_original_row_wls_v1",
+  "status": "PASS",
+  "source_photo_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "source_abiotic_sha256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "independent_direct_WLS_slope_reconstructions": 288,
+  "max_abs_coeff_difference_probability_units": 2.2898349882893854e-16,
+  "paired_bootstrap_CI_resampled_independently": false,
+  "matched_B_C_species_equal_and_rows_unchanged": true,
+  "interpretation": "Purely computational replication, not independent biological data"
+}

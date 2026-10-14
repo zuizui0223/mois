@@ -1,0 +1,947 @@
+{
+  "schema": "fcp_directional_macroecology_20261013_decision_receipt_v1",
+  "source_source_SHA256": {
+    "original_photo": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+    "all36_abiotic": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca"
+  },
+  "original_photo_opportunities": 100543,
+  "source_photo_classified": 45953,
+  "environmental_anchors": [
+    "wc_bio5",
+    "wc_bio12",
+    "wc_bio14",
+    "wc_bio15",
+    "wc_srad_annual_mean",
+    "wc_vapr_annual_mean"
+  ],
+  "n_categorical_hues": 4,
+  "n_geo_sectors": 4,
+  "n_macro_scope_cohorts": 20,
+  "directional_estimates_and_sensitivities": 1280,
+  "scope_familywise_maxT_zero_exclusions": 43,
+  "key_white_directional_observations": [
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio12",
+      "hue": "white",
+      "n_photo_species": 20694,
+      "n_genera": 1934,
+      "point_pp": 2.254545235123587,
+      "family_95_interval_pp": [
+        0.3187409730370901,
+        4.190349497210084
+      ],
+      "family_interval_excludes_zero": true,
+      "conditional_all26_or36_ridge_slope_pp": 2.2160854764356706
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio14",
+      "hue": "white",
+      "n_photo_species": 20694,
+      "n_genera": 1934,
+      "point_pp": 1.5208803731874192,
+      "family_95_interval_pp": [
+        -0.0992081227484488,
+        3.1409688691232875
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 0.9527299200803336
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio5",
+      "hue": "white",
+      "n_photo_species": 20694,
+      "n_genera": 1934,
+      "point_pp": 1.2565856580995742,
+      "family_95_interval_pp": [
+        -0.6476152256582774,
+        3.160786541857426
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 0.7247452543497174
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_vapr_annual_mean",
+      "hue": "white",
+      "n_photo_species": 20694,
+      "n_genera": 1934,
+      "point_pp": 3.951850325152891,
+      "family_95_interval_pp": [
+        1.1992533811981878,
+        6.704447269107594
+      ],
+      "family_interval_excludes_zero": true,
+      "conditional_all26_or36_ridge_slope_pp": 3.1072130149033086
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_srad_annual_mean",
+      "hue": "white",
+      "n_photo_species": 20694,
+      "n_genera": 1934,
+      "point_pp": -0.5329040760033743,
+      "family_95_interval_pp": [
+        -2.943847450590403,
+        1.8780392985836551
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -0.4603533494986574
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio12",
+      "hue": "white",
+      "n_photo_species": 5848,
+      "n_genera": 727,
+      "point_pp": 1.2291617145377651,
+      "family_95_interval_pp": [
+        -2.045755751367926,
+        4.504079180443457
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -1.4496584255879637
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio14",
+      "hue": "white",
+      "n_photo_species": 5848,
+      "n_genera": 727,
+      "point_pp": 1.102872611785829,
+      "family_95_interval_pp": [
+        -1.5762080856962242,
+        3.7819533092678825
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 2.91987534260133
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio5",
+      "hue": "white",
+      "n_photo_species": 5848,
+      "n_genera": 727,
+      "point_pp": 0.3830828984981168,
+      "family_95_interval_pp": [
+        -2.8473854821598548,
+        3.613551279156088
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -4.308122001729944
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_vapr_annual_mean",
+      "hue": "white",
+      "n_photo_species": 5848,
+      "n_genera": 727,
+      "point_pp": 1.725028390033671,
+      "family_95_interval_pp": [
+        -2.8932981271419727,
+        6.3433549072093145
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 0.7139620396617627
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_srad_annual_mean",
+      "hue": "white",
+      "n_photo_species": 5848,
+      "n_genera": 727,
+      "point_pp": 0.8787527832687865,
+      "family_95_interval_pp": [
+        -3.165951107615186,
+        4.923456674152759
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 0.5266161963058777
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geocell",
+      "axis": "wc_bio12",
+      "hue": "white",
+      "n_photo_species": 9370,
+      "n_genera": 845,
+      "point_pp": 0.8079760812355011,
+      "family_95_interval_pp": [
+        -3.5563836455636126,
+        5.172335808034615
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": null
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geocell",
+      "axis": "wc_bio14",
+      "hue": "white",
+      "n_photo_species": 9370,
+      "n_genera": 845,
+      "point_pp": 1.943401157270108,
+      "family_95_interval_pp": [
+        -2.272846310487928,
+        6.159648625028145
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": null
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geocell",
+      "axis": "wc_bio5",
+      "hue": "white",
+      "n_photo_species": 9370,
+      "n_genera": 845,
+      "point_pp": 1.199336210457303,
+      "family_95_interval_pp": [
+        -3.401808583822479,
+        5.800481004737086
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": null
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geocell",
+      "axis": "wc_vapr_annual_mean",
+      "hue": "white",
+      "n_photo_species": 9370,
+      "n_genera": 845,
+      "point_pp": 2.745040713477919,
+      "family_95_interval_pp": [
+        -3.5663258726935663,
+        9.056407299649404
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": null
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geocell",
+      "axis": "wc_srad_annual_mean",
+      "hue": "white",
+      "n_photo_species": 9370,
+      "n_genera": 845,
+      "point_pp": -0.3473271215172109,
+      "family_95_interval_pp": [
+        -6.538981759716946,
+        5.844327516682523
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": null
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio12",
+      "hue": "white",
+      "n_photo_species": 5774,
+      "n_genera": 689,
+      "point_pp": 4.715669038973751,
+      "family_95_interval_pp": [
+        1.5649845595313752,
+        7.866353518416126
+      ],
+      "family_interval_excludes_zero": true,
+      "conditional_all26_or36_ridge_slope_pp": 1.4258250325516124
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio14",
+      "hue": "white",
+      "n_photo_species": 5774,
+      "n_genera": 689,
+      "point_pp": 2.7885432450101475,
+      "family_95_interval_pp": [
+        0.109206748044854,
+        5.467879741975441
+      ],
+      "family_interval_excludes_zero": true,
+      "conditional_all26_or36_ridge_slope_pp": -4.169384246538561
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio5",
+      "hue": "white",
+      "n_photo_species": 5774,
+      "n_genera": 689,
+      "point_pp": 2.271488004525737,
+      "family_95_interval_pp": [
+        -2.108868060570826,
+        6.6518440696223
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 6.577224608547387
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_vapr_annual_mean",
+      "hue": "white",
+      "n_photo_species": 5774,
+      "n_genera": 689,
+      "point_pp": 7.038441162594064,
+      "family_95_interval_pp": [
+        0.5556198376735779,
+        13.521262487514552
+      ],
+      "family_interval_excludes_zero": true,
+      "conditional_all26_or36_ridge_slope_pp": 5.136845822999972
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_srad_annual_mean",
+      "hue": "white",
+      "n_photo_species": 5774,
+      "n_genera": 689,
+      "point_pp": -5.020646992548958,
+      "family_95_interval_pp": [
+        -10.22263941046785,
+        0.1813454253699359
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -5.539334264253271
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geocell",
+      "axis": "wc_bio12",
+      "hue": "white",
+      "n_photo_species": 2886,
+      "n_genera": 280,
+      "point_pp": -2.075679148633834,
+      "family_95_interval_pp": [
+        -8.794268412051393,
+        4.642910114783724
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": null
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geocell",
+      "axis": "wc_bio14",
+      "hue": "white",
+      "n_photo_species": 2886,
+      "n_genera": 280,
+      "point_pp": -0.7574393591110329,
+      "family_95_interval_pp": [
+        -5.30033124580465,
+        3.7854525275825854
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": null
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geocell",
+      "axis": "wc_bio5",
+      "hue": "white",
+      "n_photo_species": 2886,
+      "n_genera": 280,
+      "point_pp": -0.9496701908910904,
+      "family_95_interval_pp": [
+        -9.42769182850853,
+        7.52835144672635
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": null
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geocell",
+      "axis": "wc_vapr_annual_mean",
+      "hue": "white",
+      "n_photo_species": 2886,
+      "n_genera": 280,
+      "point_pp": -0.3214390744327475,
+      "family_95_interval_pp": [
+        -10.936457331879572,
+        10.293579183014078
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": null
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geocell",
+      "axis": "wc_srad_annual_mean",
+      "hue": "white",
+      "n_photo_species": 2886,
+      "n_genera": 280,
+      "point_pp": 0.2649320473862077,
+      "family_95_interval_pp": [
+        -13.09737826966893,
+        13.627242364441344
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": null
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio12",
+      "hue": "white",
+      "n_photo_species": 1459,
+      "n_genera": 216,
+      "point_pp": 2.3002449722875165,
+      "family_95_interval_pp": [
+        -3.7003376110909816,
+        8.300827555666014
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 14.401865322769304
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio14",
+      "hue": "white",
+      "n_photo_species": 1459,
+      "n_genera": 216,
+      "point_pp": 2.231418311520479,
+      "family_95_interval_pp": [
+        -2.240392044965393,
+        6.70322866800635
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -3.0272278252793945
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio5",
+      "hue": "white",
+      "n_photo_species": 1459,
+      "n_genera": 216,
+      "point_pp": -0.7778512177502906,
+      "family_95_interval_pp": [
+        -8.246925205636504,
+        6.691222770135924
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 8.032496595504949
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_vapr_annual_mean",
+      "hue": "white",
+      "n_photo_species": 1459,
+      "n_genera": 216,
+      "point_pp": -0.8858019341575849,
+      "family_95_interval_pp": [
+        -12.178939680115592,
+        10.407335811800424
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 2.5078750630457525
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_srad_annual_mean",
+      "hue": "white",
+      "n_photo_species": 1459,
+      "n_genera": 216,
+      "point_pp": 0.2835239787670822,
+      "family_95_interval_pp": [
+        -9.30591190136642,
+        9.872959858900584
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 5.777681196163568
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio12",
+      "hue": "white",
+      "n_photo_species": 16801,
+      "n_genera": 1665,
+      "point_pp": 2.256936929825337,
+      "family_95_interval_pp": [
+        0.1381467494328297,
+        4.375727110217845
+      ],
+      "family_interval_excludes_zero": true,
+      "conditional_all26_or36_ridge_slope_pp": 4.483597732753383
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio14",
+      "hue": "white",
+      "n_photo_species": 16801,
+      "n_genera": 1665,
+      "point_pp": 1.5858375266451803,
+      "family_95_interval_pp": [
+        -0.2448156930087524,
+        3.4164907462991128
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -0.0311858051163292
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio5",
+      "hue": "white",
+      "n_photo_species": 16801,
+      "n_genera": 1665,
+      "point_pp": 1.000442326489068,
+      "family_95_interval_pp": [
+        -1.0411937663525772,
+        3.0420784193307133
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -3.537285888330936
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_vapr_annual_mean",
+      "hue": "white",
+      "n_photo_species": 16801,
+      "n_genera": 1665,
+      "point_pp": 3.9870091151816873,
+      "family_95_interval_pp": [
+        1.0379885891123448,
+        6.936029641251031
+      ],
+      "family_interval_excludes_zero": true,
+      "conditional_all26_or36_ridge_slope_pp": 2.700627828580505
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_srad_annual_mean",
+      "hue": "white",
+      "n_photo_species": 16801,
+      "n_genera": 1665,
+      "point_pp": -0.7507525391547702,
+      "family_95_interval_pp": [
+        -3.3117551193686188,
+        1.8102500410590785
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -1.041511817142136
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "soil_available_water_proxy",
+      "hue": "white",
+      "n_photo_species": 16801,
+      "n_genera": 1665,
+      "point_pp": 1.697698201967616,
+      "family_95_interval_pp": [
+        0.0027613836653093,
+        3.3926350202699225
+      ],
+      "family_interval_excludes_zero": true,
+      "conditional_all26_or36_ridge_slope_pp": 2.3002095994676344
+    },
+    {
+      "mode": "soil",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio12",
+      "hue": "white",
+      "n_photo_species": 4448,
+      "n_genera": 593,
+      "point_pp": 2.552371688443038,
+      "family_95_interval_pp": [
+        -0.7777538131027588,
+        5.882497189988835
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 2.551494669959265
+    },
+    {
+      "mode": "soil",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio14",
+      "hue": "white",
+      "n_photo_species": 4448,
+      "n_genera": 593,
+      "point_pp": 2.229271146902652,
+      "family_95_interval_pp": [
+        -0.412963763528543,
+        4.871506057333848
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 3.555785897130922
+    },
+    {
+      "mode": "soil",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio5",
+      "hue": "white",
+      "n_photo_species": 4448,
+      "n_genera": 593,
+      "point_pp": 0.3605225451441859,
+      "family_95_interval_pp": [
+        -3.047380023795804,
+        3.768425114084176
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -2.16490358593472
+    },
+    {
+      "mode": "soil",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_vapr_annual_mean",
+      "hue": "white",
+      "n_photo_species": 4448,
+      "n_genera": 593,
+      "point_pp": 2.440844751838489,
+      "family_95_interval_pp": [
+        -2.4911432711222465,
+        7.372832774799225
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 0.1043438940669107
+    },
+    {
+      "mode": "soil",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "wc_srad_annual_mean",
+      "hue": "white",
+      "n_photo_species": 4448,
+      "n_genera": 593,
+      "point_pp": -1.1644844146027655,
+      "family_95_interval_pp": [
+        -5.411361722697502,
+        3.0823928934919707
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -0.5374494526635356
+    },
+    {
+      "mode": "soil",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "axis": "soil_available_water_proxy",
+      "hue": "white",
+      "n_photo_species": 4448,
+      "n_genera": 593,
+      "point_pp": 0.4960526895159823,
+      "family_95_interval_pp": [
+        -2.488023358445841,
+        3.4801287374778056
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 1.5182230931915468
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio12",
+      "hue": "white",
+      "n_photo_species": 4397,
+      "n_genera": 546,
+      "point_pp": 3.5505589263894937,
+      "family_95_interval_pp": [
+        0.025219695854585,
+        7.075898156924403
+      ],
+      "family_interval_excludes_zero": true,
+      "conditional_all26_or36_ridge_slope_pp": -0.6579787651924837
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio14",
+      "hue": "white",
+      "n_photo_species": 4397,
+      "n_genera": 546,
+      "point_pp": 1.783449156816696,
+      "family_95_interval_pp": [
+        -1.3733967940029017,
+        4.940295107636294
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 2.8003548630627795
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_bio5",
+      "hue": "white",
+      "n_photo_species": 4397,
+      "n_genera": 546,
+      "point_pp": 1.1279177042921251,
+      "family_95_interval_pp": [
+        -3.777128500924984,
+        6.032963909509235
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": 2.793115243831992
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_vapr_annual_mean",
+      "hue": "white",
+      "n_photo_species": 4397,
+      "n_genera": 546,
+      "point_pp": 6.069537745601088,
+      "family_95_interval_pp": [
+        -1.1739018453693726,
+        13.312977336571546
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -0.6854705709262028
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "wc_srad_annual_mean",
+      "hue": "white",
+      "n_photo_species": 4397,
+      "n_genera": 546,
+      "point_pp": -5.160020787969349,
+      "family_95_interval_pp": [
+        -11.208469718053797,
+        0.8884281421150984
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -6.9216250252613225
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "axis": "soil_available_water_proxy",
+      "hue": "white",
+      "n_photo_species": 4397,
+      "n_genera": 546,
+      "point_pp": -0.0158723518294676,
+      "family_95_interval_pp": [
+        -3.532866835489985,
+        3.5011221318310497
+      ],
+      "family_interval_excludes_zero": false,
+      "conditional_all26_or36_ridge_slope_pp": -0.169545476591852
+    }
+  ],
+  "maxT_summary_by_source_design": [
+    {
+      "mode": "climate",
+      "quality": "all",
+      "adjustment": "genus_geo",
+      "weight": "genus_equal",
+      "familywise_interval_zero_exclusions": 6,
+      "comparisons": 120
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "adjustment": "genus_geo",
+      "weight": "species_equal",
+      "familywise_interval_zero_exclusions": 15,
+      "comparisons": 120
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "adjustment": "genus_geocell",
+      "weight": "genus_equal",
+      "familywise_interval_zero_exclusions": 0,
+      "comparisons": 120
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "adjustment": "genus_geocell",
+      "weight": "species_equal",
+      "familywise_interval_zero_exclusions": 2,
+      "comparisons": 120
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "adjustment": "genus_geo",
+      "weight": "genus_equal",
+      "familywise_interval_zero_exclusions": 0,
+      "comparisons": 120
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "adjustment": "genus_geo",
+      "weight": "species_equal",
+      "familywise_interval_zero_exclusions": 0,
+      "comparisons": 120
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "adjustment": "genus_geo",
+      "weight": "genus_equal",
+      "familywise_interval_zero_exclusions": 5,
+      "comparisons": 140
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "adjustment": "genus_geo",
+      "weight": "species_equal",
+      "familywise_interval_zero_exclusions": 11,
+      "comparisons": 140
+    },
+    {
+      "mode": "soil",
+      "quality": "strict",
+      "adjustment": "genus_geo",
+      "weight": "genus_equal",
+      "familywise_interval_zero_exclusions": 0,
+      "comparisons": 140
+    },
+    {
+      "mode": "soil",
+      "quality": "strict",
+      "adjustment": "genus_geo",
+      "weight": "species_equal",
+      "familywise_interval_zero_exclusions": 4,
+      "comparisons": 140
+    }
+  ],
+  "scientific_verdict": {
+    "broad_photographic_colour_environment_association": "SUPPORTED_AS_SMALL_CONTEXT_DEPENDENT_PREDICTION",
+    "specific_marginal_rain_and_vapour_white_slope": "SUPPORTED_IN_UNFILTERED_PHOTO_ONLY",
+    "same_direction_under_genus_geocell_space_photo_quality_and_external_source": "NOT_ESTABLISHED",
+    "universal_global_abiotic_hue_direction": "NOT_SUPPORTED_BY_ALL_REQUIRED_SENSITIVITIES",
+    "world_common_hotspot_map": "NOT_ESTABLISHED_PREVIOUS_FCP_RGFCA_G1_P_0_070",
+    "climate_driven_universal_selection": "UNIDENTIFIABLE_NO_FITNESS_GENOTYPES_OR_CAUSAL_CONTROL",
+    "genetic_maintenance_of_morphs": "UNIDENTIFIABLE_NO_POPULATION_GENOTYPE_OR_RELATIVE_FITNESS"
+  },
+  "independent_botanical_source_previous_pr191": {
+    "east_white_blue_direction": "NOT_INDEPENDENTLY_CONFIRMED",
+    "n_original_source_bothcolours_taxa": 2476,
+    "n_fixed_east_vs_other_matched_genera": 58,
+    "genus_equal_east_pp": 3.56,
+    "bootstrap_ci95_pp": [
+      -15.34,
+      22.6
+    ]
+  },
+  "disclosure": [
+    "All candidates are post-outcome source-exposed macroecological PHOTO descriptions. No p-values are claimed for a universal genetic climate selection mechanism.",
+    "Each maxT family is restricted to anchors times four hues WITHIN a cohort/weight/scope; it does not family-correct the research programme across all regions and model choices.",
+    "The strict photo and shared coarse-geocell source filters change their included taxa and environment support; absent inference is not evidence the true response is absent.",
+    "The prior NHM 191 photographic-site comparison reused FCP photography locations; its null does not independently resolve genetics or habitat history."
+  ]
+}

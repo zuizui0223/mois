@@ -1,0 +1,113 @@
+{
+  "schema": "fcp_spatial_support_macroecological_decision_20261014_v1",
+  "outcome_exposure": "retrospective_same_original_FCP_photo_source",
+  "n_original_photo_opportunities": 100543,
+  "n_classified_climate26_photo_observations": 45836,
+  "n_environmental_anchors": 6,
+  "n_photographic_hue_outcomes": 4,
+  "n_source_test_regions": 2,
+  "n_weightings": 2,
+  "n_environmental_direction_rows": 576,
+  "independent_direct_source_WLS_checks": 288,
+  "max_abs_wls_discrepancy_probability": 2.2898349882893854e-16,
+  "source_sha256_photo": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "source_sha256_environment": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "base_pr193_conditions_comparable": true,
+  "claims": {
+    "wide_scale_env_colour_direction": "OBSERVATIONAL_ASSOCIATION_IN_PHOTOGRAPHIC_COLOUR_COMPOSITION",
+    "same_species_spatial_adjustment_difference": "NOT_FAMILYWISE_ROBUST_IN_EITHER_GENUS_EQUAL_GLOBAL_OR_EAST",
+    "environment_only_photo_slope": "UNIDENTIFIABLE_FROM_OBSERVATIONAL_SOURCE",
+    "within_species_colour_adaptation": "NOT_TESTED",
+    "common_world_atlas_hotspot": "NOT_SUPPORTED_BY_PREVIOUS_RGFCA_P_HOT",
+    "universal_climate_selection": "NOT_TESTED_NO_W_OR_CAUSAL_COLOUR_ENV_INTERVENTION",
+    "genetic_colour_polymorphism_maintenance": "NOT_TESTED_NO_GENOTYPES_FREQUENCY_FITNESS"
+  },
+  "BIO12_white_by_region_and_weight": {
+    "world|species_equal": {
+      "n_matched_genera": 845,
+      "n_matched_species": 9370,
+      "matched_photographic_individuals": 14268,
+      "cohort_same_matched_genera_all_species_pp": 2.8289431505602742,
+      "same_species_with_broad_coordinate_pp": 1.9501736843132473,
+      "same_species_within_genus_cell_pp": 0.7088259754389582,
+      "paired_adjustment_difference_pp": 1.241347708874289,
+      "paired_nominal_95_interval_pp": [
+        -0.4080746742752746,
+        2.896504044908815
+      ],
+      "paired_24_hue_axis_maxT_95_interval_pp": [
+        -1.2430466898347516,
+        3.7257421075833297
+      ],
+      "difference_excludes_zero_after_24_maxT": false
+    },
+    "world|genus_equal": {
+      "n_matched_genera": 845,
+      "n_matched_species": 9370,
+      "matched_photographic_individuals": 14268,
+      "cohort_same_matched_genera_all_species_pp": 2.2485947475373225,
+      "same_species_with_broad_coordinate_pp": 1.3258599317611819,
+      "same_species_within_genus_cell_pp": 0.8079760812355011,
+      "paired_adjustment_difference_pp": 0.5178838505256806,
+      "paired_nominal_95_interval_pp": [
+        -0.6419523580408171,
+        1.6438053512896167
+      ],
+      "paired_24_hue_axis_maxT_95_interval_pp": [
+        -1.253506959433599,
+        2.2892746604849603
+      ],
+      "difference_excludes_zero_after_24_maxT": false
+    },
+    "E90_E180|species_equal": {
+      "n_matched_genera": 280,
+      "n_matched_species": 2886,
+      "matched_photographic_individuals": 4149,
+      "cohort_same_matched_genera_all_species_pp": 4.847178942968744,
+      "same_species_with_broad_coordinate_pp": 4.591499666876065,
+      "same_species_within_genus_cell_pp": 1.247675593692838,
+      "paired_adjustment_difference_pp": 3.343824073183227,
+      "paired_nominal_95_interval_pp": [
+        0.9433237753250528,
+        5.97914187240127
+      ],
+      "paired_24_hue_axis_maxT_95_interval_pp": [
+        -0.5102932660498425,
+        7.197941412416296
+      ],
+      "difference_excludes_zero_after_24_maxT": false
+    },
+    "E90_E180|genus_equal": {
+      "n_matched_genera": 280,
+      "n_matched_species": 2886,
+      "matched_photographic_individuals": 4149,
+      "cohort_same_matched_genera_all_species_pp": 2.0563305246075596,
+      "same_species_with_broad_coordinate_pp": 1.1020024446255743,
+      "same_species_within_genus_cell_pp": -2.075679148633834,
+      "paired_adjustment_difference_pp": 3.1776815932594085,
+      "paired_nominal_95_interval_pp": [
+        1.0769695478931298,
+        5.3507249601860085
+      ],
+      "paired_24_hue_axis_maxT_95_interval_pp": [
+        -0.2580350282277252,
+        6.613398214746542
+      ],
+      "difference_excludes_zero_after_24_maxT": false
+    }
+  },
+  "negative_gates": [
+    {
+      "region": "world",
+      "strictly_matched_n_species": 9370,
+      "unmeasured_real_local_soil_or_individual_fitness": true,
+      "genus_equal_spatial_adjustment_CI_includes_zero": true
+    },
+    {
+      "region": "E90_E180",
+      "strictly_matched_n_species": 2886,
+      "unmeasured_real_local_soil_or_individual_fitness": true,
+      "genus_equal_spatial_adjustment_CI_includes_zero": true
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "schema": "fcp_macro_abiotic_hue_independent_source_direct_wls_v1",
+  "status": "PASS",
+  "source_SHA256": {
+    "photo": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+    "environment": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca"
+  },
+  "direct_source_genus_WLS_colour_coefficients_verified": 352,
+  "max_abs_difference_pp": 1.687538997430238e-14,
+  "study_cells": [
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "weight": "species_equal",
+      "source_species": 20694,
+      "genera": 1934
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "weight": "genus_equal",
+      "source_species": 20694,
+      "genera": 1934
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geocell",
+      "weight": "species_equal",
+      "source_species": 9370,
+      "genera": 845
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geocell",
+      "weight": "genus_equal",
+      "source_species": 9370,
+      "genera": 845
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "weight": "species_equal",
+      "source_species": 5774,
+      "genera": 689
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geo",
+      "weight": "genus_equal",
+      "source_species": 5774,
+      "genera": 689
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geocell",
+      "weight": "species_equal",
+      "source_species": 2886,
+      "genera": 280
+    },
+    {
+      "mode": "climate",
+      "quality": "all",
+      "region": "E90_E180",
+      "adjustment": "genus_geocell",
+      "weight": "genus_equal",
+      "source_species": 2886,
+      "genera": 280
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "weight": "species_equal",
+      "source_species": 5848,
+      "genera": 727
+    },
+    {
+      "mode": "climate",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "weight": "genus_equal",
+      "source_species": 5848,
+      "genera": 727
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "weight": "species_equal",
+      "source_species": 16801,
+      "genera": 1665
+    },
+    {
+      "mode": "soil",
+      "quality": "all",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "weight": "genus_equal",
+      "source_species": 16801,
+      "genera": 1665
+    },
+    {
+      "mode": "soil",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "weight": "species_equal",
+      "source_species": 4448,
+      "genera": 593
+    },
+    {
+      "mode": "soil",
+      "quality": "strict",
+      "region": "world",
+      "adjustment": "genus_geo",
+      "weight": "genus_equal",
+      "source_species": 4448,
+      "genera": 593
+    }
+  ],
+  "bootstrap_ci_resampled_independently": false,
+  "notes": [
+    "An independently authored input reader and direct row-level sqrt-weight least squares agrees with all saved genus-sufficient-statistics point estimates.",
+    "Confidence intervals are reproduced by pinned production source replay, not re-bootstrapped in this verifier."
+  ]
+}
