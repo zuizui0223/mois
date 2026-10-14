@@ -1,0 +1,39 @@
+{
+  "schema": "fcp_joint_environment_unseen_genera_source_receipt_20261011_v1",
+  "status": "SOURCE_REPLAY_VERIFIED",
+  "source_counts": {"all_photos":100543,"opportunity_species":42111,"classified_photos":45953,"unclassified_photos":54590,"climate_photos":45836,"climate_species":25028,"soil_photos":31925,"soil_species":20786},
+  "provenance": {"workflow_run":38115725651,"job":114400116950,"code_commit":"d7f1532ba4bcd04268a98a563f57981241d5422d","code_git_blob":"690a795b36ccd22e0f59fa168e4369627b657c9c","artifact_id":11692539454,"artifact_zip_sha256":"144062186117dad519fd0eeaec5af58443a2a322d2bf88d2982ab00d015d78fd","max_local_remote_numeric_difference":1.5587531265737198e-13,"unit_tests_passed":13},
+  "source_archive_sha256": {"photos":"2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0","environment":"6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca"},
+  "design": {"environment_variables":36,"whole_genus_folds":5,"ridge_alpha":40,"paired_genus_bootstrap":1999,"original_hue_labels_changed":false,"geographic_cells_withheld":false,"direct_phylogenetic_tree_used":false,"observed_test_colour_used_in_predictions":false},
+  "primary36": {
+    "absolute_species_colour": {"species":20786,"genera":4853,"photos":31925,"genus_equal_gain":0.004518473195259998,"CI95":[0.002437171114914832,0.006602243325976192],"CI98_333":[0.0019382356641081675,0.007135566735562604],"relative_gain_percent":0.7703080808879185,"relative_CI95":[0.4147665657515812,1.1304199627833071],"species_equal_gain":0.0034264415024886086,"species_equal_CI95":[0.001440539731028595,0.005367780469869215]},
+    "within_unseen_genus_species_differences": {"species":16801,"genera":1665,"photos":26163,"genus_equal_gain":-0.00014204249658095192,"CI95":[-0.000748251000414732,0.0004332480827651861],"relative_gain_percent":-0.044132111007529264},
+    "within_species_photo_differences": {"species":5939,"genera":2196,"photos":17078,"genus_equal_gain":-0.0006701053249505706,"CI95":[-0.0010381088842553025,-0.00030892829601388976],"relative_gain_percent":-0.4151383591991508}
+  },
+  "same_absolute_predictions_exact_decomposition36": {
+    "total":{"gain":0.004518473195259998,"CI95":[0.002437171114914832,0.006602243325976192]},
+    "genus_mean_colour":{"gain":0.004699289715743238,"CI95":[0.0026657770031461555,0.00678280955806521]},
+    "within_genus_species_deviation":{"gain":-0.0001808165204855161,"CI95":[-0.0006281248941632123,0.0002778647402826558]},
+    "post_exposure_followup":true,
+    "identity":"mean genus residual risk = squared mean residual + mean squared centred residual; same predictions and same bootstrap draws, not biological variance decomposition"
+  },
+  "secondary26": {
+    "absolute":{"species":25028,"genera":5366,"photos":45836,"gain":0.004474856272803862,"CI95":[0.00256164523983326,0.006441317944201419],"relative_gain_percent":0.7845158723866437},
+    "within_genus":{"species":20694,"genera":1934,"gain":0.00009068989293531393,"CI95":[-0.0004102784139745269,0.0006141844742860225]},
+    "within_species":{"species":8619,"genera":2784,"gain":-0.0002513899401878905,"CI95":[-0.0004638052960502653,-0.00002832256351512355]}
+  },
+  "strict_quality36": {
+    "absolute":{"species":6457,"genera":2228,"gain":0.004316611034846485,"CI95":[0.00018742231958400192,0.008353358572131524],"CI98_333":[-0.0007360885051918677,0.009038548359304602],"species_equal_gain":0.0017560876757469757,"species_equal_CI95":[-0.0027408071094626395,0.006132302688466451]},
+    "within_genus":{"species":4448,"genera":593,"gain":-0.003043354493765471,"CI95":[-0.004654926088509798,-0.001498422812132597]},
+    "within_species":{"species":1116,"genera":629,"gain":-0.0007999818779717977,"CI95":[-0.0018898311109664951,0.00035059235999244026]}
+  },
+  "strict_quality26": {
+    "absolute":{"species":8145,"genera":2577,"gain":0.005419393296381858,"CI95":[0.0017282417967649177,0.008870817883151359]},
+    "within_genus":{"species":5848,"genera":727,"gain":-0.001183843207619495,"CI95":[-0.0020865934044687453,-0.00030322768503156526]},
+    "within_species":{"species":1770,"genera":859,"gain":-0.0009725995651309743,"CI95":[-0.0015156953386952505,-0.00045590390392044535]}
+  },
+  "soil_addition_on_identical_20786_species": {"gain":0.00007572926908683275,"CI95":[-0.0005160491839471759,0.0006534916124622868]},
+  "full_detail_location":"Artifact 11692539454 contains full result.json and 32 genus-level loss tables, all colour-axis components, both weighting schemes, and same-sample 26/36 contrasts.",
+  "ecological_limitations":["Absolute composition and centred within-group contrast risks are different estimands.","Unknown nominal genera can still share families, geography, phylogenetic history and image biases.","No spatial holdout or dated phylogenetic covariance model in this follow-up.","Bootstrap conditions on fitted models; not full refit uncertainty or an exact selection test.","A failed shared linear response does not imply no environmental effects, and a negative predictive increment is not negative biological fitness.","Pigment costs, defensive benefit, pollinators, plant genotypes and fitness are unmeasured.","Photo quality/MNAR remain; quality-limited36 loses stronger and species-equal interval support."],
+  "original_main_H1H2_changed":false
+}

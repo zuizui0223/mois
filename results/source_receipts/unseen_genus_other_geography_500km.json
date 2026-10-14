@@ -1,0 +1,32 @@
+{
+  "schema":"fcp_joint_environment_taxon_geography_source_receipt_20261011_v2",
+  "status":"SOURCE_REPLAY_VERIFIED_STABLE_FOLDS",
+  "source":{"photo_opportunities":100543,"nominal_species_opportunities":42111,"classified_photos":45953,"unknown_photo_colours":54590,"soil36_photos":31925,"soil36_species":20786,"soil36_genera":4853,"climate26_photos":45836,"climate26_species":25028,"climate26_genera":5366},
+  "source_hashes":{"photos":"2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0","environment":"6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca"},
+  "verification":{"run_id":38123766793,"job_id":114423744975,"tested_code_commit":"7a613853ca559e0535d9c0edac28b0b98e874c9b","artifact_id":11696112849,"artifact_sha256":"3410f8b84c7a8835e63f4a5bb779e832f9e7cd8966fceb2e8f6e2a9d27f90f96","unit_tests":14,"fold_audit_rows":240,"zero_leak_checks":720,"numeric_values_compared":11986,"max_local_CI_numeric_difference":1.5776269179923474e-13,"all_four_fold_maps_match":true,"independent_pandas_point_estimate_max_difference":7.173515254033092e-15},
+  "design":{"genus_folds":5,"geographic_longitude_sectors":[[-180,-90],[-90,0],[0,90],[90,180]],"buffer_km":500,"ridge_alpha":40,"bootstrap_replicates":1999,"all_36_variables_jointly_retained":true,"original_unclassified_photos_used_in_geographic_exclusion":true,"species_with_missing_source_coordinates_excluded_from_spatial_training":169,"holdout_uses_all_original_photo_footprints_not_centroids":true,"fold_algorithm":"count_descending_genus_lexical_ascending_then_min_load_lowest_fold_v1","first_library_default_fold_results_superseded":true},
+  "main36_same_20786_evaluated_species":{
+    "genus_only":{"genus_equal_gain":0.004311883024931018,"CI95":[0.002174055327216978,0.006356699147596517],"relative_gain_percent":0.720},
+    "genus_and_region":{"genus_equal_gain":0.0007589760018718028,"CI95":[-0.0020106225432279913,0.003534538598980957],"relative_gain_percent":0.126},
+    "genus_region_and_500km":{"genus_equal_gain":0.00017405463489672535,"CI95":[-0.002628926680543109,0.002845746479713368],"relative_gain_percent":0.028979207576953374,"species_equal_CI95":[-0.003920217902643524,0.000608543260939131]},
+    "post_outcome_paired_decline_genus_only_minus_joint500":{"gain_difference":0.004137828390033824,"CI95":[0.002362329919920607,0.005837568384241617],"same_species_and_sector_outcomes":true,"not_causal_geography_effect":true}
+  },
+  "secondary26_larger_25028_species_sample_joint500":{"genus_equal_gain":0.002873897393295577,"CI95":[0.0000308750070393216,0.005817167107143855],"CI97_5":[-0.00043754441796779454,0.006190010067300961],"relative_gain_percent":0.4892154193013798,"species_equal_CI95":[-0.0009360627846048796,0.0037983053521032034]},
+  "same_soil_sample26_joint500":{"species":20786,"photos":31925,"genus_equal_gain":0.00008030825470588845,"CI95":[-0.0027679539994435337,0.002815487668634923],"interpretation":"Do not infer a soil penalty from the larger26 versus smaller36 sample comparison."},
+  "quality_sensitivity_joint500":{
+    "soil36":{"species":6457,"genus_equal_gain":0.0006320447944688778,"CI95":[-0.004869114404110669,0.005991405625206985]},
+    "climate26":{"species":8145,"genus_equal_gain":0.0018341952853994092,"CI95":[-0.0031658659202215165,0.00662579628740213]}
+  },
+  "main36_joint500_region_results_rounded":{
+    "west180_90":{"species":3149,"gain":0.004703,"CI95":[-0.000671,0.010142]},
+    "west90_0":{"species":6787,"gain":0.006970,"CI95":[0.002388,0.011566]},
+    "east0_90":{"species":7467,"gain":-0.010908,"CI95":[-0.014686,-0.007000]},
+    "east90_180":{"species":6069,"gain":0.001274,"CI95":[-0.004085,0.006475]}
+  },
+  "full_outputs":"CI artifact11696112849 contains full result.json, four OOF loss tables, four fold-audit tables and four deterministic genus-fold maps. Conversation package additionally includes exact pandas recomputation, paired follow-ups, source code, tests and report.",
+  "conversation_package_sha256":"f4a69b185d0be6aefebb02d8859b7b63725014b1f38d664c6fe41a078f9048f3",
+  "inference_ceiling":["Source-exposed observational predictive transfer, not a prospective biological replication.","Only four artificial longitude domains; bootstrap conditions on fitted folds.","Geographic exclusion also changes training sample size, flora and environmental distribution.","Unknown genera are not direct dated-phylogeny-independent units.","Camera, flower organ, classification errors and MNAR remain.","Failed common-model transfer is not absence of environmental effects or proof against biological tradeoffs.","No pigment cost, pollination, herbivory, genotype or fitness measured."],
+  "main_H1H2_changed":false,
+  "original_colour_labels_changed":false,
+  "reserved_taxa_opened":false
+}

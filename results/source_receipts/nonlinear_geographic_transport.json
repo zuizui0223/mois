@@ -1,0 +1,3297 @@
+{
+  "schema": "fcp_fixed_nonlinear_environment_transport_verified_receipt_v1",
+  "created_at_utc": "2026-10-11T14:48:13.876405+00:00",
+  "execution_status": "SOURCE_REPLAY_AND_INDEPENDENT_VERIFICATION_COMPLETE",
+  "question": "Does one frozen nonlinear all36 environmental response improve prediction for unseen genera in geographically separated regions?",
+  "code_commit": "8273831d41653f332482456b379803b595681b3c",
+  "code_tree": "ab62b7e681d2451a703571690c95f87a09e8b06f",
+  "parent_pr169_commit": "ae1136e7d43bc6c5711778a5a7c727b0b7ed8d7e",
+  "pull_request": "https://github.com/zuizui0223/fcp/pull/170",
+  "protocol_and_script_hashes": {
+    "fcp_nonlinear_environment_transport_20261011.py": "6728793ebf36595ec815f8b3f654e3c6b1fbb72045f3f34a95304c908f236016",
+    "fcp_audit_36_preflight_20261011.py": "1d51e2c7934d13b63caf4ce1d18139b9b4e483389ff1953d5cba8180c03253d0",
+    "fcp_all36_global_region_cv_20261011.py": "03d2063cee4b2576dddf46e96323442c84249772b38cb4a493735fac1a21c281",
+    "fcp_joint_environment_unseen_genera_20261011.py": "a9b1675585c7812162b73a4f1ed4e96e97246d248ba2a61d975662312315198f",
+    "fcp_joint_environment_taxongeo_20261011.py": "dfccc862878d4700b533ec193f555ead4343b600d33d6ee2b27ad48859991cf1",
+    "fcp_joint_environment_taxongeo_stable_20261011.py": "7d8e01654dec943f3301c001e618effdcfa1cf572b048c6f2ad49999b08c6380",
+    "FCP_NONLINEAR_ENVIRONMENT_TRANSPORT_PROTOCOL_20261011.md": "ee097516b8a3cf040f0fd6727f37d29657b76ac362b922eafde498a73fc81ea4"
+  },
+  "independent_verifier_sha256": "ac54457b9af56545e50fa0fabfca1eeaec569f80b85fd07bf8cc9b8d2d1b0cb4",
+  "source_archive_hashes": {
+    "fcp_original_photo_site_climate_soil_85337_20261010.zip": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+    "fcp_100543_all36_expanded_photo_site_environment_20261011.zip": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca"
+  },
+  "source_counts": {
+    "all_rows": 100543,
+    "classified": 45953,
+    "climate_complete": 45836,
+    "soil_complete": 31925,
+    "climate_species": 25028,
+    "soil_species": 20786,
+    "climate_genera": 5366,
+    "soil_genera": 4853
+  },
+  "nominal_species": 42111,
+  "unclassified_photo_opportunities": 54590,
+  "cohorts": {
+    "soil_all": {
+      "n_input_photos": 31925,
+      "n_input_species": 20786,
+      "n_input_genera": 4853,
+      "genus_fold_map_sha256": "38bb8b841ac0ab3e1737a426d6f518262277ca3973c2913713800e19c161d166",
+      "all_eligible_source_photos_accounted": true,
+      "identical_complete_target_rows_all_models_and_regimes": true,
+      "fold_status_counts": {
+        "OK": 60
+      }
+    },
+    "soil_quality": {
+      "n_input_photos": 8139,
+      "n_input_species": 6457,
+      "n_input_genera": 2228,
+      "genus_fold_map_sha256": "3d6623d9d36308df5e9d9c0dc169400a656f07bcc445936d41fe9c7f63c82bb0",
+      "all_eligible_source_photos_accounted": true,
+      "identical_complete_target_rows_all_models_and_regimes": true,
+      "fold_status_counts": {
+        "OK": 60
+      }
+    }
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "pandas": "2.2.3",
+    "scipy": "1.17.0",
+    "scikit_learn": "1.8.0"
+  },
+  "model_settings": {
+    "nonlinear": {
+      "n_estimators": 128,
+      "max_depth": 16,
+      "min_samples_leaf": 20,
+      "max_features": 1.0,
+      "bootstrap": false,
+      "criterion": "squared_error",
+      "random_state": 2026101161,
+      "n_jobs": 2
+    },
+    "ridge_alpha": 40.0,
+    "training_weights": "equal species",
+    "ridge_preprocessing": "training mean/std only; original simplex projection",
+    "tree_preprocessing": "none; raw training features; joint four-output averages"
+  },
+  "geography_predictors": [
+    "abs_lat",
+    "lon_sin",
+    "lon_cos"
+  ],
+  "full36_predictors": [
+    "wc_elevation_m",
+    "wc_bio1",
+    "wc_bio2",
+    "wc_bio3",
+    "wc_bio4",
+    "wc_bio5",
+    "wc_bio6",
+    "wc_bio7",
+    "wc_bio8",
+    "wc_bio9",
+    "wc_bio10",
+    "wc_bio11",
+    "wc_bio12",
+    "wc_bio13",
+    "wc_bio14",
+    "wc_bio15",
+    "wc_bio16",
+    "wc_bio17",
+    "wc_bio18",
+    "wc_bio19",
+    "wc_srad_annual_mean",
+    "wc_srad_monthly_cv",
+    "wc_wind_annual_mean",
+    "wc_wind_monthly_cv",
+    "wc_vapr_annual_mean",
+    "wc_vapr_monthly_cv",
+    "soil_pH",
+    "soil_SOC",
+    "soil_N",
+    "soil_clay",
+    "soil_available_water_proxy",
+    "soil_cec_0_30cm_source_raw",
+    "soil_sand_0_30cm_source_raw",
+    "soil_silt_0_30cm_source_raw",
+    "soil_bdod_0_30cm_source_raw",
+    "soil_cfvo_0_30cm_source_raw"
+  ],
+  "genus_fold_algorithm": "count_descending_genus_lexical_ascending_then_min_load_lowest_fold_v1",
+  "bootstrap": 1999,
+  "buffer_km": 500.0,
+  "local": {
+    "status": "SOURCE_REPLAY_COMPLETE",
+    "result_sha256": "bc1e477e7c6229b3574442da74c765ab8da8c9c1a7b8e115b0cb897a0dccd9e5",
+    "independent_verification_sha256": "64482b3c14450c11cd28be8fa575b5424cfcf5a81dd577fa246dfb4b3c389bae",
+    "independent_verification": {
+      "cases": {
+        "soil_all": {
+          "archived_ridge_loss_values_matched": 422496,
+          "archived_ridge_rows_matched": 70416,
+          "fold_audits": 60,
+          "fold_map_sha256": "38bb8b841ac0ab3e1737a426d6f518262277ca3973c2913713800e19c161d166",
+          "genera": 4853,
+          "point_summaries_verified": 15,
+          "prediction_rows": 70416,
+          "species": 20786,
+          "species_sector_targets": 23472
+        },
+        "soil_quality": {
+          "archived_ridge_loss_values_matched": 126036,
+          "archived_ridge_rows_matched": 21006,
+          "fold_audits": 60,
+          "fold_map_sha256": "3d6623d9d36308df5e9d9c0dc169400a656f07bcc445936d41fe9c7f63c82bb0",
+          "genera": 2228,
+          "point_summaries_verified": 15,
+          "prediction_rows": 21006,
+          "species": 6457,
+          "species_sector_targets": 7002
+        }
+      },
+      "checks": 5962,
+      "max_abs_errors": {
+        "archived_ridge": 6.661338147750939e-16,
+        "point_estimates": 3.3306690738754696e-16,
+        "primary_bootstrap": 3.217912047936977e-16,
+        "saved_loss": 6.661338147750939e-16,
+        "simplex": 1.1102230246251565e-15
+      },
+      "primary_bootstrap": {
+        "case": "soil_all",
+        "components": [
+          "total",
+          "white_axis",
+          "remaining_hue"
+        ],
+        "contrasts": [
+          "nonlinear_environment_gain",
+          "ridge_environment_gain",
+          "nonlinear_minus_ridge_environment_gain",
+          "full_model_improvement",
+          "geography_model_improvement"
+        ],
+        "intervals": [
+          "CI95",
+          "CI97_5"
+        ],
+        "loss_models": [
+          "ridge_geo",
+          "ridge_full",
+          "nonlinear_geo",
+          "nonlinear_full"
+        ],
+        "replicates": 1999,
+        "scheme": "buffer500",
+        "weights": [
+          "genus_equal",
+          "species_equal"
+        ]
+      },
+      "status": "PASS",
+      "tolerance": 1e-11
+    }
+  },
+  "remote": {
+    "run": {
+      "run_id": 38147930349,
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "8273831d41653f332482456b379803b595681b3c",
+      "html_url": "https://github.com/zuizui0223/fcp/actions/runs/38147930349",
+      "run_started_at": "2026-10-11T14:37:20Z",
+      "updated_at": "2026-10-11T14:42:36Z",
+      "jobs": [
+        {
+          "id": 114495091498,
+          "name": "source-replay",
+          "status": "completed",
+          "conclusion": "success",
+          "run_id": 38147930349,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Install frozen numerical runtime",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Verify nonlinear predictions, paired estimand, original footprint and stable folds",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "Download original archives",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Download canonical parent losses for independent ridge comparison",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Replay both fixed all36 cohorts",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Verify source identities, completeness and saved prediction algebra",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9
+            },
+            {
+              "name": "Independently recalculate predictions, paired intervals and archived ridge equality",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11
+            },
+            {
+              "name": "Post Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 21
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 22
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 23
+            }
+          ]
+        }
+      ]
+    },
+    "artifact_id": 11704774261,
+    "artifact_sha256_verified": "2d206194a760ea2f8f3104b08b018060e0082787f8d335a7f28762e0c2118e2c",
+    "artifact_bytes": 25055039,
+    "result_sha256": "2359d7562126b8d7cbb8b65ce86f65b9423b0d00f4df944ed9b93ceef5b9df98",
+    "independent_verification_sha256": "8116ac68b0fddbc3fd0693f67c27d733abefcc3f83aa27b541aaaa2639e066f1",
+    "independent_verification": {
+      "cases": {
+        "soil_all": {
+          "archived_ridge_loss_values_matched": 422496,
+          "archived_ridge_rows_matched": 70416,
+          "fold_audits": 60,
+          "fold_map_sha256": "38bb8b841ac0ab3e1737a426d6f518262277ca3973c2913713800e19c161d166",
+          "genera": 4853,
+          "point_summaries_verified": 15,
+          "prediction_rows": 70416,
+          "species": 20786,
+          "species_sector_targets": 23472
+        },
+        "soil_quality": {
+          "archived_ridge_loss_values_matched": 126036,
+          "archived_ridge_rows_matched": 21006,
+          "fold_audits": 60,
+          "fold_map_sha256": "3d6623d9d36308df5e9d9c0dc169400a656f07bcc445936d41fe9c7f63c82bb0",
+          "genera": 2228,
+          "point_summaries_verified": 15,
+          "prediction_rows": 21006,
+          "species": 6457,
+          "species_sector_targets": 7002
+        }
+      },
+      "checks": 5962,
+      "max_abs_errors": {
+        "archived_ridge": 2.6645352591003757e-14,
+        "point_estimates": 4.440892098500626e-16,
+        "primary_bootstrap": 2.220446049250313e-16,
+        "saved_loss": 8.881784197001252e-16,
+        "simplex": 1.1102230246251565e-15
+      },
+      "primary_bootstrap": {
+        "case": "soil_all",
+        "components": [
+          "total",
+          "white_axis",
+          "remaining_hue"
+        ],
+        "contrasts": [
+          "nonlinear_environment_gain",
+          "ridge_environment_gain",
+          "nonlinear_minus_ridge_environment_gain",
+          "full_model_improvement",
+          "geography_model_improvement"
+        ],
+        "intervals": [
+          "CI95",
+          "CI97_5"
+        ],
+        "loss_models": [
+          "ridge_geo",
+          "ridge_full",
+          "nonlinear_geo",
+          "nonlinear_full"
+        ],
+        "replicates": 1999,
+        "scheme": "buffer500",
+        "weights": [
+          "genus_equal",
+          "species_equal"
+        ]
+      },
+      "status": "PASS",
+      "tolerance": 1e-11
+    }
+  },
+  "local_remote_comparison": {
+    "status": "PASS",
+    "receipt_sha256": "393d88610d0da3daa46f2e58cfedae1a4949c2c9b581a27727fc4d06b2760b3e",
+    "absolute_tolerance": 1e-11,
+    "relative_tolerance": 0,
+    "json_comparison": {
+      "categorical_values": 179,
+      "matching_infinite_values": 0,
+      "matching_nan_values": 0,
+      "max_abs_difference": 1.1368683772161603e-13,
+      "numeric_values": 8397
+    },
+    "prediction_rows": 91422,
+    "max_csv_difference_including_environment_distances": 2.9558577807620168e-12,
+    "max_model_prediction_difference": 1.9206858326015208e-14,
+    "max_model_loss_difference": 3.441691376337985e-14,
+    "source_archive_hashes_equal": true,
+    "source_script_and_helper_hashes_equal": true,
+    "runtime_equal": true,
+    "mismatches": []
+  },
+  "ridge_archive_comparison": {
+    "status": "PASS",
+    "archived_rows_matched": 91422,
+    "archived_loss_values_matched": 548532,
+    "local_max_abs_difference": 6.661338147750939e-16,
+    "remote_max_abs_difference": 2.6645352591003757e-14,
+    "raw_result_pending_field_preserved": true,
+    "closure": "This final receipt supersedes the emitted pending archive-comparison status; raw result.json is unchanged."
+  },
+  "verification_scope": "All saved prediction algebra, all point estimates and fold audits/maps; independent paired bootstrap recalculation for the main soil_all/buffer500 endpoint, both weights and all components/models/contrasts, CI95 and CI97_5. All JSON summaries and intervals and all CSV columns also compared between local and remote.",
+  "tests": {
+    "focused": {
+      "status": "PASS",
+      "passed": 23,
+      "local_log_sha256": "389ca801a26856e4fa8f85e3e4149f670e5997cf3d174c85c4013a8e14be75a5",
+      "remote_step": "Verify nonlinear predictions, paired estimand, original footprint and stable folds",
+      "remote_step_conclusion": "success"
+    },
+    "full_repository": {
+      "status": "COLLECTION_BLOCKED",
+      "collection_errors": 2,
+      "missing_preexisting_dependencies": [
+        "torch",
+        "statsmodels"
+      ],
+      "affected_test_modules": [
+        "tests/test_jbi_ch1_direct_florence_colour.py",
+        "tests/test_models.py"
+      ],
+      "log_sha256": "4e4f6a448013e8696e2ceaa6df22c5dcf6d57548a2e8d9669dc0ea39a77dc5b0",
+      "full_suite_pass_claimed": false
+    }
+  },
+  "primary_result": {
+    "status": "OK",
+    "n_species": 20786,
+    "n_genera": 4853,
+    "n_species_sector_records": 23472,
+    "n_sectors": 4,
+    "bootstrap_replicates": 1999,
+    "bootstrap_seed": 2026102781,
+    "uncertainty": "paired whole-genus resampling conditional on fixed fits and folds",
+    "genus_equal": {
+      "total": {
+        "losses": {
+          "ridge_geo": {
+            "estimate": 0.6006190280894629,
+            "CI95": [
+              0.5946291053526829,
+              0.6062929441495784
+            ],
+            "CI97_5": [
+              0.5938080185327596,
+              0.6072530947814255
+            ]
+          },
+          "ridge_full": {
+            "estimate": 0.6004449734545662,
+            "CI95": [
+              0.5938002042742525,
+              0.6068858200975168
+            ],
+            "CI97_5": [
+              0.593112651157359,
+              0.60788208795555
+            ]
+          },
+          "nonlinear_geo": {
+            "estimate": 0.6041246798880772,
+            "CI95": [
+              0.5977743993242036,
+              0.610247909483075
+            ],
+            "CI97_5": [
+              0.5966009161291754,
+              0.6115951775861568
+            ]
+          },
+          "nonlinear_full": {
+            "estimate": 0.5992428848771147,
+            "CI95": [
+              0.5926633398478345,
+              0.6055558505339254
+            ],
+            "CI97_5": [
+              0.5917418802594175,
+              0.6067141800562637
+            ]
+          }
+        },
+        "contrasts": {
+          "nonlinear_environment_gain": {
+            "estimate": 0.00488179501096242,
+            "CI95": [
+              0.002320148878053824,
+              0.007495621062657842
+            ],
+            "CI97_5": [
+              0.001986072691329538,
+              0.00789517334017945
+            ]
+          },
+          "ridge_environment_gain": {
+            "estimate": 0.00017405463489672535,
+            "CI95": [
+              -0.002647152316890111,
+              0.0029164679921524325
+            ],
+            "CI97_5": [
+              -0.0031136372492726883,
+              0.003339737599041816
+            ]
+          },
+          "nonlinear_minus_ridge_environment_gain": {
+            "estimate": 0.004707740376065694,
+            "CI95": [
+              0.002124576255371602,
+              0.0073377570143316525
+            ],
+            "CI97_5": [
+              0.0017425312557639184,
+              0.007714767837869236
+            ]
+          },
+          "full_model_improvement": {
+            "estimate": 0.00120208857745141,
+            "CI95": [
+              -0.0010109399932445972,
+              0.003446649425267556
+            ],
+            "CI97_5": [
+              -0.0013853525563332692,
+              0.0037072991146435068
+            ]
+          },
+          "geography_model_improvement": {
+            "estimate": -0.0035056517986142843,
+            "CI95": [
+              -0.0052048515179938856,
+              -0.0017931763651253597
+            ],
+            "CI97_5": [
+              -0.005412104558894457,
+              -0.0015025097375353988
+            ]
+          }
+        }
+      },
+      "white_axis": {
+        "losses": {
+          "ridge_geo": {
+            "estimate": 0.3195216219686129,
+            "CI95": [
+              0.31705334470944424,
+              0.3218262007324066
+            ],
+            "CI97_5": [
+              0.3167010261287346,
+              0.3222393664813537
+            ]
+          },
+          "ridge_full": {
+            "estimate": 0.31656656434002756,
+            "CI95": [
+              0.31336368944372356,
+              0.31958423498603633
+            ],
+            "CI97_5": [
+              0.31306223500380664,
+              0.3199949395541182
+            ]
+          },
+          "nonlinear_geo": {
+            "estimate": 0.32008259731074373,
+            "CI95": [
+              0.3179297039724018,
+              0.32230106627293736
+            ],
+            "CI97_5": [
+              0.3174839794298259,
+              0.3226352223715447
+            ]
+          },
+          "nonlinear_full": {
+            "estimate": 0.31678341474022614,
+            "CI95": [
+              0.31422668973383644,
+              0.3192945717720032
+            ],
+            "CI97_5": [
+              0.3137437681279947,
+              0.3196930983986449
+            ]
+          }
+        },
+        "contrasts": {
+          "nonlinear_environment_gain": {
+            "estimate": 0.0032991825705175892,
+            "CI95": [
+              0.001316889690842049,
+              0.005389049853496067
+            ],
+            "CI97_5": [
+              0.0009616780112103083,
+              0.00565807586634238
+            ]
+          },
+          "ridge_environment_gain": {
+            "estimate": 0.0029550576285853336,
+            "CI95": [
+              0.000710728687902923,
+              0.005312974332007242
+            ],
+            "CI97_5": [
+              0.0003956746473909187,
+              0.005516423255266841
+            ]
+          },
+          "nonlinear_minus_ridge_environment_gain": {
+            "estimate": 0.0003441249419322556,
+            "CI95": [
+              -0.001625822712809158,
+              0.002376272277248256
+            ],
+            "CI97_5": [
+              -0.0019516751353750264,
+              0.002615613337391315
+            ]
+          },
+          "full_model_improvement": {
+            "estimate": -0.00021685040019858715,
+            "CI95": [
+              -0.0019439774888690947,
+              0.001573979655768756
+            ],
+            "CI97_5": [
+              -0.002199340693152431,
+              0.001713945828246433
+            ]
+          },
+          "geography_model_improvement": {
+            "estimate": -0.0005609753421308428,
+            "CI95": [
+              -0.0017604752752465285,
+              0.0006314117293447571
+            ],
+            "CI97_5": [
+              -0.0019059846996033372,
+              0.0008013344056180803
+            ]
+          }
+        }
+      },
+      "remaining_hue": {
+        "losses": {
+          "ridge_geo": {
+            "estimate": 0.28109740612085055,
+            "CI95": [
+              0.2746767772028686,
+              0.28794122191382276
+            ],
+            "CI97_5": [
+              0.27344909631049646,
+              0.28875354152805877
+            ]
+          },
+          "ridge_full": {
+            "estimate": 0.2838784091145383,
+            "CI95": [
+              0.2772531220720211,
+              0.29061672341479916
+            ],
+            "CI97_5": [
+              0.2761688446239875,
+              0.2912327543147905
+            ]
+          },
+          "nonlinear_geo": {
+            "estimate": 0.2840420825773327,
+            "CI95": [
+              0.27746425176337264,
+              0.2910581451150428
+            ],
+            "CI97_5": [
+              0.2760867148464931,
+              0.2919536322806425
+            ]
+          },
+          "nonlinear_full": {
+            "estimate": 0.2824594701368877,
+            "CI95": [
+              0.27596272828222046,
+              0.2892816061215791
+            ],
+            "CI97_5": [
+              0.2746317419680633,
+              0.2901315096845428
+            ]
+          }
+        },
+        "contrasts": {
+          "nonlinear_environment_gain": {
+            "estimate": 0.001582612440444997,
+            "CI95": [
+              0.0004430940597426547,
+              0.002785896169416174
+            ],
+            "CI97_5": [
+              0.00024706515101617367,
+              0.0029480525501202103
+            ]
+          },
+          "ridge_environment_gain": {
+            "estimate": -0.0027810029936877756,
+            "CI95": [
+              -0.0041367768419854145,
+              -0.0015033136731272942
+            ],
+            "CI97_5": [
+              -0.004401905974319544,
+              -0.0013056485749131617
+            ]
+          },
+          "nonlinear_minus_ridge_environment_gain": {
+            "estimate": 0.004363615434132773,
+            "CI95": [
+              0.002885135071772535,
+              0.0058535994818640245
+            ],
+            "CI97_5": [
+              0.002681834697895133,
+              0.0060494826632687005
+            ]
+          },
+          "full_model_improvement": {
+            "estimate": 0.0014189389776506078,
+            "CI95": [
+              0.00029480366255685286,
+              0.002587485794076752
+            ],
+            "CI97_5": [
+              0.00013323072279231019,
+              0.0027472174722154978
+            ]
+          },
+          "geography_model_improvement": {
+            "estimate": -0.002944676456482165,
+            "CI95": [
+              -0.00389506510713456,
+              -0.002007148537546491
+            ],
+            "CI97_5": [
+              -0.004028987850457156,
+              -0.0019007387179224022
+            ]
+          }
+        }
+      }
+    },
+    "species_equal": {
+      "total": {
+        "losses": {
+          "ridge_geo": {
+            "estimate": 0.6231320955374158,
+            "CI95": [
+              0.6148883008850947,
+              0.6310792805936121
+            ],
+            "CI97_5": [
+              0.6139449494752168,
+              0.6322385088963006
+            ]
+          },
+          "ridge_full": {
+            "estimate": 0.6246852403881361,
+            "CI95": [
+              0.616163257289483,
+              0.6324572486368295
+            ],
+            "CI97_5": [
+              0.6151904247076095,
+              0.6340335136430468
+            ]
+          },
+          "nonlinear_geo": {
+            "estimate": 0.6258963845299154,
+            "CI95": [
+              0.6173606370778695,
+              0.6339982865891705
+            ],
+            "CI97_5": [
+              0.6163926131407805,
+              0.6355259230167423
+            ]
+          },
+          "nonlinear_full": {
+            "estimate": 0.6235980102615382,
+            "CI95": [
+              0.6150762015081344,
+              0.6317765199817803
+            ],
+            "CI97_5": [
+              0.6142857440404965,
+              0.63295734523968
+            ]
+          }
+        },
+        "contrasts": {
+          "nonlinear_environment_gain": {
+            "estimate": 0.0022983742683772013,
+            "CI95": [
+              0.00012073356889131253,
+              0.00445789850495552
+            ],
+            "CI97_5": [
+              -5.972053736656435e-05,
+              0.004750719001009163
+            ]
+          },
+          "ridge_environment_gain": {
+            "estimate": -0.0015531448507203338,
+            "CI95": [
+              -0.003831487203221079,
+              0.0007691166775686206
+            ],
+            "CI97_5": [
+              -0.004186447057590925,
+              0.0010632713641599261
+            ]
+          },
+          "nonlinear_minus_ridge_environment_gain": {
+            "estimate": 0.003851519119097535,
+            "CI95": [
+              0.0017049059216936225,
+              0.005968781686142227
+            ],
+            "CI97_5": [
+              0.001424993119051496,
+              0.006322352522702999
+            ]
+          },
+          "full_model_improvement": {
+            "estimate": 0.001087230126597949,
+            "CI95": [
+              -0.0005672710052909702,
+              0.002779685135516302
+            ],
+            "CI97_5": [
+              -0.0007864137373905705,
+              0.003007492599560189
+            ]
+          },
+          "geography_model_improvement": {
+            "estimate": -0.002764288992499586,
+            "CI95": [
+              -0.004400225700662996,
+              -0.0010637471198002627
+            ],
+            "CI97_5": [
+              -0.004645053663268978,
+              -0.0008131589292397285
+            ]
+          }
+        }
+      },
+      "white_axis": {
+        "losses": {
+          "ridge_geo": {
+            "estimate": 0.31474452880880827,
+            "CI95": [
+              0.31237971166097306,
+              0.3170387141315505
+            ],
+            "CI97_5": [
+              0.31201859187578596,
+              0.3174494754444419
+            ]
+          },
+          "ridge_full": {
+            "estimate": 0.31431244792051255,
+            "CI95": [
+              0.3114935038836726,
+              0.317002262527848
+            ],
+            "CI97_5": [
+              0.3110953469709168,
+              0.3173755599495002
+            ]
+          },
+          "nonlinear_geo": {
+            "estimate": 0.31618006084354616,
+            "CI95": [
+              0.31407549950525576,
+              0.3182001565980769
+            ],
+            "CI97_5": [
+              0.3138276984619686,
+              0.31850195347620625
+            ]
+          },
+          "nonlinear_full": {
+            "estimate": 0.3137305884148091,
+            "CI95": [
+              0.3113346323603214,
+              0.3160872100682727
+            ],
+            "CI97_5": [
+              0.3110248644830828,
+              0.31632287690148486
+            ]
+          }
+        },
+        "contrasts": {
+          "nonlinear_environment_gain": {
+            "estimate": 0.002449472428737054,
+            "CI95": [
+              0.0007638861190858743,
+              0.004134958260108751
+            ],
+            "CI97_5": [
+              0.0004762634269451116,
+              0.004362342367664093
+            ]
+          },
+          "ridge_environment_gain": {
+            "estimate": 0.0004320808882957161,
+            "CI95": [
+              -0.0013570728670183358,
+              0.002323491833212357
+            ],
+            "CI97_5": [
+              -0.0015787783292024737,
+              0.002474400194237294
+            ]
+          },
+          "nonlinear_minus_ridge_environment_gain": {
+            "estimate": 0.002017391540441338,
+            "CI95": [
+              0.00046491062142700883,
+              0.003494328514960937
+            ],
+            "CI97_5": [
+              0.00021711542433011378,
+              0.003816556459469528
+            ]
+          },
+          "full_model_improvement": {
+            "estimate": 0.0005818595057034415,
+            "CI95": [
+              -0.00063443063913734,
+              0.0019116724012315422
+            ],
+            "CI97_5": [
+              -0.0008378586867618665,
+              0.00209632330351038
+            ]
+          },
+          "geography_model_improvement": {
+            "estimate": -0.0014355320347378964,
+            "CI95": [
+              -0.002580184518165196,
+              -0.0002824186723062148
+            ],
+            "CI97_5": [
+              -0.0026918908865039446,
+              -0.0001131639789032394
+            ]
+          }
+        }
+      },
+      "remaining_hue": {
+        "losses": {
+          "ridge_geo": {
+            "estimate": 0.3083875667286075,
+            "CI95": [
+              0.29881573858216265,
+              0.3176226535426753
+            ],
+            "CI97_5": [
+              0.2976770654325422,
+              0.31877197702851234
+            ]
+          },
+          "ridge_full": {
+            "estimate": 0.3103727924676236,
+            "CI95": [
+              0.300690945006508,
+              0.3195438462331969
+            ],
+            "CI97_5": [
+              0.2994131853364332,
+              0.32087691997556783
+            ]
+          },
+          "nonlinear_geo": {
+            "estimate": 0.3097163236863691,
+            "CI95": [
+              0.300259406606339,
+              0.3187887786620897
+            ],
+            "CI97_5": [
+              0.29907908922469306,
+              0.3200428464439639
+            ]
+          },
+          "nonlinear_full": {
+            "estimate": 0.30986742184672905,
+            "CI95": [
+              0.30025550281867813,
+              0.3190868107631913
+            ],
+            "CI97_5": [
+              0.29908378869904245,
+              0.32043031962314683
+            ]
+          }
+        },
+        "contrasts": {
+          "nonlinear_environment_gain": {
+            "estimate": -0.0001510981603599637,
+            "CI95": [
+              -0.001329123247532421,
+              0.0010524152080987057
+            ],
+            "CI97_5": [
+              -0.0014782315341033872,
+              0.0012019525744669205
+            ]
+          },
+          "ridge_environment_gain": {
+            "estimate": -0.0019852257390161054,
+            "CI95": [
+              -0.0032454918935224454,
+              -0.0007616208140542648
+            ],
+            "CI97_5": [
+              -0.0033997359338291525,
+              -0.000545284990782693
+            ]
+          },
+          "nonlinear_minus_ridge_environment_gain": {
+            "estimate": 0.0018341275786561417,
+            "CI95": [
+              0.0003559683428197902,
+              0.0032784924542564983
+            ],
+            "CI97_5": [
+              0.00019402752480994075,
+              0.0034943697767141246
+            ]
+          },
+          "full_model_improvement": {
+            "estimate": 0.000505370620894563,
+            "CI95": [
+              -0.000484411249123462,
+              0.001503268779908101
+            ],
+            "CI97_5": [
+              -0.0006384339957354365,
+              0.001624850002172093
+            ]
+          },
+          "geography_model_improvement": {
+            "estimate": -0.0013287569577615788,
+            "CI95": [
+              -0.0024244990467784276,
+              -0.00027783895389830483
+            ],
+            "CI97_5": [
+              -0.0025524127506592496,
+              -0.00011363889812199776
+            ]
+          }
+        }
+      }
+    }
+  },
+  "all_overall_total_comparisons": {
+    "soil_all": {
+      "genus_only": {
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.59871087019739,
+              "CI95": [
+                0.5926369032913134,
+                0.6050756916130686
+              ],
+              "CI97_5": [
+                0.5916934903377888,
+                0.605990955368798
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.594398987172459,
+              "CI95": [
+                0.5879557457195501,
+                0.6012387295860103
+              ],
+              "CI97_5": [
+                0.5866888824359421,
+                0.6023985052622235
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.5972931985214761,
+              "CI95": [
+                0.5906666503567893,
+                0.6040136349723797
+              ],
+              "CI97_5": [
+                0.5897589081580009,
+                0.6055096476950302
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.599139092426345,
+              "CI95": [
+                0.5920666564266182,
+                0.6062728910840692
+              ],
+              "CI97_5": [
+                0.5908125845116945,
+                0.6076902532058451
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": -0.0018458939048688894,
+              "CI95": [
+                -0.004055903731138783,
+                0.0003909428529908883
+              ],
+              "CI97_5": [
+                -0.0043080700734997035,
+                0.0007598211482580105
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.004311883024931018,
+              "CI95": [
+                0.0020524434589258124,
+                0.006509996500072645
+              ],
+              "CI97_5": [
+                0.001791161932941829,
+                0.00683794659757866
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": -0.006157776929799907,
+              "CI95": [
+                -0.008825992375433855,
+                -0.0034385141275327944
+              ],
+              "CI97_5": [
+                -0.009295400702690318,
+                -0.0031032618692830075
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": -0.004740105253886018,
+              "CI95": [
+                -0.0075496041750335585,
+                -0.002099735242515394
+              ],
+              "CI97_5": [
+                -0.007921503395388552,
+                -0.0015825322665849809
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": 0.0014176716759138897,
+              "CI95": [
+                -0.0010459889082097662,
+                0.0037120524411169416
+              ],
+              "CI97_5": [
+                -0.0014298198054964102,
+                0.004165003829016068
+              ]
+            }
+          }
+        },
+        "species_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6218564406871809,
+              "CI95": [
+                0.6136618321007814,
+                0.630453777111089
+              ],
+              "CI97_5": [
+                0.6126401335341404,
+                0.6317197203244149
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.6188892353896175,
+              "CI95": [
+                0.6105424953458644,
+                0.6274027344071533
+              ],
+              "CI97_5": [
+                0.6091668698348126,
+                0.6290224431191749
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6208614883408694,
+              "CI95": [
+                0.6125970699636168,
+                0.6294563169180368
+              ],
+              "CI97_5": [
+                0.6109695490607148,
+                0.6308744674837599
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6228222766367607,
+              "CI95": [
+                0.6144534738119791,
+                0.6316983169384343
+              ],
+              "CI97_5": [
+                0.6124784285328164,
+                0.632937355034426
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": -0.0019607882958913025,
+              "CI95": [
+                -0.0034998047492831143,
+                -0.0004539427494298032
+              ],
+              "CI97_5": [
+                -0.0036896710550443413,
+                -0.00020809207875103835
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.0029672052975634466,
+              "CI95": [
+                0.0009944889453500916,
+                0.004921485463788088
+              ],
+              "CI97_5": [
+                0.0006177160764720052,
+                0.005217081310608555
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": -0.004927993593454749,
+              "CI95": [
+                -0.006704196228832354,
+                -0.0029671067647972674
+              ],
+              "CI97_5": [
+                -0.006995872429217317,
+                -0.00267305098357467
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": -0.003933041247143221,
+              "CI95": [
+                -0.00582462001972176,
+                -0.0020890397695686237
+              ],
+              "CI97_5": [
+                -0.006118349503124759,
+                -0.0018621884365436598
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": 0.0009949523463115284,
+              "CI95": [
+                -0.0010273788900386715,
+                0.0030057803727958957
+              ],
+              "CI97_5": [
+                -0.0014775901163971595,
+                0.003174311639774331
+              ]
+            }
+          }
+        }
+      },
+      "sector_purged": {
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6016186888701848,
+              "CI95": [
+                0.5958957284371302,
+                0.6075988617431143
+              ],
+              "CI97_5": [
+                0.5950891530812156,
+                0.6085281599090053
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.600859712868313,
+              "CI95": [
+                0.5946915993133273,
+                0.6074483566961479
+              ],
+              "CI97_5": [
+                0.593941420732555,
+                0.6087764738927618
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6043256569920301,
+              "CI95": [
+                0.598162327458571,
+                0.6105711011983649
+              ],
+              "CI97_5": [
+                0.5973484958130791,
+                0.6118553800637094
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.5983751353260703,
+              "CI95": [
+                0.5922383093928387,
+                0.6049605651181742
+              ],
+              "CI97_5": [
+                0.5914270343734187,
+                0.6060954858278077
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": 0.005950521665959774,
+              "CI95": [
+                0.0035270507996181645,
+                0.00830842141109977
+              ],
+              "CI97_5": [
+                0.0031431152945694736,
+                0.00860997254240297
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.0007589760018718028,
+              "CI95": [
+                -0.0018418243652756406,
+                0.0035698387794194314
+              ],
+              "CI97_5": [
+                -0.0022703294511604716,
+                0.004068257037536003
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.005191545664087971,
+              "CI95": [
+                0.00274194187190821,
+                0.007523112908918759
+              ],
+              "CI97_5": [
+                0.0022892827696290143,
+                0.007953031564221712
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.0024845775422426275,
+              "CI95": [
+                0.0003638530661177641,
+                0.004561640944201505
+              ],
+              "CI97_5": [
+                -2.8463186833235547e-05,
+                0.004806339288007547
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": -0.0027069681218453434,
+              "CI95": [
+                -0.004250767981306414,
+                -0.0011547293435869301
+              ],
+              "CI97_5": [
+                -0.004478960399512644,
+                -0.0008950892435851504
+              ]
+            }
+          }
+        },
+        "species_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6234461569451237,
+              "CI95": [
+                0.6156242617078976,
+                0.6312237953048443
+              ],
+              "CI97_5": [
+                0.614618920623274,
+                0.6325994277346356
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.6248046125154432,
+              "CI95": [
+                0.6168709627712425,
+                0.6326172390000617
+              ],
+              "CI97_5": [
+                0.6157202394096052,
+                0.6336726563105336
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6254635177481034,
+              "CI95": [
+                0.6174297799469204,
+                0.63344016027238
+              ],
+              "CI97_5": [
+                0.6165521732915721,
+                0.6347401464135137
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6229993635319099,
+              "CI95": [
+                0.6151983890492478,
+                0.6307726661721023
+              ],
+              "CI97_5": [
+                0.6140291299004791,
+                0.6318635591315392
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": 0.0024641542161935037,
+              "CI95": [
+                0.0005668134104470147,
+                0.004285737034897746
+              ],
+              "CI97_5": [
+                0.0003475364515628854,
+                0.004564258800702119
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": -0.001358455570319439,
+              "CI95": [
+                -0.0034804359803541963,
+                0.0009591761270182629
+              ],
+              "CI97_5": [
+                -0.0037519857775106303,
+                0.0011425790002998024
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.0038226097865129427,
+              "CI95": [
+                0.0018857666961055951,
+                0.005661553920578365
+              ],
+              "CI97_5": [
+                0.0016109229609670677,
+                0.005914888144785223
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.0018052489835332919,
+              "CI95": [
+                0.00019265768716051902,
+                0.0033139475895272988
+              ],
+              "CI97_5": [
+                -2.4980114191106015e-05,
+                0.003495803533316512
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": -0.002017360802979651,
+              "CI95": [
+                -0.0033546264998168375,
+                -0.0007225289316073085
+              ],
+              "CI97_5": [
+                -0.003609833132074541,
+                -0.0004496079493827623
+              ]
+            }
+          }
+        }
+      },
+      "buffer500": {
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6006190280894629,
+              "CI95": [
+                0.5946291053526829,
+                0.6062929441495784
+              ],
+              "CI97_5": [
+                0.5938080185327596,
+                0.6072530947814255
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.6004449734545662,
+              "CI95": [
+                0.5938002042742525,
+                0.6068858200975168
+              ],
+              "CI97_5": [
+                0.593112651157359,
+                0.60788208795555
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6041246798880772,
+              "CI95": [
+                0.5977743993242036,
+                0.610247909483075
+              ],
+              "CI97_5": [
+                0.5966009161291754,
+                0.6115951775861568
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.5992428848771147,
+              "CI95": [
+                0.5926633398478345,
+                0.6055558505339254
+              ],
+              "CI97_5": [
+                0.5917418802594175,
+                0.6067141800562637
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": 0.00488179501096242,
+              "CI95": [
+                0.002320148878053824,
+                0.007495621062657842
+              ],
+              "CI97_5": [
+                0.001986072691329538,
+                0.00789517334017945
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.00017405463489672535,
+              "CI95": [
+                -0.002647152316890111,
+                0.0029164679921524325
+              ],
+              "CI97_5": [
+                -0.0031136372492726883,
+                0.003339737599041816
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.004707740376065694,
+              "CI95": [
+                0.002124576255371602,
+                0.0073377570143316525
+              ],
+              "CI97_5": [
+                0.0017425312557639184,
+                0.007714767837869236
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.00120208857745141,
+              "CI95": [
+                -0.0010109399932445972,
+                0.003446649425267556
+              ],
+              "CI97_5": [
+                -0.0013853525563332692,
+                0.0037072991146435068
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": -0.0035056517986142843,
+              "CI95": [
+                -0.0052048515179938856,
+                -0.0017931763651253597
+              ],
+              "CI97_5": [
+                -0.005412104558894457,
+                -0.0015025097375353988
+              ]
+            }
+          }
+        },
+        "species_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6231320955374158,
+              "CI95": [
+                0.6148883008850947,
+                0.6310792805936121
+              ],
+              "CI97_5": [
+                0.6139449494752168,
+                0.6322385088963006
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.6246852403881361,
+              "CI95": [
+                0.616163257289483,
+                0.6324572486368295
+              ],
+              "CI97_5": [
+                0.6151904247076095,
+                0.6340335136430468
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6258963845299154,
+              "CI95": [
+                0.6173606370778695,
+                0.6339982865891705
+              ],
+              "CI97_5": [
+                0.6163926131407805,
+                0.6355259230167423
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6235980102615382,
+              "CI95": [
+                0.6150762015081344,
+                0.6317765199817803
+              ],
+              "CI97_5": [
+                0.6142857440404965,
+                0.63295734523968
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": 0.0022983742683772013,
+              "CI95": [
+                0.00012073356889131253,
+                0.00445789850495552
+              ],
+              "CI97_5": [
+                -5.972053736656435e-05,
+                0.004750719001009163
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": -0.0015531448507203338,
+              "CI95": [
+                -0.003831487203221079,
+                0.0007691166775686206
+              ],
+              "CI97_5": [
+                -0.004186447057590925,
+                0.0010632713641599261
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.003851519119097535,
+              "CI95": [
+                0.0017049059216936225,
+                0.005968781686142227
+              ],
+              "CI97_5": [
+                0.001424993119051496,
+                0.006322352522702999
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.001087230126597949,
+              "CI95": [
+                -0.0005672710052909702,
+                0.002779685135516302
+              ],
+              "CI97_5": [
+                -0.0007864137373905705,
+                0.003007492599560189
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": -0.002764288992499586,
+              "CI95": [
+                -0.004400225700662996,
+                -0.0010637471198002627
+              ],
+              "CI97_5": [
+                -0.004645053663268978,
+                -0.0008131589292397285
+              ]
+            }
+          }
+        }
+      }
+    },
+    "soil_quality": {
+      "genus_only": {
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6733809140777316,
+              "CI95": [
+                0.6656847298404024,
+                0.680871719947336
+              ],
+              "CI97_5": [
+                0.6648615008137336,
+                0.682059391945248
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.6686960590554163,
+              "CI95": [
+                0.659579616885948,
+                0.6778821018096677
+              ],
+              "CI97_5": [
+                0.6582540341468673,
+                0.6790141171235685
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6717062904221677,
+              "CI95": [
+                0.662931704570041,
+                0.6802522145381665
+              ],
+              "CI97_5": [
+                0.6616663624350522,
+                0.6816713223274388
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6750033649520628,
+              "CI95": [
+                0.6652109047435655,
+                0.6843226686194724
+              ],
+              "CI97_5": [
+                0.6640100585634526,
+                0.6859120205182316
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": -0.0032970745298951387,
+              "CI95": [
+                -0.007375768971136354,
+                0.0005849854707157264
+              ],
+              "CI97_5": [
+                -0.007799126204518089,
+                0.001461435841380645
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.004684855022315304,
+              "CI95": [
+                0.0006153381311121143,
+                0.008954532765617817
+              ],
+              "CI97_5": [
+                -1.957821432656545e-05,
+                0.009549048235733597
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": -0.007981929552210443,
+              "CI95": [
+                -0.012404043408190952,
+                -0.003695628006368546
+              ],
+              "CI97_5": [
+                -0.01283533516308217,
+                -0.0031373696842912904
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": -0.00630730589664652,
+              "CI95": [
+                -0.01045307666252382,
+                -0.002308188102268601
+              ],
+              "CI97_5": [
+                -0.010840289999587274,
+                -0.0018213263818884383
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": 0.0016746236555639227,
+              "CI95": [
+                -0.0023516575126101445,
+                0.005996612904727221
+              ],
+              "CI97_5": [
+                -0.002788317896802986,
+                0.006409068602836178
+              ]
+            }
+          }
+        },
+        "species_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6851504178474394,
+              "CI95": [
+                0.674137799791534,
+                0.6957553988777396
+              ],
+              "CI97_5": [
+                0.6728128762516701,
+                0.6973814783397045
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.682208443257201,
+              "CI95": [
+                0.670860855370024,
+                0.6931610443130539
+              ],
+              "CI97_5": [
+                0.6687429177109732,
+                0.6948589718437785
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6851365436501026,
+              "CI95": [
+                0.6741393505671314,
+                0.6955224273211207
+              ],
+              "CI97_5": [
+                0.672521560327052,
+                0.6979363450789253
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6864470483780513,
+              "CI95": [
+                0.6746360921915133,
+                0.6971728855667269
+              ],
+              "CI97_5": [
+                0.6728058346502039,
+                0.6993914219703538
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": -0.0013105047279486914,
+              "CI95": [
+                -0.004180118760421503,
+                0.001626286744754373
+              ],
+              "CI97_5": [
+                -0.004556946317354746,
+                0.001968762415153882
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.002941974590238372,
+              "CI95": [
+                -0.0008766654478767455,
+                0.007200045343682441
+              ],
+              "CI97_5": [
+                -0.001459642209562967,
+                0.00790110290988369
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": -0.0042524793181870635,
+              "CI95": [
+                -0.00817849537991045,
+                -0.0005993357303504089
+              ],
+              "CI97_5": [
+                -0.008695347752494111,
+                -0.00012089981918739176
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": -0.004238605120850281,
+              "CI95": [
+                -0.007459648094354776,
+                -0.001132739271663813
+              ],
+              "CI97_5": [
+                -0.007780193031546023,
+                -0.0008031596330790747
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": 1.3874197336782856e-05,
+              "CI95": [
+                -0.0036715438490432795,
+                0.003922944475665979
+              ],
+              "CI97_5": [
+                -0.004157599607625159,
+                0.004209785966234571
+              ]
+            }
+          }
+        }
+      },
+      "sector_purged": {
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6787125874466698,
+              "CI95": [
+                0.6710512630099135,
+                0.6867094606743832
+              ],
+              "CI97_5": [
+                0.6698374513121725,
+                0.6879601034026874
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.677251036403954,
+              "CI95": [
+                0.6675427255882956,
+                0.6866627809553725
+              ],
+              "CI97_5": [
+                0.6664853707371535,
+                0.6880754924920209
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6775323694274825,
+              "CI95": [
+                0.6693483451897476,
+                0.6855739698972017
+              ],
+              "CI97_5": [
+                0.6682657889747511,
+                0.6868131117424198
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6747624341638855,
+              "CI95": [
+                0.6658422000178683,
+                0.6836386177325301
+              ],
+              "CI97_5": [
+                0.664515384784108,
+                0.6849376358392352
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": 0.0027699352635970342,
+              "CI95": [
+                -0.0017112151375607064,
+                0.007311980353180159
+              ],
+              "CI97_5": [
+                -0.0022739530702001105,
+                0.00797202747215653
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.0014615510427158362,
+              "CI95": [
+                -0.0037921438525365726,
+                0.006652570323748817
+              ],
+              "CI97_5": [
+                -0.004405375457504598,
+                0.007620875926667768
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.001308384220881198,
+              "CI95": [
+                -0.003575923988274138,
+                0.006397803718266302
+              ],
+              "CI97_5": [
+                -0.00456485797317453,
+                0.007240512994199139
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.002488602240068527,
+              "CI95": [
+                -0.0015800112377180487,
+                0.0068155053852541215
+              ],
+              "CI97_5": [
+                -0.0023888315841493813,
+                0.007351005600117335
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": 0.001180218019187329,
+              "CI95": [
+                -0.00179242159965583,
+                0.004317396986134503
+              ],
+              "CI97_5": [
+                -0.0024761821695080564,
+                0.004708876273585455
+              ]
+            }
+          }
+        },
+        "species_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6881378318232033,
+              "CI95": [
+                0.6770967463574129,
+                0.6992989127541274
+              ],
+              "CI97_5": [
+                0.6755123236573988,
+                0.7012489044625762
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.6918175739906282,
+              "CI95": [
+                0.6808206167964259,
+                0.7030733452261053
+              ],
+              "CI97_5": [
+                0.6792891628753724,
+                0.7044458102152269
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6890649228043116,
+              "CI95": [
+                0.678725358559457,
+                0.6996367258811903
+              ],
+              "CI97_5": [
+                0.6771760648636873,
+                0.7011397408473479
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6873481761883672,
+              "CI95": [
+                0.6765051911616974,
+                0.6985151148701235
+              ],
+              "CI97_5": [
+                0.6749030940159017,
+                0.6997030836130755
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": 0.0017167466159444533,
+              "CI95": [
+                -0.001675513499145592,
+                0.00513430639573984
+              ],
+              "CI97_5": [
+                -0.0020113328782546207,
+                0.005466541311793033
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": -0.0036797421674248376,
+              "CI95": [
+                -0.007702818172671377,
+                0.0005691520486377047
+              ],
+              "CI97_5": [
+                -0.008465700996746959,
+                0.00113115229628909
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.005396488783369291,
+              "CI95": [
+                0.0011578987399096408,
+                0.009432937142252122
+              ],
+              "CI97_5": [
+                0.0006122872058385576,
+                0.010081044483159666
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.004469397802260966,
+              "CI95": [
+                0.0005804674988057201,
+                0.008515112025557072
+              ],
+              "CI97_5": [
+                4.2799295671580584e-05,
+                0.008981433236405144
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": -0.000927090981108325,
+              "CI95": [
+                -0.004413750459717802,
+                0.002590283517318298
+              ],
+              "CI97_5": [
+                -0.005025616541271085,
+                0.0029938891017791233
+              ]
+            }
+          }
+        }
+      },
+      "buffer500": {
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6789696665688897,
+              "CI95": [
+                0.6711249008108846,
+                0.6865060617796473
+              ],
+              "CI97_5": [
+                0.6696520351720915,
+                0.6873150136135979
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.6783376217744208,
+              "CI95": [
+                0.6691797011526658,
+                0.6871845463718402
+              ],
+              "CI97_5": [
+                0.6677850520397565,
+                0.6884441371208677
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6775794372082976,
+              "CI95": [
+                0.6695967509196966,
+                0.6850135570093931
+              ],
+              "CI97_5": [
+                0.6685275541655548,
+                0.6860463580242185
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6770629116701239,
+              "CI95": [
+                0.6680934505595832,
+                0.6857669071803963
+              ],
+              "CI97_5": [
+                0.6670650206361227,
+                0.6867401843457209
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": 0.0005165255381737177,
+              "CI95": [
+                -0.004122140171137057,
+                0.00536304514553278
+              ],
+              "CI97_5": [
+                -0.004727577469576224,
+                0.00592181673359477
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.0006320447944688778,
+              "CI95": [
+                -0.004929911564461487,
+                0.006009298251287326
+              ],
+              "CI97_5": [
+                -0.005814730541872972,
+                0.006751347021103255
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": -0.00011551925629516013,
+              "CI95": [
+                -0.0053720645377742845,
+                0.005419125192397589
+              ],
+              "CI97_5": [
+                -0.006378457663058576,
+                0.0063168841029180725
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.0012747101042969167,
+              "CI95": [
+                -0.0032385193153414535,
+                0.006108118251393002
+              ],
+              "CI97_5": [
+                -0.00369696157519806,
+                0.0067099001955458525
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": 0.0013902293605920768,
+              "CI95": [
+                -0.0016225152631035578,
+                0.0048868059621894715
+              ],
+              "CI97_5": [
+                -0.0022088879352024694,
+                0.005343503649315729
+              ]
+            }
+          }
+        },
+        "species_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6879349046748464,
+              "CI95": [
+                0.6762675404978052,
+                0.6989267938139012
+              ],
+              "CI97_5": [
+                0.6743010680416651,
+                0.7005434884069273
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.6932069623019367,
+              "CI95": [
+                0.6822538991129303,
+                0.7038141410299821
+              ],
+              "CI97_5": [
+                0.6806268349992288,
+                0.7055521197291607
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6888669249298721,
+              "CI95": [
+                0.6780550149485248,
+                0.6990807249853134
+              ],
+              "CI97_5": [
+                0.6767553352645033,
+                0.7007158126490214
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6892583708687097,
+              "CI95": [
+                0.6780934395328058,
+                0.7000691566059484
+              ],
+              "CI97_5": [
+                0.6763444890421756,
+                0.7017607402811313
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": -0.0003914459388375535,
+              "CI95": [
+                -0.0037780699329763357,
+                0.0031104356083669345
+              ],
+              "CI97_5": [
+                -0.004217549782061411,
+                0.0036485309493225603
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": -0.005272057627090265,
+              "CI95": [
+                -0.010189191403248393,
+                -0.0006662590010307562
+              ],
+              "CI97_5": [
+                -0.010772192106131756,
+                5.5611605423383105e-06
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.004880611688252712,
+              "CI95": [
+                0.00017808735465248433,
+                0.009558710492744142
+              ],
+              "CI97_5": [
+                -0.0005124039748875569,
+                0.010174901826782976
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.003948591433227011,
+              "CI95": [
+                -0.0002993053948333545,
+                0.008530733725623905
+              ],
+              "CI97_5": [
+                -0.0009723637193395361,
+                0.009297552645743182
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": -0.0009320202550257006,
+              "CI95": [
+                -0.005039636061605563,
+                0.0028656557657383173
+              ],
+              "CI97_5": [
+                -0.0054559165538559575,
+                0.0033822209831390012
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "buffer500_region_total_comparisons": {
+    "soil_all": {
+      "0": {
+        "n_species": 3149,
+        "n_genera": 1160,
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.5988230044977764,
+              "CI95": [
+                0.583871504406248,
+                0.6127469278027692
+              ],
+              "CI97_5": [
+                0.5814584729981731,
+                0.6147989306925478
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.5941198648354148,
+              "CI95": [
+                0.5794168393748993,
+                0.6078056760615602
+              ],
+              "CI97_5": [
+                0.5769439321231302,
+                0.6099797266694661
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6032984280710477,
+              "CI95": [
+                0.5852826403292951,
+                0.6199450769597494
+              ],
+              "CI97_5": [
+                0.5827924287164334,
+                0.6220881797223566
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.5961160192274046,
+              "CI95": [
+                0.5816042825659028,
+                0.6097003332914344
+              ],
+              "CI97_5": [
+                0.5793728170136346,
+                0.611635424918867
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": 0.007182408843643073,
+              "CI95": [
+                -0.0007802606579592029,
+                0.01523243685925205
+              ],
+              "CI97_5": [
+                -0.0018733312066249342,
+                0.016356686510104922
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.004703139662361577,
+              "CI95": [
+                -0.000708576189643223,
+                0.010095660328345486
+              ],
+              "CI97_5": [
+                -0.0015193019024959536,
+                0.010910351734851135
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.002479269181281496,
+              "CI95": [
+                -0.0033709173931230187,
+                0.007783923497412769
+              ],
+              "CI97_5": [
+                -0.003958898034854727,
+                0.008624366530837032
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": -0.0019961543919898572,
+              "CI95": [
+                -0.00567033611725592,
+                0.001768825975401411
+              ],
+              "CI97_5": [
+                -0.006287655145907137,
+                0.0023046130183250087
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": -0.004475423573271353,
+              "CI95": [
+                -0.00943713836214805,
+                0.000564974753100244
+              ],
+              "CI97_5": [
+                -0.010246084850379516,
+                0.0014000818043310808
+              ]
+            }
+          }
+        }
+      },
+      "1": {
+        "n_species": 6787,
+        "n_genera": 2253,
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6061488618601011,
+              "CI95": [
+                0.59810566057496,
+                0.6145471326450415
+              ],
+              "CI97_5": [
+                0.597078082633396,
+                0.6151953858972015
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.599178517832567,
+              "CI95": [
+                0.5896715481691613,
+                0.6092698378525597
+              ],
+              "CI97_5": [
+                0.5883435147285302,
+                0.6107751924488932
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6084303126701103,
+              "CI95": [
+                0.5995999341854706,
+                0.6173826286909988
+              ],
+              "CI97_5": [
+                0.598434369251345,
+                0.618356687696867
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.5986840879853699,
+              "CI95": [
+                0.5889097030939371,
+                0.6083451797135561
+              ],
+              "CI97_5": [
+                0.5879067783857442,
+                0.6094526839217674
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": 0.009746224684740401,
+              "CI95": [
+                0.006425736887633321,
+                0.013220604763939658
+              ],
+              "CI97_5": [
+                0.005907809758774455,
+                0.01354710901483631
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.006970344027534048,
+              "CI95": [
+                0.0023783079721260538,
+                0.011657159733974621
+              ],
+              "CI97_5": [
+                0.0017367843528554917,
+                0.01240909428982473
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.0027758806572063532,
+              "CI95": [
+                -0.0008142573887666037,
+                0.006638402935071791
+              ],
+              "CI97_5": [
+                -0.001327299985663241,
+                0.007039467793932628
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.0004944298471971642,
+              "CI95": [
+                -0.002385915053250648,
+                0.003595612417501575
+              ],
+              "CI97_5": [
+                -0.0027922265861281574,
+                0.004037491013196617
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": -0.002281450810009189,
+              "CI95": [
+                -0.0050236788063991065,
+                0.0004337860478851373
+              ],
+              "CI97_5": [
+                -0.005439975654900092,
+                0.000812742222429286
+              ]
+            }
+          }
+        }
+      },
+      "2": {
+        "n_species": 7467,
+        "n_genera": 2152,
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.5961011253039499,
+              "CI95": [
+                0.5866047326079898,
+                0.6054760624565
+              ],
+              "CI97_5": [
+                0.5847212088768365,
+                0.6067424726347664
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.6070093669375473,
+              "CI95": [
+                0.5979637821966435,
+                0.6159613589307966
+              ],
+              "CI97_5": [
+                0.5966453289567913,
+                0.6169163166761195
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.5985916165380271,
+              "CI95": [
+                0.5882418325555218,
+                0.6086869309712134
+              ],
+              "CI97_5": [
+                0.5867974429437073,
+                0.6102302819301094
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.5987546312656895,
+              "CI95": [
+                0.5884553497393538,
+                0.6093294597440567
+              ],
+              "CI97_5": [
+                0.5869378052284535,
+                0.6108635340179961
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": -0.00016301472766244718,
+              "CI95": [
+                -0.0036904206810896454,
+                0.0034052493119020796
+              ],
+              "CI97_5": [
+                -0.0041914233155933844,
+                0.003954860145092826
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": -0.010908241633597382,
+              "CI95": [
+                -0.0144934989420755,
+                -0.007054600433909882
+              ],
+              "CI97_5": [
+                -0.015018596913741003,
+                -0.006519609917689663
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.010745226905934935,
+              "CI95": [
+                0.006553194824496078,
+                0.01455559687821758
+              ],
+              "CI97_5": [
+                0.006022014461547815,
+                0.015108707203415535
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.00825473567185775,
+              "CI95": [
+                0.003964517326924327,
+                0.01252815838830244
+              ],
+              "CI97_5": [
+                0.0033789472547700733,
+                0.01297088143557732
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": -0.0024904912340771856,
+              "CI95": [
+                -0.004977002345167125,
+                -5.5178186455423664e-05
+              ],
+              "CI97_5": [
+                -0.005273871803809183,
+                0.00020677242862134683
+              ]
+            }
+          }
+        }
+      },
+      "3": {
+        "n_species": 6069,
+        "n_genera": 1904,
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.5797679491012877,
+              "CI95": [
+                0.5689400497224766,
+                0.5909239530000923
+              ],
+              "CI97_5": [
+                0.5673825723716054,
+                0.5933410638877914
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.5784944246310076,
+              "CI95": [
+                0.5652019469536788,
+                0.5925756225508808
+              ],
+              "CI97_5": [
+                0.5633479001972924,
+                0.5945971030561856
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.5804601805689336,
+              "CI95": [
+                0.5690065398922807,
+                0.5920380994818744
+              ],
+              "CI97_5": [
+                0.5673070144435931,
+                0.5944619119415395
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.5770994459828465,
+              "CI95": [
+                0.5654709368706297,
+                0.5892171822653811
+              ],
+              "CI97_5": [
+                0.56368739008917,
+                0.5908310929128597
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": 0.0033607345860870996,
+              "CI95": [
+                0.0001575083616207118,
+                0.006598585068075812
+              ],
+              "CI97_5": [
+                -0.00034474834861365766,
+                0.007354054852045603
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.001273524470280063,
+              "CI95": [
+                -0.004082226096219393,
+                0.0065771420324506275
+              ],
+              "CI97_5": [
+                -0.004860646497859958,
+                0.007335750142484654
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.0020872101158070366,
+              "CI95": [
+                -0.0027592796648940763,
+                0.00676514551324257
+              ],
+              "CI97_5": [
+                -0.003513176759193029,
+                0.0073323463476399715
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.0013949786481611826,
+              "CI95": [
+                -0.0024532857925915253,
+                0.005126850540456972
+              ],
+              "CI97_5": [
+                -0.0029281940942364358,
+                0.006005714504381555
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": -0.0006922314676458541,
+              "CI95": [
+                -0.0030957686134067187,
+                0.0018332609364427425
+              ],
+              "CI97_5": [
+                -0.0034273253998852423,
+                0.0020867181850152115
+              ]
+            }
+          }
+        }
+      }
+    },
+    "soil_quality": {
+      "0": {
+        "n_species": 974,
+        "n_genera": 486,
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6519077722748219,
+              "CI95": [
+                0.633346700780317,
+                0.6702834633870741
+              ],
+              "CI97_5": [
+                0.6308066965910557,
+                0.6740042180187409
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.6483106509311507,
+              "CI95": [
+                0.6279656382250484,
+                0.669133608583179
+              ],
+              "CI97_5": [
+                0.6251333426904413,
+                0.6715179671906186
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6545684532622357,
+              "CI95": [
+                0.6359679544264195,
+                0.6731275524088699
+              ],
+              "CI97_5": [
+                0.6329881638455918,
+                0.6754387611679749
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6438942552786354,
+              "CI95": [
+                0.6220554782345195,
+                0.6653797049011029
+              ],
+              "CI97_5": [
+                0.6198144987156956,
+                0.6687357519389908
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": 0.010674197983600253,
+              "CI95": [
+                -0.007611206131110648,
+                0.029229189817527926
+              ],
+              "CI97_5": [
+                -0.010641108866520907,
+                0.03209243297075594
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.0035971213436711835,
+              "CI95": [
+                -0.006288682164426551,
+                0.012489417442962529
+              ],
+              "CI97_5": [
+                -0.007321775392800087,
+                0.013685679872251862
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.00707707663992907,
+              "CI95": [
+                -0.007738958570621135,
+                0.022094276211775694
+              ],
+              "CI97_5": [
+                -0.009432927201151148,
+                0.02450733884042864
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.004416395652515281,
+              "CI95": [
+                -0.004654733431834146,
+                0.01327997005105267
+              ],
+              "CI97_5": [
+                -0.005803987151213152,
+                0.014721879813309625
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": -0.0026606809874137882,
+              "CI95": [
+                -0.016194980175283237,
+                0.011285822721329296
+              ],
+              "CI97_5": [
+                -0.017955981036504358,
+                0.012652690086677397
+              ]
+            }
+          }
+        }
+      },
+      "1": {
+        "n_species": 2059,
+        "n_genera": 981,
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6962936974152663,
+              "CI95": [
+                0.6825286054673612,
+                0.7093482903206924
+              ],
+              "CI97_5": [
+                0.6799483626947345,
+                0.712045521996565
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.7018125714962432,
+              "CI95": [
+                0.687587671919476,
+                0.7159167390187076
+              ],
+              "CI97_5": [
+                0.6857934293044334,
+                0.7188044410920047
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6948296992606315,
+              "CI95": [
+                0.6825934607886125,
+                0.7063544176720454
+              ],
+              "CI97_5": [
+                0.6810911252157243,
+                0.7084613885573097
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6931672223627866,
+              "CI95": [
+                0.6801755185165023,
+                0.7063953262077483
+              ],
+              "CI97_5": [
+                0.6784256997094772,
+                0.7091492460497442
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": 0.0016624768978449334,
+              "CI95": [
+                -0.004352568468051793,
+                0.007364995272384334
+              ],
+              "CI97_5": [
+                -0.005194540588140764,
+                0.008652850229037121
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": -0.005518874080976954,
+              "CI95": [
+                -0.013633433626145414,
+                0.002226993431036744
+              ],
+              "CI97_5": [
+                -0.014802766133670806,
+                0.003395650274370184
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.007181350978821888,
+              "CI95": [
+                -6.63729836615445e-05,
+                0.014174327647611555
+              ],
+              "CI97_5": [
+                -0.0009398993950245821,
+                0.01532675744254528
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.008645349133456603,
+              "CI95": [
+                0.0018790107824373128,
+                0.015554780331794898
+              ],
+              "CI97_5": [
+                0.0010573200512758812,
+                0.016556075197919816
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": 0.0014639981546347158,
+              "CI95": [
+                -0.0020714782262292843,
+                0.005169129362048891
+              ],
+              "CI97_5": [
+                -0.0024071465924005776,
+                0.005686467787940829
+              ]
+            }
+          }
+        }
+      },
+      "2": {
+        "n_species": 2138,
+        "n_genera": 883,
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6829896544063863,
+              "CI95": [
+                0.6702053062345573,
+                0.6958237765027195
+              ],
+              "CI97_5": [
+                0.6683228653760138,
+                0.6973357494047667
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.6900288812605031,
+              "CI95": [
+                0.6756472427535147,
+                0.7046095922351233
+              ],
+              "CI97_5": [
+                0.6736438465333038,
+                0.7066375848286106
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.679786227207164,
+              "CI95": [
+                0.6667475852581811,
+                0.6932030607850941
+              ],
+              "CI97_5": [
+                0.664707925408883,
+                0.6950640346583115
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6840772676694414,
+              "CI95": [
+                0.6694110527435664,
+                0.6989825059248304
+              ],
+              "CI97_5": [
+                0.6679319003771702,
+                0.7012426046283485
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": -0.004291040462277462,
+              "CI95": [
+                -0.010361769519574043,
+                0.0017227358109574143
+              ],
+              "CI97_5": [
+                -0.010967285798224447,
+                0.002514790382528949
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": -0.007039226854116842,
+              "CI95": [
+                -0.015339007574403823,
+                0.0007315096317364827
+              ],
+              "CI97_5": [
+                -0.01638340304076132,
+                0.002104981613685405
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": 0.00274818639183938,
+              "CI95": [
+                -0.0045861605559167845,
+                0.009931977938904362
+              ],
+              "CI97_5": [
+                -0.005512094691820665,
+                0.010957133692716513
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": 0.005951613591061666,
+              "CI95": [
+                -0.0005448269949274164,
+                0.012548551020181318
+              ],
+              "CI97_5": [
+                -0.0012948687597385737,
+                0.01341434449797153
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": 0.0032034271992222862,
+              "CI95": [
+                -0.0025944416414090676,
+                0.008802230053092901
+              ],
+              "CI97_5": [
+                -0.0033925777894755205,
+                0.009915330735176175
+              ]
+            }
+          }
+        }
+      },
+      "3": {
+        "n_species": 1831,
+        "n_genera": 804,
+        "genus_equal": {
+          "losses": {
+            "ridge_geo": {
+              "estimate": 0.6738572916295713,
+              "CI95": [
+                0.6605913601292588,
+                0.6868044809800393
+              ],
+              "CI97_5": [
+                0.658473019000944,
+                0.6887283359375622
+              ]
+            },
+            "ridge_full": {
+              "estimate": 0.6705724621086311,
+              "CI95": [
+                0.6511179985970563,
+                0.6892622547875346
+              ],
+              "CI97_5": [
+                0.6486400504336268,
+                0.6920937508196011
+              ]
+            },
+            "nonlinear_geo": {
+              "estimate": 0.6753773878246995,
+              "CI95": [
+                0.6608436286020247,
+                0.689863517016248
+              ],
+              "CI97_5": [
+                0.6580059048021625,
+                0.6922816840302409
+              ]
+            },
+            "nonlinear_full": {
+              "estimate": 0.6762577600307502,
+              "CI95": [
+                0.6605537484609281,
+                0.6908258851005067
+              ],
+              "CI97_5": [
+                0.6583943220259595,
+                0.6935928117873499
+              ]
+            }
+          },
+          "contrasts": {
+            "nonlinear_environment_gain": {
+              "estimate": -0.0008803722060507502,
+              "CI95": [
+                -0.006390729424315883,
+                0.004561719180725665
+              ],
+              "CI97_5": [
+                -0.0069403234234080985,
+                0.005540766416493817
+              ]
+            },
+            "ridge_environment_gain": {
+              "estimate": 0.0032848295209402245,
+              "CI95": [
+                -0.008434685078819375,
+                0.015122096839408138
+              ],
+              "CI97_5": [
+                -0.010822776946440054,
+                0.016316879499249134
+              ]
+            },
+            "nonlinear_minus_ridge_environment_gain": {
+              "estimate": -0.004165201726990975,
+              "CI95": [
+                -0.015227598653020702,
+                0.006672829797239968
+              ],
+              "CI97_5": [
+                -0.01646397807700688,
+                0.008404625061835265
+              ]
+            },
+            "full_model_improvement": {
+              "estimate": -0.005685297922119137,
+              "CI95": [
+                -0.015790358841681305,
+                0.0045091059003006155
+              ],
+              "CI97_5": [
+                -0.017362693370728835,
+                0.006223059236617216
+              ]
+            },
+            "geography_model_improvement": {
+              "estimate": -0.0015200961951281622,
+              "CI95": [
+                -0.006338954403458951,
+                0.003889657391130702
+              ],
+              "CI97_5": [
+                -0.007109918186674449,
+                0.004416895529069388
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "bounded_conclusion_ja": "全36環境には固定した非線形モデル内で離れた未知属の写真花色組成を予測する小さい追加情報が残ったが、線形全環境モデルへの全体優位と厳格画質での頑健性は確認できず、地域共通の非線形生態応答を特定したとはいえない。",
+  "scientific_review": {
+    "status": "NO_MATERIAL_ISSUE",
+    "scope": "Actual results and ecology report independently reviewed; no new model selection or outcome-dependent tuning."
+  },
+  "limitations": [
+    "Retrospective source-exposed fixed model-form test, not preregistration or independent biological replication.",
+    "Four longitude sectors are artificial domains, not independent evolutionary replicates.",
+    "GEO is a specified coordinate baseline, not comprehensive spatial adjustment.",
+    "Bootstrap conditions on existing fits and folds and does not refit learners.",
+    "Photographic colour proportions do not identify pigments, selection, pollination, herbivory, fitness or genotypes.",
+    "Missing classification, measurement error and unobserved real populations remain.",
+    "Predictive failure cannot establish universal absence of environmental responses.",
+    "Primary increment coexists with a worse nonlinear geography baseline; direct full-model improvement is uncertain.",
+    "Strict-photo sensitivity is inconclusive and changes the available species/photos.",
+    "Fixed tree means do not generally extrapolate smooth responses beyond learned support.",
+    "Regional and component comparisons are descriptive; differing interval signs do not establish between-group differences."
+  ],
+  "main_H1H2_changed": false,
+  "new_colour_measurements": false,
+  "raw_result_files": {
+    "soil_all_oof_predictions.csv.gz": {
+      "sha256": "a931e62bffc4af81b95a887e04954c1eba0ba5d0ce478a45ec7f2746ad02b166",
+      "bytes": 19190712
+    },
+    "result.json": {
+      "sha256": "bc1e477e7c6229b3574442da74c765ab8da8c9c1a7b8e115b0cb897a0dccd9e5",
+      "bytes": 724917
+    },
+    "independent_verification.json": {
+      "sha256": "64482b3c14450c11cd28be8fa575b5424cfcf5a81dd577fa246dfb4b3c389bae",
+      "bytes": 1747
+    },
+    "soil_quality_fold_audit.csv": {
+      "sha256": "ec18d78f5c04a53cf381e415d32c1b87a686fdccec08bd6f1bce0830947948db",
+      "bytes": 12122
+    },
+    "soil_quality_oof_predictions.csv.gz": {
+      "sha256": "1f3dcf0c2cee141444f12f2bc0fade42395fcb0628894e99c89919756248d789",
+      "bytes": 5711873
+    },
+    "soil_quality_genus_fold_map.csv": {
+      "sha256": "4cbb8d03d7122c5669a321b82f85173817dfc1efb7c10ab604b9e4b2300d5730",
+      "bytes": 27184
+    },
+    "soil_all_genus_fold_map.csv": {
+      "sha256": "3d2b4210afc2339d85e021b81444bffe3887eb7b2018395065999792afcd85d9",
+      "bytes": 59761
+    },
+    "soil_all_fold_audit.csv": {
+      "sha256": "bee0165182d79be44593deb9044d2a5ccf0cd01bb602e815faa11e2de1030de6",
+      "bytes": 12311
+    }
+  },
+  "detailed_result_package": {
+    "filename": "FCP_全36環境_非線形と地域外予測_20261011.zip",
+    "sha256": "e51547cf9daea2bac68d0ab1fbffe17200cdecd4b810ebb660040df4c40f05a1",
+    "bytes": 25088034,
+    "zip_members": 18,
+    "availability": "Delivered as a separate result ZIP in the research conversation; source code is retained in Git."
+  },
+  "code_changed_after_verified_source_run": false
+}
