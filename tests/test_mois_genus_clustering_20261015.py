@@ -73,7 +73,7 @@ def test_manuscript_marks_exploratory_nominal_genus_scope():
     memo=(ROOT/"docs/MOIS_GENUS_COLOUR_CLUSTERING_AND_BALANCE_20261015.md").read_text(encoding="utf-8")
     assert "34.4%" in ms and "9.3%" in ms
     assert "### S2.5 |" in si
-    for v in ("1,935","20,725","34.4%","9.3%","23.38%","2.19%","P*=0.0005"):
+    for v in ("1,935","20,725","34.38%","9.33%","23.38%","2.19%","P*=0.0005"):
         assert v in si
     assert "no fitness" in memo.lower()
     assert "phylogenetic" in memo.lower()
