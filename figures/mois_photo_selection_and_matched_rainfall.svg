@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="800" viewBox="0 0 1440 800" role="img" aria-labelledby="fig2-title fig2-desc">
+<title id="fig2-title">Photographic selection and matched rainfall contrasts</title>
+<desc id="fig2-desc">Original data show 100543 photos, 45953 classifiable. Wet dry classes differ in classifiability. The original matched photo contrast shows a positive between species slope but not within species.</desc>
+<rect x="0" y="0" width="1440" height="800" rx="0" fill="#FFFFFF"/>
+<rect x="0" y="0" width="1440" height="14" rx="0" fill="#315773"/>
+<text x="50" y="58" font-family="Arial,sans-serif" font-size="27" font-weight="700" fill="#1E3447" text-anchor="start">VISIBLE FLOWER-COLOUR OPPORTUNITY AND MOISTURE</text>
+<text x="50" y="92" font-family="Arial,sans-serif" font-size="17" font-weight="400" fill="#5A6A78" text-anchor="start">Source-locked reporting only | original photographs, no re-estimation</text>
+<rect x="45" y="130" width="425" height="565" rx="14" fill="#F6F9FB"/>
+<rect x="506" y="130" width="425" height="565" rx="14" fill="#F6F9FB"/>
+<rect x="968" y="130" width="425" height="565" rx="14" fill="#F6F9FB"/>
+<text x="69" y="174" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="#1E3447" text-anchor="start">A  Photographic classification</text>
+<text x="69" y="210" font-family="Arial,sans-serif" font-size="17" font-weight="400" fill="#1E3447" text-anchor="start">100,543 unique original photos</text>
+<rect x="69" y="242" width="370" height="44" rx="8" fill="#DCE5EA"/>
+<rect x="69" y="242" width="169.1078444048815" height="44" rx="8" fill="#347E9B"/>
+<text x="69" y="322" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="#1E3447" text-anchor="start">45.7% classifiable</text>
+<text x="69" y="355" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#1E3447" text-anchor="start">45,953 four-hue photo labels</text>
+<text x="69" y="417" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="#1E3447" text-anchor="start">54.3% unclassifiable</text>
+<text x="69" y="451" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#1E3447" text-anchor="start">54,590 labels remain missing</text>
+<line x1="69" y1="512" x2="443" y2="512" stroke="#CAD6DD" stroke-width="1"/>
+<text x="69" y="551" font-family="Arial,sans-serif" font-size="17" font-weight="400" fill="#1E3447" text-anchor="start">Unknown flower colour is not</text>
+<text x="69" y="576" font-family="Arial,sans-serif" font-size="17" font-weight="400" fill="#1E3447" text-anchor="start">coded white or nonwhite.</text>
+<text x="530" y="174" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="#1E3447" text-anchor="start">B  Wet–dry selection contrast</text>
+<text x="530" y="210" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#5A6A78" text-anchor="start">All-photo rainfall-opportunity deciles</text>
+<text x="530" y="260" font-family="Arial,sans-serif" font-size="19" font-weight="700" fill="#1E3447" text-anchor="start">Driest (n=10,084)</text>
+<rect x="530" y="277" width="355" height="18" rx="6" fill="#DCE5EA"/>
+<rect x="530" y="277" width="175.35253867512893" height="18" rx="6" fill="#347E9B"/>
+<text x="530" y="319" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#1E3447" text-anchor="start">49.4% photos classifiable</text>
+<rect x="530" y="340" width="355" height="18" rx="6" fill="#DCE5EA"/>
+<rect x="530" y="340" width="148.38586629190925" height="18" rx="6" fill="#9784B7"/>
+<text x="530" y="383" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#1E3447" text-anchor="start">41.8% white among classifiable</text>
+<text x="530" y="456" font-family="Arial,sans-serif" font-size="19" font-weight="700" fill="#1E3447" text-anchor="start">Wettest (n=9,990)</text>
+<rect x="530" y="473" width="355" height="18" rx="6" fill="#DCE5EA"/>
+<rect x="530" y="473" width="138.73073073073073" height="18" rx="6" fill="#347E9B"/>
+<text x="530" y="515" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#1E3447" text-anchor="start">39.1% photos classifiable</text>
+<rect x="530" y="536" width="355" height="18" rx="6" fill="#DCE5EA"/>
+<rect x="530" y="536" width="189.04841188524588" height="18" rx="6" fill="#9784B7"/>
+<text x="530" y="579" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#1E3447" text-anchor="start">53.3% white among classifiable</text>
+<text x="990" y="174" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="#1E3447" text-anchor="start">C  Same original photographs</text>
+<text x="990" y="210" font-family="Arial,sans-serif" font-size="16" font-weight="400" fill="#1E3447" text-anchor="start">21,448 photos | 6,143 species</text>
+<text x="990" y="242" font-family="Arial,sans-serif" font-size="15" font-weight="400" fill="#1E3447" text-anchor="start">BIO12 white slope (pp / source SD)</text>
+<line x1="1024" y1="282" x2="1024" y2="630" stroke="#D7DFE6" stroke-width="1"/>
+<text x="1024" y="654" font-family="Arial,sans-serif" font-size="13" font-weight="400" fill="#637281" text-anchor="middle">-2</text>
+<line x1="1104.9411764705883" y1="282" x2="1104.9411764705883" y2="630" stroke="#6A7884" stroke-width="2"/>
+<text x="1104.9411764705883" y="654" font-family="Arial,sans-serif" font-size="13" font-weight="400" fill="#637281" text-anchor="middle">0</text>
+<line x1="1185.8823529411766" y1="282" x2="1185.8823529411766" y2="630" stroke="#D7DFE6" stroke-width="1"/>
+<text x="1185.8823529411766" y="654" font-family="Arial,sans-serif" font-size="13" font-weight="400" fill="#637281" text-anchor="middle">2</text>
+<line x1="1266.8235294117646" y1="282" x2="1266.8235294117646" y2="630" stroke="#D7DFE6" stroke-width="1"/>
+<text x="1266.8235294117646" y="654" font-family="Arial,sans-serif" font-size="13" font-weight="400" fill="#637281" text-anchor="middle">4</text>
+<line x1="1347.764705882353" y1="282" x2="1347.764705882353" y2="630" stroke="#D7DFE6" stroke-width="1"/>
+<text x="1347.764705882353" y="654" font-family="Arial,sans-serif" font-size="13" font-weight="400" fill="#637281" text-anchor="middle">6</text>
+<text x="989" y="318" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#1E3447" text-anchor="start">Between congeneric species</text>
+<line x1="1133.4612952832706" y1="342" x2="1295.7126106568833" y2="342" stroke="#307DA2" stroke-width="5"/>
+<line x1="1133.4612952832706" y1="332" x2="1133.4612952832706" y2="352" stroke="#307DA2" stroke-width="2"/>
+<line x1="1295.7126106568833" y1="332" x2="1295.7126106568833" y2="352" stroke="#307DA2" stroke-width="2"/>
+<circle cx="1215.109681366253" cy="342" r="7" fill="#307DA2"/>
+<text x="989" y="377" font-family="Arial,sans-serif" font-size="15" font-weight="400" fill="#526576" text-anchor="start">+2.722 [0.705, 4.714]</text>
+<text x="989" y="423" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#1E3447" text-anchor="start">Within named species</text>
+<line x1="1046.8215591300846" y1="447" x2="1118.5037436650807" y2="447" stroke="#AD6B6E" stroke-width="5"/>
+<line x1="1046.8215591300846" y1="437" x2="1046.8215591300846" y2="457" stroke="#AD6B6E" stroke-width="2"/>
+<line x1="1118.5037436650807" y1="437" x2="1118.5037436650807" y2="457" stroke="#AD6B6E" stroke-width="2"/>
+<circle cx="1084.273821590669" cy="447" r="7" fill="#AD6B6E"/>
+<text x="989" y="482" font-family="Arial,sans-serif" font-size="15" font-weight="400" fill="#526576" text-anchor="start">-0.511 [-1.436, 0.335]</text>
+<text x="989" y="528" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#1E3447" text-anchor="start">Between minus within</text>
+<line x1="1152.5112887679022" y1="552" x2="1323.4953016337258" y2="552" stroke="#315773" stroke-width="5"/>
+<line x1="1152.5112887679022" y1="542" x2="1152.5112887679022" y2="562" stroke="#315773" stroke-width="2"/>
+<line x1="1323.4953016337258" y1="542" x2="1323.4953016337258" y2="562" stroke="#315773" stroke-width="2"/>
+<circle cx="1235.7770362461722" cy="552" r="7" fill="#315773"/>
+<text x="989" y="587" font-family="Arial,sans-serif" font-size="15" font-weight="400" fill="#526576" text-anchor="start">+3.233 [1.175, 5.400]</text>
+<text x="991" y="675" font-family="Arial,sans-serif" font-size="14" font-weight="400" fill="#526576" text-anchor="start">Original paired genus-bootstrap 95% CIs</text>
+<line x1="49" y1="721" x2="1395" y2="721" stroke="#CAD6DD" stroke-width="1"/>
+<text x="50" y="750" font-family="Arial,sans-serif" font-size="15" font-weight="400" fill="#566A7B" text-anchor="start">Conditional photographed flower colour, not pigment chemistry or natural-population morph frequencies.</text>
+<text x="50" y="778" font-family="Arial,sans-serif" font-size="15" font-weight="400" fill="#566A7B" text-anchor="start">Retrospective between/within slopes use identical photo IDs, but different statistical estimands.</text>
+</svg>
