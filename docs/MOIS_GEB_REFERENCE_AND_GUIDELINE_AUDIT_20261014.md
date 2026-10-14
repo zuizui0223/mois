@@ -46,6 +46,10 @@ The author-facing article's bibliographic records were verified from publisher/c
 - **APA-6 and spelling:** keep names, DOI, journal volume, article-number/pages accurate; spellings may follow British English. The journal permits Free Format first submission, but internal citation formatting should remain consistent and the final review copy must have numbered lines.
 - **Use of publicly available original FCP GitHub material during anonymized review:** a publicly identifiable GitHub repository can itself compromise author anonymity. During review, the blinded manuscript should use a private reviewer data-access URL not traceable to authors; the editor-facing cover letter/title page can retain source identification. **A source provenance hash isn't a substitute for accessible reviewer files.**
 
+## Exact original ZIP archive access versus peer-review data availability
+
+The historical photographic ZIP is recoverable through FCP Actions artifact **11587115220** (photo archive, scheduled expiry 2027-01-06); the environmental ZIP through **11653183273**. They were byte-SHA-verified together during FCP source replay #38502660130. A local verified download helper and explicit rights review are in `docs/MOIS_GEB_ORIGINAL_ARCHIVE_RECOVERY_AND_LICENCE_20261014.md`. The helper is **not** a data publication action and has not been run in this manuscript workflow. Even after the ZIPs have been recovered, journal submission remains blocked until a genuinely anonymous stable reviewer archive exists and image/coordinate permissions are assessed.
+
 ## Stop/go
 
 **GO for internal manuscript review:** complete observed original-source result tables, frozen 1,280/576 coef ledgers, four numerical figure sources, and CI checks. **HOLD for actual GEB upload:** signed title page, reviewer-anonymous editable manuscript/metadata and reviewer data path, licence-compliant raw source archive with stable DOI, final display/layout, author-coauthor sign-off and PDF cover letter.
