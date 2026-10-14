@@ -1,6 +1,6 @@
 # Exact source-input recovery and licence gate — global mois analysis
 
-**Last audited:** 14 October 2026. **Action status:** the original GitHub Actions archive *identifiers* and source SHA256 values are known and historically verified; **the two ZIP files have not been uploaded to mois** by this documentation work. No current source permissions or new model estimation is implied.
+**Last audited:** 14 October 2026. **Action status:** both original source ZIP files have now been **downloaded and byte-SHA256 verified in this working environment**, with ZIP CRC and independent photo–environment source-join checks. They remain **outside the public mois repository and any reviewer data archive**. The ZIPs contain photographed-hue and environmental **tables, not original image pixels**; licence and coordinate rights are not yet cleared.
 
 ## Original full-data artifact identifiers
 
@@ -34,3 +34,8 @@ The script reads the original two GitHub Actions artifact URLs using only the ex
 ### Study boundary
 
 Only global **between-species** moisture/photo-colour results are required for this manuscript. Do not copy the FCP 149,900-photo high-depth H1/H2 within-species set or its prospectively unopened species into the macro data archive. The same-original-photo between/within BIO12 descriptive sensitivity may be archived with the global macro source, provided source image/observer rights are respected.
+
+
+## Executed original ZIP source audit (14 October 2026)
+
+This working session actually recovered historical photo-colour/site table artifact **11587115220** (34,282,732 bytes) and all36 environment table artifact **11653183273** (38,759,029 bytes); exact complete-file source SHA256 hashes and all ZIP members passed. An independently written source reader reproduced the original **100,543 unique photographs**, **45,953 classified**, climate26 **45,836 photo rows /25,028 species**, soil36 **31,925 photo rows /20,786 species** and 20,694/1,934 qualified species/genera. Eight independently recomputed worldwide four-hue×(BIO12/vapour) coefficients match original frozen ledger within **3.51×10⁻¹⁴ pp**. Bootstrap confidence intervals were not rerun. The safe **aggregate-only receipt** and exact source code are `results/mois_original_source_independent_recovery_audit_20261014.json` and `scripts/analysis/verify_mois_original_source_two_axis_wls_20261014.py`; full explanation and per-licence/coordinate-status sums: `docs/MOIS_GEB_ACTUAL_SOURCE_RECOVERY_AUDIT_20261014.md`. The optional `bash scripts/recover_mois_original_inputs.sh` was not used for this retrieval, but remains a reproducible method for authorized local users. Raw source image pixels, identifiable individual records and photographer attributions were **not publicly committed**.
