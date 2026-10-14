@@ -47,6 +47,10 @@ Seven scientific references are verified from publisher/conference pages, includ
 
 **Critical GEB policy:** public GitHub tracking and successful model/output CI are *not* sufficient as a stable data/code publication archive. Anonymized reviewer data/code access is required **during review**, with suitable licensed full original source data and a stable public archive/DOI required for publication. The manuscript's private reviewer link is a clear **NOT YET PROVIDED** placeholder, not an actual URL. Our anonymous manuscript is a *working derivative*, not evidence that the required reviewer data access is ready. No empirical positive result was selected during this manuscript formatting.
 
+## Source archive recovery route now identified
+
+The exact historical Actions inputs were located at FCP photo artifact **11587115220** (original photo ZIP SHA256 `2d6097ba…`, approximately 34.3 MB and scheduled expiry **2027-01-06**) and all36 environmental artifact **11653183273** (original environmental ZIP SHA256 `6e287294…`). The successful original FCP run [#38502660130](https://github.com/zuizui0223/fcp/actions/runs/38502660130) independently validated both source ZIPs and source numerical calculations. [Acquisition, SHA256 and photographer licence recovery guide](MOIS_GEB_ORIGINAL_ARCHIVE_RECOVERY_AND_LICENCE_20261014.md) plus `scripts/recover_mois_original_inputs.sh` are committed. **The files have not yet been retrieved or permanently archived in mois.** Recovering the ZIPs alone would not create anonymized peer-review access or satisfy GEB's stable DOI/licence gate. Do not advertise complete reproducibility before that further work.
+
 ## Analysis stopping rule
 
 No search for new post hoc positive rainfall hues, winner geographic sectors or image thresholds to rescue the global BIO12 sign. Existing source panels/bootstraps, 352+288 independent WLS point checks, heldout losses and unmatched-photo missingness are frozen. The next worthwhile scientific input is **source-independent standardized floral-colour/site measurement**, not further favorable p-value selection in the original iNaturalist archive.
