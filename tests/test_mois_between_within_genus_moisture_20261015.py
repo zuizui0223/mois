@@ -93,7 +93,7 @@ def test_genus_depth_subsets_and_claim_limits():
             assert 0<d["within"]<d["between"]
             assert math.isclose(d["between_minus_within"],d["between"]-d["within"],abs_tol=1e-10)
     limits=" ".join(q["limitations"]).lower()
-    assert "not a causal decomposition" in limits
+    assert "not identical biological estimands or a causal decomposition" in limits
     assert "genus labels are not a phylogeny" in limits
     assert "fitness" in limits and "pigment costs" in limits
     assert '"photo_id"' not in RECEIPT.read_text(encoding="utf8")
