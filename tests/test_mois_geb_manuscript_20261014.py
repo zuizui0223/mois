@@ -52,7 +52,7 @@ def test_research_article_abstract_and_section_structure():
     for header in ("## 2 | Materials and Methods","## 3 | Results","## 4 | Discussion","## 5 | Main conclusions",
                    "## Data and code availability","## References","## Main tables","## Figure legends"):
         assert header in s
-    assert "not been submitted" in s
+    assert "not submitted by this workflow" in s
 
 
 def test_worldwide_photo_and_broad_environment_results_stay_exact():
@@ -88,7 +88,7 @@ def test_matched_spatial_source_scale_and_familywise_nulls():
         assert v["n_matched_species"]==n and v["n_matched_genera"]==g
         assert not v["difference_excludes_zero_after_24_maxT"]
         assert v["paired_24_hue_axis_maxT_95_interval_pp"][0]<0<v["paired_24_hue_axis_maxT_95_interval_pp"][1]
-    assert "−0.258" in s and "not a causal" in s.lower()
+    assert "−0.258" in s and "cannot be read as the causal effect" in s.lower()
 
 
 def test_identical_photo_between_and_within_not_merged_with_H2():
