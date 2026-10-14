@@ -70,7 +70,7 @@ def test_original_null_quality_and_locality_checks_not_upgraded_to_climatic_sele
     assert 0<water["within_scope_maxT95_pp"][0]<0.01
     assert not data["reports_selection_causality"]
     assert not data["program_wide_multi_hypothesis_selection_corrected"]
-    assert not data["not_an_independent_biological_sample"] is False
+    assert data["not_an_independent_biological_sample"] is True
     assert not data["source_photo_image_pixels_remeasured"]
     assert data["original_source_id_photo_site_rights_not_released"]
 
