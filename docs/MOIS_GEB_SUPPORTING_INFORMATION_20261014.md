@@ -73,6 +73,24 @@ Within the 45,879 classifiable geotagged photographs, absolute latitude 0–30°
 
 Arithmetic and source-locked null fields: `results/mois_original_photo_white_balance_20261014.json`, replayer `scripts/analysis/mois_original_photo_white_balance_20261014.py`, hypotheses and fitness experiments in `docs/MOIS_WHITE_CHROMATIC_BALANCE_AND_FITNESS_HYPOTHESES_20261014.md`. None of these exploratory descriptive endpoints alters the main signed genus-equal BIO12 slopes.
 
+### S2.4 | Original source: weighting photo, species and genus without environmental eligibility filters
+
+The **original two photographic-source ZIP tables themselves** (SHA256 `2d6097ba…`) were re-opened, photo IDs deduplicated exactly (26,905 shared IDs), classifiable four-state labels checked and the data **independently recomputed** at three observational grains. Among **100,543** unique source photos, **45,953** were classified; these occurred in **25,064 named taxa and 5,369 genera** (rather than the main climate26-within-genus-eligible **20,694/1,934**). For each classifiable nominal taxon, `p_i` is the fraction of its original classified photo labels that are white. Photo-equal weights individual labels; species-equal averages `p_i` across taxa; genus-equal first averages `p_i` within each nominal genus, then averages genus means.
+
+| Original descriptive weighting | Denominator | White label share | 1,999 whole-genus bootstrap 95% |
+|---|---:|---:|---:|
+| Photo-equal | 45,953 classified photos | **46.948%** | 45.209–48.706% |
+| Species-equal | 25,064 classifiable taxa | **46.819%** | 45.245–48.350% |
+| Genus-equal | 5,369 classifiable genera | **49.891%** | 48.736–50.982% |
+
+The **paired genus-minus-species weighting contrast = +3.072 percentage points**, percentile whole-genus 95% **[+1.630,+4.602]** with the *same 1,999 sampled-genus draws* (seed 2026101450). These intervals are **sampling-cluster uncertainty for observed genera**, not probability intervals for the world's true flora.
+
+Crucially, **2,529 source genera have only one species with a classifiable original photo** and those singletons average **51.351%** white. Requiring **≥3 classifiable species per genus** reduces genus-equal white to **48.223%** (1,935 genera, source bootstrap 95% 46.867–49.585%); requiring **≥5** reduces it to **46.626%** (1,185 genera); ≥10 gives **46.353%** (556 genera) and ≥20 **45.962%** (225 genera). The original one-photo-per-taxon breadth sampling also showed a species/photo-equal share **46.579%** and a genus-equal share **49.244%**, supporting a real statistical **weighting dependence** instead of merely a photo-duplication artefact. Sampling species count per genus is *not* the biological genus richness.
+
+Because **17,047/42,111** original nominal taxa had **no classifiable source hue**, a hypothetical mean white-photo probability across **all 42,111 original taxa** lies between **27.866% and 68.347%** without missing-colour assumptions, and achieving 50% would require an unobserved average **54.677%** white among those taxa. This bound is not a population-floral-white prevalence estimate: labels are photographic, source taxa are not probability sampled, and many photos have no biologically interpretable flower organ. **3,096** taxa with more than one photograph show more than one of the four recorded photo colour classes; that is **not verified within-individual or genetic morph polymorphism**. None of these ratios estimate relative fitness, a pigment biosynthesis benefit/cost, or negative frequency-dependent maintenance.
+
+Full source replayer (original ZIP required, **not available in this public GitHub checkout**): `scripts/analysis/mois_replay_species_genus_balance_20261014.py`. Aggregate-only source-derived result: `results/mois_original_photo_species_genus_balance_20261014.json`. Detailed calculations, complete genus-size bands, source-rights boundary and ecological interpretation: `docs/MOIS_SOURCE_REPLAYED_SPECIES_GENUS_WHITE_BALANCE_20261014.md`. Actual original-data --write and --check **both passed**, while CI can only check committed numerical summaries and synthetic estimator invariants, not rerun the sensitive original ZIP. Retain the full source-photo licence/geoprivacy review gate before stable reviewer archiving.
+
 ## S3 | Same taxon identity, geographic support, and photo-scale bridge
 
 ### S3.1 | Matched geographic species B/C reconditioning
