@@ -23,6 +23,17 @@ jobs:
         run: bash -n scripts/recover_mois_original_inputs.sh
       - name: Compile separately implemented original-source coefficient verification code
         run: python -m py_compile scripts/analysis/verify_mois_original_source_two_axis_wls_20261014.py
+      - name: Build and verify internally redistributable numerical-source snapshot (no original photo IDs)
+        run: |
+          python scripts/build_mois_internal_evidence_package.py --write
+          python scripts/build_mois_internal_evidence_package.py --check
+      - name: Retain temporary internal numerical audit snapshot (not reviewer data archive)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-internal-numerical-evidence-snapshot
+          path: dist/mois_internal_numerical_evidence_20261014.zip
+          retention-days: 14
+          if-no-files-found: error
 
   synthetic-model-tests:
     runs-on: ubuntu-24.04
