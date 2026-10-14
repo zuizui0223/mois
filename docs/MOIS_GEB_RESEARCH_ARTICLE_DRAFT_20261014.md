@@ -2,7 +2,7 @@
 
 **Working research article — 14 October 2026; provisional journal target: Global Ecology and Biogeography.** This is an **author-facing editable draft**, not yet anonymized for double-anonymous review. It is not submitted by this workflow. The author-identifying title page, coauthor review, final reference and figure checks, and permanent source archive remain outstanding. All analyses reported below are original FCP source-verified *retrospective observations*; migration to `mois` is not a new experiment or a new prospective replication.
 
-**Running title:** Flower colour and moisture across scales
+**Running title:** Floral colour and moisture patterns
 
 ## Abstract
 
