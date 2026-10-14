@@ -10,7 +10,7 @@ Official publisher's [Global Ecology and Biogeography author guidelines](https:/
 |---|---|---|
 | Research Article type | **Appropriate provisional type**, not accepted | ~5,000 main text words, ~50 scholarly references and **6–8 display pieces** are typical, not strict absolute caps |
 | Structured abstract | **PASS** | 7 required fields: Aim, Location, Time period, Major taxa studied, Methods, Results, Main conclusions; limit **300 words** |
-| Running title | **Updated** | Fewer than **40 characters**; working `Floral colour and moisture across scales` is 39 characters |
+| Running title | **Updated** | Fewer than **40 characters**; working `Floral colour and moisture patterns` is 35 characters |
 | Keywords | **PASS** | Eight alphabetically arranged: citizen science, climate, floral colour, geographic sampling, macroecology, measurement bias, precipitation, trait variation |
 | Main manuscript | **Draft** | Editable article text, continuous line numbering required before Word/PDF upload; running title, main text, references, Data and Code Availability, tables and figures |
 | Tables + figures | **4 source-backed main figures + 2 tables** | Six display pieces, within the journal's typical range; individual SVGs require resolution/accessibility/legend review |
