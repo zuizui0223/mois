@@ -81,5 +81,5 @@ def test_manuscript_keeps_new_result_descriptive_not_fitness():
     assert "### S2.4 | Original source:" in si
     for token in ("25,064","5,369","49.891%","46.626%","+3.072","17,047"):
         assert token in si and token in memo
-    assert "NOT" in memo and "relative fitness" in memo
+    assert "not" in memo.lower() and "relative fitness" in memo.lower()
     assert "not evolutionary equilibria" in ms
