@@ -1,0 +1,4 @@
+# Original source-photo and WorldClim/SoilGrids archives need permission review;
+# never accidentally commit original full ZIPs to the research repository.
+raw_inputs/
+*.partial
