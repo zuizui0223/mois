@@ -110,6 +110,36 @@ The fraction of `near-pure` nominal genera (genus mean white ≤10% or ≥90%, *
 
 Exact source-original replayer: `scripts/analysis/mois_replay_genus_clustering_20261015.py`, originally rerun and checked against the recovered historical source photo ZIP SHA256 `2d6097ba…`. Public aggregate numerical output with all source seeds, 95% permutation envelopes and checks: `results/mois_original_genus_clustering_20261015.json`. Full scientific interpretation and constrained follow-up tests: `docs/MOIS_GENUS_COLOUR_CLUSTERING_AND_BALANCE_20261015.md`. The original licensed photo/position source remains out of the public repository. The four permutation families are **exploratory post-outcome comparisons** and not a programme-wide multiple-testing correction. They **do not estimate** an evolutionary 50:50 equilibrium, a pigment biosynthesis cost, pollinator-mediated rare-morph advantage or a genotype-level fitness trade-off.
 
+### S2.6 | Are moisture–white associations due only to genus turnover?
+
+To connect source-measured genus colour clustering with the main interspecific moisture result, we **independently refitted the exact same original climate26 population** used for the global source genus-equal results: **20,694 named taxa, 1,934 nominal genera, 38,498 classifiable source photographs**, drawn from the 45,836 photo-climate26 complete source with 25,028 named species before the ≥3-congener gate. The two source ZIPs were retrieved and fully checked against frozen SHA256 and ZIP integrity; original photo-colour labels, site environmental values and original join IDs were retained without remeasurement or public disclosure.
+
+For each species, the outcome is its observed proportion of classifiable source photographs labelled **white**; yellow/orange, red/pink and blue/purple remain the other mutually exclusive category assignments, so this is a compositional *photographic* species trait. BIO12 annual precipitation and mean atmospheric water vapour are each standardized by the **original photo-site source SD** (736.41568 mm for BIO12, 0.6755593 for vapour), not by a separate standard deviation for genera or region. As in the original model, the broad geographic covariates are absolute source latitude and circular longitude sine and cosine; the two moisture axes are evaluated **separately**, not in one simultaneous multi-moisture causal model.
+
+- **Within-congeneric species association:** use species-centred white, focal moisture and geographic coordinates *within each nominal genus*, assigning every genus equal total weight. The reproduced original global white slope was **+2.254545 pp/source SD for BIO12** and **+3.951850 for vapour** (matches the frozen original 24-axis×hue world source values to <1×10⁻⁹ pp).
+- **Between-genus association on those identical species:** average each species' white composition, focal moisture and broad geographic coordinates *within genus* and fit an intercept-plus-three-geography-plus-moisture regression, with **one equal weight per genus**. The genus mean is equally weighted over its eligible named species, not its number of photo opportunities.
+- **Difference and uncertainty:** independently refit the two observational scales with **identical 1,999 multinomial whole-genus bootstrap draws** (seed 2026101515) to retain paired covariance in between-minus-within estimates. Report ordinary percentile 95% intervals; these are source-conditional and **not original 24-maxT confidence intervals** or across-programme selection correction. The paired contrast does not identify a causal partition of climate effects.
+
+| Matched world climate26 white–moisture scale | BIO12 pp/source SD, point [ordinary genus-bootstrap 95%] | Mean vapour pp/source SD, point [ordinary genus-bootstrap 95%] |
+|---|---:|---:|
+| Within nominal genus, across congeners | **+2.255 [+1.030,+3.563]** | **+3.952 [+2.134,+5.815]** |
+| Among equally weighted genus means | **+8.555 [+6.220,+10.786]** | **+9.370 [+5.958,+12.893]** |
+| Genus-mean minus within-genus slope | **+6.300 [+3.666,+8.779]** | **+5.419 [+1.724,+9.380]** |
+| Simple pooled genus-equal species slope, geography adjusted | +5.303 (descriptive point only) | +6.163 (descriptive point only) |
+
+**Genus-support check (descriptive point estimates only; no new intervals):**
+
+| Minimum qualified species per genus | Species / genera | BIO12 within genus | BIO12 between genus |
+|---|---:|---:|---:|
+| ≥3 | 20,694 /1,934 | +2.255 | +8.555 |
+| ≥5 | 18,164 /1,184 | +1.756 | +10.154 |
+| ≥10 | 14,130 /555 | +2.822 | +12.870 |
+| ≥20 | 9,675 /225 | +3.372 | +17.713 |
+
+Both observed directions remain positive in every listed subset, although restricting the eligible flora **changes the population and covariate distribution**. the two scale coefficients remain **different observational estimands** even on identical species; the between-genus slope is not a strict fraction of, or addend to, the within-genus or pooled slope. One cannot infer how much variation is *caused* by lineage turnover, local moisture selection, pollinators, flower-colour physiology or photographic sampling from these coefficients. The pre-existing strict-image and within-genus×coarse-cell source scopes remain inconclusive for universal spatial transfer. Global photographed white does not identify a genetically stable 50:50 polymorphism or a pigment cost–pollination benefit trade-off.
+
+Public aggregate-only result: `results/mois_genus_between_within_moisture_20261015.json`. Replayer (requires the owner-access original measured source ZIPs, **not deposited in public GitHub**): `scripts/analysis/replay_mois_genus_between_within_moisture_20261015.py`; execute with `--photo-zip`, `--env-zip`, `--output`, `--write` or `--check`. Source executable was run locally with **--write and exact --check PASS**. The complete rationale and testable ecological alternatives are in `docs/MOIS_GENUS_TURNOVER_AND_CONGENERIC_MOISTURE_20261015.md`. This is a retrospective, post-exploration analysis of the *same measured source data*, not independent biological replication.
+
 ## S3 | Same taxon identity, geographic support, and photo-scale bridge
 
 ### S3.1 | Matched geographic species B/C reconditioning
