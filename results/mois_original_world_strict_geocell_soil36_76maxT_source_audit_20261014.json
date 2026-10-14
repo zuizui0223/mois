@@ -1,0 +1,1141 @@
+{
+  "schema": "mois_independent_original_world_quality_spatial_soil36_maxT_source_replay_20261014_v1",
+  "status": "PASS_ALL_76_FOUR_HUE_COEFFICIENTS_AND_BOOTSTRAP_CI_FAMILIES_MATCH_ORIGINAL",
+  "photo_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "environment_sha256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "source_ledger": "results/fcp_macro_direction_20261013/direction_ledger.csv",
+  "source_ledger_rows": 1280,
+  "valid_source_scopes": "world strict climate26 genus equal, world genus-by-coarse-cell climate26 genus equal, world soil36 genus-equal broad geography",
+  "original_source_id_photo_site_rights_not_released": true,
+  "source_photo_image_pixels_remeasured": false,
+  "reports_selection_causality": false,
+  "program_wide_multi_hypothesis_selection_corrected": false,
+  "not_an_independent_biological_sample": true,
+  "confidence_interval_endpoints_independently_reestimated_for_every_listed_scope": true,
+  "n_reviewed_hue_environment_contrasts": 76,
+  "max_abs_point_and_CI_difference_pp": 3.1086244689504383e-15,
+  "scopes": [
+    {
+      "scope": "strict_photo_climate26",
+      "photo_classification": "strict",
+      "spatial_adjustment": "genus_geo",
+      "source_mode": "climate",
+      "n_species": 5848,
+      "n_genera": 727,
+      "n_source_photo_rows": 8538,
+      "n_genus_subgroups": 727,
+      "original_seed": 2026101455,
+      "n_original_bootstraps": 999,
+      "maxT_critical": 3.069264180383226,
+      "independent_max_abs_point_and_CI_error_pp": 4.440892098500626e-16,
+      "original_source_scope_24_or_28_contrasts": 24,
+      "source_family_maxT_positive_contrasts": [],
+      "rows": [
+        {
+          "axis": "wc_bio5",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 0.3830828984981168,
+          "bootstrap_95_pp": [
+            -1.600676940280328,
+            2.459879370764569
+          ],
+          "within_scope_maxT95_pp": [
+            -2.8473854821598548,
+            3.613551279156088
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio5",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": 0.45268516755404414,
+          "bootstrap_95_pp": [
+            -1.1920991266545085,
+            2.1356380320228907
+          ],
+          "within_scope_maxT95_pp": [
+            -2.2055634476026382,
+            3.1109337827107266
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio5",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": 0.4713709861833464,
+          "bootstrap_95_pp": [
+            -1.1144279590507038,
+            2.0106020079986577
+          ],
+          "within_scope_maxT95_pp": [
+            -1.9532761025151584,
+            2.8960180748818516
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio5",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -1.30713905223551,
+          "bootstrap_95_pp": [
+            -2.5811944520431997,
+            -0.1163816317010436
+          ],
+          "within_scope_maxT95_pp": [
+            -3.2883250560469888,
+            0.6740469515759686
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio12",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 1.2291617145377651,
+          "bootstrap_95_pp": [
+            -1.010045359272711,
+            3.298634174536027
+          ],
+          "within_scope_maxT95_pp": [
+            -2.045755751367926,
+            4.504079180443457
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio12",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": 0.9044653061119873,
+          "bootstrap_95_pp": [
+            -0.8674222814993323,
+            2.750655057771093
+          ],
+          "within_scope_maxT95_pp": [
+            -1.9050936033884551,
+            3.71402421561243
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio12",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -1.3100896556634865,
+          "bootstrap_95_pp": [
+            -2.954331477827701,
+            0.37090648408318794
+          ],
+          "within_scope_maxT95_pp": [
+            -3.8075448696656355,
+            1.1873655583386626
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio12",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -0.8235373649862687,
+          "bootstrap_95_pp": [
+            -2.113126984764543,
+            0.5661003254742808
+          ],
+          "within_scope_maxT95_pp": [
+            -2.901232895470292,
+            1.2541581654977545
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio14",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 1.102872611785829,
+          "bootstrap_95_pp": [
+            -0.6084052364565482,
+            2.7935533021616203
+          ],
+          "within_scope_maxT95_pp": [
+            -1.5762080856962242,
+            3.7819533092678825
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio14",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": 0.36138517352714206,
+          "bootstrap_95_pp": [
+            -1.1318056674826005,
+            1.979088671383468
+          ],
+          "within_scope_maxT95_pp": [
+            -2.0673986767872505,
+            2.790169023841535
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio14",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.7023353878464917,
+          "bootstrap_95_pp": [
+            -1.9506069303410571,
+            0.5215621489807272
+          ],
+          "within_scope_maxT95_pp": [
+            -2.60671347225935,
+            1.2020426965663664
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio14",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -0.761922397466479,
+          "bootstrap_95_pp": [
+            -1.8746210158584484,
+            0.3005968149756134
+          ],
+          "within_scope_maxT95_pp": [
+            -2.4512483414207873,
+            0.9274035464878292
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio15",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": -0.08565643272621003,
+          "bootstrap_95_pp": [
+            -1.8447220941405666,
+            1.714526322056119
+          ],
+          "within_scope_maxT95_pp": [
+            -2.955628713376466,
+            2.784315847924046
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio15",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": -0.053888149608296354,
+          "bootstrap_95_pp": [
+            -1.7065589133589667,
+            1.4025977352053471
+          ],
+          "within_scope_maxT95_pp": [
+            -2.4894588236760398,
+            2.381682524459447
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio15",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.26123946511977436,
+          "bootstrap_95_pp": [
+            -1.720608227375202,
+            1.1175995877459097
+          ],
+          "within_scope_maxT95_pp": [
+            -2.4406593028971595,
+            1.91818037265761
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio15",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": 0.40078404745428126,
+          "bootstrap_95_pp": [
+            -0.8044292197324322,
+            1.611291876607928
+          ],
+          "within_scope_maxT95_pp": [
+            -1.50512509421903,
+            2.306693189127593
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_srad_annual_mean",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 0.8787527832687865,
+          "bootstrap_95_pp": [
+            -1.5694396123643113,
+            3.586585844252298
+          ],
+          "within_scope_maxT95_pp": [
+            -3.165951107615186,
+            4.923456674152759
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_srad_annual_mean",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": 0.15009659015675195,
+          "bootstrap_95_pp": [
+            -1.9760124455379766,
+            2.1849430157356275
+          ],
+          "within_scope_maxT95_pp": [
+            -3.1510647842416,
+            3.4512579645551043
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_srad_annual_mean",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.10653996537049236,
+          "bootstrap_95_pp": [
+            -2.240765919979721,
+            1.9609249867538463
+          ],
+          "within_scope_maxT95_pp": [
+            -3.4063722299155663,
+            3.193292299174581
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_srad_annual_mean",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -0.9223094080550465,
+          "bootstrap_95_pp": [
+            -2.7342171121195893,
+            0.8611630632126521
+          ],
+          "within_scope_maxT95_pp": [
+            -3.732684554494957,
+            1.8880657383848642
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_vapr_annual_mean",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 1.725028390033671,
+          "bootstrap_95_pp": [
+            -1.2315659442980496,
+            4.649571323841068
+          ],
+          "within_scope_maxT95_pp": [
+            -2.8932981271419727,
+            6.3433549072093145
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_vapr_annual_mean",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": 0.12363261157074557,
+          "bootstrap_95_pp": [
+            -2.2845359005657904,
+            2.4772610197802005
+          ],
+          "within_scope_maxT95_pp": [
+            -3.6115429367764698,
+            3.8588081599179604
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_vapr_annual_mean",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.3728922763990203,
+          "bootstrap_95_pp": [
+            -2.5246823928334567,
+            1.7504352785805828
+          ],
+          "within_scope_maxT95_pp": [
+            -3.6650169830746933,
+            2.919232430276653
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_vapr_annual_mean",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -1.4757687252053986,
+          "bootstrap_95_pp": [
+            -3.1299202919845706,
+            0.2348937696706336
+          ],
+          "within_scope_maxT95_pp": [
+            -4.13732253736173,
+            1.1857850869509334
+          ],
+          "maxT_excludes_zero": false
+        }
+      ]
+    },
+    {
+      "scope": "within_genus_geocell_climate26",
+      "photo_classification": "all",
+      "spatial_adjustment": "genus_geocell",
+      "source_mode": "climate",
+      "n_species": 9370,
+      "n_genera": 845,
+      "n_source_photo_rows": 14268,
+      "n_genus_subgroups": 1847,
+      "original_seed": 2026102253,
+      "n_original_bootstraps": 999,
+      "maxT_critical": 3.072937410657943,
+      "independent_max_abs_point_and_CI_error_pp": 4.440892098500626e-16,
+      "original_source_scope_24_or_28_contrasts": 24,
+      "source_family_maxT_positive_contrasts": [],
+      "rows": [
+        {
+          "axis": "wc_bio5",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 1.1993362104573033,
+          "bootstrap_95_pp": [
+            -1.898859359952702,
+            3.8914193908689727
+          ],
+          "within_scope_maxT95_pp": [
+            -3.401808583822479,
+            5.800481004737086
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio5",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": 0.34086392539472765,
+          "bootstrap_95_pp": [
+            -2.185831062181551,
+            2.9193674863087744
+          ],
+          "within_scope_maxT95_pp": [
+            -3.659300294572482,
+            4.341028145361937
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio5",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.2760558431550285,
+          "bootstrap_95_pp": [
+            -2.2783804650796826,
+            1.7910149848509842
+          ],
+          "within_scope_maxT95_pp": [
+            -3.4312701187861694,
+            2.879158432476112
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio5",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -1.2641442926970023,
+          "bootstrap_95_pp": [
+            -2.7113547896317614,
+            0.16340185270634086
+          ],
+          "within_scope_maxT95_pp": [
+            -3.593219784344563,
+            1.0649311989505585
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio12",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 0.8079760812355011,
+          "bootstrap_95_pp": [
+            -1.992731552302729,
+            3.6512814826314
+          ],
+          "within_scope_maxT95_pp": [
+            -3.5563836455636126,
+            5.172335808034615
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio12",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": -1.1977428098678657,
+          "bootstrap_95_pp": [
+            -4.066982716300043,
+            1.448637925877934
+          ],
+          "within_scope_maxT95_pp": [
+            -5.442540334969424,
+            3.0470547152336924
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio12",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": 0.7401345655847521,
+          "bootstrap_95_pp": [
+            -0.9063144262513336,
+            2.4271284756863816
+          ],
+          "within_scope_maxT95_pp": [
+            -1.9375196920884539,
+            3.4177888232579576
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio12",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -0.35036783695238644,
+          "bootstrap_95_pp": [
+            -2.0173556143925024,
+            1.4096600689499779
+          ],
+          "within_scope_maxT95_pp": [
+            -2.9886694100410582,
+            2.2879337361362855
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio14",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 1.9434011572701082,
+          "bootstrap_95_pp": [
+            -0.5814064603881316,
+            4.614565957136968
+          ],
+          "within_scope_maxT95_pp": [
+            -2.272846310487928,
+            6.159648625028145
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio14",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": -0.5990786369973358,
+          "bootstrap_95_pp": [
+            -3.1461753999398434,
+            1.7977692245351384
+          ],
+          "within_scope_maxT95_pp": [
+            -4.405774137478073,
+            3.2076168634834015
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio14",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.7437697962132983,
+          "bootstrap_95_pp": [
+            -2.2004552419694514,
+            0.6548928004975358
+          ],
+          "within_scope_maxT95_pp": [
+            -3.00488848684282,
+            1.517348894416224
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio14",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -0.6005527240594739,
+          "bootstrap_95_pp": [
+            -2.360559479179595,
+            1.0820722022515232
+          ],
+          "within_scope_maxT95_pp": [
+            -3.3282417495182974,
+            2.127136301399349
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio15",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 0.8167711321598174,
+          "bootstrap_95_pp": [
+            -1.8842158402631097,
+            3.6485534960519073
+          ],
+          "within_scope_maxT95_pp": [
+            -3.477449143728343,
+            5.110991408047978
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio15",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": -1.8318002188734614,
+          "bootstrap_95_pp": [
+            -4.255807984210469,
+            0.7202731941044735
+          ],
+          "within_scope_maxT95_pp": [
+            -5.740242986761829,
+            2.0766425490149056
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio15",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": 0.6297082703394917,
+          "bootstrap_95_pp": [
+            -1.1946475236647962,
+            2.627850622440262
+          ],
+          "within_scope_maxT95_pp": [
+            -2.4470009119390728,
+            3.7064174526180564
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio15",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": 0.3853208163741516,
+          "bootstrap_95_pp": [
+            -1.3033048477579332,
+            2.147336308757596
+          ],
+          "within_scope_maxT95_pp": [
+            -2.26485515552144,
+            3.0354967882697435
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_srad_annual_mean",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": -0.34732712151721096,
+          "bootstrap_95_pp": [
+            -4.3204758746681735,
+            3.4970318425998514
+          ],
+          "within_scope_maxT95_pp": [
+            -6.538981759716946,
+            5.844327516682523
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_srad_annual_mean",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": 1.8795750278258416,
+          "bootstrap_95_pp": [
+            -1.8923224737181883,
+            5.098196609603168
+          ],
+          "within_scope_maxT95_pp": [
+            -3.4851261112079834,
+            7.244276166859668
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_srad_annual_mean",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.3890294419830573,
+          "bootstrap_95_pp": [
+            -3.2453956364512386,
+            2.561490470389385
+          ],
+          "within_scope_maxT95_pp": [
+            -4.856368443026097,
+            4.078309559059982
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_srad_annual_mean",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -1.1432184643255694,
+          "bootstrap_95_pp": [
+            -3.535803189304296,
+            1.1522683868230426
+          ],
+          "within_scope_maxT95_pp": [
+            -4.930854069124877,
+            2.644417140473738
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_vapr_annual_mean",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 2.745040713477919,
+          "bootstrap_95_pp": [
+            -1.2228860564893251,
+            6.69162939509762
+          ],
+          "within_scope_maxT95_pp": [
+            -3.5663258726935663,
+            9.056407299649404
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_vapr_annual_mean",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": -1.4707171826432095,
+          "bootstrap_95_pp": [
+            -5.407603161748966,
+            2.1444737609578257
+          ],
+          "within_scope_maxT95_pp": [
+            -7.36585448236276,
+            4.424420117076341
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_vapr_annual_mean",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.9075451518681074,
+          "bootstrap_95_pp": [
+            -3.6236475924316425,
+            2.1132754641425904
+          ],
+          "within_scope_maxT95_pp": [
+            -5.372973671456187,
+            3.5578833677199717
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_vapr_annual_mean",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -0.3667783789666012,
+          "bootstrap_95_pp": [
+            -2.602627218272779,
+            2.0505855682352108
+          ],
+          "within_scope_maxT95_pp": [
+            -4.006665082342025,
+            3.2731083244088217
+          ],
+          "maxT_excludes_zero": false
+        }
+      ]
+    },
+    {
+      "scope": "global_complete_soil36",
+      "photo_classification": "all",
+      "spatial_adjustment": "genus_geo",
+      "source_mode": "soil",
+      "n_species": 16801,
+      "n_genera": 1665,
+      "n_source_photo_rows": 31925,
+      "n_genus_subgroups": 1665,
+      "original_seed": 2026101397,
+      "n_original_bootstraps": 999,
+      "maxT_critical": 2.9648395022447867,
+      "independent_max_abs_point_and_CI_error_pp": 3.1086244689504383e-15,
+      "original_source_scope_24_or_28_contrasts": 28,
+      "source_family_maxT_positive_contrasts": [
+        "wc_bio12:white",
+        "wc_vapr_annual_mean:white",
+        "soil_available_water_proxy:white"
+      ],
+      "rows": [
+        {
+          "axis": "wc_bio5",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 1.000442326489068,
+          "bootstrap_95_pp": [
+            -0.41467294963337487,
+            2.2218375752384665
+          ],
+          "within_scope_maxT95_pp": [
+            -1.0411937663525772,
+            3.0420784193307133
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio5",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": 0.5603127997952264,
+          "bootstrap_95_pp": [
+            -0.5528697475089219,
+            1.809573727016937
+          ],
+          "within_scope_maxT95_pp": [
+            -1.2824687125478622,
+            2.4030943121383155
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio5",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.7465724979725781,
+          "bootstrap_95_pp": [
+            -1.567068159823223,
+            0.10771164456462527
+          ],
+          "within_scope_maxT95_pp": [
+            -1.9874725704836116,
+            0.4943275745384554
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio5",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -0.8141826283117156,
+          "bootstrap_95_pp": [
+            -1.5340527774221504,
+            -0.031371946018791154
+          ],
+          "within_scope_maxT95_pp": [
+            -1.9329104975468983,
+            0.3045452409234673
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio12",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 2.2569369298253372,
+          "bootstrap_95_pp": [
+            0.9261523764953523,
+            3.666426999711167
+          ],
+          "within_scope_maxT95_pp": [
+            0.13814674943282979,
+            4.375727110217845
+          ],
+          "maxT_excludes_zero": true
+        },
+        {
+          "axis": "wc_bio12",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": -1.4004408689404664,
+          "bootstrap_95_pp": [
+            -2.6342521661063216,
+            -0.11121834984596309
+          ],
+          "within_scope_maxT95_pp": [
+            -3.3252123074307542,
+            0.5243305695498216
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio12",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.3907044865434384,
+          "bootstrap_95_pp": [
+            -1.1828771035689007,
+            0.33281218516243416
+          ],
+          "within_scope_maxT95_pp": [
+            -1.5326576624076447,
+            0.7512486893207678
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio12",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -0.46579157434143287,
+          "bootstrap_95_pp": [
+            -1.0868242744375403,
+            0.14386164504877555
+          ],
+          "within_scope_maxT95_pp": [
+            -1.435328315515214,
+            0.5037451668323482
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio14",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 1.5858375266451803,
+          "bootstrap_95_pp": [
+            0.40255202489110725,
+            2.7694408723887327
+          ],
+          "within_scope_maxT95_pp": [
+            -0.24481569300875244,
+            3.4164907462991128
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio14",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": -0.9753507281939553,
+          "bootstrap_95_pp": [
+            -2.0798940226596705,
+            0.11255935266640904
+          ],
+          "within_scope_maxT95_pp": [
+            -2.667678729848401,
+            0.7169772734604902
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio14",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": 0.16222708209483716,
+          "bootstrap_95_pp": [
+            -0.5627041809398151,
+            0.9386410828722191
+          ],
+          "within_scope_maxT95_pp": [
+            -0.9636624349575931,
+            1.2881165991472674
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio14",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -0.7727138805460632,
+          "bootstrap_95_pp": [
+            -1.3644311393557076,
+            -0.17503739176430755
+          ],
+          "within_scope_maxT95_pp": [
+            -1.6692649946406193,
+            0.12383723354849277
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio15",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": -0.4727900398796275,
+          "bootstrap_95_pp": [
+            -1.7509729378398273,
+            0.7817634476408258
+          ],
+          "within_scope_maxT95_pp": [
+            -2.3775082195836794,
+            1.4319281398244246
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio15",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": 0.23684108643130505,
+          "bootstrap_95_pp": [
+            -0.9075088665823865,
+            1.3458630187232585
+          ],
+          "within_scope_maxT95_pp": [
+            -1.4331026547374397,
+            1.9067848276000494
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio15",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.7754519553667537,
+          "bootstrap_95_pp": [
+            -1.485642354833972,
+            -0.09020819179221837
+          ],
+          "within_scope_maxT95_pp": [
+            -1.835404763623516,
+            0.28450085289000865
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_bio15",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": 1.0114009088150753,
+          "bootstrap_95_pp": [
+            0.3034388518590216,
+            1.7273506297437007
+          ],
+          "within_scope_maxT95_pp": [
+            -0.058541873809944515,
+            2.081343691440095
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_srad_annual_mean",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": -0.7507525391547702,
+          "bootstrap_95_pp": [
+            -2.4210069066892554,
+            0.9051854311062696
+          ],
+          "within_scope_maxT95_pp": [
+            -3.3117551193686188,
+            1.8102500410590785
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_srad_annual_mean",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": 1.4784660057515069,
+          "bootstrap_95_pp": [
+            -0.1467661623169609,
+            3.141001690447314
+          ],
+          "within_scope_maxT95_pp": [
+            -0.9920585363729276,
+            3.9489905478759413
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_srad_annual_mean",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.42220397334869625,
+          "bootstrap_95_pp": [
+            -1.3931989797054563,
+            0.5697220425107289
+          ],
+          "within_scope_maxT95_pp": [
+            -1.9104497420042985,
+            1.0660417953069057
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_srad_annual_mean",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -0.3055094932480414,
+          "bootstrap_95_pp": [
+            -1.1619752807809696,
+            0.58092716140103
+          ],
+          "within_scope_maxT95_pp": [
+            -1.6042262914622907,
+            0.993207304966208
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_vapr_annual_mean",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 3.9870091151816873,
+          "bootstrap_95_pp": [
+            2.149941992710633,
+            5.906362583258012
+          ],
+          "within_scope_maxT95_pp": [
+            1.0379885891123448,
+            6.9360296412510305
+          ],
+          "maxT_excludes_zero": true
+        },
+        {
+          "axis": "wc_vapr_annual_mean",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": -2.034508824066608,
+          "bootstrap_95_pp": [
+            -3.706707358719763,
+            -0.24990573252526696
+          ],
+          "within_scope_maxT95_pp": [
+            -4.658676137181067,
+            0.5896584890478503
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_vapr_annual_mean",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -1.0197333966854496,
+          "bootstrap_95_pp": [
+            -2.259399875429494,
+            0.15812478411355413
+          ],
+          "within_scope_maxT95_pp": [
+            -2.883877221707518,
+            0.8444104283366187
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "wc_vapr_annual_mean",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": -0.932766894429627,
+          "bootstrap_95_pp": [
+            -2.000544464748959,
+            0.11373474433024626
+          ],
+          "within_scope_maxT95_pp": [
+            -2.5190475774808596,
+            0.6535137886216056
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "soil_available_water_proxy",
+          "hue": "white",
+          "coefficient_pp_per_source_sd": 1.697698201967616,
+          "bootstrap_95_pp": [
+            0.5657333327739539,
+            2.860557559075303
+          ],
+          "within_scope_maxT95_pp": [
+            0.0027613836653093277,
+            3.3926350202699225
+          ],
+          "maxT_excludes_zero": true
+        },
+        {
+          "axis": "soil_available_water_proxy",
+          "hue": "yellow_orange",
+          "coefficient_pp_per_source_sd": -1.364544559709304,
+          "bootstrap_95_pp": [
+            -2.350731460963763,
+            -0.3988013372972775
+          ],
+          "within_scope_maxT95_pp": [
+            -2.841769450477106,
+            0.11268033105849787
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "soil_available_water_proxy",
+          "hue": "red_pink",
+          "coefficient_pp_per_source_sd": -0.49788081786562915,
+          "bootstrap_95_pp": [
+            -1.1556253740880764,
+            0.20235042933655595
+          ],
+          "within_scope_maxT95_pp": [
+            -1.5658674195696658,
+            0.5701057838384076
+          ],
+          "maxT_excludes_zero": false
+        },
+        {
+          "axis": "soil_available_water_proxy",
+          "hue": "blue_purple",
+          "coefficient_pp_per_source_sd": 0.1647271756073188,
+          "bootstrap_95_pp": [
+            -0.36451185332459424,
+            0.703480250543812
+          ],
+          "within_scope_maxT95_pp": [
+            -0.6672860801056151,
+            0.9967404313202526
+          ],
+          "maxT_excludes_zero": false
+        }
+      ]
+    }
+  ]
+}
