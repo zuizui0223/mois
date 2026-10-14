@@ -28,6 +28,19 @@ The original model uses **within-nominal-genus** species-centred four-colour fra
 
 The world climate26 broad genus-equal white/BIO12 coefficient is **+2.254545 pp/source SD**, 24-comparison approx maxT95 **[+0.318741,+4.190349]**. World white/mean annual atmospheric vapour-pressure is **+3.951850 [1.199253,6.704447]**. Soil36/photo-complete genus-equal white/BIO12 under a different eligibility set is **+2.257 [0.138,4.376]**. This latter result is a contrast from a different source population; it is not a paired response to adding soil. For all four original colours and all 20 scopes, retrieve the 1,280-row `direction_ledger.csv` rather than selecting individual significant sectors.
 
+### Four-hue compositional check and Figure 4
+
+The original 1,280-row direction ledger retains the full **four photographed hue outcomes**, not only white. The following world-climate26 estimates have fixed genus-equal weight, broad geographic adjustment and the **same 20,694 qualified species/1,934 genera**. The intervals are simultaneous only within the original **six axes × four hues**, not across the entire historical analysis programme.
+
+| Original classified hue | Annual precipitation BIO12 coefficient [maxT95] (pp/SD) | Annual mean vapour pressure coefficient [maxT95] (pp/SD) |
+|---|---:|---:|
+| White | **+2.25455 [+0.31874,+4.19035]** | **+3.95185 [+1.19925,+6.70445]** |
+| Yellow/orange | −1.22082 [−2.98702,+0.54538] | −1.38543 [−3.81809,+1.04722] |
+| Red/pink | −0.44593 [−1.51309,+0.62123] | −1.50897 [−3.30513,+0.28720] |
+| Blue/purple | −0.58779 [−1.42880,+0.25321] | −1.05745 [−2.41338,+0.29848] |
+
+Each column's four point slopes sums to zero within floating-point tolerance because four photo probabilities sum to one. Only white's own intervals exclude zero; **the data do not identify a unique corresponding decline in any particular coloured category** after 24-contrast adjustment. The archived original CSV, not this rounded table, controls the precise coefficients. Figure 4 regenerates from `results/fcp_macro_direction_20261013/direction_ledger.csv` with `node scripts/render_mois_four_hue_moisture.mjs --check`. This numerical figure is reporting-only, not another environmental fit.
+
 The broad all-source climate26 genus-equal strict-photo white/BIO12 becomes **+1.229162 [−2.045756,+4.504079]**; genus×coarse-cell **+0.807976 [−3.556384,+5.172336]**. The source scientific verdict is `universal_global_abiotic_hue_direction = NOT_SUPPORTED_BY_ALL_REQUIRED_SENSITIVITIES`, while broad source-specific evidence is retained as positive.
 
 ### S2.2 | Source-original colour availability and dry/wet deciles
