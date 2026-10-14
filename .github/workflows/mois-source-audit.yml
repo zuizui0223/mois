@@ -19,6 +19,8 @@ jobs:
           python-version: "3.11"
       - name: Verify exact transferred FCP source blobs, scoped numbers and negative gates
         run: python scripts/check_mois_migration.py
+      - name: Recompute sharp original-photo nonresponse identification receipt
+        run: python scripts/analysis/mois_photo_nonresponse_bounds_20261014.py --check
       - name: Syntax-check original raw source recovery without downloading or publishing images
         run: bash -n scripts/recover_mois_original_inputs.sh
       - name: Compile separately implemented original-source coefficient verification code
@@ -62,7 +64,7 @@ jobs:
       - name: Install narrow manuscript regression dependencies
         run: python -m pip install pytest==8.4.2
       - name: Verify GEB-structured manuscript, source-receipt statistical claims and publication boundaries
-        run: python -m pytest -q tests/test_mois_geb_manuscript_20261014.py tests/test_mois_geb_submission_integrity_20261014.py tests/test_mois_original_source_recovery_20261014.py tests/test_mois_world24_bootstrap_replay_20261014.py tests/test_mois_original_matched_spatial_full576_20261014.py tests/test_mois_world_quality_spatial_soil36_maxT_20261014.py tests/test_mois_single_genus_influence_20261014.py
+        run: python -m pytest -q tests/test_mois_geb_manuscript_20261014.py tests/test_mois_geb_submission_integrity_20261014.py tests/test_mois_original_source_recovery_20261014.py tests/test_mois_world24_bootstrap_replay_20261014.py tests/test_mois_original_matched_spatial_full576_20261014.py tests/test_mois_world_quality_spatial_soil36_maxT_20261014.py tests/test_mois_single_genus_influence_20261014.py tests/test_mois_photo_nonresponse_bounds_20261014.py
       - name: Verify reproducible Figure 2 is identical to source JSON receipt generation
         run: node scripts/render_mois_figure2_source_receipts.mjs --check
       - name: Verify Figure 3 taxonomic and geographic transfer from source receipts
