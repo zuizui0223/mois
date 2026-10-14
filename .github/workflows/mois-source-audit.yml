@@ -50,3 +50,5 @@ jobs:
         run: python -m pytest -q tests/test_mois_geb_manuscript_20261014.py
       - name: Verify reproducible Figure 2 is identical to source JSON receipt generation
         run: node scripts/render_mois_figure2_source_receipts.mjs --check
+      - name: Verify Figure 3 taxonomic and geographic transfer from source receipts
+        run: node scripts/render_mois_figure3_transfer.mjs --check
