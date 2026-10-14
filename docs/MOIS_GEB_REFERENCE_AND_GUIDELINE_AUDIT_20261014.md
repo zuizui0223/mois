@@ -55,3 +55,8 @@ Both original Actions archives (photographic colour/site tables **11587115220** 
 **GO for internal manuscript review:** complete observed original-source result tables, frozen 1,280/576 coef ledgers, four numerical figure sources, and CI checks. **HOLD for actual GEB upload:** signed title page, reviewer-anonymous editable manuscript/metadata and reviewer data path, licence-compliant raw source archive with stable DOI, final display/layout, author-coauthor sign-off and PDF cover letter.
 
 **No scientific p-value rescue:** additional nonlinear or split analysis must not be used to select a stronger finding from the same source after seeing outcome. This paper remains a *bounded observational inference* about generality, not demonstrated pigmentation selection or white-versus-coloured genetic morph fitness.
+
+
+## Reproducibility update: source-verbatim 999-genus family rebootstrap
+
+The original two SHA256-locked tabular source ZIPs were used for a separate independent reconstruction of the frozen world-climate26, genus-equal **24-contrast maxT family** with **999 original-seed genus resamples**. All 24 coefficient estimates, 24 percentile CIs, 24 maxT 95% intervals and support flags match original source to maximum **3.55×10⁻¹⁵ pp**; the critical value is 3.0109108050453743. See `docs/MOIS_GEB_WORLD24_GENUS_SUFFSTATS_REPLAY_20261014.md`. This is a verification of the original scoped statistical calculation, **not** a new biological sample or correction for historical post-outcome model and region selection. The internal anonymous-genus sufficient-moment intermediate has not been deposited in the public repo; source rights/site covariance must be reviewed before any external handoff or publication.
