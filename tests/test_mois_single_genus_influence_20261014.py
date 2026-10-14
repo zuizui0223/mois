@@ -1,6 +1,6 @@
 """Report-only guard: does a single named genus drive the two main water slopes?
 
-1943? No: original source correctly contains 1,934 qualifying nominal genera.
+Original source contains 1,934 qualifying nominal genera.
 The restricted genus-moment NPZ is NOT a published or CI input. CI checks the
 aggregate-only executed sensitivity receipt against original frozen coefficients.
 """
