@@ -1,0 +1,158 @@
+{
+  "schema": "mois_same_source_genus_between_within_moisture_v1",
+  "date": "2026-10-15",
+  "source_sha256": {
+    "photo": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+    "environment": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca"
+  },
+  "source_cohort": {
+    "n_unique_original_photos": 100543,
+    "n_photo_climate26": 45836,
+    "n_climate26_species": 25028,
+    "n_primary_taxa": 20694,
+    "n_primary_genera": 1934,
+    "n_primary_photos": 38498
+  },
+  "design": "Exact original climate26 photo-eligible species with >=3 source species/nominal genus. Four-hue source white photo fraction per species. For each moisture axis, regress genus-centred white versus genus-centred axis controlling genus-centred broad photo-site abs latitude and longitude sine/cosine; a genus-equal model. Separately regress genus-mean white against genus-mean axis and the same three genus-mean geographic nuisance covariates, with each genus weight one. One source photo-site environmental SD anchors both slopes. Pooled genus-equal ordinary slope recorded for comparison only. Genus-level paired bootstrap 1999 samples same genus draws for within, between, their difference and both axes.",
+  "estimates": {
+    "n_bootstrap": 1999,
+    "bootstrap_seed": 2026101515,
+    "bootstrap_genus_unit": 1934,
+    "axes": {
+      "wc_bio12": {
+        "within_nominal_genus": {
+          "point_pp_per_original_photo_sd": 2.2545452351235875,
+          "whole_genus_percentile_CI95_pp": [
+            1.0298542621096871,
+            3.5631757100021444
+          ],
+          "bootstrap_positive_fraction": 1
+        },
+        "between_genus_means": {
+          "point_pp_per_original_photo_sd": 8.554761563975925,
+          "whole_genus_percentile_CI95_pp": [
+            6.220283178203807,
+            10.78624780319661
+          ],
+          "bootstrap_positive_fraction": 1
+        },
+        "between_minus_within": {
+          "point_pp_per_original_photo_sd": 6.300216328852337,
+          "whole_genus_percentile_CI95_pp": [
+            3.665536124679145,
+            8.77877252098331
+          ],
+          "bootstrap_positive_fraction": 1
+        },
+        "pooled_genus_equal_geographic_adjusted_pp_per_original_photo_sd": 5.302656010625416,
+        "photo_environment_source_sd": 736.4156814228156
+      },
+      "wc_vapr_annual_mean": {
+        "within_nominal_genus": {
+          "point_pp_per_original_photo_sd": 3.95185032515289,
+          "whole_genus_percentile_CI95_pp": [
+            2.1344062472317256,
+            5.814863801410174
+          ],
+          "bootstrap_positive_fraction": 1
+        },
+        "between_genus_means": {
+          "point_pp_per_original_photo_sd": 9.370358924252026,
+          "whole_genus_percentile_CI95_pp": [
+            5.957767920447617,
+            12.8926559731249
+          ],
+          "bootstrap_positive_fraction": 1
+        },
+        "between_minus_within": {
+          "point_pp_per_original_photo_sd": 5.418508599099136,
+          "whole_genus_percentile_CI95_pp": [
+            1.7238795109787992,
+            9.380216520064678
+          ],
+          "bootstrap_positive_fraction": 0.9959979989994997
+        },
+        "pooled_genus_equal_geographic_adjusted_pp_per_original_photo_sd": 6.16286814319715,
+        "photo_environment_source_sd": 0.6755592525330926
+      }
+    },
+    "note": "Within and between are different observational covariate contrasts on identical species. Between-minus-within has paired same-genus bootstrap but is not a causal mixture decomposition; pooled slope is not algebraic sum."
+  },
+  "descriptive_genus_support_thresholds_without_new_bootstrap_intervals": [
+    {
+      "min_classified_climate_species_per_genus": 3,
+      "n_species": 20694,
+      "n_genera": 1934,
+      "point_coefficients_pp": {
+        "wc_bio12": {
+          "within": 2.2545452351235875,
+          "between": 8.554761563975925,
+          "between_minus_within": 6.300216328852337
+        },
+        "wc_vapr_annual_mean": {
+          "within": 3.95185032515289,
+          "between": 9.370358924252026,
+          "between_minus_within": 5.418508599099136
+        }
+      }
+    },
+    {
+      "min_classified_climate_species_per_genus": 5,
+      "n_species": 18164,
+      "n_genera": 1184,
+      "point_coefficients_pp": {
+        "wc_bio12": {
+          "within": 1.755767705593387,
+          "between": 10.153899952268466,
+          "between_minus_within": 8.398132246675077
+        },
+        "wc_vapr_annual_mean": {
+          "within": 2.77011184664192,
+          "between": 11.472349192727615,
+          "between_minus_within": 8.702237346085694
+        }
+      }
+    },
+    {
+      "min_classified_climate_species_per_genus": 10,
+      "n_species": 14130,
+      "n_genera": 555,
+      "point_coefficients_pp": {
+        "wc_bio12": {
+          "within": 2.8215111587224704,
+          "between": 12.87019196898768,
+          "between_minus_within": 10.048680810265209
+        },
+        "wc_vapr_annual_mean": {
+          "within": 2.354545832182354,
+          "between": 8.398975092319674,
+          "between_minus_within": 6.044429260137319
+        }
+      }
+    },
+    {
+      "min_classified_climate_species_per_genus": 20,
+      "n_species": 9675,
+      "n_genera": 225,
+      "point_coefficients_pp": {
+        "wc_bio12": {
+          "within": 3.3717944860379543,
+          "between": 17.713001655320312,
+          "between_minus_within": 14.341207169282358
+        },
+        "wc_vapr_annual_mean": {
+          "within": 3.7697768439596957,
+          "between": 16.50996060954885,
+          "between_minus_within": 12.740183765589153
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Source-exposed post hoc distinction; within and between observational contrasts are not identical biological estimands or a causal decomposition.",
+    "Genus means reflect named and classified photograph opportunities, unequal taxon sampling and broad photo-site geography; genus labels are not a phylogeny.",
+    "Confidence intervals are ordinary within-design whole-genus bootstrap percentiles; not whole-programme model-selection-corrected.",
+    "Neither flowering-plant relative abundance nor within-population morph genetic frequencies, pollen/seed fitness, or pigment costs were measured.",
+    "Raw photo labels/environment measured in archived original data; no new photo pixels remeasured. Source archive is not publicly licensed for sharing and stays outside GitHub."
+  ]
+}
