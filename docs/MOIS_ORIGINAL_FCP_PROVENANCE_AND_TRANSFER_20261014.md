@@ -41,3 +41,9 @@ Additional files transferred in subsequent commits (figure and retrospective sen
 **fcp:** Across species where within-species photographic colour composition is adequately sampled, are there recurrent colour-space displacement directions and geographically patterned local combinations? Frozen prospective 158-species H2 remains the confirmatory test; 439-species W is descriptive, not prospective. No worldwide moisture-based fitness cost inference.
 
 **Neither** can declare genetically maintained white/coloured local polymorphism or direct pigments without independent plant/physiology/fitness measurements.
+
+## Additional original source-file copies and verification
+
+The exact source receipts, figure source and SVG, nonlinear transport and four-colour predictive contribution documents are transferred under `results/source_receipts/`, `results/figure_source_data.json`, `figures/global_moisture_colour.svg` and `docs/supporting/`. Their exact original Git blob content SHA values are tracked and checked by `scripts/check_mois_migration.py`; the source commits are in `docs/MOIS_SUPPORTING_EVIDENCE_AND_NEGATIVE_GATES_20261014.md`. In the mois version the copy's *path* may be shortened, but source file *bytes* have not been changed; no old FCP source is erased.
+
+**Verification scope:** a fast SHA-source result audit is not raw FCP iNaturalist or CHELSA/WorldClim/soil archive recovery and not a new 999-permutation/bootstrap analysis. A future fully independent biological photo-source replication still requires new floral image phenotypes.

@@ -19,6 +19,12 @@ The worldwide source contains **100,543 distinct original photo IDs** across **4
 
 Original source identity: GitHub FCP [PR #193](https://github.com/zuizui0223/fcp/pull/193), [PR #194](https://github.com/zuizui0223/fcp/pull/194), source code commits `0adef37c75c0e5bc135c447a861cd77eed34dbb2` and `111eea149f5ac970036f82d7b646d79fcd378d68`. **Historical FCP files were copied, not deleted**; their blob hashes are checked in the migration manifest. Large original zipped image/abiotic archives live in the preserved source-run workflow artifacts/recovery routes, **not** in this repository: photo ZIP SHA256 `2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0`, environment ZIP SHA256 `6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca`.
 
+## Verification in the new home
+
+`python scripts/check_mois_migration.py` checks SHA-1 of Git blobs for the original FCP scripts, numeric ledgers, source figures and receipt JSONs; tests 1,280 +576 result rows and the negative source-sensitivity verdicts without requiring raw photo/model re-estimation. The GitHub Actions workflow `.github/workflows/mois-source-audit.yml` runs this source-integrity gate for `mois`. Optional figure regeneration: `python scripts/render_mois_global_moisture.py` after installing NumPy and matplotlib; immutable historical `figures/global_moisture_colour.svg` is not rewritten.
+
+[Additional source-backed ecological sensitivity table](docs/MOIS_SUPPORTING_EVIDENCE_AND_NEGATIVE_GATES_20261014.md): original same-photo inter/within rainfall contrast, missing-colour MNAR, identical-species soil, unseen genera, distant geographic transfer, nonlinear model and independent botanical hue.
+
 ## Reproducibility and inference
 
 The transferred analysis scripts and source-verifier scripts preserve the original model definitions and original source-archive checks. The original [source-verification run #38502660130](https://github.com/zuizui0223/fcp/actions/runs/38502660130) documents archived full source replay. The lightweight `mois` CI separately guards committed source tables and statements without pretending to redownload original photographs. Original source scripts may still require their historical raw ZIP/CSV environment and specific dependencies before a fresh end-to-end run.
