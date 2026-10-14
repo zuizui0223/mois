@@ -54,6 +54,15 @@ Overall original-photo classifiability: **45,953/100,543 = 45.705%**, unknown **
 
 The observed wet-minus-dry classified-white fraction is **+11.454 pp**, a raw descriptive difference; it cannot be compared directly to the genus-adjusted source-BIO12 slope (+2.255 pp/global SD). The original MNAR sensitivity assumes the unclassified *dry* set is 50% white. A **41.2637% white proportion in the unclassified wet photos** would then eliminate the implied latent *all-photo* wet–dry white difference. This is a tipping condition, not a measurement of the missing photos. A classifier-success inverse-probability-weighting model depends on a missing-at-random assumption and does not establish colour-agnostic selection.
 
+**No-assumption photo nonresponse identification.** On the raw 0th and 9th rainfall opportunity deciles, each classified white count is determined by the frozen photo-denominator and colour fraction. If every unclassified opportunity is *hypothetically* assigned a binary white/nonwhite state, the sharp lower and upper all-photo shares are `classified_white / all_photos` and `(classified_white + unclassified) / all_photos`. The wet-minus-dry range is formed by subtracting the dry upper share from the wet lower share, and vice versa. No missing-at-random, equal classifiability or wet–dry colour-composition constraint is assumed.
+
+| Original rainfall decile | Classified white photos | Unclassified opportunities | Hypothetical all-photo white share |
+|---|---:|---:|---:|
+| Driest (0; 10,084 total) | 2,082 | 5,103 | **20.6466–71.2515%** |
+| Wettest (9; 9,990 total) | 2,079 | 6,086 | **20.8108–81.7317%** |
+
+Thus the possible all-photo wet-minus-dry white contrast spans **−50.4407 to +61.0852 percentage points**: the sign is *not identified* without restrictions on missing outcomes. These are **logical identification bounds**, not bootstrapped intervals; they apply to the **unadjusted opportunity-decile difference**, not the congeneric genus-adjusted BIO12 slope. They are conditional on every unclassifiable photo having a biologically meaningful latent binary hue, which may fail when no appropriate floral organ is diagnosable. The extremes are not observed colour frequencies or ecological predictions. Calculation and exact source receipt: `scripts/analysis/mois_photo_nonresponse_bounds_20261014.py` and `results/mois_photo_nonresponse_bounds_20261014.json`. They complement, rather than replace, the source's assumption-specific 41.2637% MNAR tipping calculation.
+
 The previous species-conditioned global-latitude white-fraction evenness null was not supportive (*P*=0.214), while the hypothesised negative geographic compensation between species turnover and local colour deviations had one-sided *P*=0.997 and observed **positive** covariance +0.00018144. Thus the worldwide photo share near one half is neither unusually stable under the original null nor an evolutionary balancing equilibrium. These photographic balance tests are secondary to `mois`, not a core pigment-fitness result.
 
 ## S3 | Same taxon identity, geographic support, and photo-scale bridge
