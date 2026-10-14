@@ -10,6 +10,10 @@ The worldwide source contains **100,543 distinct original photo IDs** across **4
 
 **Nonconfirmation matters:** strict-quality precipitation +1.229 pp (95% [−2.046,+4.504]), within-genus×coarse-cell +0.808 (95% [−3.556,+5.172]); the same-taxonomic-support paired spatial contrast has a simultaneous interval spanning zero. Independent NHM-described floral hue also fails to independently establish a positive geographic rainfall direction. Positive global and negative geographic/source checks belong in the same article.
 
+## Photo-white near-parity and balancing-selection hypotheses (source-only)
+
+The source-classifiable unique photographs were **21,574 white/24,379 coloured** (**46.95%/53.05%**) among 45,953 assigned four-hue labels, not a global species census. An exactly 50:50 *hypothetical all-photo* ratio requires **52.57% white among 54,590 unclassifiable photo opportunities**; neither the unclassified colours nor population morph genotypes are known. The source's original latitude-evenness null (`P=0.214`) and negative geographic compensation test (`P=0.997`) do **not** demonstrate an actively maintained ratio. See the [original-source balance arithmetic](results/mois_original_photo_white_balance_20261014.json), [reproducer](scripts/analysis/mois_original_photo_white_balance_20261014.py), and [separate evolutionary trade-off hypotheses and empirical tests](docs/MOIS_WHITE_CHROMATIC_BALANCE_AND_FITNESS_HYPOTHESES_20261014.md). This is a companion research question, **not a measured trait-fitness trade-off or a new primary-paper causal result**.
+
 ## Source files transferred byte-for-byte from fcp
 
 - [Global colour × 36-abiotic direction methods/report](docs/FCP_GLOBAL_COLOUR_ENVIRONMENT_DIRECTION_AND_CAUSAL_GATES_20261013.md); [source script](scripts/analysis/fcp_abiotic_hue_direction_macro_20261013.py); [1,280-colour×environment result ledger](results/fcp_macro_direction_20261013/direction_ledger.csv); [decision receipt](results/fcp_macro_direction_20261013/decision_receipt.json)
