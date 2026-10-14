@@ -2,3 +2,5 @@
 # never accidentally commit original full ZIPs to the research repository.
 raw_inputs/
 *.partial
+# CI-only numerical audit bundles; not a permanent journal repository.
+dist/
