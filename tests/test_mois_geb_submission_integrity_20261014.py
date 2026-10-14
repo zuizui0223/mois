@@ -97,7 +97,7 @@ def test_reference_DOIs_are_verified_and_nothing_claims_a_source_archive_DOI():
         assert doi in s and doi in g,doi
     assert "NOT YET PROVIDED" in text(BLIND)
     assert "GitHub" in g and "stable" in g.lower()
-    assert "not present in the new mois repository" in text(SI)
+    assert "not shipped in mois" in text(SI)
 
 
 def test_cover_letter_interest_and_submission_require_human_approval():
@@ -109,5 +109,5 @@ def test_cover_letter_interest_and_submission_require_human_approval():
     assert "HUMAN" in cover and "TO CONFIRM" in cover
     audit=text(REFERENCE)
     assert "HOLD" in audit
-    assert "PRIVATE" in audit.upper()
+    assert "reviewer" in audit.lower() and "anonymous" in audit.lower()
     assert "source archive" in audit.lower()
