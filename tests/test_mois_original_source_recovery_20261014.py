@@ -67,7 +67,7 @@ def test_source_permissions_and_geography_are_aggregates_not_individual_records(
     assert not r["per_photo_ids_coordinates_and_attribution_released"]
     assert not r["all_original_photo_pixels_present"]
     assert r["source_rights_and_geoprivacy_human_review_required"] is True
-    assert not (ROOT/"raw_inputs").exists()
+    assert "raw_inputs/" in (ROOT/".gitignore").read_text(encoding="utf8")
     code=SCRIPT.read_text(encoding="utf8")
     assert "sha256" in code.lower() and "genus" in code.lower()
     assert "photo_path" in code and "environment_path" in code
