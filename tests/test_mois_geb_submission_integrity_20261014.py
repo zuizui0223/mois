@@ -111,3 +111,20 @@ def test_cover_letter_interest_and_submission_require_human_approval():
     assert "HOLD" in audit
     assert "reviewer" in audit.lower() and "anonymous" in audit.lower()
     assert "source archive" in audit.lower()
+
+
+def test_original_source_artifact_recovery_is_documented_but_not_misreported():
+    source_note=text(ROOT/"docs/MOIS_GEB_ORIGINAL_ARCHIVE_RECOVERY_AND_LICENCE_20261014.md")
+    recovery=text(ROOT/"scripts/recover_mois_original_inputs.sh")
+    ignored=text(ROOT/".gitignore")
+    assert "11587115220" in recovery and "11653183273" in recovery
+    assert "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0" in recovery
+    assert "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca" in recovery
+    assert "sha256sum -c" in recovery
+    assert "gh api" in recovery
+    assert "raw_inputs/" in ignored
+    assert "not been executed" in source_note
+    assert "do not" in source_note.lower()
+    assert "2027-01-06" in source_note
+    assert "licence" in source_note.lower()
+    assert "original raw-source photo and abiotic-source" not in text(BLIND) or "NOT YET PROVIDED" in text(BLIND)
