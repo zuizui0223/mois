@@ -33,6 +33,15 @@ FILES=(
     "figures/mois_photo_selection_and_matched_rainfall.svg",
     "figures/mois_environmental_transfer_and_model_form.svg",
     "figures/mois_original_four_hue_moisture.svg",
+    "results/mois_world24_genus_moment_source_replay_audit_20261014.json",
+    "results/mois_original_matched_spatial_full576_replay_20261014.json",
+    "results/mois_original_world_strict_geocell_soil36_76maxT_source_audit_20261014.json",
+    "docs/MOIS_GEB_WORLD24_GENUS_SUFFSTATS_REPLAY_20261014.md",
+    "docs/MOIS_GEB_INDEPENDENT_SPATIAL576_SOURCE_REPLAY_20261014.md",
+    "docs/MOIS_GEB_WORLD_SENSITIVITY_76_INDEPENDENT_REPLAY_20261014.md",
+    "scripts/analysis/replay_mois_world24_from_genus_moments_20261014.py",
+    "scripts/analysis/replay_mois_original_matched_spatial_576_20261014.py",
+    "scripts/analysis/replay_mois_world_quality_geocell_soil36_from_original_zips_20261014.py",
 )
 BAN_NAMES=("raw_inputs", "original_100543_photo_sites.zip", "original_100543_photo_sites_all36_environment.zip")
 BANNED_CSV_COLUMNS=("photo_id", "observation_id", "inat_taxon_id", "latitude",
