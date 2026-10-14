@@ -88,6 +88,10 @@ Among the 100,543 original photos, the classifiability gate excludes 54.3%. Sour
 
 An external phenotype comparison uses Natural History Museum botanical flower/petal/corolla colour descriptions, retaining only strict and noncontradictory white and blue/purple values under matching named species. The independent-source **phenotypic** evidence retains original the historical source study photographed localities for climate/site covariates. Thus this is not an independent occurrence/climate study, and its binary white–blue response is not numerically exchangeable with the four-category photographed response. No data set records morph genotypes, flower pigment masses, UV reflectance, pollinator gains, reproductive fitness or temporally matched climate treatments.
 
+### 2.8 | Independent verification using recovered original source tables
+
+Both exact historical the historical source study source ZIPs were **recovered and byte-SHA256 verified** in a separate working execution environment, with ZIP integrity checks. They contain photo-colour measurements, source photo/observation identifiers, site locations and environmental tables, **not the original camera image pixels**. An independent source-data reader joined taxon, observation and photo IDs one-to-one; replicated climate26 and soil36 source denominators; and reconstructed all four hue point coefficients for original-source BIO12 precipitation and mean vapour pressure in 20,694 eligible species, independently of the historical the historical source study regression implementation. All **eight coefficients** agreed with the frozen 1,280-row ledger to a maximum absolute discrepancy of **3.51×10⁻¹⁴ percentage points**. This check reproduces point estimates only and does **not** independently rebootstrap confidence intervals or validate the original image-classifier pixels. The aggregate-only receipt contains original licence/coordinate-source status counts, but no individual photographed records are deposited in `the source study` (Supporting Information S6).
+
 ## 3 | Results
 
 ### 3.1 | Photographic colour availability and conditional worldwide white prevalence
