@@ -65,6 +65,14 @@ Thus the possible all-photo wet-minus-dry white contrast spans **−50.4407 to +
 
 The previous species-conditioned global-latitude white-fraction evenness null was not supportive (*P*=0.214), while the hypothesised negative geographic compensation between species turnover and local colour deviations had one-sided *P*=0.997 and observed **positive** covariance +0.00018144. Thus the worldwide photo share near one half is neither unusually stable under the original null nor an evolutionary balancing equilibrium. These photographic balance tests are secondary to `mois`, not a core pigment-fitness result.
 
+### S2.3 | Is globally photographed white exactly one half? Source-only evaluation
+
+The original photo union classified **21,574 white and 24,379 nonwhite** photo opportunities: white **46.94797%**, coloured **53.05203%**. This is *not exact 50:50*; the numerator counts photos, not equally weighted taxa, genera, individuals or known genetic morphs. The two source photo programmes have different photographic opportunities, so a taxon-level floristic white fraction is not available from these aggregate counts alone. Under an explicitly hypothetical latent white/nonwhite assignment of all **54,590 unclassifiable photos**, an exactly half-white union would require **52.57% of the unclassified photos** to be white; the full-photo logically possible range is **21.46–75.75%**. Neither the true unseen-photo outcomes nor genuine genetic white frequencies are observed.
+
+Within the 45,879 classifiable geotagged photographs, absolute latitude 0–30°, 30–60° and 60–90° recorded white **47.08%, 46.79%, 49.00%**, respectively. Their **2.213 pp** range was not unusually small under the original within-species label-shuffling conditional null (999 permutations, one-sided `P=0.214`); the distinct genus-preserving `P=0.053` is a retrospectively examined null rather than independent evidence of 50:50 regulation. The source spatial-composition decomposition yielded **positive covariance +0.0001814445**, contrary to predicted negative cancellation of between-species composition and within-species local colour shifts (negative-compensation one-sided **`P=0.997`**). These estimates therefore provide **no demonstrated geographic compensation, stable coexistence or frequency-dependent fitness equilibrium**.
+
+Arithmetic and source-locked null fields: `results/mois_original_photo_white_balance_20261014.json`, replayer `scripts/analysis/mois_original_photo_white_balance_20261014.py`, hypotheses and fitness experiments in `docs/MOIS_WHITE_CHROMATIC_BALANCE_AND_FITNESS_HYPOTHESES_20261014.md`. None of these exploratory descriptive endpoints alters the main signed genus-equal BIO12 slopes.
+
 ## S3 | Same taxon identity, geographic support, and photo-scale bridge
 
 ### S3.1 | Matched geographic species B/C reconditioning
