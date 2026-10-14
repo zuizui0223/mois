@@ -1,12 +1,12 @@
 # The geographic and measurement dependence of flower-colour–moisture associations across a photographed global flora
 
-**Working research article — 14 October 2026; provisional journal target: Global Ecology and Biogeography.** This is an editable, blinded-manuscript *draft* and has not been submitted. The author-identifying title page, coauthor review, final reference and figure checks, and permanent source archive remain outstanding. All analyses reported below are original FCP source-verified *retrospective observations*; migration to \`mois\` is not a new experiment or a new prospective replication.
+**Working research article — 14 October 2026; provisional journal target: Global Ecology and Biogeography.** This is an editable, blinded-manuscript *draft* and has not been submitted. The author-identifying title page, coauthor review, final reference and figure checks, and permanent source archive remain outstanding. All analyses reported below are original FCP source-verified *retrospective observations*; migration to `mois` is not a new experiment or a new prospective replication.
 
 **Running title:** Flower colour and moisture across scales
 
 ## Abstract
 
-**Aim:** Broad climatic associations with floral colour may represent shared ecological responses, taxonomic turnover or uneven observation. We quantify how a worldwide photographic white-versus-coloured contrast relates to moisture and assess whether its direction persists across source quality, geographic conditioning, taxonomic prediction and within-species comparisons.
+**Aim:** Floral colour–climate associations may reflect ecology, species turnover or uneven observation. We test whether worldwide photographic white–moisture gradients persist across image quality, spatial conditioning, taxonomic prediction and within-species contrasts.
 
 **Location:** Worldwide georeferenced iNaturalist photographic opportunities, summarized globally and in four 90° longitude sectors.
 
@@ -14,11 +14,11 @@
 
 **Major taxa studied:** Named flowering-plant taxa; a classifiable four-state photographic hue was obtained for 45,953 of 100,543 unique images across an opportunity universe of 42,111 taxa.
 
-**Methods:** We modelled species-level four-colour photo fractions within 1,934 qualifying nominal genera (20,694 climate-complete species), with geographic controls, genus resampling and within-design 24-contrast simultaneous uncertainty. We compared strict-quality and genus-by-coarse-cell designs, held the same species fixed across alternative spatial models, examined between- and within-species slopes on identical photographs, and assembled independent botanical-description and geographic-transfer diagnostics.
+**Methods:** We modelled four-colour photo fractions in 20,694 climate-complete species/1,934 genera using geographic controls and genus-resampled simultaneous intervals. We compared strict-quality and coarse-cell designs, held species fixed across spatial models, tested between/within-species slopes on identical images, and examined botanical-description and geographic-transfer results.
 
 **Results:** Globally, photographic white increased with annual rainfall (+2.255 percentage points per source SD; simultaneous 95% interval +0.319 to +4.190) and mean atmospheric vapour pressure (+3.952; +1.199 to +6.704). Rainfall contrasts from strict images (+1.229; −2.046 to +4.504) and congeneric species within coarse geographic cells (+0.808; −3.556 to +5.172) did not exclude zero. On 21,448 identical images of 6,143 species, positive congeneric rainfall association (+2.722) contrasted with an unsupported within-species association (−0.511 percentage points per SD). An independent botanical colour source did not confirm the signed pattern.
 
-**Main conclusions:** A worldwide photographic colour–moisture association is observable at a broad between-species scale but does not demonstrate one portable water-driven white-flower response. Environmental relationships depend on photographic and taxonomic/geographic support; independent phenotypes, pigments, evolutionary mechanisms and plant relative fitness require other data.
+**Main conclusions:** Broad interspecific photographic colour–moisture associations are conditional on measurement and spatial support; neither a shared within-species response nor climatic selection is established.
 
 **Keywords:** citizen science, climate, floral colour, geographic sampling, macroecology, measurement bias, precipitation, trait variation
 
@@ -44,11 +44,11 @@ The original photographic opportunity census included one breadth image per nomi
 
 An original fixed visual-colour pipeline localized a candidate flower region, segmented its mask, and classified the resulting camera-visible floral pixels. A coarse photo label could be **white**, **yellow/orange**, **red/pink** or **blue/purple**. Exactly **45,953** photographs had an admissible four-colour label; **54,590** had no classifiable label. Unknown colours were not coded as white, coloured, or biologically monomorphic. Segmented flower pixels also allowed nine-palette continuous white-area sensitivity analyses on a restricted source subset. This image system is neither wavelength-calibrated spectrophotometry, UV reflectance nor an anthocyanin assay. Original classifier artefacts and near-clipping remain possible explanations for apparent white categories.
 
-We copied the archived photographic outcome files without relabelling them. The archived raw-photo bundle is identified by SHA256 \`2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0\`. The original broad/region source is photographed opportunity; it does not establish genetically distinct morphs, independent individual plants, or year-specific flowering phenotype distributions.
+We copied the archived photographic outcome files without relabelling them. The archived raw-photo bundle is identified by SHA256 `2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0`. The original broad/region source is photographed opportunity; it does not establish genetically distinct morphs, independent individual plants, or year-specific flowering phenotype distributions.
 
 ### 2.2 | Geographic and environmental join; source denominators
 
-The photographic source was joined one-to-one to original-site environmental records using **taxon ID, observation ID and photo ID simultaneously**, rejecting unmatched or duplicated original identifiers. Its separately archived environmental ZIP SHA256 is \`6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca\`. The 36 abiotic variables comprise temperature (11 bioclimatic variables), precipitation (eight), solar radiation (two), wind (two), vapour pressure (two), elevation (one) and soil properties (ten). We treated them as correlated environmental covariates, not independent causal interventions.
+The photographic source was joined one-to-one to original-site environmental records using **taxon ID, observation ID and photo ID simultaneously**, rejecting unmatched or duplicated original identifiers. Its separately archived environmental ZIP SHA256 is `6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca`. The 36 abiotic variables comprise temperature (11 bioclimatic variables), precipitation (eight), solar radiation (two), wind (two), vapour pressure (two), elevation (one) and soil properties (ten). We treated them as correlated environmental covariates, not independent causal interventions.
 
 With valid source coordinates, known colour and complete 26-variable nonsoil environmental support, **45,836 original photos representing 25,028 taxa** were eligible. Including all ten soil predictors reduced the separate complete-case panel to **31,925 photographs from 20,786 taxa**. Restricting subsequent directional regressions to nominal genera with at least three distinct sampled taxa yielded **20,694 species in 1,934 genera** for climate26 and **16,801 species in 1,665 genera** for soil36. These are *different eligibility rules applied within different source panels*; the soil36 count is not simply an attrition of 20,694 taxa.
 
@@ -208,7 +208,7 @@ Trethowan, L. A., Jennings, L., Bramley, G., Briggs, M., Clark, R., Dawson, S., 
 
 ## Figure legends
 
-**Figure 1. Broad global photographed white–moisture coefficients and their source-based limits.** (a) Original 26- and 36-variable held-out four-hue Brier gains on different complete-case populations. (b) Genus-equal white–annual rain slope in broad, strict-photograph and genus×coarse-cell designs (within-design simultaneous intervals). (c) Identical-species world and eastern broad-minus-cell adjustment differences (within-design 24-contrast intervals). (d) Source-independent botanical-description white–blue East versus rest comparison, using original FCP photo-site climates. The panels have different units and should not be used as one joint test. Archived image: \`figures/global_moisture_colour.svg\`; source: \`results/figure_source_data.json\`.
+**Figure 1. Broad global photographed white–moisture coefficients and their source-based limits.** (a) Original 26- and 36-variable held-out four-hue Brier gains on different complete-case populations. (b) Genus-equal white–annual rain slope in broad, strict-photograph and genus×coarse-cell designs (within-design simultaneous intervals). (c) Identical-species world and eastern broad-minus-cell adjustment differences (within-design 24-contrast intervals). (d) Source-independent botanical-description white–blue East versus rest comparison, using original FCP photo-site climates. The panels have different units and should not be used as one joint test. Archived image: `figures/global_moisture_colour.svg`; source: `results/figure_source_data.json`.
 
 **Figure 2. Observation/classification opportunity and same-original-photo between/within rainfall sensitivity.** (a) Original photos with classifiable and unclassified four-colour observations. (b) Driest versus wettest photographic opportunities: differing photo-classifiability rates and conditional white fractions. (c) Original 21,448 matched photo ID panel: between-congeneric positive BIO12 slope, within-named-species unsupported coefficient and paired difference, all with original bootstrap intervals. This visual is descriptive/source-preserving, not a new fitted regression or population morph census. Production source and artwork are listed in the supplement/figure manifest.
 
@@ -224,4 +224,4 @@ Trethowan, L. A., Jennings, L., Bramley, G., Briggs, M., Clark, R., Dawson, S., 
 
 **S5.** External botanical colour and original source-site climate sensitivity; source result boundaries.
 
-**Scientific disclosure:** Supporting original-source receipts and historical negative results are in \`docs/MOIS_SUPPORTING_EVIDENCE_AND_NEGATIVE_GATES_20261014.md\`, \`results/source_receipts/\` and \`docs/MOIS_ORIGINAL_FCP_PROVENANCE_AND_TRANSFER_20261014.md\`. No new photographs, phenotype labels, bootstrap worlds or test folds have been generated by the manuscript rewrite.
+**Scientific disclosure:** Supporting original-source receipts and historical negative results are in `docs/MOIS_SUPPORTING_EVIDENCE_AND_NEGATIVE_GATES_20261014.md`, `results/source_receipts/` and `docs/MOIS_ORIGINAL_FCP_PROVENANCE_AND_TRANSFER_20261014.md`. No new photographs, phenotype labels, bootstrap worlds or test folds have been generated by the manuscript rewrite.
