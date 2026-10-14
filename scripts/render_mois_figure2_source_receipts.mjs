@@ -53,9 +53,11 @@ function render(o) {
  [-2,0,2,4,6].forEach(v=>{const xx=px(v);L(xx,282,xx,630,v===0?"#6A7884":"#D7DFE6",v===0?2:1);T(xx,654,String(v),13,400,"middle","#637281");});
  o.slopes.forEach((q,i)=>{
   const y=342+i*105,c=["#307DA2","#AD6B6E","#315773"][i],lo=q.range[0],hi=q.range[1];
+  R(985,y-43,365,27,"#F6F9FB",4);
   T(989,y-24,q.name,17,700);
   L(px(lo),y,px(hi),y,c,5);L(px(lo),y-10,px(lo),y+10,c,2);L(px(hi),y-10,px(hi),y+10,c,2);
   out.push(`<circle cx="${px(q.point)}" cy="${y}" r="7" fill="${c}"/>`);
+  R(985,y+16,305,26,"#F6F9FB",4);
   T(989,y+35,(q.point>=0?"+":"")+round(q.point,3)+" ["+round(lo,3)+", "+round(hi,3)+"]",15,400,"start","#526576");
  });
  T(991,675,"Original paired genus-bootstrap 95% CIs",14,400,"start","#526576");

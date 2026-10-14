@@ -128,3 +128,16 @@ def test_original_source_artifact_recovery_is_documented_but_not_misreported():
     assert "2027-01-06" in source_note
     assert "licence" in source_note.lower()
     assert "original raw-source photo and abiotic-source" not in text(BLIND) or "NOT YET PROVIDED" in text(BLIND)
+
+
+def test_figure_label_backdrops_do_not_hide_data_interval():
+    """Keep axis gridlines from painting through the panels' long text labels."""
+    fig2=(ROOT/"figures/mois_photo_selection_and_matched_rainfall.svg").read_text(encoding="utf8")
+    fig3=(ROOT/"figures/mois_environmental_transfer_and_model_form.svg").read_text(encoding="utf8")
+    # Both exact figures remain source JSON regenerable; only typography stacking changed.
+    assert fig2.count('width="365" height="27" rx="4" fill="#F6F9FB"') == 3
+    assert fig2.count('width="305" height="26" rx="4" fill="#F6F9FB"') == 3
+    assert fig3.count('width="420" height="29" rx="4" fill="#F8FAFC"') == 9
+    assert fig3.count('width="420" height="27" rx="4" fill="#F8FAFC"') == 9
+    assert 'Between congeneric species' in fig2 and 'Unseen genus only' in fig3
+    assert '<line' in fig2 and '<circle' in fig3

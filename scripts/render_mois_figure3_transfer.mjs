@@ -44,10 +44,12 @@ function render(panels) {
   [-0.002,0,0.002,0.004,0.006,0.008].forEach(z=>{const xx=m(z);l(xx,280,xx,601,z===0?"#718190":"#D8E1E7",z===0?2:1);t(xx,626,z.toFixed(3),12,400,"#617387","middle");});
   q.data.forEach((d,j)=>{
    const yy=330+j*114,col=["#2A7599","#9C6F9A","#36566F"][j];
+   rect(x+19,yy-59,420,29,"#F8FAFC",4);
    t(x+21,yy-35,d.name,15,600);
    l(m(d.ci[0]),yy,m(d.ci[1]),yy,col,5);
    l(m(d.ci[0]),yy-9,m(d.ci[0]),yy+9,col,2);l(m(d.ci[1]),yy-9,m(d.ci[1]),yy+9,col,2);
    v.push(`<circle cx="${m(d.point)}" cy="${yy}" r="7" fill="${col}"/>`);
+   rect(x+19,yy+12,420,27,"#F8FAFC",4);
    t(x+22,yy+30,(d.point>=0?"+":"")+d.point.toFixed(6)+" ["+d.ci[0].toFixed(5)+", "+d.ci[1].toFixed(5)+"]",13,400,"#586D7F");
   });
  });
