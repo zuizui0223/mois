@@ -1,0 +1,233 @@
+# The geographic and measurement dependence of flower-colour–moisture associations across a photographed global flora
+
+**Running title:** Floral colour and moisture patterns
+
+## Abstract
+
+**Aim:** Floral colour–climate associations may reflect ecology, species turnover or uneven observation. We test whether worldwide photographic white–moisture gradients persist across image quality, spatial conditioning, taxonomic prediction and within-species contrasts.
+
+**Location:** Worldwide georeferenced iNaturalist photographic opportunities, summarized globally and in four 90° longitude sectors.
+
+**Time period:** Heterogeneous historical photographic records paired to archived long-term environmental summaries. Source dates are not sufficiently represented in the analysis-ready original-photo files for a temporal or contemporaneous flowering-weather test.
+
+**Major taxa studied:** Named flowering-plant taxa; a classifiable four-state photographic hue was obtained for 45,953 of 100,543 unique images across an opportunity universe of 42,111 taxa.
+
+**Methods:** We modelled four-colour photo fractions in 20,694 climate-complete species/1,934 genera using geographic controls and genus-resampled simultaneous intervals. We compared strict-quality and coarse-cell designs, held species fixed across spatial models, tested between/within-species slopes on identical images, and examined botanical-description and geographic-transfer results.
+
+**Results:** Globally, photographic white increased with annual rainfall (+2.255 percentage points per source SD; simultaneous 95% interval +0.319 to +4.190) and mean atmospheric vapour pressure (+3.952; +1.199 to +6.704). Rainfall contrasts from strict images (+1.229; −2.046 to +4.504) and congeneric species within coarse geographic cells (+0.808; −3.556 to +5.172) did not exclude zero. On 21,448 identical images of 6,143 species, positive congeneric rainfall association (+2.722) contrasted with an unsupported within-species association (−0.511 percentage points per SD). An independent botanical colour source did not confirm the signed pattern.
+
+**Main conclusions:** Broad interspecific photographic colour–moisture associations are conditional on measurement and spatial support; neither a shared within-species response nor climatic selection is established.
+
+**Keywords:** citizen science, climate, floral colour, geographic sampling, macroecology, measurement bias, precipitation, trait variation
+
+## 1 | Introduction
+
+Visible flower colour is among the most recognizable reproductive plant traits, yet a floral colour seen in a photograph can encode multiple biological and observational processes. Species differ in pigments, petal structures, pollinator environments and evolutionary histories, while site-specific illumination, image selection, flower-organ detection and camera exposure alter what can be classified from an opportunistically submitted photograph. Separating these scales matters when a trait–climate association is interpreted as evidence for climatic adaptation.
+
+Abiotic correlates of floral colour are biologically plausible. Light and thermal conditions can alter floral optical functions, and drought or nutrient environments might change the relative investments and benefits of pigments. Pollinator distributions and local plant-community structure may also covary with climate. In a quantitative analysis of 339 species, Dalrymple et al. (2020) reported that flower colour was associated with pollinator and plant assemblages as well as precipitation and solar radiation. On Malesian islands, a separate botanical-trait and phylogenetic study found more white-flowered taxa in wet tropical lowlands while floral-colour distributions also depended on insularity and temperature (Trethowan et al., 2024). These precedents mean that simply identifying white flowers in wet places would not, by itself, establish a new general biological mechanism.
+
+A large photographic atlas adds geographical and taxonomic coverage, but it does not automatically resolve why a pattern appears. Original image colour is a conditional response: a labelled photo is not a reflectance spectrum or authenticated floral pigment, and only photos whose floral region and visible colour can be segmented reliably enter a four-hue analysis. Community-science observation behaviour is spatially and taxonomically nonrandom (Di Cecco et al., 2021). If the chance of obtaining a classifiable photo varies with climate and floral appearance, both the apparent geographical prevalence of white and its climatic gradient may be distorted. Similarly, analyses at a worldwide genus-adjusted scale can combine widely separated congeneric species that are not comparable within one local plant assemblage.
+
+The distinction between a **between-species** and a **within-species** colour–climate relation is especially important. The same global association might result from historical lineage composition, niche distribution or developmental constraints, without predicting that white-flowered photographs of the same named species occur more frequently at wetter sites. Botanical reflectance studies at the population level show how climatic and colonization-history correlates can differ for components of floral colour (Koski & Galloway, 2020). A positive species-level slope is therefore not a selection coefficient and should not automatically be projected onto individuals or local breeding populations.
+
+We address three connected questions using archived source-measured photographs and deliberately different statistical tests. **First**, is there a detectable direction linking visible white, relative to yellow/orange, red/pink and blue/purple, with rainfall and atmospheric water-vapour gradients among nominal congeneric taxa globally? **Second**, do the signed coefficients survive image-quality restrictions, alternative geographic conditioning of identical species, and botanical-colour verification? **Third**, where does joint environmental predictive information persist when entire genera and increasingly distant geographic support are excluded, and does the signed rain–white relation reappear within species on exactly matched photographic evidence?
+
+Our primary estimand is **photographed taxon-level floral-colour composition conditional on observation and classification**, not genetic white-morph incidence, petal UV reflectance or plant reproductive fitness. The methods and interpretations are explicitly retrospective. We use both positive and negative source-verified endpoints to delimit the scale on which a global result can be generalized, rather than selecting the most supportive region, colour category or model after inspecting its outcome.
+
+## 2 | Materials and Methods
+
+### 2.1 | Source photographs, unique image identities and visible colour measurement
+
+The original photographic opportunity census included one breadth image per nominal species and additional species-by-geographic-cell records from iNaturalist. Specifically, the source programme held 42,111 one-photo taxon opportunities and 85,337 taxon–cell photographic records, with **26,905 duplicate photo identifiers** between the two sets. Deduplication by original photo ID therefore yielded **100,543 unique photographs from 42,111 nominal named species**. The selection was based on photographed flowering records with source taxon, observation and photo identifiers and georeferences. Species opportunity and photo availability are not probability samples of the world flora.
+
+An original fixed visible-colour measurement machine used ROI-v4 to detect a floral region and EfficientSAM (Xiong et al., 2024) to segment a flower mask. Segmented pixels were measured against the frozen nine-element visible palette (white, yellow, orange, red, pink, magenta, purple, blue and bronze), from which four coarse photo hue labels were assigned under explicit classification gates. A coarse photo label could be **white**, **yellow/orange**, **red/pink** or **blue/purple**. Exactly **45,953** photographs had an admissible four-colour label; **54,590** had no classifiable label. Unknown colours were not coded as white, coloured, or biologically monomorphic. Segmented flower pixels also allowed nine-palette continuous white-area sensitivity analyses on a restricted source subset. This image system is neither wavelength-calibrated spectrophotometry, UV reflectance nor an anthocyanin assay. Original classifier artefacts and near-clipping remain possible explanations for apparent white categories.
+
+We copied the archived photographic outcome files without relabelling them. The archived raw-photo bundle is identified by SHA256 [source fingerprint withheld for blinded review]. The original broad/region source is photographed opportunity; it does not establish genetically distinct morphs, independent individual plants, or year-specific flowering phenotype distributions.
+
+### 2.2 | Geographic and environmental join; source denominators
+
+The photographic source was joined one-to-one to original-site environmental records using **taxon ID, observation ID and photo ID simultaneously**, rejecting unmatched or duplicated original identifiers. The original spatial predictors were derived from WorldClim climate surfaces (Fick & Hijmans, 2017) and SoilGrids soil-property surfaces (Poggio et al., 2021), according to the archived the historical source study environmental-source specification; the joined archive is authoritative for exact source layer choices. Its separately archived environmental ZIP SHA256 is [source fingerprint withheld for blinded review]. The 36 abiotic variables comprise temperature (11 bioclimatic variables), precipitation (eight), solar radiation (two), wind (two), vapour pressure (two), elevation (one) and soil properties (ten). We treated them as correlated environmental covariates, not independent causal interventions.
+
+With valid source coordinates, known colour and complete 26-variable nonsoil environmental support, **45,836 original photos representing 25,028 taxa** were eligible. Including all ten soil predictors reduced the separate complete-case panel to **31,925 photographs from 20,786 taxa**. Restricting subsequent directional regressions to nominal genera with at least three distinct sampled taxa yielded **20,694 species in 1,934 genera** for climate26 and **16,801 species in 1,665 genera** for soil36. These are *different eligibility rules applied within different source panels*; the soil36 count is not simply an attrition of 20,694 taxa.
+
+Photographic site latitude and longitude were transformed into absolute latitude and circular sine/cosine longitude nuisance covariates. A coarse sensitivity grid has 18 longitude bins and nine equal-area-in-sine-latitude bins, with 162 possible cell IDs. This supports comparison at a broad taxonomic–geographic grain, not matched microsites, contemporaneous humidity measurements or a fitted fine-scale spatial random field.
+
+### 2.3 | Estimating signed colour–environment slopes among congeners
+
+For every qualified species, photographed class probabilities were defined as the observed four-colour photo fractions; its predictor values and nuisance coordinates were source-photo-site averages. Species thus contributed one averaged photographic-composition row rather than a number of independent observations proportional to photographic effort.
+
+We assessed a retrospective family of six interpretable environmental axes: warmest-month maximum temperature (BIO5), annual precipitation (BIO12), driest-month precipitation (BIO14), precipitation seasonality (BIO15), annual mean solar radiation and annual mean atmospheric vapour pressure. An additional soil available-water proxy was included where all soil predictors were complete. All axes were standardized to original-source environmental standard deviations rather than rescaled separately for a selected region or quality subset. Coefficients are therefore expressed in **percentage points of originally classified photographic hue probability per original-source environmental SD**.
+
+Within nominal genera, we centred predictors and photo-colour fractions. For broad geographic adjustment, each focal environment was evaluated with absolute latitude and circular longitude components. This is not a single simultaneously fitted model with all six correlated ecological axes: individual signed-axis contrasts condition on the three broad geographic nuisance coordinates, and a separate all26/all36 ridge model gives descriptive partial coefficients. We report both species-equal and genus-equal weighting, emphasizing genus-equal worldwide contrasts to avoid assigning large genera disproportionate total influence.
+
+The source retains 20 photo/population/location scopes, five regions (world and four 90° longitude sectors), strict versus ordinary photographic quality, and different local/group adjustments. The strict original image gate required at least **23,826 effective flower pixels** and nonflower nuisance fraction no greater than **0.1375717742**. Source-based whole-genus resampling used **999 bootstrap draws**, shared across all hue/environment contrasts within a scope. Approximate maxT simultaneous 95% intervals protect the **six (or seven) axes × four hues within one population/weight/scope**, not the many choices of region, eligibility rule, model family or hypotheses across the broader exploration. Positive support in one model must not be described as study-wide correction or as a prospectively fixed treatment effect. Figure 1 summarizes these original source-conditional contrasts and their uncertainty.
+
+### 2.4 | Matched-species spatial-conditioning analysis
+
+To separate changes in species support from changes in geographic adjustment, we used the already completed three-stage source analysis in the world and eastern (90–180° E) sectors. Stage A keeps all species from genera that can qualify for the same-genus×cell comparison while retaining broad coordinate controls. Stage B retains species in groups with at least three different congeners in the relevant coarse cell, retaining the **same broad coordinate model**. Stage C uses **exactly the stage B species, photo outcomes and environmental means**, but instead centres within genus-by-coarse-cell groups. Thus A–B mainly changes eligible source species and geographical opportunity; B–C changes statistical conditioning on an identical taxon set. C does not preserve the original same single-species covariate contrast, and B–C cannot be read as the causal effect of geography.
+
+For the genus-equal headline B/C comparisons, the world-matched denominator was **9,370 taxa /845 genera /14,268 photos** and the eastern denominator **2,886 taxa /280 genera /4,149 photographs**. Stage differences used **999 identical whole-genus resampling draws** and familywise approximate maxT intervals for six axes × four hues separately in each region and weighting. These are matched species/estimated responses, not independent geographic plant replicates.
+
+### 2.5 | Prediction, taxonomic transfer and geographic transfer
+
+Joint environmental information was evaluated separately from the sign of any single BIO12 coefficient. The original full climate26 and soil36 models compared held-out multiclass four-hue squared-error (Brier) loss against geography/taxonomic baselines under fixed, source-defined geographic or whole-genus folds. A **positive gain** denotes smaller held-out error from adding environment. The climate26 and soil36 complete-case datasets score different species and must not be subtracted for a soil effect.
+
+Other source-verified prediction analyses, retained as sensitivity rather than new primary inferential families, hold out entire genera; decompose the error of species-colour composition into genus-mean and within-genus species-deviation terms using the *same model predictions*; and exclude training species in the test longitude sector and within 500 km of test-source photos. These progressively restricted geographical designs change training-flora and environmental support, so a prediction drop is not uniquely due to spatial causation.
+
+A subsequent source-exposed test used one fixed ExtraTrees learner (128 trees, maximum depth 16 and minimum leaf 20) on the **same originally tested taxa and folds**. Its full-environment prediction is compared with a geography-only baseline and with the original ridge full model. An environmental improvement over a *weaker nonlinear geographic baseline* is not sufficient to claim that nonlinear modelling solved geographic transfer.
+
+### 2.6 | Identical-original-photo between/within-species comparison
+
+A complementary original-photo analysis holds the same **21,448 photo IDs from 6,143 species and 787 genera** between a congeneric species-level and a within-named-species photo-level fit for the originally classified white response. Both use archived BIO12 and BIO1/BIO5/BIO15, elevation and broad geographic covariates, under their respective level-specific centring/conditioning. BIO12 is standardized by its source-photo SD of approximately **736.416 mm**. The original **1,999 paired genus-bootstrap draws** quantify their difference. Comparing slopes on identical photo outcomes reduces one source of denominator confounding, but the models still target different statistical variations; their difference is not an evolutionary selection contrast. The analysis was exploratory and was not pre-frozen to test this study's main manuscript.
+
+A further original sensitivity applies continuous segmented white-palette fraction (not a coarse white label) to **14,667 photo IDs from 3,351 species**. It uses a different original-source BIO12 SD (**717.253 mm**), so its coefficient cannot be averaged directly with the categorical analysis. Strict floral ROI quality changes the eligible species set. No independent photographed-organ colour standards were collected for this comparison.
+
+### 2.7 | Missing-colour selection, independent phenotype descriptions and mechanistic limits
+
+Among the 100,543 original photos, the classifiability gate excludes 54.3%. Source wet/dry photographic opportunity deciles were defined across *all source photos* before checking their floral hue. We report four-state white shares only conditional on successful classification and retain a missing-not-at-random (MNAR) tipping exercise for the unknown colours. This sensitivity treats unclassified dry photo-white prevalence as an assumption and asks what unmeasured prevalence among unclassified wet photos would erase the apparent wet–dry white difference. The unobserved colour proportions are not data-driven estimates.
+
+An external phenotype comparison uses Natural History Museum botanical flower/petal/corolla colour descriptions, retaining only strict and noncontradictory white and blue/purple values under matching named species. The independent-source **phenotypic** evidence retains original the historical source study photographed localities for climate/site covariates. Thus this is not an independent occurrence/climate study, and its binary white–blue response is not numerically exchangeable with the four-category photographed response. No data set records morph genotypes, flower pigment masses, UV reflectance, pollinator gains, reproductive fitness or temporally matched climate treatments.
+
+## 3 | Results
+
+### 3.1 | Photographic colour availability and conditional worldwide white prevalence
+
+From the source 100,543 unique photo opportunities, **45,953 (45.7%)** were assigned a four-colour hue and **54,590 (54.3%)** remained unclassifiable. Of the classified photos, **21,574 (46.95%)** were white. This is a photo-weighted, observation-conditioned statistic; without assumptions concerning the unclassified source photos, the possible full-photo white share spans **21.46–75.75%**. Broadly similar white proportions across latitude bins therefore provide no independent estimate of genetically or demographically maintained morph frequencies.
+
+Photo classification was not geographically neutral. In the driest original-photo rainfall decile, 4,981 of 10,084 source photos were classifiable (**49.4%**), compared with 3,904 of 9,990 (**39.1%**) in the wettest. Among the classifiable, white occupied **41.80%** and **53.25%**, respectively—a raw wet-minus-dry difference of **+11.45 percentage points**, far larger than the adjusted congeneric slope because it is a different, unadjusted descriptive contrast. The MNAR tipping exercise showed that, if 50% of the unclassified dry photographs were truly white, a wet unclassified white fraction of **41.26%** would eliminate a *latent all-photo* wet/dry difference. No such missing-photo true hue was measured (Fig. 2; Table 1).
+
+### 3.2 | Broad congeneric photographic white–moisture directions are positive
+
+In the climate26 global genus-equal panel (**20,694 species, 1,934 genera**), annual precipitation BIO12 was associated with **+2.255 percentage points of photographed white per global photo-site environmental SD**, within-scope 24-colour–axis maxT 95% interval **[+0.319,+4.190]**. Mean annual atmospheric vapour pressure yielded **+3.952 points [1.199,6.704]**. A soil36 analysis on a separately defined eligible set (**16,801 species, 1,665 genera**) gave BIO12 white **+2.257 [0.138,4.376]**; these two broad coefficients involve different underlying complete-case source taxa.
+
+The world genus-equal BIO12 point coefficients for yellow/orange (**−1.221**), red/pink (**−0.446**) and blue/purple (**−0.588**) collectively offset white by construction of the four-colour composition, but each of their **individual 24-contrast maxT 95% intervals spans zero**. Similarly, for water vapour the three nonwhite hue points (−1.385, −1.509 and −1.057) have intervals spanning zero. This is evidence for a source-conditional white-versus-combined-nonwhite compositional contrast, **not** three independently confirmed coloured-hue decreases (Fig. 4).
+
+The broad coefficients are compatible with the descriptive claim that photographed white is relatively more common in wetter environments among the studied congeneric species. The analogous world BIO5 and solar-radiation signed white intervals did not establish a comparably general effect. Because multiple original scopes and families were explored, these source-conditional maxT intervals cannot certify a *universal* moisture–colour rule.
+
+### 3.3 | Image and within-genus local geography restrict the signed pattern
+
+Under the strict photograph-quality gate, climate26 white/BIO12 was **+1.229 [−2.046,+4.504]**; within genus-by-coarse-geographic-cell comparison it was **+0.808 [−3.556,+5.172]**. Both simultaneous 95% intervals include zero. Their smaller or differently distributed source populations mean these observations bound robustness but do not prove the full-population effect vanished when simply changing one imaging or geographic variable (Fig. 1b; Table 2).
+
+In matched-species spatial analyses, the world sample contained 9,370 species/845 genera. Under broad coordinate adjustment (stage B), white/BIO12 was **+1.326**, while genus×cell centring on the **same species** (stage C) yielded **+0.808**. In 2,886 eastern species/280 genera, B was **+1.102** versus C **−2.076**. The eastern B−C paired difference was **+3.178 points** with nominal bootstrap 95% interval [+1.077,+5.351], but its **24-contrast simultaneous interval [−0.258,+6.613]** includes zero. The matching establishes that the *model specification*, not only the number of eligible species, can change the source estimate; it does not demonstrate a climate effect removed by spatial control (Fig. 1c; Table 2).
+
+### 3.4 | Same original photo colours do not reveal a shared positive within-species rainfall slope
+
+An original photo-identity matched set of **21,448 images from 6,143 taxa and 787 genera** yielded between-congeneric photographed-white/BIO12 **+2.722 points per source SD** (paired genus-bootstrap 95% [+0.705,+4.714]), but within-named-species **−0.511** (95% [−1.436,+0.335]). The source-exploratory difference, between minus within, was **+3.233 [1.175,5.400]**; original one-sided paired bootstrap *P* = 0.0005. The signed within-species slope is not supported as positive. This is a between-/within-statistical-level difference on identical original labels, **not** a difference in selection strength or a new independent image cohort.
+
+A continuous-photo-white ROI fraction analysis on 14,667 source photographs/3,351 species likewise estimated a positive congeneric coefficient **+2.229 points** (95% [0.177,4.282]) but unsupported within-species **−0.180** (95% [−1.011,+0.651]). Restricting source ROI quality weakened the congeneric coefficient to **+1.116 [−1.169,+3.401]**. Thus the between-/within distinction remains an important observational result, but its imaging and selection sensitivity precludes interpreting it as verified pigment biology (Fig. 2c; Table 2).
+
+### 3.5 | Joint environmental prediction is small and strongly support-dependent
+
+The separate genus-equal geographic heldout prediction tests reported a climate26 Brier gain **+0.002943** (17,183 test species) and soil36 **+0.001432** (13,961 different test species). The two values do not estimate the incremental effect of including soil. A matched, soil-complete unseen-genus analysis on identical **20,786 species** estimated soil10 incremental gain **+0.0000757 [−0.000516,+0.000653]**, providing no conclusive soil-only increment.
+
+With all36 variables jointly, previously unseen-genus prediction of absolute photo-colour composition did improve the source geographic baseline (**+0.004518 [0.002437,0.006602]**, 20,786 species), but within-unseen-genus species deviations did not (**−0.000142 [−0.000748,+0.000433]**). A subsequent decomposition of the **same fitted predictions** attributed the broad benefit largely to genus-average colour error (+0.004699) rather than within-genus residuals (−0.000181), an algebraic model-loss statement rather than biological variance or evolution.
+
+After excluding genera and source-flora footprints in the test longitude sector and within 500 km, all36 ridge environmental gain fell to **+0.000174 [−0.002629,+0.002846]**. A fixed nonlinear model had a positive environmental increment over its *own* geography-only model (**+0.004882 [0.002320,0.007496]**), but its geography-only baseline performed worse than the ridge geography-only baseline, and the direct nonlinear versus ridge **full-model** advantage remained uncertain (**+0.001202 [−0.001011,+0.003447]**). Strict-quality nonlinear environmental gain **+0.000517 [−0.004122,+0.005363]** was inconclusive (Table S2). These are prediction-model results, not tests of adaptive flowering responses. Figure 3 makes the changes in prediction target, geographic source support and model baseline explicit.
+
+### 3.6 | Botanical-description checks do not independently confirm the direction
+
+The strict botanical-description white versus blue/purple comparison among **670 named species in 58 genera** in the eastern sector estimated genus-equal rainfall contrast **+3.56 percentage points** with ordinary 95% interval **[−15.34,+22.60]**. Its direction was imprecise and the interval includes zero. Botanical hue labels were independent of the historical source study's photographic classifier, but climate and site support remained derived from the original photo locations and the binary trait denominator differed. The result therefore cannot be used as either a conclusive falsification or independent confirmation of the worldwide four-colour association (Fig. 1d).
+
+## 4 | Discussion
+
+### 4.1 | What is repeated worldwide, and at what scale?
+
+Our principal finding is a distinction between a **source-conditional worldwide interspecific colour–moisture association** and an unverified **region-independent or within-species ecological mechanism**. Since the probabilities of white and three coloured classes sum to one, increasing photographic white implies an aggregate nonwhite decrease, not significant decreases in each coloured hue; Figure 4 and original four-hue maxT intervals make this distinction explicit. The globally congeneric photographic signal is positive for white against BIO12 annual rain and atmospheric water vapour in broadly defined source populations. That result extends taxonomic and geographical photographic sampling beyond earlier small regional colour–climate analyses. However, both prior floral macroecology (Dalrymple et al., 2020) and work on species-rich Malesian islands (Trethowan et al., 2024) already associate flower-colour traits with abiotic environments. Scale, measurement support and a transparent record of failed transfers—not a newly discovered expectation that wet regions have white flowers—are the distinctive contributions available from these data.
+
+This distinction has concrete biological implications. A trait–environment coefficient among species may encode ecological filtering, clade turnover, habitat-associated lineage histories, local pollinator communities or observational sorting. An inability to recover the same signed direction among observed photographs of the same named species is compatible with several mechanisms and does not demonstrate that any one is absent. In particular, its high-depth evolutionary interpretation is not supplied by a separate white–chromatic phenotype-space analysis retained in the independent the historical source study within-species manuscript.
+
+### 4.2 | Geographic conditioning is not a biological intervention
+
+Matched species sets remove one straightforward problem in comparing broad and local analyses: the effect can no longer be attributed *solely* to excluding different named taxa. Yet stage B and C still condition on different spatial variation, and the source has sparse, heterogeneously photographed localities. Their change in point estimate—and the exploratory eastern sign reversal—does not identify a species-universal environmental response, independent climate effect or spatially varying selection coefficient. The eastern difference's simultaneous interval includes zero. Its nominal interval should not be elevated by selecting that sector after the source was inspected.
+
+Out-of-genus and out-of-geography tests reinforce the scale issue. Small environmental predictive gains in familiar portions of the source flora increasingly weakened when the source taxa and neighbouring occurrence environments were removed. The fixed nonlinear learner illustrates why a gain relative to the learner's own coordinate-only baseline cannot establish a better full predictive model or ecological universality. More flexible response functions might be plausible but these results do not demonstrate a single portable water–white mechanism.
+
+### 4.3 | Photographic missingness is an inferential problem, not a footnote
+
+A majority of original photo opportunities lacked a classifiable four-colour phenotype. Wet and dry source deciles differed substantially in classifier success. Such missingness cannot be cured by merely counting more downloaded images; the classifier outcome itself may depend on lighting, flower type, background, observer preferences and habitat. The MNAR tipping exercise is important because a feasible difference in **unknown** photo-colour proportions could erase the latent wet–dry gradient even where observed-classified contrast is strong. No available IPW model can prove its missing-at-random assumption from these images alone.
+
+Photo-white labels also do not imply chemically pigment-free petals, a particular UV absorption pattern or bee-perceived achromatic colour. Some white photographed flowers may contain nonvisual flavonoids; some colourful petals may appear white under exposure or ROI mislocalization. Expert botanical descriptions mitigate one measurement channel but are much smaller, qualitatively coarser, and paired with the original photo-site geography. Without calibrated organ-specific measurements from independent sites, conclusions must remain framed as **observed digital flower colours**.
+
+### 4.4 | Competing explanations and suitable future tests
+
+The photographic patterns motivate several **competing**, not mutually exclusive, hypotheses. Drier environments may favour protective pigmentation or alter floral thermal environments; wetter communities may differ in pollinators or coloured-lineage species pools; local soil and vegetation may confound rain and visible floral hue. Conversely, conserved developmental biases or historical range filling may produce similar averages without an ongoing advantage to either colour. The source lacks actual pollen/seed relative fitness, pigment concentrations, plant genotypes and known evolutionary transitions. Nothing in the present contrasts shows a stabilizing 50:50 white-versus-coloured polymorphism: even the 46.95% world-photo statistic is conditional on classification and sampling.
+
+A next-stage experiment must compare morph-verified genotypes within well-sampled populations under controlled water treatments and record pigment chemistry, pollinator responses and both seed and pollen success. A distinct macroecological follow-up should obtain independent, standardized botanical/spectrometric flower-colour observations with original **non-the historical source study** occurrence coordinates and revisit the **same**, prespecified BIO12 comparison across source regions. Such designs could distinguish trait measurement error from biogeographical filtering and selection, unlike scanning more weather axes in the same archived photo outcomes.
+
+## 5 | Main conclusions
+
+Among 20,694 climatically complete, genus-qualified photographed taxa, white visible colour was associated with more annual precipitation and atmospheric water vapour under broad genus/geographic adjustment. The association was less well identified in strict-image, local congeneric and independent botanical-colour comparisons, and the same photographed hue outcomes did not demonstrate a common positive within-species rainfall slope. These results support a **scale- and measurement-conditional macroecological pattern**, not a universal climate-colour law, selection coefficient or pigment cost/benefit trade-off. Testing the latter will require source-independent measurements at the level of floral organs, individuals and populations.
+
+## References
+
+Dalrymple, R. L., Kemp, D. J., Flores-Moreno, H., Laffan, S. W., White, T. E., Hemmings, F. A., & Moles, A. T. (2020). Macroecological patterns in flower colour are shaped by both biotic and abiotic factors. *New Phytologist*, **228**, 1972–1985. https://doi.org/10.1111/nph.16737
+
+Di Cecco, G. J., Barve, V., Belitz, M. W., Stucky, B. J., Guralnick, R. P., & Hurlbert, A. H. (2021). Observing the observers: How participants contribute data to iNaturalist and implications for biodiversity science. *BioScience*, **71**, 1179–1188. https://doi.org/10.1093/biosci/biab093
+
+Fick, S. E., & Hijmans, R. J. (2017). WorldClim 2: New 1-km spatial resolution climate surfaces for global land areas. *International Journal of Climatology*, **37**, 4302–4315. https://doi.org/10.1002/joc.5086
+
+Koski, M. H., & Galloway, L. F. (2020). Geographic variation in floral color and reflectance correlates with temperature and colonization history. *Frontiers in Plant Science*, **11**, 991. https://doi.org/10.3389/fpls.2020.00991
+
+Poggio, L., de Sousa, L. M., Batjes, N. H., Heuvelink, G. B. M., Kempen, B., Ribeiro, E., & Rossiter, D. (2021). SoilGrids 2.0: Producing soil information for the globe with quantified spatial uncertainty. *SOIL*, **7**, 217–240. https://doi.org/10.5194/soil-7-217-2021
+
+Trethowan, L. A., Jennings, L., Bramley, G., Briggs, M., Clark, R., Dawson, S., ... Rustiami, H. (2024). Island area, isolation and climate effects upon flower traits in a megadiverse archipelago. *Journal of Biogeography*, **51**, 1659–1669. https://doi.org/10.1111/jbi.14751
+
+Xiong, Y., Varadarajan, B., Wu, L., Xiang, X., Xiao, F., Zhu, C., ... Chandra, V. (2024). EfficientSAM: Leveraged masked image pretraining for efficient segment anything. *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition*, 16111–16121. https://doi.org/10.1109/CVPR52733.2024.01525
+
+**Reference completion gate:** The four original ecological references plus WorldClim, SoilGrids and EfficientSAM have been verified against their publisher/conference records. Original iNaturalist download/snapshot dataset citation and the custom ROI-v4 model/source version require exact archived source identifiers and independent licence review before final submission; neither is invented here. See [source file withheld for blinded review].
+
+## Data and code availability
+
+**BLINDED-REVIEW SOURCE ACCESS — NOT YET PROVIDED.** Archived source photographic hue and environmental inputs, analysis code, original model results, and independent receipt verifiers will be made available in an appropriately licensed and reviewer-anonymized stable archive. The private reviewer access link and the permanent dataset record **have not been established**; the manuscript must not be submitted until these are supplied. GitHub source mirrors alone do not satisfy the journal's stable archiving requirement. Original photo/licence restrictions may require separately justified access conditions.
+
+## Main tables
+
+**Table 1. Photographic sampling units and analytical eligibility.** These observations are not a single species-attrition funnel; their underlying photo IDs overlap and their conditioning variables differ.
+
+| Evidence level | Photo opportunities/colour support | Species / genera | Response and interpretation |
+|---|---|---|---|
+| Original unique photo opportunity | 100,543 images; 45,953 classifiable; 54,590 unknown | 42,111 named taxa | Four digital flower hue classes; no genetic morph census |
+| Climate26 geographic complete cases | 45,836 classifiable images | 25,028 taxa | Photo-site source environmental values |
+| Climate26 congeneric signed direction | Subset of above | 20,694 species /1,934 genera | Main genus-equal signed colour/BIO12 |
+| Soil36 complete cases | 31,925 classifiable images | 20,786 taxa | Distinct 36-variable complete-case population |
+| Soil36 congeneric signed direction | Subset of above | 16,801 species /1,665 genera | Sensitivity, not paired with climate26 slope taxa |
+| Matched congeneric/cell world | 14,268 photos | 9,370 species /845 genera | Same species B/C geographic-conditioning contrast |
+| Matched congeneric/cell East | 4,149 photos | 2,886 species /280 genera | Same eastern species B/C contrast |
+| Same-original-photo between/within rain | 21,448 original images | 6,143 species /787 genera | Different statistical levels on identical photo outcomes |
+| Independently described strict botanical colour (East) | 2,355 matched the historical source study photo-site records | 670 taxa /58 genera | Binary white–blue botanical colour, original the historical source study site climates |
+
+**Table 2. Rainfall and photographic white: signed slopes under changing designs.** Values are percentage points of originally classified photo-white per respective source BIO12 SD. Positive coefficients are not claims of pigment/relative fitness. Intervals are approximately 24-contrast maxT within-design for main macro models, with separately indicated ordinary source paired intervals.
+
+| Cohort / design | White–rain slope or difference (pp/SD) | 95% source interval | Inferential role |
+|---|---:|---|---|
+| World climate26, genus equal, broad geography | +2.255 | +0.319 to +4.190 | Broad conditional positive |
+| World climate26, strict photo, genus equal | +1.229 | −2.046 to +4.504 | Strict quality nonconfirmation |
+| World climate26, within genus × coarse cell | +0.808 | −3.556 to +5.172 | Local geographic support nonconfirmation |
+| East fixed species broad B versus genus-cell C | +3.178 (B−C) | −0.258 to +6.613 | Matched model contrast; 24-maxT nonconfirmation |
+| Original matched-photo *between* congeners (6,143 species) | +2.722 | +0.705 to +4.714 | Ordinary original paired genus bootstrap |
+| Original matched-photo *within* named species | −0.511 | −1.436 to +0.335 | No positive signed within-species evidence |
+| Original matched-photo between minus within | +3.233 | +1.175 to +5.400 | Exploratory ordinary paired difference; not climate selection |
+
+## Figure legends
+
+**Figure 1. Broad global photographed white–moisture coefficients and their source-based limits.** (a) Original 26- and 36-variable held-out four-hue Brier gains on different complete-case populations. (b) Genus-equal white–annual rain slope in broad, strict-photograph and genus×coarse-cell designs (within-design simultaneous intervals). (c) Identical-species world and eastern broad-minus-cell adjustment differences (within-design 24-contrast intervals). (d) Source-independent botanical-description white–blue East versus rest comparison, using original the historical source study photo-site climates. The panels have different units and should not be used as one joint test. Archived image: [source file withheld for blinded review]; source: [source file withheld for blinded review].
+
+**Figure 2. Observation/classification opportunity and same-original-photo between/within rainfall sensitivity.** (a) Original photos with classifiable and unclassified four-colour observations. (b) Driest versus wettest photographic opportunities: differing photo-classifiability rates and conditional white fractions. (c) Original 21,448 matched photo ID panel: between-congeneric positive BIO12 slope, within-named-species unsupported coefficient and paired difference, all with original bootstrap intervals. This visual is descriptive/source-preserving, not a new fitted regression or population morph census. Production source and artwork are listed in the supplement/figure manifest.
+
+**Figure 3. Taxonomic and geographic transfer of joint environmental colour prediction.** (a) Original whole-genus held-out all36 model improvements in absolute species photo hue, within-genus species deviations and within-species photo deviations, with distinct support populations. (b) Source-matched evaluation of 20,786 original soil-complete taxa under whole-genus exclusion, sector exclusion and additional 500-km source-photo footprint exclusion; training flora and covariate support change across stages. (c) Original ridge versus fixed nonlinear learner: environmental gains within each geographic baseline and the direct full-model improvement (nonlinear versus ridge); the nonlinear baseline itself performed worse geographically. All intervals are original source genus-bootstrap 95% intervals conditional on the fitted models/folds, not causal model-treatment effects. Regenerator: [source file withheld for blinded review]; figure: [source file withheld for blinded review].
+
+**Figure 4. All four original photographic flower-colour classes against two worldwide moisture gradients.** Source genus-equal climate26 (20,694 species, 1,934 genera) signed coefficients and approximate 24 hue–axis maxT 95% intervals for (a) annual precipitation BIO12 and (b) mean atmospheric vapour pressure. All four-class response probabilities sum to one; white is the only individual hue whose simultaneous interval excludes zero in both panels. Negative point coefficients for yellow/orange, red/pink and blue/purple are not individually confirmed. The panels retain original selected data support, not external colour validation or a causal pigment assay. Source: the original 1,280-row [source file withheld for blinded review]; generator: `node scripts/render_mois_four_hue_moisture.mjs --check`; artwork: [source file withheld for blinded review].
+
+## Supporting information
+
+**S1.** Exact source DOI/SHA/photographic and abiotic provenance, all 1,280 signed directional estimates and 576 matched spatial results, 20 population/quality scopes, 4 sectors and 26/36 complete-case rule.
+
+**S2.** Original classifiability selection and wet/dry MNAR tipping; continuous ROI white-pixel source; photo quality/no-causal-selection boundaries.
+
+**S3.** Within-versus-between original-photo BIO12 coefficient test, genus bootstrap and source uniqueness.
+
+**S4.** Unseen-genus, regional/500-km transfer, nonlinear geographic baseline and matched soil increment. These are different observational predictions, not independent biological test sets of a shared mechanism.
+
+**S5.** External botanical colour and original source-site climate sensitivity; source result boundaries.
+
+**Scientific disclosure:** Supporting original-source receipts and historical negative results are in [source file withheld for blinded review], [source file withheld for blinded review] and [source file withheld for blinded review]. No new photographs, phenotype labels, bootstrap worlds or test folds have been generated by the manuscript rewrite.
