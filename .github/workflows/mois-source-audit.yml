@@ -19,6 +19,8 @@ jobs:
           python-version: "3.11"
       - name: Verify exact transferred FCP source blobs, scoped numbers and negative gates
         run: python scripts/check_mois_migration.py
+      - name: Syntax-check original raw source recovery without downloading or publishing images
+        run: bash -n scripts/recover_mois_original_inputs.sh
 
   synthetic-model-tests:
     runs-on: ubuntu-24.04
