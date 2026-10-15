@@ -35,9 +35,15 @@ def test_external_moisture_extraction_requires_real_independent_sources():
     assert not (ROOT/"results/mois_external_independent_bio12_source_20261016.json").exists()
 
 
-def test_original_empirical_clade_receipt_remains_a_nonclimate_source():
-    p=ROOT/"results/mois_external_paired_flower_fruit_20261016.json"
-    assert p.exists()
-    s=p.read_text(encoding="utf-8")
-    assert "2960" in s and "clade" in s
-    assert "Not pigment mass" in s
+def test_independently_curated_flower_colour_receipt_remains_nonclimate():
+    import json
+    p=ROOT/"results/mois_external_clade_white_source_20261015.json"
+    r=json.loads(p.read_text(encoding="utf-8"))
+    assert (r["source_row_count"],r["qualified_clades"],r["n_white_species_in_all_classifiable"])==(2960,51,1449)
+    assert "no independent moisture gradient" in r["comparison_warning"]
+    assert "flower_white" in r["schema"]
+    # Out-of-scope cross-organ results are deliberately absent.
+    for path in ("results/mois_external_paired_flower_fruit_20261016.json",
+                 "scripts/analysis/mois_external_cross_organ_clade_20261016.py",
+                 "tests/test_mois_external_paired_organs_20261016.py"):
+        assert not (ROOT/path).exists()
