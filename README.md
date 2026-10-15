@@ -2,6 +2,16 @@
 
 **Scientific scope:** the association between photographed floral colour composition **among plant species** and moisture-related environment across the world. This repository is the destination for the cross-species global climate/soil analyses originally developed in [zuizui0223/fcp](https://github.com/zuizui0223/fcp). The separate **fcp** repository focuses on *within-species* photographed flower-colour variation, recurrent white–chromatic colour axes and geographic partitioning.
 
+## Consolidated ecological conclusions — 16 October 2026
+
+[**日本語：これまでの主要成果と生態学的解釈の統合**](docs/MOIS_INTEGRATED_ECOLOGICAL_FINDINGS_20261016.md) · [GEB Research Article](docs/MOIS_GEB_RESEARCH_ARTICLE_DRAFT_20261014.md) · [source-backed Figures 1–5](figures/)
+
+**Core interpretation:** In **20,694 photographed flowering-plant taxa /1,934 genera**, higher rainfall and water vapour are associated with greater photographed-white flower composition among congeners. On **identical taxa**, genus-mean rainfall gradients (**+8.555 percentage points/source SD**) are stronger than congeneric gradients (**+2.255**), while individual genera contribute mixed positive, negative and invariant directions. Taxonomic composition therefore matters, but genus turnover alone does not erase the source-conditioned congeneric correlation. Independent hand-curated **flower-colour** categories (2,960 taxa/51 clades) also show taxonomic clustering, *not* an independent flower-colour–rainfall replication.
+
+**What the pattern does not prove:** White photographs comprise **46.95%** of classifiable source photos, but photo-hue missingness exceeds half the original opportunities; this does not establish genetic colour-morph balance or pigment metabolic costs. Local/photo-quality/within-species support is less conclusive and water climate improves unseen-congener pairwise error only **0.21%** over broad geography on a **different soil-complete cohort** (95% interval spans zero). This is an ecological and biogeographical trait-composition study, not causal pigment selection or a fruit-colour study.
+
+**Manuscript decision:** Summarize the established flower-colour findings and retain existing geographic/source limitations; do not expand into unrelated traits or present source-free future analyses as completed results. Draft PR is unmerged and unsubmitted; licensed anonymized original source data, DOI and human coauthor approval remain pending.
+
 ## The main ecological question
 
 **Do photographed white versus coloured floral states covary with precipitation and atmospheric moisture among congeneric species, and how well does this relationship persist under photographic, spatial and alternative biological-measurement controls?**
