@@ -22,7 +22,7 @@ Soil36 completeness was highly unequal across original **climate26-classified ph
 | 289–941 m | 11,469 | 9,325 | **81.3%** |
 | 941–6,104 m | 11,467 | 10,058 | **87.7%** |
 
-Soil coverage was **66.8%, 67.0%, 74.3% and 68.5%** across the four 90° longitude sectors from western Pacific (180–90°W) to eastern Asia/Oceania (90–180°E). These are source photo coverage rates, not evidence that lowland plants lack soil water or that high-altitude soils are biologically more important. The soil35/soil36 complete-case ecological population differs systematically by altitude and region: inference beyond its sampled taxa requires an explicit missingness/representation design.
+Soil coverage was **66.8%, 67.0%, 74.3% and 68.5%** across the four 90° longitude sectors from 180–90°W source sector to eastern Asia/Oceania (90–180°E). These are source photo coverage rates, not evidence that lowland plants lack soil water or that high-altitude soils are biologically more important. The soil36 complete-case ecological population differs systematically by altitude and region: inference beyond its sampled taxa requires an explicit missingness/representation design.
 
 ## 3. Soil associations and predictive information are not interchangeable
 
