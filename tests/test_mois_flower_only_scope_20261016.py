@@ -17,7 +17,7 @@ def test_fcp_derived_article_keeps_floral_colour_only():
     body=raw[raw.index("## 1 | Introduction"):raw.index("## Data and code availability")]
     assert "rainfall" in body.lower() and "flower" in body.lower()
     assert "2,960" in body and "27.48%" in body
-    for forbidden in ("fruit", "果実", "S2.19", "cross-organ", "red/black"):
+    for forbidden in ("fruit", "果実", "cross-organ", "red/black"):
         assert forbidden not in body.lower(), forbidden
     assert len(body.split())<=5000
     abstract=raw[raw.index("## Abstract"):raw.index("## 1 | Introduction")]
@@ -29,11 +29,11 @@ def test_supplement_and_working_scope_exclude_cross_organ_claims():
     readiness=READINESS.read_text(encoding="utf8")
     readme=README.read_text(encoding="utf8")
     assert "### S2.18 |" in si
-    assert "### S2.19 |" not in si
+    assert "### S2.19 | The same 13 geography/climate/elevation/soil terms" in si
     assert "fruit →" not in si and "red/black fruit" not in si
     assert "mois_external_paired_flower_fruit_20261016.json" not in si+readiness+readme
     assert "mois_external_cross_organ_clade_20261016.py" not in si+readiness+readme
-    assert "S2.19" not in readiness
+    assert "S2.19" in readiness
     assert "flower-colour-only" in readiness
     assert "independent" in readme.lower() and "BIO12" in readme
 
