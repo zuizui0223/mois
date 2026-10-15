@@ -75,6 +75,27 @@ Among **32 nonindependent source-model settings**, adding the source soil5 block
 
 A new original-ZIP replayer `scripts/analysis/mois_soil_full26_alpha_fold_robustness_20261015.py` and privacy-safe machine receipt `results/mois_soil_full26_alpha_fold_robustness_20261015.json` preserve each alpha/fold result and 1,999 whole-genus bootstrap 95% intervals at `α=0.01`. Note that **the penalty scan reuses heldout folds**, not nested CV for selecting a tuning hyperparameter. The proper conclusion remains that **coarse source edaphic predictors have little demonstrated extra *transportable* predictive value over climate and geography for this selected photo-white target**, not that soil or hydrologic microsites have no floral-colour biology. The missing linked DEM terrain and uneven soil-photo completeness remain outstanding.
 
+### Independent matched-block prediction: soil does contain some source information, but most of it is not uniquely transferable
+
+The earlier negative **soil addition to a full climate model** does not tell us whether a soil-only environmental block can predict photo-white variation beyond broad geography. We therefore ran a new independent original-photo ZIP analysis holding fixed **16,801 soil36-qualified taxa /1,665 named genera** and five disjoint whole-genus test folds. Unlike S2.13's 32-way robustness check focused on soil addition, the new comparison explicitly contrasts **geography+soil5/10**, **geography+annual rainfall and vapour**, **geography+other24 climate** (leaving out precisely the two named water axes), **geography+all26 climate**, and plus-soil5/10 versions. Training-only feature scaling, clipped ridge predictions, genus-equal photo-white squared error, and 1,999 genus-bootstrap resamples of fixed predictions are consistent across the models.
+
+| Same source model (α=0.01) | Heldout genus-equal squared error | Gain beyond geography [ordinary 95%] |
+|---|---:|---:|
+| Geography only | **0.229810** | baseline |
+| Geography + soil5 | **0.228778** | **+0.001032 [−0.000012,+0.001997]** |
+| Geography + soil10 | 0.229013 | +0.000797 [−0.000299,+0.001813] |
+| Geography + rain/vapour | **0.227455** | **+0.002355 [+0.001134,+0.003574]** |
+| Geography + remaining climate24 | 0.228173 | +0.001637 [+0.000291,+0.003007] |
+| Geography + full climate26 | 0.228133 | +0.001677 [+0.000300,+0.003087] |
+
+**Biological interpretation at the correct level:** Soil predictors do not have *zero* predictive signal in the fitted source (point improvement versus geography is positive), but the **soil5-only confidence interval overlaps zero** for the original α=0.01 setting. By contrast, the two water-climate variables predict observed white-photo fractions better than soil5 by **+0.001323 [paired 95% +0.000436,+0.002214]**, with exactly matched source species. Water2 versus soil10 has an even larger positive difference **+0.001558 [+0.000662,+0.002474]**. Yet adding these **two water indices to the other 24 climate features** supplies only **+0.000040 [−0.000141,+0.000226]**, because those other source climate measurements already encode overlapping ecological variation. The distinct statistical meaning of these contrasts is central: *climate as a proxy for a complex habitat axis* is a robust observational interpretation; *rainfall alone physiologically causing loss of floral pigment* is not identified.
+
+The same directional comparison was repeated at ridge α=0.001 and 0.1 on the identical folds. Water-vs-soil5 paired gains were **+0.001334 [0.000347,0.002241]** and **+0.001179 [0.000391,0.001991]**, respectively, while the **incremental water2 gain beyond other climate24 remained near zero with intervals covering zero in all three α settings**. The previously established all26+soil5 and all26+soil10 negative increments remain present; S2.13 additionally covers four genus-fold partitions and a wider 8-value regularization grid.
+
+These results do **not** exclude local edaphic filtering, clade-specific soil preferences, rain-shadow geography, or soil topographic moisture accumulation; the original soil variables are coarse proxies, and source soil/hue missingness varies markedly by elevation. Natural topographic slope/aspect, local valley/ridge TPI, TRI and TWI require an independently sourced gridded DEM and remain **unmeasured for the real original source**, even though the separate terrain code's synthetic tests pass.
+
+New owner-source-verified replayer: `scripts/analysis/mois_soil_vs_climate_blocks_20261015.py`; safe aggregate receipt: `results/mois_soil_crossdomain_block_audit_20261015.json`; GEB Supporting Information S2.14. Neither per-genus effects nor attributed photograph/site coordinates are published.
+
 ## 5. Biogeography matters for transport
 
 We performed a stricter descriptive longitude-sector transfer using the same soil36 source species: hold out an entire 90° sector and **exclude from training every genus represented in the test sector**, so evaluation holds out both geographically distinct species and source genera. The number of training species changes substantially across sectors; no generalization to spatially unseen microhabitats or Wallace biogeographic realms is claimed.
