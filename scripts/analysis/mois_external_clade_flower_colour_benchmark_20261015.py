@@ -25,7 +25,7 @@ DOI = "10.5061/dryad.r4xgxd2sc"
 # The archived 2025 CSV uses 'black' and 'purple', not the website's
 # descriptive 'black/dark' or 'blue/purple'. All are treated as nonwhite.
 # No unrecorded synonyms or inferred whiteness are silently accepted.
-COLOURS = frozenset({"black", "black/dark", "blue", "blue/purple", "purple", "green", "orange", "pink", "red", "white", "yellow"})
+COLOURS = frozenset({"black", "black/dark", "blue/purple", "purple", "green", "orange", "pink", "red", "white", "yellow"})
 MISSING = frozenset({"", "na", "n/a", "none", "null", "unknown"})
 
 
@@ -211,11 +211,12 @@ def self_test():
             raise AssertionError("Duplicate species counted as independent")
         except ValueError as e:
             assert "appears in more than one source row" in str(e)
-    # Publication sample also uses exactly these opaque nonwhite category values.
-    p.write_text("clade,species,flower_color\nA,A_1,white\nA,A_2,purple\nA,A_3,black\nB,B_1,white\nB,B_2,green\nB,B_3,pink\n", encoding="utf-8")
-    z = run(p, draws=199, seed=1)
-    assert z["n_white_species_in_all_classifiable"] == 2
-    assert len(z["clade_resampling_diagnostic"]["selected_clade_bootstrap95_white_species_equal"]) == 2
+        # Published source uses the exact labels 'purple' and 'black', not
+        # only the website's explanatory umbrella labels.
+        p.write_text("clade,species,flower_color\nA,A_1,white\nA,A_2,purple\nA,A_3,black\nB,B_1,white\nB,B_2,green\nB,B_3,pink\n", encoding="utf-8")
+        z = run(p, draws=199, seed=1)
+        assert z["n_white_species_in_all_classifiable"] == 2
+        assert len(z["clade_resampling_diagnostic"]["selected_clade_bootstrap95_white_species_equal"]) == 2
     print("PASS synthetic external colour counts, published-category aliases, clade bootstrap, permutation and ambiguity gates (NOT external replication)")
 
 
