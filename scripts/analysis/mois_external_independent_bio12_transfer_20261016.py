@@ -117,7 +117,7 @@ def sample_bio12(points,raster_path, multiplier=1.0):
     return result,dict(bad)
 
 
-def fit_white_bio12(traits, site_climate, min_cells=5, min_clade_species=3, bootstraps=1999,seed=202610162151):
+def fit_white_bio12(traits, site_climate, min_cells=5, min_clade_species=3, min_total_species=200, min_total_clades=15, min_variable_clades=10, bootstraps=1999,seed=202610162151):
     taxa=[]
     for species,(clade,white) in traits.items():
         records=site_climate.get(species,[])
@@ -129,10 +129,15 @@ def fit_white_bio12(traits, site_climate, min_cells=5, min_clade_species=3, boot
         taxa.append((clade,white,median,latitude,lsin,lcos))
     eligible_counts=Counter(row[0] for row in taxa)
     selected=[row for row in taxa if eligible_counts[row[0]]>=min_clade_species]
-    if len(selected)<20 or len(set(row[0] for row in selected))<5:
+    clade_white=defaultdict(set)
+    for row in selected:clade_white[row[0]].add(row[1])
+    variable=sum(len(vals)==2 for vals in clade_white.values())
+    if len(selected)<min_total_species or len(clade_white)<min_total_clades or variable<min_variable_clades:
         return {'status':'insufficient_independent_species_and_clades',
                 'n_taxa_candidate':len(taxa),'n_taxa_eligible':len(selected),
-                'n_clades_eligible':len(set(row[0] for row in selected))}
+                'n_clades_eligible':len(clade_white),'n_clades_with_white_variation':variable,
+                'n_eligible_white':sum(row[1] for row in selected),
+                'predeclared_gate':{'min_species':min_total_species,'min_clades':min_total_clades,'min_variable_clades':min_variable_clades}}
     climate_sd=float(np.std([row[2] for row in selected]))
     if climate_sd<=0:raise ValueError('No source climatic gradient')
     groups=defaultdict(list)
@@ -158,7 +163,9 @@ def fit_white_bio12(traits, site_climate, min_cells=5, min_clade_species=3, boot
     lo,hi=map(float,np.quantile(bs,[.025,.975]))
     return {'status':'source_independent_climate_analysis_completed',
             'n_taxa_candidate':len(taxa),'n_taxa_eligible':len(selected),
-            'n_clades_eligible':len(groups),'rainfall_median_species_source_sd_mm':climate_sd,
+            'n_clades_eligible':len(groups),'n_clades_with_white_variation':variable,
+            'n_eligible_white':sum(row[1] for row in selected),
+            'rainfall_median_species_source_sd_mm':climate_sd,
             'white_bio12_pp_per_source_sd':beta,'ordinary_clade_bootstrap95_pp':[lo,hi],
             'n_clade_resamples_estimable':len(bs),'bootstraps':bootstraps,
             'warning':'Clade-mean centered equal-clade WLS on recorded preserved specimen environments. Not causal trait selection; not equal to Mois photo-site BIO12 scaling, original clade composition, or fixed familywise maxT tests.'}
@@ -175,7 +182,7 @@ def self_test():
         climate[k]=[(15+g*3+i*2+g*i*.12+z*.01,
                      -120+g*18+i*i+g*i*.23+z*.01,
                      500+g*35+37*math.sin(2*i+g)+z) for z in range(5)]
-    out=fit_white_bio12(traits,climate,bootstraps=99)
+    out=fit_white_bio12(traits,climate,min_total_species=20,min_total_clades=5,min_variable_clades=5,bootstraps=99)
     assert out['status']=='source_independent_climate_analysis_completed'
     assert out['n_taxa_eligible']==24 and out['n_clades_eligible']==6
     assert len(out['ordinary_clade_bootstrap95_pp'])==2
