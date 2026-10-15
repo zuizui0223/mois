@@ -22,7 +22,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 DOI = "10.5061/dryad.r4xgxd2sc"
-COLOURS = frozenset({"black/dark", "blue/purple", "green", "orange", "pink", "red", "white", "yellow"})
+# The archived 2025 CSV uses 'black' and 'purple', not the website's
+# descriptive 'black/dark' or 'blue/purple'. All are treated as nonwhite.
+# No unrecorded synonyms or inferred whiteness are silently accepted.
+COLOURS = frozenset({"black", "black/dark", "blue", "blue/purple", "purple", "green", "orange", "pink", "red", "white", "yellow"})
 MISSING = frozenset({"", "na", "n/a", "none", "null", "unknown"})
 
 
@@ -90,7 +93,7 @@ def _stats(grouped):
             "near_single_hue_fraction_ge3": sum(x <= 0.1 or x >= 0.9 for x in means) / len(means)}
 
 
-def run(path, *, draws=1999, seed=2026101501, min_clade_species=3):
+def run(path, *, draws=9999, seed=202610152328, min_clade_species=3):
     if draws < 99:
         raise ValueError("At least 99 permutations required for meaningful null diagnostic")
     by_clade, n_rows, n_missing = load_csv(path)
@@ -108,6 +111,7 @@ def run(path, *, draws=1999, seed=2026101501, min_clade_species=3):
     rng = random.Random(seed)
     eta_null = []
     near_null = []
+    near5_null = []
     for _ in range(draws):
         rng.shuffle(labels)
         start = 0
@@ -118,12 +122,29 @@ def run(path, *, draws=1999, seed=2026101501, min_clade_species=3):
         s = _stats(simulated)
         eta_null.append(s["clade_mean_eta_squared"])
         near_null.append(s["near_single_hue_fraction_ge3"])
+        if ge5:
+            ge5_means = [sum(v) / len(v) for v in simulated.values() if len(v) >= 5]
+            near5_null.append(sum(z <= .1 or z >= .9 for z in ge5_means) / len(ge5_means))
 
     def perm_result(observed, null):
         return {"observed": observed,
                 "global_species_colour_shuffle_mean": sum(null) / len(null),
                 "global_species_colour_shuffle_95": [percentile(null, .025), percentile(null, .975)],
                 "one_sided_upper_tail_permutation_p": (1 + sum(x >= observed - 1e-14 for x in null)) / (draws + 1)}
+
+    # Nonparametric resampling of the 51 observed SOURCE clades. This describes
+    # variation across selected clades, not worldwide angiosperm uncertainty.
+    bootstrap_seed, bootstrap_draws = 202610152329, 9999
+    clade_rng = random.Random(bootstrap_seed)
+    observed_groups = list(eligible.values())
+    eta_boot, white_boot, clade_white_boot = [], [], []
+    for _ in range(bootstrap_draws):
+        replicate = {i: observed_groups[clade_rng.randrange(len(observed_groups))]
+                     for i in range(len(observed_groups))}
+        summary = _stats(replicate)
+        eta_boot.append(summary["clade_mean_eta_squared"])
+        white_boot.append(summary["white_species_equal"])
+        clade_white_boot.append(summary["white_clade_equal"])
 
     return {
         "schema": "mois_external_independent_clade_flower_white_replication_v1",
@@ -136,6 +157,7 @@ def run(path, *, draws=1999, seed=2026101501, min_clade_species=3):
         "qualified_clade_min_species": min_clade_species,
         "qualified_classifiable_species": estimate["n_species"],
         "qualified_clades": estimate["n_clades"],
+        "n_white_species_in_all_classifiable": sum(sum(v) for v in by_clade.values()),
         "white_species_equal_all_classifiable": all_white,
         "white_species_equal_qualified_clades": estimate["white_species_equal"],
         "white_equal_qualified_clade_means": estimate["white_clade_equal"],
@@ -145,6 +167,14 @@ def run(path, *, draws=1999, seed=2026101501, min_clade_species=3):
             estimate["near_single_hue_fraction_ge3"], near_null),
         "n_qualified_clades_ge5": len(ge5),
         "nearly_uniform_white_or_nonwhite_clade_share_ge5": ge5_nearpure,
+        "nearly_uniform_white_or_nonwhite_clade_share_ge5_null": (perm_result(ge5_nearpure, near5_null) if ge5 else None),
+        "clade_resampling_diagnostic": {
+            "seed": bootstrap_seed, "draws": bootstrap_draws,
+            "selected_clade_bootstrap95_white_species_equal": [percentile(white_boot, .025), percentile(white_boot, .975)],
+            "selected_clade_bootstrap95_white_clade_equal": [percentile(clade_white_boot, .025), percentile(clade_white_boot, .975)],
+            "selected_clade_bootstrap95_eta_squared": [percentile(eta_boot, .025), percentile(eta_boot, .975)],
+            "warning": "Clades were not drawn at random from the world flora; intervals are conditional descriptive resampling, not population-universal confidence limits.",
+        },
         "permutations": draws, "random_seed": seed,
         "comparison_warning": ("External phylogenetic clades are not Mois nominal genera. "
                                "This tests taxonomy-conditional colour clustering in a distinct "
@@ -181,7 +211,12 @@ def self_test():
             raise AssertionError("Duplicate species counted as independent")
         except ValueError as e:
             assert "appears in more than one source row" in str(e)
-    print("PASS synthetic external colour counts, clade variance, permutation and ambiguity gates (NOT external replication)")
+    # Publication sample also uses exactly these opaque nonwhite category values.
+    p.write_text("clade,species,flower_color\nA,A_1,white\nA,A_2,purple\nA,A_3,black\nB,B_1,white\nB,B_2,green\nB,B_3,pink\n", encoding="utf-8")
+    z = run(p, draws=199, seed=1)
+    assert z["n_white_species_in_all_classifiable"] == 2
+    assert len(z["clade_resampling_diagnostic"]["selected_clade_bootstrap95_white_species_equal"]) == 2
+    print("PASS synthetic external colour counts, published-category aliases, clade bootstrap, permutation and ambiguity gates (NOT external replication)")
 
 
 def main():
@@ -189,8 +224,9 @@ def main():
     parser.add_argument("--csv", type=Path, help="Researcher-supplied official Dryad final_dataset.csv; never scraped")
     parser.add_argument("--aggregate-output", type=Path,
                         help="Optional output JSON with only population-level statistics; no taxon/clade identities")
-    parser.add_argument("--draws", type=int, default=1999)
-    parser.add_argument("--seed", type=int, default=2026101501)
+    parser.add_argument("--draws", type=int, default=9999)
+    parser.add_argument("--seed", type=int, default=202610152328)
+    parser.add_argument("--expected-sha256", help="Optional independently recorded expected SHA256 of locally provided CSV")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     if args.self_test:
@@ -198,6 +234,9 @@ def main():
         return
     if args.csv is None:
         parser.error("--csv is required unless --self-test is used")
+    digest = hashlib.sha256(args.csv.read_bytes()).hexdigest()
+    if args.expected_sha256 and digest.lower() != args.expected_sha256.lower():
+        raise ValueError(f"External CSV SHA256 mismatch: expected {args.expected_sha256}, got {digest}")
     summary = run(args.csv, draws=args.draws, seed=args.seed)
     report = json.dumps(summary, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     if args.aggregate_output:
