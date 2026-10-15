@@ -67,6 +67,14 @@ The ten soil features again fail to deliver a positive out-of-genus increment, e
 
 Replayer: `scripts/analysis/mois_full26_soil10_transfer_20261015.py`. Source-derived frozen safe machine values: `results/mois_full26_climate_soil10_transfer_20261015.json`. Bootstrap 1,999 entire sampled genera (seed 202610151710) over original heldout-fold loss results; intervals condition on fixed fitted folds. No original image IDs, source taxon labels or site positions deposited.
 
+### Is the negative soil increment robust to ridge regularization and genus folds?
+
+An additional original-SHA256-verified source reanalysis crossed **eight ridge regularization strengths (α 0.0003–1.0)** with **four different complete fivefold genus-only assignments**, keeping the exact **16,801 soil36-complete photographed source taxa /1,665 genera** and comparing the same geography+all26 climate predictors with soil5/soil10 additions under each setting. Training-only feature standardization, clipped photo-white predictions and equal-genus heldout squared error remained unchanged.
+
+Among **32 nonindependent source-model settings**, adding the source soil5 block increased heldout prediction loss in **31/32**; adding soil10 increased loss in **32/32**. Only soil5 under one salted partition with the strongest penalty `α=1.0` improved prediction, by just **+0.000012** in loss reduction (+0.000011947 before rounding). At the original penalty 0.01, all four genus splits yielded negative soil5 and soil10 increments. Across the four fixed-fold source bootstrap experiments, some 95% intervals **crossed zero**, so these are robust *directions of estimated errors across exploratory configurations*, not four independently confirmed effects.
+
+A new original-ZIP replayer `scripts/analysis/mois_soil_full26_alpha_fold_robustness_20261015.py` and privacy-safe machine receipt `results/mois_soil_full26_alpha_fold_robustness_20261015.json` preserve each alpha/fold result and 1,999 whole-genus bootstrap 95% intervals at `α=0.01`. Note that **the penalty scan reuses heldout folds**, not nested CV for selecting a tuning hyperparameter. The proper conclusion remains that **coarse source edaphic predictors have little demonstrated extra *transportable* predictive value over climate and geography for this selected photo-white target**, not that soil or hydrologic microsites have no floral-colour biology. The missing linked DEM terrain and uneven soil-photo completeness remain outstanding.
+
 ## 5. Biogeography matters for transport
 
 We performed a stricter descriptive longitude-sector transfer using the same soil36 source species: hold out an entire 90° sector and **exclude from training every genus represented in the test sector**, so evaluation holds out both geographically distinct species and source genera. The number of training species changes substantially across sectors; no generalization to spatially unseen microhabitats or Wallace biogeographic realms is claimed.
