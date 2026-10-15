@@ -2,6 +2,14 @@
 
 **Date:** 14 October 2026. **Status:** paper draft for coauthor review, **not submitted and not ready for anonymized external review**.
 
+## 16 October 2026 — integrated ecological decision (current; older sections are historical)
+
+**Scientific direction is fixed on FCP-derived flower colour ecology.** [Integrated evidence and ecological interpretation](MOIS_INTEGRATED_ECOLOGICAL_FINDINGS_20261016.md) consolidates the supported worldwide water–white association, stronger genus-mean than congeneric rainfall gradients, heterogeneous genus contributions, independent flower-colour-only taxonomic clustering, geography/soil/elevation confounding and limited species-pair prediction. No out-of-scope fruit-colour analyses remain in the current manuscript, SI or PR source scripts.
+
+**Current manuscript:** Research Article **4,970 main-text words**, structured abstract **282 words**; **five source-backed figures and two tables**; blinded and line-numbered derivatives regenerated. Current GEB argument is **global taxonomic/environmental association at distinct observational grains**, not the first worldwide colour–moisture correlation and not a selection-cost experiment. Previous dated figures and paper word counts below describe historical revisions and **must not be mistaken for the current draft**.
+
+**Clear science GO/HOLD:** GO for coauthor reading and FCP/ecological interpretation. Independent external white–BIO12 coefficient, physical DEM terrain morphology, genetic morph ratio, pigment costs, pollen/seed fitness and pollinator selection **have not been demonstrated**; they are not prerequisites for *describing* the original conditional source association but cannot be claimed as discoveries. HOLD for publisher-accessible licensed/anonymized raw-photo and source climate data, stable archive/DOI, author permissions, final figures/references and actual journal upload. Draft PR remains open and unmerged.
+
 ## Scientific editorial decision
 
 ### 16 October 2026 — direct GBIF specimen search reveals taxonomic source attrition
