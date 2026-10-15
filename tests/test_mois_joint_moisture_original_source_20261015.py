@@ -39,8 +39,13 @@ def test_synthetic_two_axis_rotation_and_wls_model_contrasts():
     for name,idx in mod.MODELS.items():
         assert points[name].shape==(len(idx),)
         assert boots[name].shape==(79,len(idx))
-        np.testing.assert_allclose(boots[name],
-            np.tile(points[name],(79,1)),rtol=0,atol=1e-13)
+    # The correct full model includes every source predictor with an explicit
+    # nonzero generative coefficient: cluster reweighting cannot change beta.
+    # Reduced models omit genuine predictors and need NOT share that property.
+    np.testing.assert_allclose(points["geo4_joint"],100*beta,rtol=0,atol=1e-11)
+    np.testing.assert_allclose(boots["geo4_joint"],
+        np.tile(points["geo4_joint"],(79,1)),rtol=0,atol=1e-11)
+    assert np.std(boots["geo3_rain_only"][:,-1])>1e-4
     original=points["geo4_joint"][-2:]
     r=np.array([[1,1],[1,-1]])/np.sqrt(2)
     np.testing.assert_allclose(np.linalg.norm(r@original),np.linalg.norm(original),atol=1e-13)
