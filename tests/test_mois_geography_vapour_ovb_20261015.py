@@ -103,5 +103,5 @@ def test_editorial_limit_on_ecological_interpretation():
     assert '+2.60 points per 10°' in ms
     assert 'do **not** show causal vapour mediation' in ms
     assert 'coefficient-change algebra' in memo
-    assert 'not a counterfactual intervention' in memo
+    assert '*not* a counterfactual intervention' in memo
     assert len(ms[ms.index('## 1 | Introduction'):ms.index('## Data and code availability')].split())<=5000
