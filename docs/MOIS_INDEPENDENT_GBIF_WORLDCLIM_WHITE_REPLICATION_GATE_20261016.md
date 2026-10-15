@@ -1,0 +1,42 @@
+# Independent specimen-based moisture test: source acquisition and analysis gate
+
+**16 October 2026 — prospective replication design, not completed climate inference.** This is an executable protocol for the outstanding independent ecological test in the Mois GEB draft. The only completed independent empirical reanalysis to date is the **2,960-species colour-only Dryad sample** (clade clustering and flower–fruit contingency), and **not** an independent moisture association. Do not substitute original Mois photographed coordinates or previously fitted abiotic values to close this gap.
+
+## Explicit question and new test target
+
+Do *manually curated, independently scored plant species flower-colour labels* independently covary with annual precipitation BIO12 among congeneric or clade-related species, when **the climates are extracted from specimen-backed occurrences** rather than the original Mois/iNaturalist flower-photo localities?
+
+A new supplementary code pathway is added: `scripts/analysis/mois_external_independent_bio12_transfer_20261016.py`. On **actual** user-supplied GBIF occurrence CSV/TSV and a **WorldClim annual precipitation (BIO12) GeoTIFF**, it estimates a geographically controlled, clade-centred **visible-white species fraction versus independent species-range median precipitation** slope and 1,999 whole-clade bootstrap draws. The result uses the **original 51 source clade groups**, not the 1,934 Mois genera. The manuscript should label it *prospective source-independent descriptive climate transfer* only when the raw data, sample eligibility and calibration pass.
+
+## Identifiable input sources, not inferred or fetched
+
+1. **External published flower/fruit traits:** Sinnott-Armstrong et al. Dryad DOI [10.5061/dryad.r4xgxd2sc](https://doi.org/10.5061/dryad.r4xgxd2sc); exactly 2,960 taxa/51 clades in locally recovered `final_dataset.csv`. Input SHA256: `a253308785e4cbd0e361b3ca04cdfdae29c523eefa843375cebf8030ee0874af`. The local reader rejects any different checksum, unexpected source columns or duplicate binomial names.
+2. **GBIF occurrence download:** a **separately generated, citable GBIF download** for these plant taxa (GBIF download DOI `10.15468/dl.*`). Supply the **user-authorized download export** CSV/TSV with `gbifID`, `scientificName`, `decimalLatitude`, `decimalLongitude`, `basisOfRecord`, `occurrenceStatus`, `year`, `datasetKey`, and preferably `coordinateUncertaintyInMeters`, `issue`, `establishmentMeans`. **Only PRESERVED_SPECIMEN is retained by default.** This reduces but does not eliminate observation/cultivation or geographical representation bias. The scraper/interactive GBIF portal is not called by the pipeline. GBIF documents that bulk occurrence downloads require a registered user and generate an associated DOI: [official GBIF API downloads](https://techdocs.gbif.org/en/data-use/api-downloads). Rather than using high-offset species-by-species public search, procure a **single permitted bulk download**.
+3. **Independent site climate:** a clearly cited **WorldClim BIO12 annual precipitation raster** (mm/year; e.g. WorldClim version 2.1). Supply the exact local single-band GeoTIFF and version/resolution citation. The program calculates a SHA256 hash of the downloaded raster and records any user-specified multiplier. Do **not** substitute temperature, aridity (precipitation/PET), source Mois BIO12 per-photo means, soil available-water proxies or an independently unspecified annual-mean climatology for this exact test.
+
+**As of this update: actual GBIF specimen download DOI and linked WorldClim raster have not been acquired in the working environment.** The Dellinger et al. (2026) article deposited earlier species occurrences and analysis in its Vienna Phaidra repository (https://phaidra.univie.ac.at/o:2098641), but the current retrieval displayed access verification and its source data were not loaded, replayed or silently used. The connected public-browser result proves a prior ecological study exists, **not** ownership or a new replication on original 2,960 independent source labels.
+
+## Spatial and statistical controls fixed before evaluating climate coefficients
+
+- Taxon normalization: exact genus+specific epithet from public `genus_species` matched to species binomial from GBIF `scientificName`. This **does not** resolve synonyms, ambiguous accepted taxa, hybrids or incorrect identifications. Any alias repair must be separately audited, not silently fuzzy-matched.
+- GBIF records: accepted post-2010 `PRESERVED_SPECIMEN` with `occurrenceStatus=PRESENT` (or original export blank); reject invalid 0/0 coordinates, source coordinate flags, uncertainty greater than 5 km when present, and explicitly cultivated/introduced status. Missing coordinate uncertainty or establishment flags **do not** constitute reliable evidence of native range; these remain representation risks.
+- Spatial sampling: collapse repeated `species × 0.25° latitude/longitude source cell` to one record (not equal-area; do not call it a 25-km buffer). Use accepted unique source IDs. Retain species with **≥5 independent thinned source cells** and clades with **≥3 surviving species**, and report all attrition denominators. No source-specific climate values should be imputed at missing raster pixels.
+- Species climate: use **median sampled BIO12** across independently preserved, georeferenced specimen-site raster values; geography nuisance consists of species-level mean absolute latitude and circular mean longitude. Standardize rainfall by SD **among eligible independent-source taxa**, not by the original 736.42 mm FCP PHOTO-site source SD. These two estimates may share direction but **are not numerically interchangeable**.
+- Model: centre `white, BIO12, |latitude|, sin(longitude), cos(longitude)` **within each original clade**; weighted least squares gives each clade one equal total vote (weights `1/n_g`). Report both sign and effect size, ordinary clade-bootstrap95 based on 1,999 clade resamples. **No claim of original source 24-maxT familywise confirmation** is authorized from this new result. Clades are selected nonrandomly and not independent phylogenetic replicate nodes.
+- Decision gate: report an ecological direction only after completing the exact external source and raster extraction, original-source SHA + cited GBIF DOI, matched species and clade attrition and estimated interval. If retained taxa/clades are too few or the design matrix is rank-deficient, return a **non-inferential stop result**, not a positive/negative climate estimate.
+
+## Owner-run command once licensed sources are available
+
+```bash
+python scripts/analysis/mois_external_independent_bio12_transfer_20261016.py \
+  --traits /your/saved/final_dataset.csv \
+  --gbif-occurrences /your/GBIF_PRESERVED_SPECIMEN_download.csv \
+  --gbif-download-doi 10.15468/dl.YOUR_REAL_DOWNLOAD_KEY \
+  --worldclim-bio12 /your/wc2.1_2.5m_bio_12.tif \
+  --worldclim-citation 'WorldClim v2.1, published version, resolution and period confirmed' \
+  --output /your/private/mois_independent_bio12_receipt.json
+```
+
+The download DOI, file path and raster citation above are explicitly **user-supplied placeholders**, not a claimed available source. Run `python scripts/analysis/mois_external_independent_bio12_transfer_20261016.py --self-test` to check the synthetic estimator without GBIF or climate data; passing it **does not** reproduce a species–rainfall result. Geographic occurrence coordinates remain only within the user-provided runtime; published code and its future receipt retain **aggregate eligible-sample statistics and source hashes**. Bibliographic sources: [Dellinger et al. 2026](https://doi.org/10.1002/ajb2.70044), [Fick & Hijmans 2017](https://doi.org/10.1002/joc.5086) and source-specific WorldClim 2.1 documentation.
+
+**Research decision:** The independent flower-colour clustering and paired reproductive organ tests advance the inference that taxonomy affects pooled hue patterns; they do **not** demonstrate the claimed white–BIO12 relationship in independently located plants. Only the documented third-source occurrence + climate join can address the latter.
