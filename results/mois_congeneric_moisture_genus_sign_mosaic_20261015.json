@@ -1,0 +1,222 @@
+{
+  "schema": "mois_congeneric_moisture_genus_sign_mosaic_v1",
+  "date": "2026-10-15",
+  "original_photo_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "original_environment_sha256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "source_support": {
+    "n_original_photos": 100543,
+    "n_climate26_photos": 45836,
+    "n_primary_species": 20694,
+    "n_primary_genera": 1934,
+    "n_primary_eligible_classified_photos": 38498
+  },
+  "estimand": "Signed contribution of each nominal genus to one worldwide genus-centred species-level photographic white/moisture WLS coefficient after the same global pooled within-genus geographic adjustment; individual signs are not separate genus regression significance tests.",
+  "randomization": "1999 within-genus permutations of source species photographic-white fractions with genus sample sizes and white composition, original photo depth and source species environment/geography held fixed. Both environmental axes share each permutation. Conditional retrospective tests, not programme-wide multiple-testing adjustment.",
+  "cases": {
+    "3": {
+      "minimum_photo_classifiable_species_per_genus": 3,
+      "n_taxa": 20694,
+      "n_genera": 1934,
+      "n_photo_white_variable_genera": 1549,
+      "n_photo_white_invariant_genera": 385,
+      "permutations": 1999,
+      "permutation_seed": 2026101603,
+      "axes": {
+        "wc_bio12": {
+          "source_wls_slope_pp_per_environment_sd": 2.254545,
+          "n_positive_contributing_genera": 830,
+          "n_negative_contributing_genera": 719,
+          "n_no_within_genus_photo_white_variation": 385,
+          "fraction_positive_among_all_genera": 0.429162,
+          "fraction_positive_among_variable_genera": 0.53583,
+          "permuted_positive_fraction_mean": 0.499595,
+          "permuted_positive_fraction_interval95": [
+            0.475759,
+            0.524855
+          ],
+          "permuted_positive_fraction_upper_tail_p": 0.004,
+          "permuted_slope_interval95_pp": [
+            -1.235408,
+            1.217171
+          ],
+          "permuted_global_slope_upper_tail_p": 0.0005,
+          "share_of_positive_covariance_from_top_tenth_of_genera": 0.602834
+        },
+        "wc_vapr_annual_mean": {
+          "source_wls_slope_pp_per_environment_sd": 3.95185,
+          "n_positive_contributing_genera": 841,
+          "n_negative_contributing_genera": 708,
+          "n_no_within_genus_photo_white_variation": 385,
+          "fraction_positive_among_all_genera": 0.43485,
+          "fraction_positive_among_variable_genera": 0.542931,
+          "permuted_positive_fraction_mean": 0.496569,
+          "permuted_positive_fraction_interval95": [
+            0.471917,
+            0.522272
+          ],
+          "permuted_positive_fraction_upper_tail_p": 0.0005,
+          "permuted_slope_interval95_pp": [
+            -1.733677,
+            1.721169
+          ],
+          "permuted_global_slope_upper_tail_p": 0.0005,
+          "share_of_positive_covariance_from_top_tenth_of_genera": 0.579967
+        }
+      }
+    },
+    "5": {
+      "minimum_photo_classifiable_species_per_genus": 5,
+      "n_taxa": 18164,
+      "n_genera": 1184,
+      "n_photo_white_variable_genera": 1058,
+      "n_photo_white_invariant_genera": 126,
+      "permutations": 1999,
+      "permutation_seed": 2026101605,
+      "axes": {
+        "wc_bio12": {
+          "source_wls_slope_pp_per_environment_sd": 1.755768,
+          "n_positive_contributing_genera": 569,
+          "n_negative_contributing_genera": 489,
+          "n_no_within_genus_photo_white_variation": 126,
+          "fraction_positive_among_all_genera": 0.480574,
+          "fraction_positive_among_variable_genera": 0.537807,
+          "permuted_positive_fraction_mean": 0.497884,
+          "permuted_positive_fraction_interval95": [
+            0.466919,
+            0.52741
+          ],
+          "permuted_positive_fraction_upper_tail_p": 0.004,
+          "permuted_slope_interval95_pp": [
+            -1.169035,
+            1.248292
+          ],
+          "permuted_global_slope_upper_tail_p": 0.004,
+          "share_of_positive_covariance_from_top_tenth_of_genera": 0.553877
+        },
+        "wc_vapr_annual_mean": {
+          "source_wls_slope_pp_per_environment_sd": 2.770112,
+          "n_positive_contributing_genera": 561,
+          "n_negative_contributing_genera": 497,
+          "n_no_within_genus_photo_white_variation": 126,
+          "fraction_positive_among_all_genera": 0.473818,
+          "fraction_positive_among_variable_genera": 0.530246,
+          "permuted_positive_fraction_mean": 0.494183,
+          "permuted_positive_fraction_interval95": [
+            0.464083,
+            0.522684
+          ],
+          "permuted_positive_fraction_upper_tail_p": 0.008,
+          "permuted_slope_interval95_pp": [
+            -1.602311,
+            1.615084
+          ],
+          "permuted_global_slope_upper_tail_p": 0.002,
+          "share_of_positive_covariance_from_top_tenth_of_genera": 0.54573
+        }
+      }
+    },
+    "10": {
+      "minimum_photo_classifiable_species_per_genus": 10,
+      "n_taxa": 14130,
+      "n_genera": 555,
+      "n_photo_white_variable_genera": 531,
+      "n_photo_white_invariant_genera": 24,
+      "permutations": 1999,
+      "permutation_seed": 2026101610,
+      "axes": {
+        "wc_bio12": {
+          "source_wls_slope_pp_per_environment_sd": 2.821511,
+          "n_positive_contributing_genera": 297,
+          "n_negative_contributing_genera": 234,
+          "n_no_within_genus_photo_white_variation": 24,
+          "fraction_positive_among_all_genera": 0.535135,
+          "fraction_positive_among_variable_genera": 0.559322,
+          "permuted_positive_fraction_mean": 0.495896,
+          "permuted_positive_fraction_interval95": [
+            0.451977,
+            0.54049
+          ],
+          "permuted_positive_fraction_upper_tail_p": 0.003,
+          "permuted_slope_interval95_pp": [
+            -1.248872,
+            1.109332
+          ],
+          "permuted_global_slope_upper_tail_p": 0.0005,
+          "share_of_positive_covariance_from_top_tenth_of_genera": 0.513836
+        },
+        "wc_vapr_annual_mean": {
+          "source_wls_slope_pp_per_environment_sd": 2.354546,
+          "n_positive_contributing_genera": 284,
+          "n_negative_contributing_genera": 247,
+          "n_no_within_genus_photo_white_variation": 24,
+          "fraction_positive_among_all_genera": 0.511712,
+          "fraction_positive_among_variable_genera": 0.53484,
+          "permuted_positive_fraction_mean": 0.497351,
+          "permuted_positive_fraction_interval95": [
+            0.455744,
+            0.538606
+          ],
+          "permuted_positive_fraction_upper_tail_p": 0.0455,
+          "permuted_slope_interval95_pp": [
+            -1.587061,
+            1.608077
+          ],
+          "permuted_global_slope_upper_tail_p": 0.0025,
+          "share_of_positive_covariance_from_top_tenth_of_genera": 0.50547
+        }
+      }
+    },
+    "20": {
+      "minimum_photo_classifiable_species_per_genus": 20,
+      "n_taxa": 9675,
+      "n_genera": 225,
+      "n_photo_white_variable_genera": 223,
+      "n_photo_white_invariant_genera": 2,
+      "permutations": 1999,
+      "permutation_seed": 2026101620,
+      "axes": {
+        "wc_bio12": {
+          "source_wls_slope_pp_per_environment_sd": 3.371794,
+          "n_positive_contributing_genera": 136,
+          "n_negative_contributing_genera": 87,
+          "n_no_within_genus_photo_white_variation": 2,
+          "fraction_positive_among_all_genera": 0.604444,
+          "fraction_positive_among_variable_genera": 0.609865,
+          "permuted_positive_fraction_mean": 0.498417,
+          "permuted_positive_fraction_interval95": [
+            0.434978,
+            0.565022
+          ],
+          "permuted_positive_fraction_upper_tail_p": 0.0005,
+          "permuted_slope_interval95_pp": [
+            -1.303762,
+            1.30379
+          ],
+          "permuted_global_slope_upper_tail_p": 0.0005,
+          "share_of_positive_covariance_from_top_tenth_of_genera": 0.428191
+        },
+        "wc_vapr_annual_mean": {
+          "source_wls_slope_pp_per_environment_sd": 3.769777,
+          "n_positive_contributing_genera": 134,
+          "n_negative_contributing_genera": 89,
+          "n_no_within_genus_photo_white_variation": 2,
+          "fraction_positive_among_all_genera": 0.595556,
+          "fraction_positive_among_variable_genera": 0.600897,
+          "permuted_positive_fraction_mean": 0.498117,
+          "permuted_positive_fraction_interval95": [
+            0.430493,
+            0.560538
+          ],
+          "permuted_positive_fraction_upper_tail_p": 0.0025,
+          "permuted_slope_interval95_pp": [
+            -1.872011,
+            2.015106
+          ],
+          "permuted_global_slope_upper_tail_p": 0.0005,
+          "share_of_positive_covariance_from_top_tenth_of_genera": 0.440264
+        }
+      }
+    }
+  },
+  "limits": "Results are classifier-conditional and opportunistically sampled. Genus names are not a molecular phylogeny; positive covariance does not demonstrate all genera have positive ecological slopes or any water-driven selection. Top-tenth contribution is the share of POSITIVE covariance mass, not causal explained variance. No original photo IDs, named taxa, sites, genetic morphs, pollinator fitness or pigment costs are deposited."
+}
