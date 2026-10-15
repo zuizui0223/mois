@@ -143,6 +143,22 @@
     "added_env_after_genus_R2_of_total_white_variance": 0.0022348400706378294,
     "genus_identity_R2_is_in_sample_many_group_means_not_species_tree": true
   },
+  "all_soil36_classifiable_species_without_congeneric_gate_species_equal": {
+    "eligible_species": 20786,
+    "observed_named_genera": 4853,
+    "source_classifiable_photo_rows": 31925,
+    "species_equal_observed_photo_white_mean": 0.4624333889012507,
+    "all13_in_sample_pooled_white_R2": 0.012806646762199388,
+    "all13_five_block_shapley": {
+      "Geography": 0.0023493569301890034,
+      "Moisture": 0.004299204156943364,
+      "Temperature and radiation": 0.001469952924253766,
+      "Elevation": 0.0014472916120755984,
+      "Soil5": 0.0032408411387376576
+    },
+    "BIO12_full13_slope_pp_per_original_source_soil_site_SD": 2.658888954703096,
+    "warning": "Only species-equal descriptive overall environmental fit; no >=3 congeneric species condition; no bootstrap family or independent occurrence-site replication for this sensitivity."
+  },
   "genus_equal_999_cluster_bootstrap": {
     "draws": 999,
     "seed": 202610161210,
