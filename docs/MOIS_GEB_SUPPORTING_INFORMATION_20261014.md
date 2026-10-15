@@ -452,6 +452,37 @@ No genetic flower-colour polymorphism, plant relative fitness, effective source 
 
 Original photo/environment source-only script: scripts/analysis/mois_environment_block_shapley_residual_cv_20261015.py. Frozen privacy-safe aggregate result with both complete five-block and genus-residual target calculations: results/mois_env_shapley_and_genus_residual_transfer_20261015.json. Independent interpretation document: docs/MOIS_ENVIRONMENT_BLOCK_PARTITION_GENUS_RESIDUAL_TRANSFER_20261015.md. Real archived photo/site input source ZIPs remain outside public GitHub, and public CI validates numerical source receipts and synthetic properties rather than re-executing them.
 
+### S2.17 | Source-independent test-genus white mean: predicting differences between two unseen congeneric taxa
+
+**A distinct prediction target, not another photograph recolouring.** The prior genus-centred unseen-genus regression (S2.16) evaluated each species' photo-white fraction minus the mean of its *test genus*, a retrospective response not available for forecasting the unknown absolute white fraction of a new genus. To test how far the **congeneric colour–environment slope itself** transfers, we construct a *pairwise difference* target on the **same 16,801 original soil36-complete photographed taxa, 1,665 nominal genera and 26,163 original classifiable photos**. Both original source ZIP SHA256 hashes, original photo-ID deduplication and the source hue classifier were independently rechecked. All genera contain at least three qualified source taxa.
+
+For test congeners `i` and `j`, predict `white_photo_fraction_i − white_photo_fraction_j` by the estimated difference of their site-mean environmental predictor vectors: `(x_i − x_j)β`. **No test-genus mean phenotype and no test photocolour label enter this prediction.** The two real taxon white-photo fractions are used **afterward** to score the predicted difference; the task still requires both congeners' environmental site covariates. The training genera alone supply the within-genus-centred photo-white outcomes and genus-equal, zero-intercept `ridge α=0.01` coefficient. Training-fold-only environmental normalization prevents test-fold scaling leakage. Each of five deterministic whole-genus cross-validation folds contains only genera absent from training. Three additional salted SHA256 fivefold genus assignments on the same source species check sensitivity to the holdout partition.
+
+The squared error of the difference is averaged over **all unordered sampled species pairs within each heldout genus**, and then each genus contributes one equal weight. The explicit pairwise calculation equals the computationally efficient identity
+
+```text
+mean_{i<j} ((y_i − y_j) − (ŷ_i − ŷ_j))²
+  = (2*n_g/(n_g−1)) * mean_i ((e_i − mean_g(e))²)
+where e_i = y_i − ŷ_i .
+```
+
+This identity was independently checked on synthetic all-pairs data. The response mean `mean_g(y)` is **not** an input for generating pairwise predictions; averaging the **already observed test residuals** occurs only in the scoring identity. Thus this is a directly interpretable contrast forecast rather than one that assumes a new genus's true white mean is known.
+
+| Fivefold whole-genus assignment | Geography-only mean squared pair-difference error | Added rainfall+vapour gain [ordinary genus-bootstrap95] | Added soil5 to selected full climate/elevation gain [ordinary genus-bootstrap95] |
+|---|---:|---:|---:|
+| Original SHA256 | **0.316285** | **+0.000665 [−0.000227,+0.001506]** | **−0.000205 [−0.000803,+0.000356]** |
+| Salt 202610151 | 0.316278 | +0.000823 [−0.000067,+0.001705] | +0.000226 [−0.000340,+0.000773] |
+| Salt 202610152 | 0.316273 | +0.000796 [−0.000068,+0.001650] | +0.000105 [−0.000480,+0.000686] |
+| Salt 202610153 | 0.316179 | +0.000729 [−0.000184,+0.001622] | +0.000102 [−0.000471,+0.000653] |
+
+Each reported interval comes from **1,999 resamples of the original heldout whole-genus pairwise losses**, with frozen seeds; heldout prediction models are not refitted inside the bootstrap. The four assignments reuse the same source species and are **nonindependent** sensitivity checks, not replicate botanical datasets. A gain is the **decrease in pair-difference squared error**, not a percentage-point floral-colour coefficient, direct pigment/seed-fitness advantage, or proportion of explained biological variance.
+
+Under the original genus-fold assignment, adding rainfall+vapour reduces pairwise squared error from **0.316285 to 0.315620**: a point improvement of **+0.000665**, approximately **0.21%** of the geography-only pairwise squared error. All four source heldout assignments retain a **small positive point gain** for the moisture-related block but *every* genus-bootstrap 95% interval **includes zero**. Soil5 addition to the broader climate/elevation model changes sign across fold assignments, with intervals also spanning zero. Therefore no stable improvement of *congeneric pairwise trait-difference forecasting for unseen genera* is established by either component on the selected source. This does **not** contradict the previously significant, geographically broad **absolute photo-white fraction** genus-heldout water gain **+0.002355 [95% +0.001125,+0.003608]**: these are **different ecological targets with different error baselines** and must not be directly subtracted.
+
+**Biological implication and limitations:** The original broad white/rainfall+vapour regression among congeneric species and the stronger genus-mean gradient are source-supported observational patterns, but neither translates into precise, portable forecasts of which *two unseen congeneric species* will differ in photographed-white colour. In the same soil36-complete species support, 13 available source environment/soil variables explained only **0.6202%** of observed within-genus species-photo-white variance (S2.16). Lineage-level biology, pollinator selection, independently measured corolla reflectance, genuine local topography and genotype-level fitness data are needed to distinguish competing mechanisms; **no DEM slope/aspect/TPI/TRI or colour-dependent pollen/seed benefit was actually measured**. These pairwise tests cannot establish a pigment benefit–cost equilibrium or a global true white genetic morph frequency.
+
+Source-only reproducibility: `scripts/analysis/mois_pairwise_congeneric_transfer_20261015.py`; safe aggregate numerical result `results/mois_pairwise_congeneric_photo_white_transfer_20261015.json`; biological target rationale `docs/MOIS_PAIRWISE_CONGENERIC_TRANSFER_INDEPENDENT_VALIDATION_20261015.md`. Original attributed photos, site IDs, taxon and genus names, precise geographic coordinates and original ZIPs remain outside the public repository; CI guards source result receipts and synthetic mathematical properties without raw input access.
+
 ## S3 | Same taxon identity, geographic support, and photo-scale bridge
 
 ### S3.1 | Matched geographic species B/C reconditioning
