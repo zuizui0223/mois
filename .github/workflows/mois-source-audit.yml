@@ -59,6 +59,8 @@ jobs:
         run: python scripts/analysis/mois_dem_terrain_metrics_gate_20261015.py --self-test
       - name: Verify global pooled vs genus-centred flower-white 13-variable model algebra
         run: python scripts/analysis/mois_global_pooled_white_13env_20261016.py --self-test
+      - name: Verify metadata-only full FCP source measurement budget and checksum gate
+        run: python scripts/acquisition/mois_plan_from_fcp_full_source_counts_20261016.py --self-test
       - name: Test source-independent herbarium rainfall estimator on synthetic sites
         run: python scripts/analysis/mois_external_independent_bio12_transfer_20261016.py --self-test
       - name: Test reproducible public GBIF search and taxonomic alias pilot on mock API records
