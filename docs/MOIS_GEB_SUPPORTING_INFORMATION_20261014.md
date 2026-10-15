@@ -416,6 +416,42 @@ To explicitly test **context differences** rather than promoting independent int
 
 Full source-replayable program: `scripts/analysis/mois_soil_moisture_context_20261015.py`. Original-owner-independent source raw-ZIP calculations generated `results/mois_source_soil_moisture_context_eight_contrast_20261015.json` (aggregate-only; no source taxon, genus, ID, media or location rows). An independently implemented same-source numerical audit, submitted with its original input-checksum provenance, supports these new estimates, while public GitHub Actions compiles the raw source replayer and checks frozen scientific/estimator invariants without holding unlicensed source photography. The primary world's positive genus-adjusted photographed-white/moisture association and earlier uncertainty/transfer caveats are **not replaced** by this retrospective source-subgroup exercise.
 
+### S2.16 | Five-block within-genus environment variance and target-matched unseen-genus transfer
+
+**Core distinction:** Source descriptions of floral hue conditional on photographed white **within a genus** and absolute-white prediction for a previously unseen genus have **different outcomes and loss baselines**. An apparently useful source soil regression coefficient does not imply an additive, geographically portable soil effect, nor does a negative absolute-white holdout soil increment establish a null within-genus ecological association.
+
+On the exact original, SHA256-verified **16,801 soil36-complete taxa, 1,665 nominal genera and 26,163 classifiable photographs** of qualifying species, each taxon's original four-hue classified-photo white fraction and all source environmental variables were centred within its original nominal genus. Each genus had one total WLS weight; environmental SDs were taken from the original soil36-complete photo-site source. Thirteen selected features were allocated among **five non-overlapping feature blocks** (though their ecological information overlaps): (i) absolute latitude and circular longitude sine/cosine, (ii) annual rainfall BIO12 and annual mean vapour, (iii) warmest-month BIO5 temperature and mean solar radiation, (iv) **point elevation**, and (v) pH, SOC, nitrogen, clay and original **soil available-water proxy**. These are not causal interventions or actual DEM landform metrics.
+
+The **full13 covariate** genus-centred weighted linear model explained only **R²=0.00620237, or 0.6202% of the source species' within-genus white-photo variation**. To measure statistical predictor-block overlap, all **31 nonempty block subsets** were fitted and their weighted R² contributions were allocated to the five blocks by exact Shapley averaging across addition orders. No forward model-selection step or phylogenetic covariance correction was added. The allocations sum to the all-block WLS R².
+
+| Original source environmental block | Shapley attribution, percentage points of within-genus photographed-white variation | Unique partial R², percentage points, conditional on other four blocks |
+|---|---:|---:|
+| Original broad latitude + circular longitude | **0.1792** | 0.1608 |
+| Soil5, including soil available-water **proxy** | **0.1728** | 0.1256 |
+| Annual rainfall + atmospheric vapour | **0.1433** | 0.1188 |
+| Original point elevation | **0.0773** | 0.0045 |
+| Warm-month temperature + annual solar radiation | **0.0477** | 0.0111 |
+| **Full model explained share** | **0.6202** | *Partial components cannot be summed* |
+
+A 999-resample genus bootstrap (seed 202610151610) checks the original moments, block Shapley contributions and their descriptive sampling variability. Crucially, in-sample R² can only increase with more unconstrained linear predictors, so **Shapley attributions are nonnegative by construction**; their bootstrap intervals cannot be interpreted as evidence of a block-specific biological selective effect or independent statistical significance. Point elevation's conditional unique fraction of **0.0045 percentage points** is consistent with broad geography and climate overlap, not proof of biological irrelevance of terrain.
+
+**Matched heldout ecological target.** The previous 16,801-source-species whole-genus fivefold prediction model evaluated **absolute photo-white species fractions**; it showed a geography-to-moisture gain **+0.002355 [ordinary 95% +0.001125,+0.003608]**, while soil5 added to its climatic/elevation block showed **−0.000435 [−0.000700,−0.000171]** incremental squared-error improvement. We repeated the same original SHA256-defined five genus-disjoint folds (**3,212/3,505/3,803/3,306/2,975** species) but changed the test phenotype to a species' *photographic-white fraction minus the mean photographic-white fraction among sampled species of its own test genus*. Environmental predictors were also centred within that sampled genus. With training-only equal-genus feature standardization, a fixed ridge penalty 0.01 and zero-intercept genus-centred residual outcome, this test measures **whether a learned congeneric environment/white slope transports to heldout genera**, not prospective forecasting of their absolute colour fraction.
+
+| Genus-residual test with the same original soil36 species | Heldout residual squared error | Improvement over geographic predictors alone |
+|---|---:|---:|
+| Original broad geographical covariates only | **0.128554** | Reference |
+| Geography + annual rainfall/vapour | **0.128322** | **+0.000232 [ordinary 95% −0.000104,+0.000564]** |
+| Geography + moisture + warm temperature + solar + elevation | **0.128488** | +0.000066 |
+| Previous climate/elevation model + soil5 | **0.128570** | −0.000016 |
+
+The soil5 increment relative to the **same** preceding climate/elevation model is **−0.000082 [−0.000310,+0.000127]**. Neither that soil contrast nor the within-genus target moisture-only geography gain excludes zero in its 1,999-genus bootstrap percentile 95% interval (seed 202610151710). All are very small relative to the centred-photo-white response's baseline squared error **0.128704**. These are **fixed original genus heldout folds with genus-resampled fixed test losses**, not repeated ecological sampling or model-training bootstrap.
+
+**Critical test-information restriction:** The mean of each heldout sampled genus's species-level photographic white is needed to construct its residual outcome. The resulting within-genus-residual evaluation is an **ex post slope-transfer diagnostic** and *cannot serve as an operational prospective prediction for a genus with no colour observations*. It must not be combined with absolute-white heldout gains as if they shared a measured response. Soil5 may carry in-sample photo-white environmental descriptive information while failing to improve either ecological out-of-genus task, without proving the absence of soil-driven phenotype selection.
+
+No genetic flower-colour polymorphism, plant relative fitness, effective source availability of a real DEM, photochemically measured pigment, phylogenetic species tree, independent vegetation-region assignment or genuine TPI/TRI/slope/aspect data have been supplied by these original site records. The source-soil model is strongly selected by geography and altitude: S2.12–S2.15 remain essential sampling-support boundaries. For future independent spatial data, real biogeographic/ecoregion polygons and explicitly sourced multi-scale terrestrial DEM geomorphometry are required, with original sensitive site coordinates processed locally and not transmitted to a third-party service.
+
+Original photo/environment source-only script: scripts/analysis/mois_environment_block_shapley_residual_cv_20261015.py. Frozen privacy-safe aggregate result with both complete five-block and genus-residual target calculations: results/mois_env_shapley_and_genus_residual_transfer_20261015.json. Independent interpretation document: docs/MOIS_ENVIRONMENT_BLOCK_PARTITION_GENUS_RESIDUAL_TRANSFER_20261015.md. Real archived photo/site input source ZIPs remain outside public GitHub, and public CI validates numerical source receipts and synthetic properties rather than re-executing them.
+
 ## S3 | Same taxon identity, geographic support, and photo-scale bridge
 
 ### S3.1 | Matched geographic species B/C reconditioning
