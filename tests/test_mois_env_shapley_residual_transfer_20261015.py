@@ -99,7 +99,7 @@ def test_manuscript_scope_and_no_coordinates_leaked():
   assert sensitive not in txt
  memo=DOC.read_text(encoding="utf8")
  si=SI.read_text(encoding="utf8")
- for v in ("16,801","1,665","0.62%","0.000232","−0.000082"):
+ for v in ("16,801","1,665","0.6202%","0.000232","−0.000082"):
   assert v in memo and v in si,v
  assert "### S2.16 |" in si
  assert "not" in memo.lower()
