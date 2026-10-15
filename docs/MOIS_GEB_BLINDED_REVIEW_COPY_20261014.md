@@ -4,7 +4,7 @@
 
 ## Abstract
 
-**Aim:** Floral colour–climate associations can reflect taxonomic turnover, ecological differences among congeners or uneven observation. We separate between-genus and within-genus photographed white–moisture gradients and examine their sensitivity to sampling and measurement.
+**Aim:** We ask whether worldwide flower-colour–moisture associations reflect differences between genera, among congeneric species, or both, and whether these relationships persist across photographic and geographic comparisons.
 
 **Location:** Worldwide georeferenced iNaturalist photographic opportunities, summarized globally and in four 90° longitude sectors.
 
@@ -12,11 +12,11 @@
 
 **Major taxa studied:** Named flowering-plant taxa; a classifiable four-state photographic hue was obtained for 45,953 of 100,543 unique images across an opportunity universe of 42,111 taxa.
 
-**Methods:** We modelled four-colour photo fractions in 20,694 climate-complete species/1,934 genera using geographic controls and genus-resampled simultaneous intervals. We compared strict-quality and coarse-cell designs, held species fixed across spatial models, tested between/within-species slopes on identical images, and examined botanical-description and geographic-transfer results.
+**Methods:** We compared genus means and congeneric gradients in 20,694 photographed species/1,934 genera, with geographic controls and genus-bootstrap intervals. We evaluated strict photo quality, local geography, within-species patterns and unseen genera, and independently curated flower-colour labels for 2,960 species.
 
 **Results:** In 20,694 species/1,934 genera, photographed white increased with rainfall within genera (+2.255 percentage points/source SD; 24-comparison simultaneous 95% interval +0.319 to +4.190). On exactly the same species, the geographically adjusted between-genus rainfall slope was +8.555 (ordinary genus-bootstrap 95% interval +6.220 to +10.786), with a positive paired between-minus-within difference. Both scales were also positive for atmospheric vapour. Strict-image and local coarse-cell models did not independently confirm the worldwide direction, and a matched-photo within-species test did not show the same positive slope. Separately curated flower colours in 2,960 species also clustered by clade (27.48% of binary-white variance versus 1.68% after colour-label shuffling).
 
-**Main conclusions:** Genus-mean and congeneric white–moisture gradients coexist, but climatic covariates barely predict differences between unseen congeneric species. Photographic selection, geographic structure and unmeasured fitness prevent causal pigment-trade-off conclusions.
+**Main conclusions:** Global white–moisture associations coexist with stronger genus-mean gradients, heterogeneous genus contributions and weak portability to unseen congeners. Taxonomic composition and observation scale matter; pigment fitness trade-offs remain unmeasured.
 
 **Keywords:** citizen science, climate, floral colour, geographic sampling, macroecology, measurement bias, precipitation, trait variation
 
@@ -160,9 +160,9 @@ The strict botanical-description white versus blue/purple comparison among **670
 
 ### 4.1 | What is repeated worldwide, and at what scale?
 
-Our principal finding combines **positive genus-mean and congeneric white–moisture gradients** on identical photographed taxa with limited geographic and photographic portability. The three nonwhite hue slopes offset white by compositional arithmetic, but their individual original maxT intervals contain zero. Positive global point slopes survive one-at-a-time genus deletion and broad climate-context splits, not every tighter spatial/photo comparison. Earlier studies already found abiotic flower-colour patterns (Dalrymple et al., 2020; Trethowan et al., 2024; Dellinger et al., 2026). the source study therefore addresses **taxonomic, observational and geographic generality**, not first discovery of a wet–white association or evidence for pigment-fitness selection.
+Our ecological finding is a **contrast of taxonomic scales**, not the first report of floral colour–climate covariation (Dalrymple et al., 2020; Trethowan et al., 2024; Dellinger et al., 2026). On exactly **20,694 taxa**, rainfall correlated more strongly with photographed white between genus means (**+8.555 pp/source SD**) than among congeners (**+2.255**). Within-genus contributions were **830 positive, 719 negative and 385 photo-white-invariant**, not individually significant genus slopes. The other three hue points offset white compositionally but none has a separately confirmed original simultaneous coefficient. These observations establish scale-structured association, not causal floristic turnover.
 
-Independent, manually curated **flower-colour labels** corroborate taxonomic clustering of white flowers, but do not replicate the moisture–colour gradient. In the source study, genus-mean rainfall gradients exceeded congeneric slopes on identical taxa, yet the extra water-climate predictors reduced unseen-congener pairwise error by only **0.21%** versus geography in a **different soil-complete cohort** (S2). These estimates are not a causal variance partition or evidence for a pigment benefit–cost balance. The positive pooled congeneric slope averages opposing genus contributions, not a universal genus response. High-depth within-species flower-colour analyses remain in the separate the historical source study project.
+Manually curated **flower-colour labels** corroborate taxonomic white clustering, but not the moisture response. Strict-photo, local congeneric and matched within-species tests did not independently confirm the broad rainfall direction. In a **different soil-complete cohort**, rainfall/vapour reduced unseen-congener pairwise error only **0.21%** beyond geography; its interval includes zero (S2). Thus the global trend is not a universal genus response or a portable species-difference law. These distinct estimands cannot identify pigment costs or fitness; high-depth within-species analyses remain in the separate the historical source study project.
 
 ### 4.2 | Geographic conditioning is not a biological intervention
 
@@ -184,7 +184,7 @@ A next-stage experiment must compare morph-verified genotypes within well-sample
 
 ## 5 | Main conclusions
 
-Among 20,694 climatically complete, genus-qualified photographed taxa, white visible colour was associated with more annual precipitation and atmospheric water vapour under broad genus/geographic adjustment. The association was less well identified in strict-image, local congeneric and independent botanical-colour comparisons, and the same photographed hue outcomes did not demonstrate a common positive within-species rainfall slope. These results support a **scale- and measurement-conditional macroecological pattern**, not a universal climate-colour law, selection coefficient or pigment cost/benefit trade-off. Testing the latter will require source-independent measurements at the level of floral organs, individuals and populations.
+Across 20,694 climate-complete photographed plant taxa, visible white flower colour was positively associated with rainfall and vapour at both genus-mean and congeneric scales. **Stronger genus-mean gradients, mixed genus contributions and independently observed taxonomic colour clustering** indicate that global associations depend on the sampled plant lineages and scale. Local, strict-photo, within-species and unseen-genus comparisons limit generalization. The results do not identify a universal climate-colour law, pigment selection, stable white-colour morph balance or reproductive fitness trade-offs.
 
 ## References
 
