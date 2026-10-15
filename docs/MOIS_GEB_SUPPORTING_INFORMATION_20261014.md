@@ -140,6 +140,45 @@ Both observed directions remain positive in every listed subset, although restri
 
 Public aggregate-only result: `results/mois_genus_between_within_moisture_20261015.json`. Replayer (requires the owner-access original measured source ZIPs, **not deposited in public GitHub**): `scripts/analysis/replay_mois_genus_between_within_moisture_20261015.py`; execute with `--photo-zip`, `--env-zip`, `--output`, `--write` or `--check`. Source executable was run locally with **--write and exact --check PASS**. The complete rationale and testable ecological alternatives are in `docs/MOIS_GENUS_TURNOVER_AND_CONGENERIC_MOISTURE_20261015.md`. This is a retrospective, post-exploration analysis of the *same measured source data*, not independent biological replication.
 
+### S2.7 | How widespread are positive congeneric colour–moisture contributions among genera?
+
+We decomposed the **original worldwide genus-centred, genus-equal, broadly geographically adjusted source coefficient** on its unchanged **20,694 qualified taxa /1,934 nominal genera** into signed genus-level cross-product *contributions*, rather than fitting a separate unstable selection model for every genus. This analysis reuses the two original SHA256-verified photo/environment archives with no recolouring, no novel biological samples and no raw per-genus rows publicly released.
+
+Let `p_i` be the classifiable-photograph white fraction of species `i`. Centre `p_i`, environmental axis `x_i` and the source's **absolute latitude, sine longitude and cosine longitude** within each genus. Residualize `x_i` against the genus-centred geography variables using the **global genus-equal regression** (taxon weight `1/n_g`). The Frisch–Waugh–Lovell identity gives the overall moisture coefficient as the ratio of a sum of signed genus numerators to a sum of genus denominators:
+
+```text
+c_g = sum_{i in genus g} (1/n_g) * x_residual_i * (p_i - genus_mean_p)
+d_g = sum_{i in genus g} (1/n_g) * x_residual_i^2
+
+original genus-equal adjusted slope = sum_g c_g / sum_g d_g
+```
+
+A genus with no classified-photo-white variation has **exactly zero** numerator, even if the moisture and geography of its species vary. The `c_g` sign is **not** a genus-specific significant slope, biological within-genus selection coefficient or predictor of its realised lifetime fitness.
+
+On the principal ≥3-classifiable-species-per-genus cohort, **385 genera have no source photo-white variation**; the other **1,549** have some. A new exploratory null shuffles the *species-level source photo-white fractions* **only within each named genus** while keeping original climate/geographic species values, genus membership, sampled taxon counts and the genus photo-white distribution fixed. The source species photographic depth remains recorded but the pairing between photo-white fraction and photo depth is not otherwise conditioned on. There were **1,999 permutations** per taxonomic support scope with one shared set for the two water axes. Original source standard deviations and geographic projections are fixed for each scope. The permutation comparison is **conditional on within-genus exchangeability**, not a universal phylogenetic or photographic-missingness correction.
+
+| Original globally adjusted source axis | Positive genus contributions | Negative contributions | Zero-photo-white-variation genera | Positive among 1,549 photo-white-variable genera | Permutation null mean [95% range] | Exploratory positive-fraction upper-tail *P* |
+|---|---:|---:|---:|---:|---:|---:|
+| BIO12 annual precipitation | **830** | 719 | 385 | **53.58%** | 49.96% [47.58%,52.49%] | **0.0040** |
+| Mean annual atmospheric vapour pressure | **841** | 708 | 385 | **54.29%** | 49.66% [47.19%,52.23%] | **0.0005** |
+
+The numerator-weighted global coefficients are **+2.254545 pp/source SD for BIO12** and **+3.951850 for vapour**, agreeing with the pre-existing world climate26 source values to the shown precision. These coefficients reflect the *net* of differently signed genus cross-products: only **42.92%** (830/1,934) and **43.49%** (841/1,934) of all main-scope genera have a positive contribution, respectively. For BIO12, the largest **10% of genera by positive cross-product magnitude** contain **60.28% of the *positive* numerator mass** (58.00% for vapour), **not 60.28% of the global causal climate effect**. The negative contributions partly offset that positive mass.
+
+**Species-support thresholds (descriptive, newly refitted same weighting, and exploratory shuffled signs):**
+
+| Minimum source classifiable species per genus | Species / genera | Variable-white genera | BIO12 positive among variable genera | Vapour positive among variable genera |
+|---|---:|---:|---:|---:|
+| ≥3 | 20,694 /1,934 | 1,549 | 53.58% | 54.29% |
+| ≥5 | 18,164 /1,184 | 1,058 | 53.78% | 53.02% |
+| ≥10 | 14,130 /555 | 531 | 55.93% | 53.48% |
+| ≥20 | 9,675 /225 | 223 | 60.99% | 60.09% |
+
+The ≥20 subset includes **136 BIO12-positive versus 87 BIO12-negative** contributing genera with within-genus photographed-white variation and two invariant genera (conditional source permutation mean 49.84%, exploratory one-sided `P=0.0005`). Changing the genus taxon-count threshold also changes the study flora and climatic support; these sensitivity analyses do **not** establish that a single evolutionary process is stronger in more species-rich lineages. There were **eight examined axis-by-threshold positive-direction families**. The reported conditional permutations are post hoc and not adjusted across the manuscript's earlier model searches.
+
+**Inference:** Some genus-level covariance contributions reinforce the positive global pattern, some oppose it, and some cannot contribute because all observed species in the sampled genus share the same classified-white state. The small excess of positive signs is compatible with a distributed but heterogeneous macroecological signal, not universal congeneric colour evolution, maintenance of a 50:50 flower-colour equilibrium or opposing pigment/fitness benefits and costs.
+
+Source-only replay: `scripts/analysis/replay_mois_genus_sign_mosaic_20261015.py` (requires original photo and environment ZIPs, run with `--photo-zip`, `--env-zip`, `--output`, `--write`/`--check`). Aggregate evidence: `results/mois_congeneric_moisture_genus_sign_mosaic_20261015.json`. Ecology and conditional null interpretation: `docs/MOIS_CONGENERIC_MOISTURE_GENUS_SIGN_MOSAIC_20261015.md`. Source-specific code and aggregate test fixtures can be verified publicly; full original photograph/site data remain outside GitHub pending licence, attribution and location privacy clearance.
+
 ## S3 | Same taxon identity, geographic support, and photo-scale bridge
 
 ### S3.1 | Matched geographic species B/C reconditioning
