@@ -238,6 +238,36 @@ In the geography-only model the nominal-genus-adjusted elevation slope is negati
 
 **Evidence and limits.** The committed **aggregate-only synthesis receipt** `results/mois_photo_colour_geography_synthesis_20261015.json` records denominators, raw bands and within-model maxT intervals. An owner-executed standalone Python source replayer with **full ZIP SHA256 checks** independently recomputed the exact original congeneric BIO12 point estimate and all four new models, then passed its `--check` against its full-precision local output. The original licensed photography and site-level original ZIPs remain outside public GitHub pending author-approved data licence and location review. The new exploratory geographic comparisons are **Supporting Information only**: the source-conditional positive moisture–white species result remains central to the main GEB paper. No causal genotype-level pigment economy or natural selection conclusion is added.
 
+### S2.10 | Why altitude and latitude slopes change when water-vapour exposure is included
+
+The S2.9 geography-only and geography-plus-water-vapour fits used the same **20,694 climate26-qualified species from 1,934 genera** and the original source photo-colour labels. The difference is the covariate set, not a replacement of the species sample. To determine **why** the geographic coefficients shift, we reloaded both SHA256-verified original photo/environment ZIPs and independently reconstructed the original genus-equal white/BIO12 coefficient **+2.254545 pp/source SD**. Original sampled taxon/photo denominators (**38,498** classified original photographs in the main genus-qualified panel) remained unchanged.
+
+Let `Y` denote the original species-level classified-photo white proportion, `G` the genus-centred original geographic variables (absolute latitude, longitude sine/cosine and elevation), `V` the genus-centred atmospheric-vapour exposure and `W` equal total weights per sampled nominal genus. Weighted least squares gives the *exact omitted-variable coefficient identity*:
+
+```text
+beta(G without V) = beta(G given V) + beta(V given G) * gamma(V on G)
+gamma(V on G) = (G' W G)^(-1) G' W V
+```
+
+The same identity is repeated with BIO12 rainfall included among `G`. All terms use the same species, source-site environmental normalization and broad within-genus geographical conditioning. This algebra holds without a biological causal model and does **not** identify water vapour as an ecological mediator.
+
+| Same-species comparison (white fraction pp) | Model omitting vapour | Model including vapour | Paired change after including vapour [ordinary 95%] |
+|---|---:|---:|---:|
+| Absolute latitude, per **+10°**, geography alone | **+0.483** | **+3.083** | **+2.600 [+0.995,+4.233]** |
+| Elevation, per **+1,000 m**, geography alone | **−1.903** | **+1.011** | **+2.914 [+1.110,+4.759]** |
+| Absolute latitude, per **+10°**, geography+BIO12 | **+1.101** | **+2.830** | **+1.729 [+0.127,+3.370]** |
+| Elevation, per **+1,000 m**, geography+BIO12 | **−1.564** | **+0.483** | **+2.047 [+0.148,+3.986]** |
+
+The *point* increase in each row is identical (numerical discrepancy <1×10⁻⁹ percentage points before display rounding) to the negative of the vapour-white coefficient times the regression of vapour on already included geographic/rainfall covariates. Under geography alone the source vapour-white partial coefficient is **+5.106 pp/source SD**, and the fitted vapour-versus-standardized-absolute-latitude and vapour-versus-standardized-elevation coefficients, conditional on the remaining geographic covariates, are **−0.786 and −0.505**. This explains the *statistical* sign changes, not their biological cause.
+
+Because geography and atmospheric vapour are closely related among the original photographed taxa, the genus-equal within-genus source model explains **74.53%** of within-genus source vapour variation using latitude, circular longitude and elevation alone (**VIF 3.927** for adding vapour). Adding BIO12 to those geography predictors raises vapour variance explanation to **78.57% (VIF 4.667)**. Simple within-genus source correlations of vapour with absolute latitude, elevation and BIO12 were **−0.517, −0.489 and +0.445**, respectively; these are distinct from the raw photo-level correlation because the data are centred within genus and genus weighted.
+
+For each nested-model comparison, the geographic-coefficient *difference* was assessed using the **same 1,999 multinomial whole-genus bootstrap resamples** (fixed seed `202610151216`). The reported intervals are **ordinary, retrospectively constructed paired within-design percentile 95% ranges**, *not* within-model geo4 maxT intervals, or a correction for trying multiple geographically adjusted models. The confidence interval of a **coefficient shift** must not be read as demonstrating causal mediation, altitude-selected pigment benefit, independent latitudinal adaptation or zero residual geographic effects. Within-model original geo4 maxT intervals remain as reported in S2.9.
+
+**Biological interpretation:** The observed source altitude/flower-colour association shares geography-dependent vapour variation. Once the exposure set includes atmospheric vapour, the signed elevation result is not stable; meanwhile the positive high-absolute-latitude conditional coefficient becomes larger. This is expected from the exact weighted-regression identity, and warns against promoting either geographical coefficient to a direct colour-pigment adaptation. The source still measures neither flowering-plant demographic prevalence nor anthocyanin costs, seed/pollen relative fitness, colour-morph genotype frequencies or a maintained 50:50 equilibrium.
+
+Numerical details, complete algebra and limits: `docs/MOIS_GEOGRAPHY_VAPOUR_SHARED_GRADIENT_20261015.md`. Public aggregate only: `results/mois_geography_vapour_ovb_20261015.json`. Self-contained source replayer: `scripts/analysis/mois_geography_vapour_ovb_20261015.py` (original licensed source ZIPs required for full `--check`, not in public GitHub). The new analysis **does not alter** the original signed worldwide congeneric white/BIO12 and water-vapour maxT results or the strict-photo/spatial-limit findings.
+
 ## S3 | Same taxon identity, geographic support, and photo-scale bridge
 
 ### S3.1 | Matched geographic species B/C reconditioning
