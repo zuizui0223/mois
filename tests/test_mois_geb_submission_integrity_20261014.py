@@ -65,7 +65,7 @@ def test_research_article_journal_submission_envelope_stays_bounded():
     wordline=re.search(r"^\*\*Keywords:\*\* (.+)$",s,re.M).group(1)
     words=[x.strip() for x in wordline.split(",")]
     assert 6<=len(words)<=10 and words==sorted(words,key=str.casefold)
-    assert [str(i) for i in range(1,5)]==[m.group(1) for m in re.finditer(r"^\*\*Figure (\d+)\.",s,re.M)]
+    assert [str(i) for i in range(1,6)]==[m.group(1) for m in re.finditer(r"^\*\*Figure (\d+)\.",s,re.M)]
     assert [str(i) for i in range(1,3)]==[m.group(1) for m in re.finditer(r"^\*\*Table (\d+)\.",s,re.M)]
     assert "not submitted by this workflow" in s
 
