@@ -143,10 +143,15 @@ def run(path, *, draws=9999, seed=202610152328, min_clade_species=3):
     for _ in range(bootstrap_draws):
         replicate = {i: observed_groups[clade_rng.randrange(len(observed_groups))]
                      for i in range(len(observed_groups))}
-        summary = _stats(replicate)
-        eta_boot.append(summary["clade_mean_eta_squared"])
-        white_boot.append(summary["white_species_equal"])
-        clade_white_boot.append(summary["white_clade_equal"])
+        # A tiny synthetic clade bootstrap can sample only all-white or
+        # only nonwhite source clades: white prevalence is defined, but
+        # between-clade eta² is undefined when binary variance is zero.
+        groups = list(replicate.values())
+        sample_p = sum(sum(group) for group in groups) / sum(len(group) for group in groups)
+        white_boot.append(sample_p)
+        clade_white_boot.append(sum(sum(group) / len(group) for group in groups) / len(groups))
+        if 0 < sample_p < 1:
+            eta_boot.append(_stats(replicate)["clade_mean_eta_squared"])
 
     return {
         "schema": "mois_external_independent_clade_flower_white_replication_v1",
