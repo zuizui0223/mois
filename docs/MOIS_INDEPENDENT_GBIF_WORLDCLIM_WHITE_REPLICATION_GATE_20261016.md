@@ -25,6 +25,30 @@ A new supplementary code pathway is added: `scripts/analysis/mois_external_indep
 - Model: centre `white, BIO12, |latitude|, sin(longitude), cos(longitude)` **within each original clade**; weighted least squares gives each clade one equal total vote (weights `1/n_g`). Report both sign and effect size, ordinary clade-bootstrap95 based on 1,999 clade resamples. **No claim of original source 24-maxT familywise confirmation** is authorized from this new result. Clades are selected nonrandomly and not independent phylogenetic replicate nodes.
 - Decision gate: report an ecological direction only after completing the exact external source and raster extraction, original-source SHA + cited GBIF DOI, matched species and clade attrition and estimated interval. If retained taxa/clades are too few or the design matrix is rank-deficient, return a **non-inferential stop result**, not a positive/negative climate estimate.
 
+## First actual source-coverage pilot and synonym problem (16 October 2026)
+
+A newly implemented [source-locked public GBIF count reader](../scripts/analysis/mois_independent_gbif_search_coverage_pilot_20261016.py) was used with the **previously recovered original Dryad 2,960-species flower-colour CSV**, frozen SHA256 `a253308785e4cbd0e361b3ca04cdfdae29c523eefa843375cebf8030ee0874af`. The deliberately **nonrepresentative** pilot selects the **15 largest source clades** having ≥20 taxa and both white and nonwhite flower-labelled species, then the **alphabetically first one white-labelled and one nonwhite-labelled source species in each clade** (30 taxon strings, sample ordered-names SHA256 `d025092677a9377265d48d1484fa8ab9555788a76b3c3b08c04fdb2729f6b0be`). The public GBIF API was queried by `scientificName`, `basisOfRecord=PRESERVED_SPECIMEN`, `hasCoordinate=true`, `year=2010,2026`, using `limit=0` for indexed counts and `limit=1` for a first-record species identity check. The retrieval is **not** an authenticated citable GBIF occurrence download, and an individual `scientificName` search can return data indexed under a newer synonymized accepted species. No download DOI was generated. No WorldClim values or taxonomic-selection parameters were estimated from the search.
+
+**Actual GBIF search-only results:**
+
+| Deterministic pilot audit (15 clades / 30 names) | Count |
+| --- | ---: |
+| Source names with at least one indexed coordinate-bearing specimen | **27/30** |
+| Source names with ≥5 raw indexed specimen records (NOT independent 0.25° cells) | **23/30** |
+| No indexed eligible-name hits | **3/30** |
+| First returned GBIF `species` literal equals source name | **19/30** |
+| First returned GBIF `species` differs from source name | **8/30**; **8/27** among nonzero queries |
+| Both white and nonwhite search names with ≥5 raw indexed records in same sampled source clade | **8/15** |
+| Both first species identities exact AND each named query has ≥5 raw indexed records | **6/15** |
+
+**Ecologically material data-joining risk.** The actual mismatch examples included original `Disemma herbertiana` recorded in GBIF as `Passiflora herbertiana`, `Blephistelma aurantia` as `Passiflora aurantia`, `Cordyloblaste pendula` as `Symplocos pendula`, `Cerasus yedoensis` as `Prunus yedoensis`, and the original `Clidemia` names indexed in `Miconia`. This shows why **search count is not the denominator of correctly joined independent taxa**; even when the API exposes records, source/GBIF taxonomy reconciliation remains necessary. These eight were mismatches in the **first** record of each species query, not estimates of the frequency of synonym mismatches among all the indexed specimens. Zero search counts may reflect outdated source names, not biological absence. Any synonym crosswalk must be explicit, audited and verified against taxonomic authorities, not forced into an apparent ecological effect. The sample is purposely lexicographically selected within clades and cannot estimate a population-wide matching rate or ecological gradient.
+
+**New literal source name safety check:** The original published 2,960-row flower-colour table contains **two hybrid-style name strings**, `Rosa_X_odorata` and `Garcinia_X_mangostana`. The prior generic two-word parser would have interpreted their second token `X` as a species epithet. This has now been corrected: the independent climate acquisition code excludes these **two** unresolved hybrid names from its binomial-species matching pathway, records the source attrition (**2,958 strict nonhybrid trait rows before GBIF join**) and rejects unknown flower colours rather than silently calling them nonwhite. The original S2.18 and S2.19 **flower/fruit colour counts deliberately retain the full 2,960 rows**, because those describe the published labelled source and never require a taxonomic occurrence join.
+
+**Safe auditable evidence:** [anonymous 30-name source-GBIF coverage receipt](../results/mois_independent_gbif_specimen_search_pilot_20261016.json) with query parameters, exact deterministic source-name selection digest and original indexed counts; [replay source](../scripts/analysis/mois_independent_gbif_search_coverage_pilot_20261016.py), including strict source file SHA and a conservative public GET throttle. Running this code on a later date may yield new GBIF counts, because occurrences are mutable. CI tests only the deterministic mathematics and mock API identity conditions; it does not send automatic repeated anonymous GBIF queries during every pull request.
+
+**Consequent source gate:** The full independent rainfall test still requires a rights/metadata-reviewed accepted-name mapping (or explicitly restricted exact-name subset), the citable authenticated GBIF bulk archive, spatially distinct accepted specimen cells, a genuine WorldClim BIO12 raster, and sufficient colour-variable clade coverage. The pilot establishes **name/occurrence availability and a concrete taxonomy blocker**, not a white–rainfall slope or an estimate of natural selection.
+
 ## Owner-run command once licensed sources are available
 
 ```bash
