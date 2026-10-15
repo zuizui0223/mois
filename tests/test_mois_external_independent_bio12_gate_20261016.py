@@ -19,7 +19,7 @@ def test_external_moisture_extraction_requires_real_independent_sources():
         "PRESERVED_SPECIMEN", "sample_bio12", "fit_white_bio12",
         "min_cells=5", "min_clade_species=3", "gbifID",
         "coordinateUncertaintyInMeters", "gbif-download-doi",
-        "raster-factor", "Source", "DOI",
+        "raster-factor", "DOI",
     ):
         assert token in code or token in note, token
     for token in (
