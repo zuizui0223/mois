@@ -23,13 +23,10 @@ def test_external_moisture_extraction_requires_real_independent_sources():
     ):
         assert token in code or token in note, token
     for token in (
-        "NOT", "not", "2,960", "WorldClim", "GBIF", "10.15468/dl.",
+        "2,960", "WorldClim", "GBIF", "10.15468/dl.",
         "10.5061/dryad.r4xgxd2sc", "species", "raster",
-        "NO", "not independently",
+        "not", "have not been acquired",
     ):
-        # Directly verify meaningful presence of methodological gates.
-        if token in ("NO", "not independently"):
-            continue
         assert token in note, token
     assert "source_independent_climate_analysis_completed" in code
     assert "insufficient_independent_species_and_clades" in code
