@@ -268,6 +268,41 @@ For each nested-model comparison, the geographic-coefficient *difference* was as
 
 Numerical details, complete algebra and limits: `docs/MOIS_GEOGRAPHY_VAPOUR_SHARED_GRADIENT_20261015.md`. Public aggregate only: `results/mois_geography_vapour_ovb_20261015.json`. Self-contained source replayer: `scripts/analysis/mois_geography_vapour_ovb_20261015.py` (original licensed source ZIPs required for full `--check`, not in public GitHub). The new analysis **does not alter** the original signed worldwide congeneric white/BIO12 and water-vapour maxT results or the strict-photo/spatial-limit findings.
 
+### S2.11 | Do annual precipitation and atmospheric vapour have distinguishable congeneric white associations?
+
+**A paired, identical-source reanalysis rather than additional flower sampling.** The original SHA256-verified FCP photo and site-environment archives were reopened, and the *same climate26 eligible* **20,694 species, 1,934 named genera and 38,498 original classifiable photos** were selected. A photo-classified white proportion was calculated for each species, and original photo-site predictors were genus-centred and weighted so each genus contributes one total unit. The original geographic nuisance covariates were absolute latitude and circular longitude sine/cosine; a second specification also includes altitude. All environmental predictors use the original **45,836 climate26-qualified photo-site SD**, not a model-specific or genus-specific unit. The legacy **separate-axis** white/BIO12 +2.254545 and white/annual-vapour +3.951850 pp/source SD were numerically independently recovered before the new comparisons.
+
+**Joint model, not two interchangeable causal water drivers.** Annual precipitation BIO12 and annual mean atmospheric vapour are partly correlated among these taxa. Fit the following source-conditional models on precisely the same original species: each water axis separately, and both water axes together, first with broad original three-coordinate geography and then with those three coordinates **plus elevation**. The latter specification does not assume that including more correlated covariates identifies individual physiological climate effects. Whole-genus 1,999 shared multinomial bootstrap resamples (frozen seed `202610151330`) provide ordinary percentile 95% ranges. Within each *selected* two-moisture model, standardized centered bootstrap deviations yield **simultaneous maxT 95% intervals for its two water coefficients**. These new **two-contrast** maxT intervals must not replace the original **24 hue×axis** within-family maxT intervals or be mistaken for correction over the whole manuscript's retrospective model searches.
+
+| Exact same 20,694-species genus-equal source scope | Water axis fit separately, point pp/source SD | Both water axes fitted: conditional point pp/source SD [within-model two-axis maxT95] |
+|---|---:|---:|
+| Broad geography: rainfall BIO12 | +2.255 | **+1.454 [−0.039,+2.947]** |
+| Broad geography: annual vapour | +3.952 | **+3.182 [+1.021,+5.343]** |
+| Geography + elevation: rainfall BIO12 | +2.003 | **+1.383 [−0.167,+2.934]** |
+| Geography + elevation: annual vapour | +5.106 | **+3.771 [−0.163,+7.704]** |
+
+Both water-axis point estimates stay positive in both models. **With altitude additionally included, neither separate conditional coefficient's selected two-axis simultaneous interval excludes zero**. The ordinary 95% intervals for these two geographic-plus-elevation coefficients are rainfall **[+0.035,+2.761]** and vapour **[+0.237,+7.178]**; they are not the same as simultaneous intervals. This is *uncertainty about unique statistical attribution*, not evidence that the broader positive white–moisture association vanishes or that either water axis has no effect. The partial **rainfall–vapour** correlation after within-genus geographic adjustment is **+0.365**, rising to **+0.398** when altitude is also conditioned upon.
+
+**An equal-standardized moisture direction and a contrasting direction.** To examine the direction along which *both* annual moisture-related indices increase, use the reparameterization
+
+```text
+z_R = (BIO12 - original_photo_site_mean_BIO12)/original_photo_site_sd_BIO12
+z_V = (vapour - original_photo_site_mean_vapour)/original_photo_site_sd_vapour
+M_common = (z_R + z_V)/sqrt(2)
+D_difference = (z_R - z_V)/sqrt(2)
+```
+
+Fit **both** `M_common` and `D_difference` in the same model with original congeneric/geographic adjustment. This is an *exact invertible rotation of the two original environmental predictors*; it does not alter model fitted values, identify a true latent factor or measure direct plant water availability. A one-unit change in `M_common` **holding the difference axis constant** corresponds to increasing both component z-scores by 1/sqrt(2). The model-conditional source results were:
+
+| Rotated photographic white-climate axis | Broad geography, point [2-axis maxT95] | Geography + altitude, point [2-axis maxT95] |
+|---|---:|---:|
+| Common rainfall+vapour direction, `M_common` | **+3.278 [+1.777,+4.779]** | **+3.644 [+1.137,+6.152]** |
+| Rainfall versus vapour contrast, `D_difference` | −1.222 [−3.356,+0.912] | −1.688 [−5.057,+1.681] |
+
+Thus the **positive common moisture-related environmental direction persists after altitude and broad geographic adjustments** in the studied global photo-classified flora, whereas the rainfall-versus-vapour *contrast* is imprecise. It remains possible that either climatic measurement contributes more than the other; a two-contrast interval crossing zero is not an equivalence test. The rotated direction was **examined retrospectively** and is not a measured soil-water supply, flower-cell water potential, ultraviolet exposure or fitness/payoff variable. Its conditional bootstrap interval does not provide study-wide discovery-adjusted inference.
+
+**Biological scope and source reproducibility.** The evidence supports a positive broad water-related *species composition* gradient under multiple reasonable parameterizations, alongside heterogeneous named-genus signs and documented strict-photo/geography limitations. It does not identify **independent causal rainfall versus vapour effects**, drought-selected anthocyanin production, colour-dependent pollen/seed relative fitness, or negative-frequency-dependent maintenance of global 50:50 floral morphs. The exact original source ZIPs, photo IDs, taxon names and sensitive coordinates remain rights-controlled and outside public GitHub. Full SHA256-original ZIP replayer: `scripts/analysis/mois_joint_rain_vapour_geography_20261015.py`. Aggregate-only numerical receipt: `results/mois_original_joint_rain_vapour_geography_20261015.json`. Both locally executed `--write` and `--check` modes passed against the source ZIPs in the authorized execution environment; GitHub CI tests independent synthetic algebra and the frozen aggregate receipt without requiring restricted raw photo data.
+
 ## S3 | Same taxon identity, geographic support, and photo-scale bridge
 
 ### S3.1 | Matched geographic species B/C reconditioning
