@@ -40,7 +40,9 @@ def test_external_color_source_is_protocol_not_fictitious_result():
     assert "no independent climate–colour coefficient" in note
     assert "publisher-side manifest SHA" in note
     assert "10.1002/ajb2.70044" in refs
-    assert "Source download redirects" in refs
+    assert "A saved copy" in refs
+    assert "flower-colour clustering only" in refs
+    assert "No fruit-colour variable is used as a biological response in Mois" in refs
     assert "flower_color" in src
     assert "--self-test" in src
     assert "source_row_count" in src
