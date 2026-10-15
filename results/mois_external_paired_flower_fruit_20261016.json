@@ -1,0 +1,97 @@
+{
+  "bootstrap_seed": 202610162101,
+  "clade_bootstrap_draws": 9999,
+  "label_shuffle_draws": 19999,
+  "label_shuffle_seed": 202610162100,
+  "limits": "Exploratory fruit-red/black and fruit-white coarsenings of independently curated flower/fruit hue. Not pigment mass, fitness, causal colour allocation, within-species genetics, or independent moisture climate data. Clades are selected and not a random world flora sample.",
+  "null": "Fruit target labels randomly reassigned within each original sampled clade with exact fixed group margins (hypergeometric draw); not independent field replication.",
+  "outcomes": {
+    "fruit_red_or_black": {
+      "clade_conditional_equal_clade_clade_bootstrap95_pp": [
+        -9.328086815004982,
+        5.755256949146792
+      ],
+      "clade_conditional_equal_clade_label_shuffle_95_pp": [
+        -6.128678225108096,
+        6.1237128493760515
+      ],
+      "clade_conditional_equal_clade_slope_pp": -1.452377766881527,
+      "clade_conditional_equal_clade_two_sided_label_shuffle_p": 0.6526,
+      "clade_conditional_species_weighted_clade_bootstrap95_pp": [
+        -2.562683709741028,
+        7.349621117370596
+      ],
+      "clade_conditional_species_weighted_label_shuffle_95_pp": [
+        -3.5106485778345435,
+        3.5738732911755196
+      ],
+      "clade_conditional_species_weighted_slope_pp": 2.8281341470691967,
+      "clade_conditional_species_weighted_two_sided_label_shuffle_p": 0.12485,
+      "n_clades": 51,
+      "n_flower_white": 1449,
+      "n_strata_with_both_binary_variation": 43,
+      "n_target_fruit": 1530,
+      "overlap_white_flower_target_fruit": 819,
+      "raw_fisher_two_sided_p": 2.5884669867219895e-07,
+      "raw_species_2x2_rows_flower_nonwhite_white_columns_fruit_nontarget_target": [
+        [
+          800,
+          711
+        ],
+        [
+          630,
+          819
+        ]
+      ],
+      "raw_species_conditional_fruit_prevalence_difference_pp": 9.466808620838485,
+      "raw_species_odds_ratio": 1.4627285513361463,
+      "total_species": 2960
+    },
+    "fruit_white": {
+      "clade_conditional_equal_clade_clade_bootstrap95_pp": [
+        -4.0559651714096905,
+        0.44129381922476224
+      ],
+      "clade_conditional_equal_clade_label_shuffle_95_pp": [
+        -1.6292834912185008,
+        1.6440043392940344
+      ],
+      "clade_conditional_equal_clade_slope_pp": -1.5254939235353207,
+      "clade_conditional_equal_clade_two_sided_label_shuffle_p": 0.06895,
+      "clade_conditional_species_weighted_clade_bootstrap95_pp": [
+        -2.9266586893383355,
+        0.3141373353281018
+      ],
+      "clade_conditional_species_weighted_label_shuffle_95_pp": [
+        -1.2599150198685019,
+        1.3501719845036269
+      ],
+      "clade_conditional_species_weighted_slope_pp": -1.0734802338419211,
+      "clade_conditional_species_weighted_two_sided_label_shuffle_p": 0.14415,
+      "n_clades": 51,
+      "n_flower_white": 1449,
+      "n_strata_with_both_binary_variation": 21,
+      "n_target_fruit": 86,
+      "overlap_white_flower_target_fruit": 44,
+      "raw_fisher_two_sided_p": 0.7428817713677707,
+      "raw_species_2x2_rows_flower_nonwhite_white_columns_fruit_nontarget_target": [
+        [
+          1469,
+          42
+        ],
+        [
+          1405,
+          44
+        ]
+      ],
+      "raw_species_conditional_fruit_prevalence_difference_pp": 0.2569608013742335,
+      "raw_species_odds_ratio": 1.0953397729198442,
+      "total_species": 2960
+    }
+  },
+  "schema": "mois_external_paired_flower_fruit_clade_conditional_v1",
+  "source_clades": 51,
+  "source_doi": "10.5061/dryad.r4xgxd2sc",
+  "source_rows": 2960,
+  "source_sha256": "a253308785e4cbd0e361b3ca04cdfdae29c523eefa843375cebf8030ee0874af"
+}
