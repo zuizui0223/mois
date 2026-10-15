@@ -53,6 +53,20 @@ Every comparison predicts the original sampled **species-mean fraction of classi
 
 Relative to the **identical full climate/elevation baseline**, soil5 addition **reduces** out-of-genus prediction improvement by **−0.000435** (bootstrap 95% **[−0.000700,−0.000171]**), while soil10 addition reduces improvement by **−0.000620 [−0.000958,−0.000284]**. Thus **observing a positive within-model soil proxy coefficient is compatible with soil inputs failing to improve a heldout predictive task**. The source supports a transferable, modest water-related environmental signal more than a portable direct soil mechanism, *for these fixed predictors, fixed ridge and selected soil-complete photographs*. This is not proof that soil never affects plant colour.
 
+### All 26 original climate variables: additional same-source confirmation
+
+To check that the soil-block result was not an artefact of retaining only BIO5, BIO12, vapour and annual solar radiation, a second **all26 climate predictor** experiment used the same **16,801 species/1,665 genera**, same five SHA256 genus-heldout folds, fixed ridge regularization `0.01`, training-only covariate standardization and identical observed photo-white species-fraction squared-error target. Three models were compared without resampling the underlying flora:
+
+| Fivefold heldout fixed-source model | Photo-white species-fraction squared error | Soil increment over all26 + geography [genus bootstrap 95%] |
+|---|---:|---:|
+| Geographic coordinates + **all 26 source climate predictors (including elevation)** | **0.228133** | reference |
+| Previous + soil5 | 0.228537 | **−0.000404 [−0.000679,−0.000116]** |
+| Previous + all soil10 | 0.228661 | **−0.000528 [−0.000873,−0.000173]** |
+
+The ten soil features again fail to deliver a positive out-of-genus increment, even when **the full original climate feature block** is used, rather than the limited moisture/solar/temperature subset. This supports the restricted conclusion that source climate has more reliably transferable ecological information than these soil additions **under fixed soil-complete eligibility and model/loss settings**. More correlated predictors can increase error; the negative increments do **not** prove zero soil effects or uniquely identify climate as a physiological driver.
+
+Replayer: `scripts/analysis/mois_full26_soil10_transfer_20261015.py`. Source-derived frozen safe machine values: `results/mois_full26_climate_soil10_transfer_20261015.json`. Bootstrap 1,999 entire sampled genera (seed 202610151710) over original heldout-fold loss results; intervals condition on fixed fitted folds. No original image IDs, source taxon labels or site positions deposited.
+
 ## 5. Biogeography matters for transport
 
 We performed a stricter descriptive longitude-sector transfer using the same soil36 source species: hold out an entire 90° sector and **exclude from training every genus represented in the test sector**, so evaluation holds out both geographically distinct species and source genera. The number of training species changes substantially across sectors; no generalization to spatially unseen microhabitats or Wallace biogeographic realms is claimed.
