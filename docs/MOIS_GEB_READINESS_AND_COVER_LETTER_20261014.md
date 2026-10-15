@@ -4,6 +4,17 @@
 
 ## Scientific editorial decision
 
+### 15 October 2026 — external precedent found; new paper framing and synthetic benchmark
+
+**New editorial constraint from independently checked published literature:** Dellinger et al. (2026 issue, first online 14 May 2025, DOI [10.1002/ajb2.70044](https://doi.org/10.1002/ajb2.70044)) already assessed global flower-colour associations with aridity, temperature and UV-B in **2,815 taxa/51 clades** using curated flower images and independently cleaned GBIF occurrence-site environments. Relative flower-white representation in their selected flora shifted from ~82% to ~50–55% under different colour categorizations. This finding **rules out any defensible Mois claim to discovering worldwide colour–climate associations or a biological 50:50 equilibrium first**; it does not re-estimate the Mois BIO12 slope, and the two photo sources can overlap in contributing observations.
+
+**Manuscript corrected:** The Introduction, Discussion 4.1 and scholarly reference list now position the original **20,694-species/1,934-genus** moisture association as a **scale/measurement-transfer investigation**, not as a new global colour law. Revised main research text: **4,925 words**, structured abstract still **269 words**; five source-backed figures and two tables retained. Anonymous and numbered review copies regenerated.
+
+**External validation executable added, but not run on actual external data:** [source-independent clade benchmark](../scripts/analysis/mois_external_clade_flower_colour_benchmark_20261015.py) accepts a legitimate local `final_dataset.csv` from the 2025 [Dryad 2,960-species/51-clade source](https://doi.org/10.5061/dryad.r4xgxd2sc) and estimates clade white-colour composition/clustering against colour-label permutations. It does **not** re-estimate rainfall effects. Only its artificial six-species fixtures have been executed in public CI. This file was not downloaded in this session because raw file links encountered access-verification pages; no external numeric replication is claimed. Comparison logic and the distinct 51-clade versus 1,934-genus denominators are in [the external-source audit](MOIS_EXTERNAL_CLADE_HUE_AND_PRECEDENT_AUDIT_20261015.md).
+
+**Submission boundary:** Citation correction and synthetic tests do not solve the existing **HOLD** for licensed and anonymized source data, stable reviewer DOI, author approval or reproduction of the independent colour benchmark. Do not report the 2,960 external taxa as newly analysed.
+
+
 ## 15 October 2026 — direct pairwise photo-white transfer (four genus holdouts)
 
 **What advanced scientifically:** A new, operational pairwise phenotype target now predicts the *difference* in source classifiable-photo white fractions between any two taxa of a genus not observed during training. Only their environmental predictor difference and the fitted slope from earlier genera enter prediction; the actual/test **genus mean white-photo phenotype is not an input**. Original source photo/environment ZIPs were checked, and the exact source **16,801 soil36 qualified species /1,665 genera/26,163 classified photo rows** were reconstructed. All unordered species pairs within genus are scored by squared difference error, and heldout genera receive equal total weight.
