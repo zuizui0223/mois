@@ -66,12 +66,34 @@ jobs:
       - name: Install narrow manuscript regression dependencies
         run: python -m pip install pytest==8.4.2
       - name: Verify GEB-structured manuscript, source-receipt statistical claims and publication boundaries
-        run: python -m pytest -q tests/test_mois_geb_manuscript_20261014.py tests/test_mois_geb_submission_integrity_20261014.py tests/test_mois_original_source_recovery_20261014.py tests/test_mois_world24_bootstrap_replay_20261014.py tests/test_mois_original_matched_spatial_full576_20261014.py tests/test_mois_world_quality_spatial_soil36_maxT_20261014.py tests/test_mois_single_genus_influence_20261014.py tests/test_mois_photo_nonresponse_bounds_20261014.py tests/test_mois_original_photo_white_balance_20261014.py
+        run: python -m pytest -q tests/test_mois_geb_manuscript_20261014.py tests/test_mois_geb_submission_integrity_20261014.py tests/test_mois_original_source_recovery_20261014.py tests/test_mois_world24_bootstrap_replay_20261014.py tests/test_mois_original_matched_spatial_full576_20261014.py tests/test_mois_world_quality_spatial_soil36_maxT_20261014.py tests/test_mois_single_genus_influence_20261014.py tests/test_mois_photo_nonresponse_bounds_20261014.py tests/test_mois_original_photo_white_balance_20261014.py tests/test_mois_figure5_ecological_scales_20261015.py
       - name: Verify reproducible Figure 2 is identical to source JSON receipt generation
         run: node scripts/render_mois_figure2_source_receipts.mjs --check
       - name: Verify Figure 3 taxonomic and geographic transfer from source receipts
         run: node scripts/render_mois_figure3_transfer.mjs --check
       - name: Verify Figure 4 all photographed hue directions and original maxT source intervals
         run: node scripts/render_mois_four_hue_moisture.mjs --check
+      - name: Verify source-locked Figure 5 of photo-white weighting and taxonomic scales
+        run: node scripts/render_mois_figure5_ecological_scales.mjs --check
+      - name: Render Figure 5 at full and downscaled sizes for visual inspection
+        run: |
+          python -m pip install --quiet cairosvg==2.8.2
+          python - <<'PY'
+          from pathlib import Path
+          import cairosvg
+          fig = Path("figures/mois_white_moisture_ecological_scales.svg")
+          out = Path("artifacts/mois_figure5_visual")
+          out.mkdir(parents=True, exist_ok=True)
+          for width in (1560, 780):
+              cairosvg.svg2png(url=str(fig), write_to=str(out / f"figure5_{width}px.png"), output_width=width)
+          print("Rendered both source-backed Figure 5 visual proofs")
+          PY
+      - name: Preserve temporary Figure 5 PNG visual proofs (not reviewer source data)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-figure5-ecological-scales-visual-proof
+          path: artifacts/mois_figure5_visual/*.png
+          retention-days: 14
+          if-no-files-found: error
       - name: Verify regenerated double-anonymous and continuously numbered GEB review copies
         run: node scripts/build_mois_blinded_review_copy.mjs --check
