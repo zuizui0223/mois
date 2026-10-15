@@ -57,6 +57,8 @@ jobs:
         run: python -m pip install numpy==2.1.3 pandas==2.2.3 pytest==8.4.2
       - name: Verify terrain mathematics without pretending original terrain rasters exist
         run: python scripts/analysis/mois_dem_terrain_metrics_gate_20261015.py --self-test
+      - name: Test clade-conditioned reproductive hue nulls on synthetic source traits
+        run: python scripts/analysis/mois_external_cross_organ_clade_20261016.py --self-test
       - name: Assert global hue model and matched geographic support invariants
         run: python -m pytest -q tests/test_fcp_macro_abiotic_direction_20261013.py tests/test_spatial_support_decomposition.py tests/test_mois_species_genus_source_balance_20261014.py tests/test_mois_genus_clustering_20261015.py tests/test_mois_between_within_genus_moisture_20261015.py tests/test_mois_genus_sign_mosaic_20261015.py tests/test_mois_climate_regime_moisture_20261015.py tests/test_mois_geography_vapour_ovb_20261015.py tests/test_mois_joint_moisture_original_source_20261015.py tests/test_mois_biogeography_climate_soil_terrain_20261015.py tests/test_mois_env_shapley_residual_transfer_20261015.py tests/test_mois_soil_moisture_context_20261015.py tests/test_mois_soil_full26_alpha_fold_robustness_20261015.py tests/test_mois_soil_crossdomain_block_audit_20261015.py tests/test_mois_congeneric_pairwise_transfer_20261015.py
 
@@ -74,7 +76,7 @@ jobs:
       - name: Install narrow manuscript regression dependencies
         run: python -m pip install pytest==8.4.2
       - name: Verify GEB-structured manuscript, source-receipt statistical claims and publication boundaries
-        run: python -m pytest -q tests/test_mois_geb_manuscript_20261014.py tests/test_mois_geb_submission_integrity_20261014.py tests/test_mois_original_source_recovery_20261014.py tests/test_mois_world24_bootstrap_replay_20261014.py tests/test_mois_original_matched_spatial_full576_20261014.py tests/test_mois_world_quality_spatial_soil36_maxT_20261014.py tests/test_mois_single_genus_influence_20261014.py tests/test_mois_photo_nonresponse_bounds_20261014.py tests/test_mois_original_photo_white_balance_20261014.py tests/test_mois_figure5_ecological_scales_20261015.py tests/test_mois_original_geography_20261015.py tests/test_mois_external_clade_precedent_20261015.py
+        run: python -m pytest -q tests/test_mois_geb_manuscript_20261014.py tests/test_mois_geb_submission_integrity_20261014.py tests/test_mois_original_source_recovery_20261014.py tests/test_mois_world24_bootstrap_replay_20261014.py tests/test_mois_original_matched_spatial_full576_20261014.py tests/test_mois_world_quality_spatial_soil36_maxT_20261014.py tests/test_mois_single_genus_influence_20261014.py tests/test_mois_photo_nonresponse_bounds_20261014.py tests/test_mois_original_photo_white_balance_20261014.py tests/test_mois_figure5_ecological_scales_20261015.py tests/test_mois_original_geography_20261015.py tests/test_mois_external_clade_precedent_20261015.py tests/test_mois_external_paired_organs_20261016.py
       - name: Verify reproducible Figure 2 is identical to source JSON receipt generation
         run: node scripts/render_mois_figure2_source_receipts.mjs --check
       - name: Verify Figure 3 taxonomic and geographic transfer from source receipts
