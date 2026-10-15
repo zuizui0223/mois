@@ -1,0 +1,207 @@
+{
+  "schema": "mois_flower_white_original_geography_synthesis_v1",
+  "date_jst": "2026-10-15",
+  "source_original_photo_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "source_original_environment_sha256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "source_geotagged_all": 100348,
+  "source_geotagged_classified": 45879,
+  "source_climate26_classified": 45836,
+  "primary_adjusted_species": 20694,
+  "primary_adjusted_genera": 1934,
+  "primary_adjusted_classified_photos": 38498,
+  "source_norm_sd": {
+    "abs_latitude_degree": 15.439584279847766,
+    "elevation_m": 884.973608627064,
+    "BIO12_mm": 736.4156814228156,
+    "vapour_source_unit": 0.6755592525330926
+  },
+  "original_primary_white_BIO12_adjusted_pp_per_source_sd_reproduced": 2.2545452351235875,
+  "raw_geographic_classified_photo_white": {
+    "absolute_latitude": [
+      {
+        "abs_lat_deg": "0-30",
+        "all_photos": 47159,
+        "classifiable": 19642,
+        "white": 9247,
+        "pct_white_of_classifiable": 47.0777
+      },
+      {
+        "abs_lat_deg": "30-60",
+        "all_photos": 50863,
+        "classifiable": 25033,
+        "white": 11713,
+        "pct_white_of_classifiable": 46.7902
+      },
+      {
+        "abs_lat_deg": "60-90",
+        "all_photos": 2326,
+        "classifiable": 1204,
+        "white": 590,
+        "pct_white_of_classifiable": 49.0033
+      }
+    ],
+    "longitude_90deg_sector": [
+      {
+        "sector": "W180_W90",
+        "all_photos": 13263,
+        "classifiable": 6301,
+        "white": 2918,
+        "pct_white_of_classifiable": 46.3101,
+        "pct_classifiable": 47.5081
+      },
+      {
+        "sector": "W90_E0",
+        "all_photos": 30177,
+        "classifiable": 13272,
+        "white": 6142,
+        "pct_white_of_classifiable": 46.2779,
+        "pct_classifiable": 43.9805
+      },
+      {
+        "sector": "E0_E90",
+        "all_photos": 30330,
+        "classifiable": 14313,
+        "white": 6555,
+        "pct_white_of_classifiable": 45.7975,
+        "pct_classifiable": 47.1909
+      },
+      {
+        "sector": "E90_E180",
+        "all_photos": 26578,
+        "classifiable": 11993,
+        "white": 5935,
+        "pct_white_of_classifiable": 49.4872,
+        "pct_classifiable": 45.1238
+      }
+    ],
+    "elevation_photo_opportunity_quartile": [
+      {
+        "quartile": 1,
+        "range_elevation_m": [
+          -330,
+          94
+        ],
+        "all_photos": 24910,
+        "classifiable": 11200,
+        "white": 5497,
+        "pct_white_of_classifiable": 49.0804
+      },
+      {
+        "quartile": 2,
+        "range_elevation_m": [
+          94,
+          286
+        ],
+        "all_photos": 25182,
+        "classifiable": 11628,
+        "white": 5562,
+        "pct_white_of_classifiable": 47.8328
+      },
+      {
+        "quartile": 3,
+        "range_elevation_m": [
+          286,
+          929
+        ],
+        "all_photos": 25083,
+        "classifiable": 11385,
+        "white": 5472,
+        "pct_white_of_classifiable": 48.0632
+      },
+      {
+        "quartile": 4,
+        "range_elevation_m": [
+          929,
+          6104
+        ],
+        "all_photos": 25080,
+        "classifiable": 11623,
+        "white": 4993,
+        "pct_white_of_classifiable": 42.9579
+      }
+    ]
+  },
+  "genus_equal_20694_species_geographically_adjusted": [
+    {
+      "model": "geography_only",
+      "white_vs_10deg_higher_abs_lat_pp": 0.4832,
+      "within_model_geography4_maxT95_lat_pp": [
+        -0.86238,
+        1.82878
+      ],
+      "white_vs_1000m_higher_elevation_pp": -1.902575,
+      "within_model_geography4_maxT95_elevation_pp": [
+        -3.49346,
+        -0.31169
+      ],
+      "longitude_sin_cos_joint_approx_chisq2_p": 0.0043868
+    },
+    {
+      "model": "geography_plus_rain",
+      "white_vs_10deg_higher_abs_lat_pp": 1.100865,
+      "within_model_geography4_maxT95_lat_pp": [
+        -0.28476,
+        2.48648
+      ],
+      "white_vs_1000m_higher_elevation_pp": -1.563683,
+      "within_model_geography4_maxT95_elevation_pp": [
+        -3.13791,
+        0.01055
+      ],
+      "longitude_sin_cos_joint_approx_chisq2_p": 0.03916535
+    },
+    {
+      "model": "geography_plus_vapour",
+      "white_vs_10deg_higher_abs_lat_pp": 3.082987,
+      "within_model_geography4_maxT95_lat_pp": [
+        0.59975,
+        5.56622
+      ],
+      "white_vs_1000m_higher_elevation_pp": 1.011016,
+      "within_model_geography4_maxT95_elevation_pp": [
+        -1.71324,
+        3.73527
+      ],
+      "longitude_sin_cos_joint_approx_chisq2_p": 0.006955
+    },
+    {
+      "model": "geography_both_moisture",
+      "white_vs_10deg_higher_abs_lat_pp": 2.82958,
+      "within_model_geography4_maxT95_lat_pp": [
+        0.45092,
+        5.20824
+      ],
+      "white_vs_1000m_higher_elevation_pp": 0.483004,
+      "within_model_geography4_maxT95_elevation_pp": [
+        -2.2096,
+        3.1756
+      ],
+      "longitude_sin_cos_joint_approx_chisq2_p": 0.03326929
+    }
+  ],
+  "source_bootstrap": {
+    "reps": 1999,
+    "seeds": [
+      202610151140,
+      202610151141,
+      202610151142,
+      202610151143
+    ],
+    "within_model_geo4_simultaneous_intervals": true,
+    "across_models_or_research_program_adjustment": false,
+    "longitude_joint_test": "Exploratory normal-approximate two-degree Wald test from paired genus bootstrap coefficient covariance; not a spatially corrected/geographical causation claim."
+  },
+  "original_latitude_photo_label_null": {
+    "within_species_equalness_one_sided_p": 0.214,
+    "source_original_receipt": "results/source_receipts/photo_white_latitudinal_null.json"
+  },
+  "limitations": [
+    "Photo-classifiable outcome is opportunistic visible photo hue, not worldwide plant species, morph genotype or fitness.",
+    "Raw photographic lat/lon/elevation strata differ from genus-centered 20694-species adjusted cohort and are not equivalent statistical estimands.",
+    "Absolute latitude is used, not signed north-south latitude. Longitude is circular: sine/cosine, not an eastward monotonic regression.",
+    "Climatic exposures strongly correlate: abs-lat/photo vapour r=-0.7816 and altitude/photo vapour r=-0.3892; changing adjusted covariates changes estimand and coefficient directions.",
+    "Geo4 maxT bootstrap is within each chosen fitted model, not a full-programme selection adjustment; original source photographic MNAR and site sampling remain unresolved.",
+    "Altitude association switching direction after atmospheric-vapour adjustment is not evidence for causal mediation or absence of altitude adaptation.",
+    "No original photo IDs, taxon names, per-genus site observations, original imagery, photographer metadata or source coordinates published."
+  ]
+}
