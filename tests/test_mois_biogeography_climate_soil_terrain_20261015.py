@@ -20,6 +20,9 @@ DEM=ROOT/"scripts/analysis/mois_dem_terrain_metrics_gate_20261015.py"
 OLD=ROOT/"results/fcp_macro_direction_20261013/decision_receipt.json"
 SI=ROOT/"docs/MOIS_GEB_SUPPORTING_INFORMATION_20261014.md"
 MEMO=ROOT/"docs/MOIS_BIOGEOGRAPHY_CLIMATE_SOIL_ELEVATION_TERRAIN_AUDIT_20261015.md"
+FULL26=ROOT/"results/mois_full26_climate_soil10_transfer_20261015.json"
+FULL26_SCRIPT=ROOT/"scripts/analysis/mois_full26_soil10_transfer_20261015.py"
+
 
 def module(path,name):
  spec=importlib.util.spec_from_file_location(name,path)
@@ -128,3 +131,29 @@ def test_manuscript_si_marks_full_scope_and_real_dem_blocker():
  assert "not" in memo.lower()
  assert "actual" in memo.lower()
  assert '"inat_taxon_id"' not in SAFE.read_text(encoding="utf8")
+
+
+def test_all26_climate_soil10_same_taxa_heldout_robustness():
+    q=data(FULL26)
+    old=data(SAFE)
+    assert q["schema"]=="mois_original_full26_climate_soil10_same_cohort_unseen_genus_v1"
+    assert q["photo_sha256"]==old["source_scope"]["source_sha256"]["photo"]
+    assert q["environment_sha256"]==old["source_scope"]["source_sha256"]["environment"]
+    assert (q["eligible_species"],q["eligible_genera"])==(16801,1665)
+    assert q["n_folds"]==5 and q["ridge_alpha"]==.01
+    assert q["bootstrap"]=={"unit":"heldout observed whole genera, no model refitting","draws":1999,"seed":202610151710}
+    m=q["model_results"]
+    base=m["geo_plus_all26_climate"]["heldout_species_photo_white_squared_error"]
+    for name in ("geo_plus_all26_climate_plus_soil5","geo_plus_all26_climate_plus_soil10"):
+        a=m[name]
+        assert a["heldout_species_photo_white_squared_error"]>base
+        assert a["incremental_soil_prediction_gain_over_geo_climate26"]<0
+        assert a["incremental_gain_genus_bootstrap95"][1]<0
+    assert m["geo_plus_all26_climate_plus_soil10"]["incremental_soil_prediction_gain_over_geo_climate26"]<m["geo_plus_all26_climate_plus_soil5"]["incremental_soil_prediction_gain_over_geo_climate26"]
+    code=FULL26_SCRIPT.read_text(encoding="utf8")
+    assert "mois_full_biogeography_climate_soil_audit_20261015.py" in code
+    assert "SHA256" in code and "training" in code
+    si=SI.read_text(encoding="utf8")
+    for token in ("all 26 original climate variables","0.228133","0.228537","0.228661","−0.000404","−0.000528"):
+        assert token in si,token
+
