@@ -12,6 +12,14 @@
 
 **Manuscript decision:** Summarize the established flower-colour findings and retain existing geographic/source limitations; do not expand into unrelated traits or present source-free future analyses as completed results. Draft PR is unmerged and unsubmitted; licensed anonymized original source data, DOI and human coauthor approval remain pending.
 
+## New exact original-source pooled floral-white ecology: 13 predictors (16 October 2026)
+
+[**Full source-backed results, 13 predictor slopes and ecological weighting comparison**](docs/MOIS_GLOBAL_OVERALL_WHITE_13ENV_AND_GENUS_SCALES_20261016.md) · [aggregate JSON receipt](results/mois_global_overall_white_13env_20261016.json) · [SHA-verified ZIP replayer](scripts/analysis/mois_global_pooled_white_13env_20261016.py).
+
+This answers a distinct question from the earlier 0.6202% genus-centred result. On the **same 16,801 soil36-complete classifiable species /1,665 genera**, the **13 geography, rainfall/vapour, temperature/solar, point-elevation and soil5 predictors together describe 2.000% of pooled species photographed-white variance** with one equal total weight per sampled genus (**1.282%** with species-equal weights). The original **0.6202%** is the separate fraction of *within-genus* white variation; it is **not** the environmental explanation of overall observed white. Source genome-free **genus identity alone** describes **44.315%** of these exact-species observed white-photo fractions in-sample (including the large grouping-model degrees-of-freedom effect; size-fixed colour shuffling mean **19.063%**). Environmental 13 predictors beyond fitted genus means add only **0.3454 percentage points** of total observed white variation. In a broader no-genus-gate set of **20,786 soil-complete species**, the 13-variable species-equal pooled R² remains **1.2807%**.
+
+Among the 13 mutually adjusted covariates, worldwide annual precipitation BIO12 retains **+3.770 white percentage points per original soil36-photo-site SD** (999 whole-genus resamples; 13-coefficient simultaneous95 **[+0.817,+6.723]**). Vapour, site elevation and the five individual soil terms have exploratory partial intervals spanning zero. The 2.000% pooled environmental R² is attributed descriptively via Shapley to **geography 0.6490, moisture 0.5574, soil5 0.4022, elevation 0.2373, temperature/light 0.1540** percentage points of *overall* white variance. These are shared, noncausal source-colour associations; photo-classification and soil complete-case selection, no measured DEM terrain, and no pigment fitness data remain important limitations.
+
 ## The main ecological question
 
 **Do photographed white versus coloured floral states covary with precipitation and atmospheric moisture among congeneric species, and how well does this relationship persist under photographic, spatial and alternative biological-measurement controls?**
