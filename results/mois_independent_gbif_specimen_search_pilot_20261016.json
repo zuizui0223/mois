@@ -1,0 +1,234 @@
+{
+  "schema": "mois_independent_gbif_public_search_coverage_pilot_v1",
+  "date_local": "2026-10-16",
+  "source_flower_labels": "Sinnott-Armstrong et al. Dryad (2025), 10.5061/dryad.r4xgxd2sc",
+  "source_traits_sha256": "a253308785e4cbd0e361b3ca04cdfdae29c523eefa843375cebf8030ee0874af",
+  "source_selection": "Sort original source clades by descending n_species then clade name, require >=20 taxa and both photographic white/nonwhite categories, select first 15; within each clade choose lexicographically first named white and nonwhite species. Exactly 30 source names are selected. No taxon names or climate data exported.",
+  "selection_ordered_binomial_names_sha256": "d025092677a9377265d48d1484fa8ab9555788a76b3c3b08c04fdb2729f6b0be",
+  "urls_format": "GET https://api.gbif.org/v1/occurrence/search?scientificName={source_species}&basisOfRecord=PRESERVED_SPECIMEN&hasCoordinate=true&year=2010,2026&limit=0 for source count, limit=1 for a single species-identity check",
+  "search_basis": "GBIF public search API, NOT an authenticated downloaded/citable GBIF data export. An api scientificName query may map aliases to GBIF's different current accepted species, and search counts do NOT guarantee that 5 independent 0.25-degree cells remain after quality and taxonomy filters.",
+  "n_clades_sampled": 15,
+  "n_species_sampled": 30,
+  "source_clade_sizes_in_sample_order": [
+    442,
+    185,
+    129,
+    123,
+    119,
+    101,
+    96,
+    93,
+    92,
+    90,
+    88,
+    87,
+    83,
+    83,
+    83
+  ],
+  "totals": {
+    "nonzero_named_searches": 27,
+    "searches_with_at_least_5_raw_indexed_occurrences": 23,
+    "searches_with_zero": 3,
+    "first_result_exact_binomial_matching_source": 19,
+    "first_result_accepted_species_mismatch": 8,
+    "n_hits_over_all_30_search_queries": 1634,
+    "white_nonzero": 14,
+    "nonwhite_nonzero": 13,
+    "white_first_exact": 11,
+    "nonwhite_first_exact": 8,
+    "paired_clades_both_names_raw_indexed_count_at_least_5": 8,
+    "paired_clades_both_first_accepted_species_exact": 8,
+    "paired_clades_both_first_exact_and_raw_count_at_least_5": 6
+  },
+  "anonymous_pairs": [
+    {
+      "rank": 1,
+      "source_clade_species_n": 442,
+      "white": {
+        "indexed_specimens": 46,
+        "first_result_species_exact": true
+      },
+      "nonwhite": {
+        "indexed_specimens": 23,
+        "first_result_species_exact": true
+      }
+    },
+    {
+      "rank": 2,
+      "source_clade_species_n": 185,
+      "white": {
+        "indexed_specimens": 20,
+        "first_result_species_exact": false
+      },
+      "nonwhite": {
+        "indexed_specimens": 67,
+        "first_result_species_exact": false
+      }
+    },
+    {
+      "rank": 3,
+      "source_clade_species_n": 129,
+      "white": {
+        "indexed_specimens": 1,
+        "first_result_species_exact": true
+      },
+      "nonwhite": {
+        "indexed_specimens": 8,
+        "first_result_species_exact": true
+      }
+    },
+    {
+      "rank": 4,
+      "source_clade_species_n": 123,
+      "white": {
+        "indexed_specimens": 248,
+        "first_result_species_exact": true
+      },
+      "nonwhite": {
+        "indexed_specimens": 152,
+        "first_result_species_exact": true
+      }
+    },
+    {
+      "rank": 5,
+      "source_clade_species_n": 119,
+      "white": {
+        "indexed_specimens": 84,
+        "first_result_species_exact": true
+      },
+      "nonwhite": {
+        "indexed_specimens": 12,
+        "first_result_species_exact": true
+      }
+    },
+    {
+      "rank": 6,
+      "source_clade_species_n": 101,
+      "white": {
+        "indexed_specimens": 71,
+        "first_result_species_exact": true
+      },
+      "nonwhite": {
+        "indexed_specimens": 0,
+        "first_result_species_exact": null
+      }
+    },
+    {
+      "rank": 7,
+      "source_clade_species_n": 96,
+      "white": {
+        "indexed_specimens": 17,
+        "first_result_species_exact": false
+      },
+      "nonwhite": {
+        "indexed_specimens": 0,
+        "first_result_species_exact": null
+      }
+    },
+    {
+      "rank": 8,
+      "source_clade_species_n": 93,
+      "white": {
+        "indexed_specimens": 41,
+        "first_result_species_exact": true
+      },
+      "nonwhite": {
+        "indexed_specimens": 72,
+        "first_result_species_exact": false
+      }
+    },
+    {
+      "rank": 9,
+      "source_clade_species_n": 92,
+      "white": {
+        "indexed_specimens": 156,
+        "first_result_species_exact": true
+      },
+      "nonwhite": {
+        "indexed_specimens": 2,
+        "first_result_species_exact": false
+      }
+    },
+    {
+      "rank": 10,
+      "source_clade_species_n": 90,
+      "white": {
+        "indexed_specimens": 47,
+        "first_result_species_exact": true
+      },
+      "nonwhite": {
+        "indexed_specimens": 252,
+        "first_result_species_exact": true
+      }
+    },
+    {
+      "rank": 11,
+      "source_clade_species_n": 88,
+      "white": {
+        "indexed_specimens": 30,
+        "first_result_species_exact": true
+      },
+      "nonwhite": {
+        "indexed_specimens": 1,
+        "first_result_species_exact": true
+      }
+    },
+    {
+      "rank": 12,
+      "source_clade_species_n": 87,
+      "white": {
+        "indexed_specimens": 0,
+        "first_result_species_exact": null
+      },
+      "nonwhite": {
+        "indexed_specimens": 17,
+        "first_result_species_exact": false
+      }
+    },
+    {
+      "rank": 13,
+      "source_clade_species_n": 83,
+      "white": {
+        "indexed_specimens": 4,
+        "first_result_species_exact": false
+      },
+      "nonwhite": {
+        "indexed_specimens": 34,
+        "first_result_species_exact": false
+      }
+    },
+    {
+      "rank": 14,
+      "source_clade_species_n": 83,
+      "white": {
+        "indexed_specimens": 50,
+        "first_result_species_exact": true
+      },
+      "nonwhite": {
+        "indexed_specimens": 156,
+        "first_result_species_exact": true
+      }
+    },
+    {
+      "rank": 15,
+      "source_clade_species_n": 83,
+      "white": {
+        "indexed_specimens": 12,
+        "first_result_species_exact": true
+      },
+      "nonwhite": {
+        "indexed_specimens": 11,
+        "first_result_species_exact": true
+      }
+    }
+  ],
+  "special_cautions": [
+    "Eight of the 27 nonzero queries returned an initial GBIF 'species' inconsistent with the exact source taxon name, due to synonymized genera or a hybrid marker; do not equate query results with eligible matched occurrence records.",
+    "Two of the full original 2960 source names use explicit X hybrid notation. The independent climate join must not silently normalize their species epithet to 'x'.",
+    "The sampled names are deliberately the alphabetic first of the 15 largest sampled clades with both colors, not a representative flora sample; selection includes one hybrid-coded source name.",
+    "Counts of raw indexed GBIF records ignore the spatial thinning and occurrence issue flags, accepted species status, and true number of raster-valid specimens.",
+    "None of the 30 queried species has been linked to WorldClim BIO12; no ecological effect estimate or independent rainfall slope was computed.",
+    "An authenticated DOI-stamped GBIF bulk download is still required for publishable external occurrence analysis."
+  ]
+}
