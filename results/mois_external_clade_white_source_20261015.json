@@ -1,0 +1,87 @@
+{
+  "schema": "mois_external_independent_clade_flower_white_replication_v1",
+  "external_data_doi": "10.5061/dryad.r4xgxd2sc",
+  "external_csv_sha256": "a253308785e4cbd0e361b3ca04cdfdae29c523eefa843375cebf8030ee0874af",
+  "external_csv_size_bytes": 118867,
+  "original_external_label_values": [
+    "black",
+    "green",
+    "orange",
+    "pink",
+    "purple",
+    "red",
+    "white",
+    "yellow"
+  ],
+  "external_eight_hue_counts": {
+    "black": 10,
+    "green": 365,
+    "orange": 26,
+    "pink": 219,
+    "purple": 293,
+    "red": 124,
+    "white": 1449,
+    "yellow": 474
+  },
+  "source_row_count": 2960,
+  "source_rows_without_classifiable_white_category": 0,
+  "classifiable_species_in_all_clades": 2960,
+  "n_original_named_clades": 51,
+  "qualified_clade_min_species": 3,
+  "qualified_classifiable_species": 2960,
+  "qualified_clades": 51,
+  "n_white_species_in_all_classifiable": 1449,
+  "white_species_equal_all_classifiable": 0.48952702702702705,
+  "white_species_equal_qualified_clades": 0.48952702702702705,
+  "white_equal_qualified_clade_means": 0.4819389233555799,
+  "clade_mean_binary_white_variance_fraction": {
+    "observed": 0.27484321871615275,
+    "global_species_colour_shuffle_mean": 0.01684536208634321,
+    "global_species_colour_shuffle_95": [
+      0.010925109152031607,
+      0.023655352079384042
+    ],
+    "one_sided_upper_tail_permutation_p": 0.0001
+  },
+  "nearly_uniform_white_or_nonwhite_clade_share_ge3": {
+    "observed": 0.23529411764705882,
+    "global_species_colour_shuffle_mean": 0.009616647939303734,
+    "global_species_colour_shuffle_95": [
+      0,
+      0.0392156862745098
+    ],
+    "one_sided_upper_tail_permutation_p": 0.0001
+  },
+  "n_qualified_clades_ge5": 49,
+  "nearly_uniform_white_or_nonwhite_clade_share_ge5": 0.24489795918367346,
+  "nearly_uniform_white_or_nonwhite_clade_share_ge5_null": {
+    "observed": 0.24489795918367346,
+    "global_species_colour_shuffle_mean": 0.0024553475755738838,
+    "global_species_colour_shuffle_95": [
+      0,
+      0.02040816326530612
+    ],
+    "one_sided_upper_tail_permutation_p": 0.0001
+  },
+  "clade_resampling_diagnostic": {
+    "seed": 202610152329,
+    "draws": 9999,
+    "selected_clade_bootstrap95_white_species_equal": [
+      0.409299244795689,
+      0.5841380936024202
+    ],
+    "selected_clade_bootstrap95_white_clade_equal": [
+      0.40135260438635206,
+      0.565084999004509
+    ],
+    "selected_clade_bootstrap95_eta_squared": [
+      0.1738791558071994,
+      0.39410586570893863
+    ],
+    "warning": "Clades were not drawn at random from the world flora; intervals are conditional descriptive resampling, not population-universal confidence limits."
+  },
+  "permutations": 9999,
+  "random_seed": 202610152328,
+  "comparison_warning": "External phylogenetic clades are not Mois nominal genera. This tests taxonomy-conditional colour clustering in a distinct animal-pollinated/fleshy-fruited source sample; no independent moisture gradient, BIO12 slope or reproductive fitness is estimated.",
+  "scope": "Independent external taxon colour labels, not validation of Mois photo-classification/UV or a causal phylogenetic effect"
+}
