@@ -46,6 +46,7 @@ def load_csv(path):
     encountered = {}
     n_rows = 0
     n_missing = 0
+    hue_counts = Counter()
     with Path(path).open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         if not reader.fieldnames:
@@ -64,6 +65,7 @@ def load_csv(path):
             if species in encountered:
                 raise ValueError(f"Species appears in more than one source row: {species}; use unambiguous input first")
             encountered[species] = clade
+            hue_counts[colour] += 1
             if colour in MISSING:
                 n_missing += 1
                 continue
@@ -72,7 +74,7 @@ def load_csv(path):
             by_clade[clade].append(1 if colour == "white" else 0)
     if not by_clade:
         raise ValueError("No classifiable flowers")
-    return by_clade, n_rows, n_missing
+    return by_clade, n_rows, n_missing, hue_counts
 
 
 def _stats(grouped):
@@ -96,7 +98,7 @@ def _stats(grouped):
 def run(path, *, draws=9999, seed=202610152328, min_clade_species=3):
     if draws < 99:
         raise ValueError("At least 99 permutations required for meaningful null diagnostic")
-    by_clade, n_rows, n_missing = load_csv(path)
+    by_clade, n_rows, n_missing, hue_counts = load_csv(path)
     eligible = {name: observations for name, observations in by_clade.items() if len(observations) >= min_clade_species}
     if len(eligible) < 2:
         raise ValueError("At least two qualifying independent sampled clades required")
@@ -150,6 +152,9 @@ def run(path, *, draws=9999, seed=202610152328, min_clade_species=3):
         "schema": "mois_external_independent_clade_flower_white_replication_v1",
         "external_data_doi": DOI,
         "external_csv_sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(),
+        "external_csv_size_bytes": Path(path).stat().st_size,
+        "original_external_label_values": sorted(x for x in hue_counts if x not in MISSING),
+        "external_eight_hue_counts": dict(sorted((k, v) for k, v in hue_counts.items() if k not in MISSING)),
         "source_row_count": n_rows,
         "source_rows_without_classifiable_white_category": n_missing,
         "classifiable_species_in_all_clades": sum(len(x) for x in by_clade.values()),
