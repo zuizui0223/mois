@@ -98,7 +98,7 @@ def test_scientific_publication_and_rights_limits():
     receipt = RECEIPT.read_text(encoding='utf8')
     q = json.loads(receipt)
     restrictions = ' '.join(q['limits']).lower()
-    for phrase in ('not original 24-hue-axis maxt', 'not causal', 'pollen or seed success',
+    for phrase in ('not original 24-hue-axis maxt', 'no causal moderator', 'pollen or seed success',
                    'site coordinates are exported'):
         assert phrase in restrictions
     assert '"photo_id"' not in receipt and '"inat_taxon_id"' not in receipt
@@ -108,4 +108,4 @@ def test_scientific_publication_and_rights_limits():
     for term in ('20,694','1,934','+2.076','+2.481','+1.781','+2.485','+3.381','+2.021'):
         assert term in si and term in memo
     assert 'source photo' in memo.lower() or 'photo-site' in memo.lower()
-    assert 'not a causal' in si.lower()
+    assert 'not causal' in si.lower()
