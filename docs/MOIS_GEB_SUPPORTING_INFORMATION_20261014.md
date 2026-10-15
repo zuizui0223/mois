@@ -199,6 +199,45 @@ The same original water-vapour outcome was positive across all six source strata
 
 Exact source ZIP replayer: scripts/analysis/mois_replay_climate_regime_moisture_20261015.py (the owner-held original photo and environment ZIPs required; supports --photo-zip, --env-zip, --output and --check); public **aggregate-only numerical result**: results/mois_climate_regime_moisture_20261015.json. Scientific scope, future independent pigment/fitness tests and raw-photo rights boundary: docs/MOIS_CLIMATE_REGIME_WHITE_MOISTURE_20261015.md. Full source --write and exact numerical --check passed separately in the owner execution environment; public GitHub CI validates the aggregate receipt and synthetic method properties without distributing original photos/sites.
 
+### S2.9 | Geographical coordinates and source altitude: photographic fractions and adjusted congeneric comparisons
+
+**Why these differ from the main moisture slopes.** Previously published source analysis used absolute latitude and circular longitude sine/cosine as broad geographic adjustment, with elevation among its 26 abiotic environmental variables but **not a primary independently estimated geographic coefficient**. The exact historical photo/environment ZIPs were therefore reopened and their full SHA256 hashes checked independently. The original **100,543** unique photo IDs and **45,953** four-class labels were unchanged. There were **100,348** original photo opportunities with valid source latitude/longitude, including **45,879** with classifiable photographic hue. The two analyses below are **different observational estimands**, not causally linked evidence.
+
+**A. Unadjusted source-photo geographic composition.** Absolute photo-site latitude produced white fractions **47.0777%** (0–30°, 9,247/19,642 classified), **46.7902%** (30–60°, 11,713/25,033) and **49.0033%** (60–90°, 590/1,204). The original 999-permutation within-species label-shuffle test found no unusually small latitudinal range (*P*=0.214). Latitude-photo classifiability differed (41.65%, 49.22%, 51.76% respectively), so these are not census frequencies of the true flora.
+
+| Original photo longitude sector | All geotagged photos | Classifiable photos | White among classifiable |
+|---|---:|---:|---:|
+| 180–90° W | 13,263 | 6,301 | **46.31%** |
+| 90–0° W | 30,177 | 13,272 | **46.28%** |
+| 0–90° E | 30,330 | 14,313 | **45.80%** |
+| 90–180° E | 26,578 | 11,993 | **49.49%** |
+
+The eastern 90–180° *photo-sector* has higher white representation, but longitude is circular and a sector difference is not a monotone eastward ecological trend. Country, biome, photo opportunity and floral composition differ by geographic sector.
+
+| Original source elevation quartile (metres) | Classifiable photo count | White among classifiable |
+|---|---:|---:|
+| −330–94 | 11,200 | **49.08%** |
+| 94–286 | 11,628 | **47.83%** |
+| 286–929 | 11,385 | **48.06%** |
+| 929–6,104 | 11,623 | **42.96%** |
+
+The elevation quartiles derive from **all source photo opportunities with valid coordinates and recorded elevation**, not just classifiable photos or taxa; the 100,255 opportunities with elevation enter the quartile assignment. The raw high-altitude minus low-altitude contrast is −6.12 percentage points conditional on photographic classifiability. No site/individual fitness, plant abundance or causal altitude contrast has been measured.
+
+**B. Same 20,694 source taxa and 1,934 genera: congeneric geographic models.** On the identical main climate26-complete species panel (**38,498 classifiable photographs**), regress each species' original photo-white fraction on genus-centred **absolute latitude, longitude sine/cosine and elevation** with equal total weight per genus. Evaluate (i) geographic variables only, (ii) +annual precipitation BIO12, (iii) +mean atmospheric vapour, (iv) +both water axes. Each model uses the original source photo-site environmental SD, and coefficients shown below are converted to **percentage points per +10° absolute latitude or +1,000 metres elevation**. The archived source original genus-equal congeneric white/BIO12 slope **+2.254545** pp/source SD was separately reconstructed exactly using its original latitude/sin/cos specification, with no source photo recolouring. There are **1,999 whole-genus bootstrap resamples per new model**, and a **within-model four-geographic-coefficient maxT 95% interval** for the four spatial/geographical regressors. This simultaneous band is not a study-wide or cross-model familywise correction.
+
+| Original-source genus-centred white model | Absolute latitude +10° (point [within-model four-geo maxT95]) | Elevation +1,000 m (point [within-model four-geo maxT95]) |
+|---|---:|---:|
+| Latitude + periodic longitude + elevation only | **+0.483 [−0.862,+1.829]** | **−1.903 [−3.493,−0.312]** |
+| Above + BIO12 annual rainfall | **+1.101 [−0.285,+2.486]** | **−1.564 [−3.138,+0.011]** |
+| Above + atmospheric vapour | **+3.083 [+0.600,+5.566]** | **+1.011 [−1.713,+3.735]** |
+| Above + both rainfall and vapour | **+2.830 [+0.451,+5.208]** | **+0.483 [−2.210,+3.176]** |
+
+In the geography-only model the nominal-genus-adjusted elevation slope is negative, but its sign changes and its interval spans zero after atmospheric vapour is included. The opposite effect occurs for **absolute latitude**: its geography-only interval spans zero, while the observed model-conditional coefficient is positive with vapour in the model. **Neither reversal identifies mediation, a physiological photoprotection trade-off, an independently selected elevation effect, or an evolutionary latitude rule.** The original classified photo-site absolute latitude and vapour are strongly correlated (`r≈−0.782`), as are elevation and vapour (`r≈−0.389`); different sets of conditioning variables define different associations.
+
+**Longitude model:** longitude was fit jointly as sine and cosine, not as a naive signed number from −180 to +180°. In the geography-only model, an approximate uncorrected two-degree Wald test of the pair gave *P*≈0.0044 and the fitted whole-circle peak-to-trough contrast was ≈6.71 percentage points, calculated after undoing original sine/cosine scaling. This *full-circle model contrast is an extrapolation beyond locally observed congeners*. The corresponding exploratory longitude-joint *P* values after adding rain, vapour and both were ≈0.039, 0.007 and 0.033, respectively. These normal-approximate tests are **not spatial-autocorrelation-corrected, cross-model multiplicity-controlled, or independent validation**. Differences in floristic geography and source photo classification remain plausible alternatives.
+
+**Evidence and limits.** The committed **aggregate-only synthesis receipt** `results/mois_photo_colour_geography_synthesis_20261015.json` records denominators, raw bands and within-model maxT intervals. An owner-executed standalone Python source replayer with **full ZIP SHA256 checks** independently recomputed the exact original congeneric BIO12 point estimate and all four new models, then passed its `--check` against its full-precision local output. The original licensed photography and site-level original ZIPs remain outside public GitHub pending author-approved data licence and location review. The new exploratory geographic comparisons are **Supporting Information only**: the source-conditional positive moisture–white species result remains central to the main GEB paper. No causal genotype-level pigment economy or natural selection conclusion is added.
+
 ## S3 | Same taxon identity, geographic support, and photo-scale bridge
 
 ### S3.1 | Matched geographic species B/C reconditioning
