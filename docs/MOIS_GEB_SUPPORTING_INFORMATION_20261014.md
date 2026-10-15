@@ -1,6 +1,6 @@
 # Supporting Information — observational global photographic flower colour and moisture
 
-**Companion to** `docs/MOIS_GEB_RESEARCH_ARTICLE_DRAFT_20261014.md`. All values come from migrated original-FCP SHA-locked result files or unchanged source-verification receipts, not new image opening, p-value search or independent replication. The `mois` repository is the interspecific study; H2 high-depth within-species colour-space results remain in `fcp`.
+**Companion to** `docs/MOIS_GEB_RESEARCH_ARTICLE_DRAFT_20261014.md`. Mois's original water–colour analyses remain anchored to FCP SHA-locked source receipts. The separate S2.18 analysis uses independently curated flower-colour labels from a published Dryad dataset and reports no new independent moisture associations. The `mois` repository is the interspecific study; H2 high-depth within-species colour-space results remain in `fcp`.
 
 ## S1 | Data source, exact units and original analysis lineage
 
@@ -482,6 +482,32 @@ Under the original genus-fold assignment, adding rainfall+vapour reduces pairwis
 **Biological implication and limitations:** The original broad white/rainfall+vapour regression among congeneric species and the stronger genus-mean gradient are source-supported observational patterns, but neither translates into precise, portable forecasts of which *two unseen congeneric species* will differ in photographed-white colour. In the same soil36-complete species support, 13 available source environment/soil variables explained only **0.6202%** of observed within-genus species-photo-white variance (S2.16). Lineage-level biology, pollinator selection, independently measured corolla reflectance, genuine local topography and genotype-level fitness data are needed to distinguish competing mechanisms; **no DEM slope/aspect/TPI/TRI or colour-dependent pollen/seed benefit was actually measured**. These pairwise tests cannot establish a pigment benefit–cost equilibrium or a global true white genetic morph frequency.
 
 Source-only reproducibility: `scripts/analysis/mois_pairwise_congeneric_transfer_20261015.py`; safe aggregate numerical result `results/mois_pairwise_congeneric_photo_white_transfer_20261015.json`; biological target rationale `docs/MOIS_PAIRWISE_CONGENERIC_TRANSFER_INDEPENDENT_VALIDATION_20261015.md`. Original attributed photos, site IDs, taxon and genus names, precise geographic coordinates and original ZIPs remain outside the public repository; CI guards source result receipts and synthetic mathematical properties without raw input access.
+
+### S2.18 | Independent clade-labelled flower colours: is near-half white prevalence within-clade balance?
+
+The **2025 Dryad dataset** associated with Sinnott-Armstrong et al. (2026, _American Journal of Botany_, DOI `10.1002/ajb2.70146`; Dryad DOI `10.5061/dryad.r4xgxd2sc`) was accessed through a previously saved, locally available copy of `final_dataset.csv`, not a new scrape or an original Mois ROI classification. The CSV's exact local SHA256 was `a253308785e4cbd0e361b3ca04cdfdae29c523eefa843375cebf8030ee0874af` and byte size **118,867**, with one record per **2,960 unique species** in **51 clades**. Its original eight `flower_color` strings are `white` (1,449), `yellow` (474), `green` (365), `purple` (293), `pink` (219), `red` (124), `orange` (26), and `black` (10). All rows were labelled; unknown colour strings are rejected rather than imputed. The observed schema, dimensions and size match the public dataset description, but **the provider's own file hash was not available to cryptographically compare the recovered copy**. The underlying sampling is animal-pollinated/fleshy-fruited lineages; the 51 selected clades are **not randomly sampled genera** and may include multiple nominal genera. The external researchers also used some botanical images drawn from GBIF/iNaturalist, so their *label generation* differs from the automated Mois classifier but underlying visual media need not be entirely non-overlapping.
+
+We prespecified the colour-only comparison in `docs/MOIS_EXTERNAL_CLADE_HUE_AND_PRECEDENT_AUDIT_20261015.md` before obtaining this copy. Define a species white indicator `y_i=1` for exactly `flower_color == white` and 0 for every other observed source colour. For each source clade `g` with `n_g≥3`, let `p_g` denote the mean binary white indicator, and `p` the species-equal grand mean. The descriptive between-clade fraction of observed binary-white variance is
+
+```text
+eta²_clade = Σ_g n_g (p_g − p)² / (N p (1 − p)).
+```
+
+This statistical grouping measure is **not** a phylogenetic comparative method, macroevolutionary transition-rate estimate, pollen-transfer fitness or the causal effect of genus replacement. The null repeatedly shuffles species white labels across the **fixed original clade sizes** (`9,999` permutations, seed `202610152328`), preserving the global 1,449 white labels and all source clade sizes. The one-sided Monte Carlo `P` counts observed-or-larger statistics with the plus-one correction `(1 + #{null≥observed})/(9,999+1)`; it is conditional on the selected labels/clades, not study-wide correction across Mois's prior model search. A separate `9,999`-draw clade-resampling diagnostic (seed `202610152329`) uses replacement of the **51 selected clade groups**, not external random sampling of angiosperm lineages.
+
+| Real recovered external trait-table result | Observed | Label-shuffle mean and 95% permutation envelope |
+| --- | ---: | ---: |
+| Species-equal white | **1,449/2,960 = 48.9527%** | Fixed in each permutation, by construction |
+| Clade-equal mean white | **48.1939%** | Descriptive; not tested as a stable adaptive optimum |
+| Binary-white variance described by clade composition | **27.4843%** | **1.6845% [1.0925, 2.3655]%**, conditional one-sided `P=0.0001` |
+| Clades with white ≤10% or ≥90%, ≥3 sampled species | **12/51 = 23.53%** | **0.9617% [0, 3.9216]%**, `P=0.0001` |
+| Clades with white ≤10% or ≥90%, ≥5 sampled species | **12/49 = 24.49%** | **0.2455% [0, 2.0408]%**, `P=0.0001` |
+
+Conditional clade-resampling ranges were **40.93–58.41%** for species-weighted white, **40.14–56.51%** for clade-equal white and **17.39–39.41%** for eta². These are descriptive uncertainty diagnostics of the *selected* 51 clades, not inferential confidence intervals for all flowering plants or the original Mois photograph-selection process. The near-half on two distinct source trait-labelling systems does **not** establish stabilizing/balancing selection, equilibrium genotype frequencies, equal reproductive fitness, or metabolically costly nonwhite pigment production.
+
+**Ecological conclusion at the supported grain:** The source provides **independently curated plant flower-colour observations** with strong clade-structured white heterogeneity despite species-aggregate near-parity, qualitatively concordant with Mois's nominal-genus photo-label clustering (**34.38% observed**, original genus-size shuffle **9.33%**). The observed two R²-like statistics and their nulls **cannot be directly compared as if they share taxonomy, response, group size or sampling probabilities**. The new Dryad source is closely related to Dellinger et al. (2026) and does **not** independently estimate moisture or geographic environments, provide VIS/UV reflectance, characterize pollination or reproductive benefits, or replicate Mois's water/BIO12 sign.
+
+Reproduction and privacy/licence scope: `scripts/analysis/mois_external_clade_flower_colour_benchmark_20261015.py --csv PATH/TO/final_dataset.csv --expected-sha256 a253308785e4cbd0e361b3ca04cdfdae29c523eefa843375cebf8030ee0874af`; corresponding **aggregate-only result** `results/mois_external_clade_white_source_20261015.json` and [public citable Dryad dataset](https://doi.org/10.5061/dryad.r4xgxd2sc). Public CI checks synthetic hue parsing, clade permutation mathematics and frozen aggregate invariants; the actual 2,960 row table remains at its source and the existing user Library, not committed to this GitHub repository. Original FCP source-photo ZIPs remain separately licence-gated.
 
 ## S3 | Same taxon identity, geographic support, and photo-scale bridge
 
