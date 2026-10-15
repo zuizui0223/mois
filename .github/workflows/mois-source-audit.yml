@@ -27,6 +27,8 @@ jobs:
         run: python scripts/analysis/mois_ecological_scale_synthesis_20261015.py --check
       - name: Test external clade colour benchmark on synthetic rows only (NO downloaded dataset)
         run: python scripts/analysis/mois_external_clade_flower_colour_benchmark_20261015.py --self-test
+      - name: Test external name-derived genus sensitivity on synthetic rows only
+        run: python scripts/analysis/mois_external_nominal_genus_sensitivity_20261015.py --self-test
       - name: Syntax-check original raw source recovery without downloading or publishing images
         run: bash -n scripts/recover_mois_original_inputs.sh
       - name: Compile separately implemented original-source coefficient verification code
