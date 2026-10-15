@@ -1,0 +1,45 @@
+{
+  "schema": "mois_original_full26_climate_soil10_same_cohort_unseen_genus_v1",
+  "photo_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "environment_sha256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "eligible_species": 16801,
+  "eligible_genera": 1665,
+  "cross_validation": "five disjoint SHA256 hashed genus folds; no source genus is shared between train/test within a fold",
+  "n_folds": 5,
+  "ridge_alpha": 0.01,
+  "scaling": "training-fold equal-genus mean/SD only; prediction clipped to [0,1]",
+  "target": "classified photo white fraction per source named taxon; heldout equal genus squared error, not genotype or lifetime fitness",
+  "bootstrap": {
+    "unit": "heldout observed whole genera, no model refitting",
+    "draws": 1999,
+    "seed": 202610151710
+  },
+  "model_results": {
+    "geo_plus_all26_climate": {
+      "heldout_species_photo_white_squared_error": 0.22813288536129273,
+      "incremental_soil_prediction_gain_over_geo_climate26": 0,
+      "incremental_gain_genus_bootstrap95": [
+        0,
+        0
+      ]
+    },
+    "geo_plus_all26_climate_plus_soil5": {
+      "heldout_species_photo_white_squared_error": 0.22853734681634522,
+      "incremental_soil_prediction_gain_over_geo_climate26": -0.00040446145505249054,
+      "incremental_gain_genus_bootstrap95": [
+        -0.0006785829901109569,
+        -0.00011604202195280859
+      ]
+    },
+    "geo_plus_all26_climate_plus_soil10": {
+      "heldout_species_photo_white_squared_error": 0.2286610993702406,
+      "incremental_soil_prediction_gain_over_geo_climate26": -0.0005282140089478693,
+      "incremental_gain_genus_bootstrap95": [
+        -0.0008731178701702202,
+        -0.00017285539857311993
+      ]
+    }
+  },
+  "interpretation": "On the same original soil36-complete taxon support, all26 climate plus geography did not gain from additional 5 or 10 SoilGrids predictor fields under this fixed ridge/unseen-genus loss setup. Negative heldout gain does NOT show soil has no ecological or causal effect.",
+  "limits": "Climate26 includes site elevation; the added soil5/soil10 fields are often correlated, sand-silt-clay texture is compositional; unlicensed photo/site data and real DEM terrain remain absent from public GitHub."
+}
