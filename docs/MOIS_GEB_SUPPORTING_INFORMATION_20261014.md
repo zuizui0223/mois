@@ -336,6 +336,34 @@ A separate descriptive Natural Earth 110m country-polygon overlay of original **
 
 Full audit and biological interpretations: `docs/MOIS_BIOGEOGRAPHY_CLIMATE_SOIL_ELEVATION_TERRAIN_AUDIT_20261015.md`. The safe machine-readable scientific receipt is `results/mois_biogeography_climate_soil_elevation_full_audit_20261015.json`; source replayer: `scripts/analysis/mois_full_biogeography_climate_soil_audit_20261015.py` (**original photo/environment ZIPs required; optional separately sourced 110m polygon dataset**). The full owner-side original-source run and numerical `--check` passed; public hosted CI checks committed aggregated results and synthetic numerical/terrain invariants, **not licensed raw photo data**. This is an additional same-source sensitivity/prediction audit and does not replace the originally signed main GEB worldwide white/BIO12 result, nor demonstrate biological fitness benefits, selective pigment costs or global 50:50 evolutionary equilibrium.
 
+### S2.13 | Is the soil-block predictive increment an artefact of one genus split or ridge penalty?
+
+The original all26-climate-versus-soil5/soil10 predictive experiment (S2.12) used fixed ridge `α=0.01` and one deterministic fivefold split across whole sampled nominal genera. We therefore revisited the **identical 16,801 original soil36-qualified species/1,665 genera** directly using the same two original SHA256-verified photo and environmental ZIPs. The complete original photo-site and classifiable-hue gate, source species fractions and all26 climate predictor columns (including elevation) remain unchanged. Each model uses geographic location plus all26 original climate predictors, versus exactly those predictors plus five or ten original soil fields. Predictor means and standard deviations are recomputed **from each training fold only**, genus-heldout evaluation is fully disjoint at genus level, and ridge intercepts are unpenalized.
+
+Eight frozen ridge strengths (`α=0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0`) were crossed with the original SHA256-based whole-genus fivefold assignment and **three additional deterministic salted whole-genus fivefold assignments**. This produces **32 nonindependent analysis settings on the same original photographed source cohort**; each setting evaluates the same original species under the same folds/penalty across climate-only, climate+soil5 and climate+soil10. The response is each taxon's original *classifiable-photo white proportion*, and the error is the equal-genus average heldout squared deviation. Positive incremental gain means soil decreased the heldout error compared with **that setting's climate-only model**. No pigment chemistry, relative fitness or independent new species observations were added.
+
+| Source sensitivity question | Settings with *worse* heldout prediction after adding soil | Other settings |
+|---|---:|---:|
+| Full climate26 + soil5 | **31/32** | 1/32 slightly improved |
+| Full climate26 + soil10 | **32/32** | 0/32 improved |
+
+The single soil5 improvement occurred for the third salted genus assignment under very strong ridge `α=1.0`, with **+0.000012** positive gain (full safe numerical precision +0.000011947). All original-fold choices and all other regularization strengths had negative source heldout soil increments. This supports *directional robustness* of the original modest/no incremental soil predictive finding, **not an empirical claim that soils do not regulate pigment biology**. A very small apparent gain under one heavily penalized model is expected to be unstable at this scale.
+
+For detailed uncertainty when holding ridge at the original `α=0.01`, we performed **1,999 whole-genus resamples of the already heldout errors** per separate genus split, with frozen seeds. These are *fixed-prediction bootstrap intervals*, not independent external evaluation or nesting that reoptimizes hyperparameters:
+
+| Disjoint whole-genus fold assignment | Soil5 gain versus full26 climate [95%] | Soil10 gain versus full26 climate [95%] |
+|---|---:|---:|
+| Original SHA256 genus folds | **−0.000404 [−0.000683,−0.000130]** | **−0.000528 [−0.000874,−0.000176]** |
+| Additional salted folds A | −0.000149 [−0.000399,+0.000109] | −0.000199 [−0.000494,+0.000116] |
+| Additional salted folds B | −0.000174 [−0.000439,+0.000087] | −0.000303 [−0.000632,+0.000025] |
+| Additional salted folds C | **−0.000284 [−0.000545,−0.000008]** | **−0.000458 [−0.000791,−0.000105]** |
+
+The fixed-penalty point differences remain negative across these four disjoint-genus partitions, but **their 95% intervals overlap zero for several partitions**. They must not be described as four independently confirmed negative effects, and the grid is not nested model tuning or a programme-wide error-controlled test. Exploratory selection of the best ridge value *on the same heldout predictions* would be optimistic; no such selection is used to declare an out-of-sample discovery.
+
+**Ecological interpretation:** The broader positive white–water-climate pattern can remain detectable in sampled congeneric species and predict previously unseen sampled genera without necessarily obtaining additional transferable species-level photographic colour information from these coarse soil fields. This does **not** rule out local microsite moisture, belowground resource limitation, pH effects in particular clades, water retention relevant at different resolutions or soil-driven flowering fitness trade-offs. Geographically and elevationally unequal soil availability, highly correlated source texture fractions and photo-hue classifier missingness remain unresolved.
+
+Full original-ZIP source replayer `scripts/analysis/mois_soil_full26_alpha_fold_robustness_20261015.py`; machine-checkable source-aggregate receipt `results/mois_soil_full26_alpha_fold_robustness_20261015.json`; ecological interpretation `docs/MOIS_BIOGEOGRAPHY_CLIMATE_SOIL_ELEVATION_TERRAIN_AUDIT_20261015.md`. Hosted CI tests exact receipt numbers, synthetic grouped loss and full-source script syntax; original source photo and environment ZIPs remain in an access-controlled owner workspace. **True terrain slope/aspect/TPI/TRI is not inferred from source point elevation**; a distinct, independently licensed DEM with validated sample-site linkage is still required.
+
 ## S3 | Same taxon identity, geographic support, and photo-scale bridge
 
 ### S3.1 | Matched geographic species B/C reconditioning
