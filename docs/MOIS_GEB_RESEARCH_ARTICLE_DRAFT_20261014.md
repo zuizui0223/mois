@@ -120,7 +120,9 @@ In the climate26 global genus-equal panel (**20,694 species, 1,934 genera**), an
 
 The world genus-equal BIO12 point coefficients for yellow/orange (**−1.221**), red/pink (**−0.446**) and blue/purple (**−0.588**) collectively offset white by construction of the four-colour composition, but each of their **individual 24-contrast maxT 95% intervals spans zero**. Similarly, for water vapour the three nonwhite hue points (−1.385, −1.509 and −1.057) have intervals spanning zero. This is evidence for a source-conditional white-versus-combined-nonwhite compositional contrast, **not** three independently confirmed coloured-hue decreases (Fig. 4).
 
-Original within-design 24-maxT estimates and intervals were independently recovered from the source ZIPs (S6); this is numerical reproducibility, not biological replication.
+Original within-design 24-maxT estimates were independently recovered from the source ZIPs (S6), without new biological replication.
+
+With rainfall, vapour and elevation jointly fitted, both conditional white slopes remained positive but their two-contrast maxT intervals included zero. The standardized shared-moisture direction remained positive (**+3.644 pp**, two-contrast 95% **[+1.137,+6.152]**), without identifying an independent causal driver (S2).
 
 All 1,934 leave-one-genus-out checks retained positive white–rainfall and white–vapour slopes, without identifying biological selection (S6).
 
