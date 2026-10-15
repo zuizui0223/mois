@@ -53,7 +53,7 @@ def load_source(photo_zip:Path,environment_zip:Path):
     y=species.white.to_numpy(float)
     if not np.isfinite(x).all() or not np.isfinite(y).all() or not np.all((0<=y)&(y<=1)):
         raise ValueError('Invalid original photographed species colours or environments')
-    return source,labels,gi,n,x,y,norm
+    return source,labels,gi,n,x,y,norm,soil
 
 
 def block_shapley(scores):
@@ -184,13 +184,27 @@ def genus_shuffle(gi,n,y,observed):
 
 
 def make(photo_zip,env_zip):
-    source,genera,gi,n,x,y,site_norm=load_source(photo_zip,env_zip)
+    source,genera,gi,n,x,y,site_norm,soil=load_source(photo_zip,env_zip)
     gw=1/n[gi]
     equal_genus=pooled_fit(gi,n,x,y,gw)
     equal_species=pooled_fit(gi,n,x,y,np.ones(len(y)))
+    # Additional *global* species-equal sensitivity: no >=3 species/genus gate.
+    # Retains 20,786 unique original soil36-complete species and 31,925 photos.
+    col={name:'mean' for name in FEATURES}
+    col.update({'genus':'first','white':'mean','photo_id':'size'})
+    all_species=soil.groupby('inat_taxon_id',sort=True).agg(col).reset_index()
+    if (len(all_species),all_species.genus.nunique(),int(all_species.photo_id.sum()))!=(20786,4853,31925):
+        raise ValueError('All soil36 original global taxon/genus/photo denominator drift')
+    all_genera,all_id=np.unique(all_species.genus.to_numpy(),return_inverse=True)
+    all_n=np.bincount(all_id)
+    all_X=all_species[FEATURES].to_numpy(float)/np.array([site_norm[k] for k in FEATURES])
+    all_y=all_species.white.to_numpy(float)
+    all_global=pooled_fit(all_id,all_n,all_X,all_y,np.ones(len(all_y)))
     old_within=.006202366064066511
     if abs(equal_genus['same_cohort_within_genus_all13_R2_of_remaining_within_white_variance']-old_within)>1e-10:
         raise AssertionError('Original source validated within-genus all13 R2 does not replay')
+    if abs(all_global['pooled_all13_R2']-.012806646762199388)>1e-9:
+        raise AssertionError('Original unqualified 20,786-species pooled environmental R2 drift')
     if abs(equal_genus['pooled_all13_R2']-.01999939742187049)>1e-9:
         raise AssertionError('Original pooled whole-colour WLS R2 drift')
     report={
@@ -206,6 +220,15 @@ def make(photo_zip,env_zip):
       'source_photo_site_sd_for_all13':{key:site_norm[key] for key in FEATURES},
       'pooled_overall_white_genus_equal':equal_genus,
       'pooled_overall_white_species_equal':equal_species,
+      'all_soil36_classifiable_species_without_congeneric_gate_species_equal':{
+        'eligible_species':len(all_y),'observed_named_genera':len(all_genera),
+        'source_classifiable_photo_rows':int(all_species.photo_id.sum()),
+        'species_equal_observed_photo_white_mean':all_global['photo_white_mean_of_species_proportions'],
+        'all13_in_sample_pooled_white_R2':all_global['pooled_all13_R2'],
+        'all13_five_block_shapley':all_global['pooled_block_shapley_fraction_total_white_variance'],
+        'BIO12_full13_slope_pp_per_original_source_soil_site_SD':all_global['pooled_all13_coefficient_pp_per_original_soil36_photo_site_SD']['wc_bio12'],
+        'warning':'Only species-equal descriptive overall environmental fit; no >=3 congeneric species condition; no bootstrap family or independent occurrence-site replication for this sensitivity.'
+      },
       'genus_equal_999_cluster_bootstrap':bootstrap_genus_pooled(gi,n,x,y,equal_genus),
       'fixed_genus_size_species_white_permutation_null':genus_shuffle(gi,n,y,{
         'genus_equal':equal_genus['same_cohort_genus_identity_only_R2'],
