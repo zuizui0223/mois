@@ -23,6 +23,9 @@ import numpy as np
 TRAIT_SHA='a253308785e4cbd0e361b3ca04cdfdae29c523eefa843375cebf8030ee0874af'
 DOI='10.5061/dryad.r4xgxd2sc'
 EXCLUDES={'INTRODUCED','INVASIVE','MANAGED','CULTIVATED','FOSSIL_SPECIMEN'}
+VISIBLE_HUES={'black','green','orange','pink','purple','red','white','yellow'}
+SOURCE_EXPECTED_ROWS=2960
+SOURCE_EXPECTED_HYBRID_NAMES=2
 
 
 def sha256(path):
@@ -32,26 +35,43 @@ def sha256(path):
     return h.hexdigest()
 
 
+def is_hybrid_source_name(x):
+    """Do not silently turn a hybrid marker 'X/×' into a species epithet."""
+    terms=str(x).strip().replace('_',' ').split()
+    return len(terms)>=3 and terms[1].casefold() in ('x','×')
+
+
 def binomial(x):
-    """Keep only canonical Genus species, never fuzzy matching or synonyms."""
-    terms=x.strip().replace('_',' ').split()
-    if len(terms)<2 or not re.fullmatch(r'[A-Za-z][A-Za-z-]+',terms[0]) or not re.fullmatch(r'[A-Za-z][A-Za-z-]+',terms[1]):
+    """Strict literal Genus species; do not silently reconcile hybrid names."""
+    terms=str(x).strip().replace('_',' ').split()
+    if len(terms)<2 or terms[1].casefold() in ('x','×') or not re.fullmatch(r'[A-Za-z][A-Za-z-]+',terms[0]) or not re.fullmatch(r'[A-Za-z][A-Za-z-]+',terms[1]):
         return ''
     return (terms[0]+' '+terms[1]).casefold()
 
 
-def load_traits(path,validate=True):
+def load_traits(path,validate=True,return_audit=False):
     if validate and sha256(path)!=TRAIT_SHA:raise ValueError('Dryad species/colour checksum differs from frozen analysis')
-    traits={}
+    traits={};n_rows=0;n_hybrid=0
     with open(path,encoding='utf-8-sig',newline='') as f:
         reader=csv.DictReader(f)
         if list(reader.fieldnames or [])!=['clade','species','flower_color','fruit_color']:
             raise ValueError('Unexpected source traits columns')
         for row in reader:
+            n_rows+=1
+            hue=row['flower_color'].strip().casefold()
+            if hue not in VISIBLE_HUES:
+                raise ValueError('Unrecognised source flower colour; never silently code as nonwhite')
+            if is_hybrid_source_name(row['species']):
+                n_hybrid+=1
+                continue  # Unresolved hybrid parentage/taxonomy; exclude conservatively
             taxon=binomial(row['species'])
             if not taxon or taxon in traits:raise ValueError('Invalid or duplicate species name after binomial normalization')
-            traits[taxon]=(row['clade'],int(row['flower_color'].strip().casefold()=='white'))
-    return traits
+            traits[taxon]=(row['clade'],int(hue=='white'))
+    if validate and (n_rows,n_hybrid)!=(SOURCE_EXPECTED_ROWS,SOURCE_EXPECTED_HYBRID_NAMES):
+        raise ValueError('Dryad source denominator or hybrid-exclusion count unexpectedly changed')
+    audit={'n_original_source_rows':n_rows,'n_excluded_unresolved_hybrid_names':n_hybrid,
+           'n_strict_binomial_traits':len(traits),'species_identity':'literal Genus species only, no synonym/hybrid crosswalk'}
+    return (traits,audit) if return_audit else traits
 
 
 def points_from_gbif(path, traits, *, min_year=2010, max_uncertainty=5000, preserve_only=True):
@@ -70,7 +90,13 @@ def points_from_gbif(path, traits, *, min_year=2010, max_uncertainty=5000, prese
             if not source_id or source_id in seen:c['duplicate_or_missing_gbifid']+=1;continue
             seen.add(source_id)
             species=binomial(row['scientificName'])
-            if species not in traits:c['taxon_not_matched']+=1;continue
+            if species not in traits:c['scientific_name_not_strictly_matched']+=1;continue
+            # GBIF's accepted species can differ even when the verbatim name matches.
+            # A source-specific synonym crosswalk is mandatory before merging those rows.
+            gbif_accepted=binomial(row.get('species') or '')
+            if gbif_accepted and gbif_accepted!=species:
+                c['accepted_species_mismatch_requires_crosswalk']+=1
+                continue
             if row['occurrenceStatus'].upper() not in ('PRESENT',''):c['not_present']+=1;continue
             if preserve_only and row['basisOfRecord'].upper()!='PRESERVED_SPECIMEN':
                 c['not_preserved_specimen']+=1;continue
@@ -175,6 +201,11 @@ def self_test():
     assert binomial('Annona_reticulata')=='annona reticulata'
     assert binomial('Annona reticulata L.')=='annona reticulata'
     assert binomial('Invalid')==''
+    assert is_hybrid_source_name('Rosa_X_odorata')
+    assert is_hybrid_source_name('Garcinia × mangostana')
+    assert binomial('Rosa_X_odorata')==''
+    assert binomial('Garcinia × mangostana')==''
+    assert not is_hybrid_source_name('Annona_reticulata')
     traits={f'genus{g} species{i}':(f'clade{g}',int(i%2==0)) for g in range(6) for i in range(4)}
     climate={}
     for idx,k in enumerate(traits):
@@ -205,11 +236,12 @@ def main():
         p.error('Need verified traits, independently sourced GBIF occurrence export and DOI, and credited WorldClim raster')
     if not re.fullmatch(r'10\.15468/dl\.[\w-]+',args.gbif_download_doi.strip(),re.I):
         p.error('A citable GBIF occurrence-download DOI is mandatory')
-    traits=load_traits(args.traits)
+    traits,trait_audit=load_traits(args.traits,return_audit=True)
     points,counts=points_from_gbif(args.gbif_occurrences,traits)
     bio12,bad=sample_bio12(points,args.worldclim_bio12,args.raster_factor)
     out=fit_white_bio12(traits,bio12)
     out.update({'source_trait_sha256':sha256(args.traits),'traits_doi':DOI,
+                'source_traits_taxonomy_audit':trait_audit,
                 'gbif_occurrence_download_doi':args.gbif_download_doi,
                 'gbif_download_sha256':sha256(args.gbif_occurrences),
                 'worldclim_raster_sha256':sha256(args.worldclim_bio12),
