@@ -14,6 +14,8 @@ NOTE = ROOT / "docs/MOIS_EXTERNAL_CLADE_HUE_AND_PRECEDENT_AUDIT_20261015.md"
 REFERENCE = ROOT / "docs/MOIS_GEB_REFERENCE_AND_GUIDELINE_AUDIT_20261014.md"
 SCRIPT = ROOT / "scripts/analysis/mois_external_clade_flower_colour_benchmark_20261015.py"
 EXTERNAL = ROOT / "results/mois_external_clade_white_source_20261015.json"
+GENUS = ROOT / "results/mois_external_nominal_genus_hue_20261015.json"
+GENUS_SCRIPT = ROOT / "scripts/analysis/mois_external_nominal_genus_sensitivity_20261015.py"
 
 
 def test_global_precedent_citation_and_distinct_estimands():
@@ -74,3 +76,29 @@ def test_real_external_aggregates_are_consistent_but_not_a_climate_replication()
     assert boot["selected_clade_bootstrap95_white_species_equal"][0] < .5 < boot["selected_clade_bootstrap95_white_species_equal"][1]
     assert "no independent moisture gradient" in q["comparison_warning"]
     assert not any(x in EXTERNAL.read_text(encoding="utf-8") for x in ("Annona_reticulata", "Solanum_lycopersicum", "gps_coordinates"))
+
+
+def test_external_nominal_genus_sensitivity_is_distinct_from_original_51_clades():
+    q = json.loads(GENUS.read_text(encoding="utf-8"))
+    assert q["external_data_doi"] == "10.5061/dryad.r4xgxd2sc"
+    assert q["original_csv_sha256"] == "a253308785e4cbd0e361b3ca04cdfdae29c523eefa843375cebf8030ee0874af"
+    assert q["original_source_rows"] == 2960
+    assert (q["source_clades"], q["all_unique_nominal_genus_tokens"]) == (51, 118)
+    assert q["source_rows_genus_token_differs_from_study_clade"] == 159
+    assert (q["qualifying_nominal_genera"], q["qualifying_source_species"]) == (68, 2902)
+    assert q["white_species_in_eligible_genera"] == 1426
+    assert math.isclose(q["white_species_equal_eligible_genera"], 1426/2902, abs_tol=1e-14)
+    assert math.isclose(q["white_equal_nominal_genus_means"], .43788559529682863, abs_tol=1e-12)
+    r2 = q["nominal_genus_eta2"]
+    assert math.isclose(r2["observed"], .28565106059472606, abs_tol=1e-12)
+    assert math.isclose(r2["global_species_colour_shuffle_mean"], .023090826983744445, abs_tol=1e-12)
+    assert r2["one_sided_upper_tail_permutation_p"] == .0001
+    assert math.isclose(q["source_clade_eta2_on_identical_species"], .27968702615385255, abs_tol=1e-12)
+    assert q["nominal_genus_near_pure_fraction_ge3"]["observed"] == 19/68
+    assert q["n_eligible_nominal_genera_ge5"] == 58
+    assert math.isclose(q["nominal_genus_near_pure_fraction_ge5"], 16/58, abs_tol=1e-12)
+    assert (q["fixed_genus_size_permutations"], q["permutation_seed"]) == (9999, 202610152330)
+    src = GENUS_SCRIPT.read_text(encoding="utf-8")
+    assert "nominal_genus" in src and "no independent climate variable" in src
+    assert "--self-test" in src
+    assert "not a vetted taxonomic synonym" in q["limits"]
