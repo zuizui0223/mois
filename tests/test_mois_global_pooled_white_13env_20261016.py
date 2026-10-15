@@ -97,7 +97,7 @@ def test_source_replayer_and_ecological_scope_notes():
     text=REPORT.read_text(encoding="utf8")
     for word in ("--self-test","--photo-zip","--env-zip",
                  "source.original","block_shapley","genus_shuffle",
-                 "within-genus", "SOURCE"):
+                 "within-genus", "Original source"):
         assert word in script or word in text,word
     assert "2.000%" in text and "1.282%" in text and "0.6202%" in text
     assert "20,786" in text and "44.315%" in text
