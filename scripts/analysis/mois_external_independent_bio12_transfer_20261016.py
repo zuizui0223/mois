@@ -206,6 +206,24 @@ def self_test():
     assert binomial('Rosa_X_odorata')==''
     assert binomial('Garcinia × mangostana')==''
     assert not is_hybrid_source_name('Annona_reticulata')
+    with tempfile.TemporaryDirectory() as tmp:
+        p=Path(tmp)/'traits.csv'
+        p.write_text('clade,species,flower_color,fruit_color\n'
+                     'A,Annona_reticulata,white,red\n'
+                     'A,Rosa_X_odorata,pink,red\n'
+                     'B,Garcinia_X_mangostana,yellow,red\n'
+                     'B,Solanum_absconditum,purple,green\n',encoding='utf-8')
+        found,audit=load_traits(p,validate=False,return_audit=True)
+        assert len(found)==2 and audit['n_excluded_unresolved_hybrid_names']==2
+        assert 'annona reticulata' in found and 'solanum absconditum' in found
+        assert all(not name.endswith(' x') for name in found)
+        p.write_text('clade,species,flower_color,fruit_color\n'
+                     'A,Annona_reticulata,unknown,red\n',encoding='utf-8')
+        try:
+            load_traits(p,validate=False)
+            raise AssertionError('Unexpected hue was silently treated as nonwhite')
+        except ValueError as exc:
+            assert 'Unrecognised source flower colour' in str(exc)
     traits={f'genus{g} species{i}':(f'clade{g}',int(i%2==0)) for g in range(6) for i in range(4)}
     climate={}
     for idx,k in enumerate(traits):
