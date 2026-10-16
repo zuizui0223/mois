@@ -11,7 +11,7 @@ from scripts.analysis.mois_prepare_400_botanical_review_handoff import (
 def _csv(tmp_path:Path,duplicate:bool=False)->Path:
     file=tmp_path/"sources.csv"
     with file.open("w",newline="") as f:
-        fields=[k for k in SOURCE_MAP if k!="review_token"]
+        fields=[k for k in SOURCE_MAP if k!="review_token"]+["attribution"]
         w=csv.DictWriter(f,fieldnames=fields,lineterminator="\n")
         w.writeheader()
         for i in (1,2):
