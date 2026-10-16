@@ -86,6 +86,31 @@ jobs:
             --worldclim-dynamic-root .trusted/original48_climate \
             --worldclim-dynamic-sha256 9d0cf37a64534542d7788debef28c13f106a15c3bf7bf91be0653f3ce106baae \
             --out-source-audit .trusted/pilot_climate/real96_original_photo_four_climate.csv_aggregated.json
+      - name: Verify actual 10m photo-cell repeat-month support and prohibit pilot seasonal slope
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('.trusted/pilot_climate/real96_original_photo_four_climate.csv_aggregated.json')
+          d=json.loads(p.read_text())
+          assert d['n_original_source_photo_IDs']==96
+          assert d['n_roi_original_four_colour_classifiable']==20
+          assert d['n_roi_original_classified_white']==3
+          assert d['n_monthly_source_site_climate_joined']==96
+          assert d['real_10m_source_climate_cells_with_any_original_photo']==60
+          assert d['real_10m_source_climate_cells_with_original_photos_in_two_or_more_months']==11
+          assert d['real_10m_source_climate_cells_with_classifiable_photos']==16
+          assert d['real_10m_source_climate_cells_with_classifiable_photos_in_two_or_more_months']==3
+          assert d['cell_FE_primary_four_dynamic_months_estimable_in_this_pilot'] is False
+          assert d['prespecified_site_cell_season_FE_within_month_estimated'] is False
+          print('MOIS_REAL_FCP96_CELL_MONTH_SUPPORT_GATED',json.dumps({
+              'source_climate_cells':60,
+              'cells_with_2_original_observed_months':11,
+              'cells_with_measured_four_hue_photos':16,
+              'cells_with_2_classifiable_original_months':3,
+              'season_climate_white_regression_estimated':False
+          },sort_keys=True))
+          PY
       - name: Upload only the small source-scoped 96-real-photo aggregate summary; never original photo coordinates
         if: success()
         uses: actions/upload-artifact@v4
