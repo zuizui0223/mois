@@ -19,6 +19,8 @@ jobs:
           python-version: "3.11"
       - name: Verify exact transferred FCP source blobs, scoped numbers and negative gates
         run: python scripts/check_mois_migration.py
+      - name: Reject cross-paper inference contamination
+        run: python scripts/check_study_scope.py
 
   synthetic-model-tests:
     runs-on: ubuntu-24.04
