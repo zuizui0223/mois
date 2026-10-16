@@ -92,7 +92,8 @@ def test_entire_source_shard_dates_no_flower_claim_and_no_species_cap(tmp_path):
     assert r["date_screen_state"]=={
         "ORIGINAL_SOURCE_DATE_KNOWN":5,
         "SOURCE_DATE_AFTER_FROZEN_SNAPSHOT":1,
-        "SOURCE_DATE_NOT_VALID_ISO_DAY":3
+        "SOURCE_DATE_IMPOSSIBLE_CALENDAR_DAY":1,
+        "SOURCE_DATE_NOT_VALID_ISO_DAY":2
     }
     assert r["source_photo_cap_per_taxon"] is None
     assert r["metadata_rejected_by_observer_added_Flowers_annotation"]==0
