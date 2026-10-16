@@ -10,6 +10,11 @@ import json
 import re
 import zipfile
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 try:
     from scripts.analysis.mois_monthly_rainfall_flower_colour_20261016 import (
