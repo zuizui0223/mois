@@ -16,8 +16,13 @@ import json
 import math
 import re
 import sqlite3
+import sys
 from contextlib import ExitStack
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from scripts.acquisition.mois_stratified_photo_selection_20261016 import (
     PRIVATE_FIELDS, sha256_file, CAP, SOURCE_SPECIES, SOURCE_PHOTOS,
