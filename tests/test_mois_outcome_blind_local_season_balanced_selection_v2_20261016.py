@@ -165,3 +165,50 @@ def test_v2_protocol_not_accepted_with_accidentally_missing_sampler(tmp_path):
                    tmp_path/"out.csv",tmp_path/"out.json",
                    calibration={"synthetic":True},synthetic=True,
                    selection_protocol=v2.STRATEGY)
+
+
+
+def test_v2_sealed_photo_selection_keeps_original_design_weights_through_roi_and_season_preflight(tmp_path):
+    handoff=module("mois_v2_roi_handoff",
+                   "scripts/acquisition/mois_build_sample_roi_handoff_20261016.py")
+    season_support=module("mois_v2_season_support",
+                          "scripts/analysis/mois_seasonal_sample_support_preflight_20261016.py")
+    source,counts,admission=direct_test.fixture(tmp_path)
+    selected=tmp_path/"v2_private.csv"
+    source_receipt=tmp_path/"v2_receipt.json"
+    original=direct.run(
+        source,counts,admission,direct_test.FakeBio12(),
+        selected,source_receipt,calibration={"synthetic":True},
+        synthetic=True,species_sampler=v2.sample_species_season_v2,
+        selection_protocol=v2.STRATEGY
+    )
+    packets=tmp_path/"private_packets"
+    verified=handoff.assemble(selected,source_receipt,packets,synthetic=True)
+    assert verified["selected_photo_ids"]==original["selected_original_photo_ids"]
+    assert verified["original_source_selection_schema"]==v2.SCHEMA
+    assert verified["original_source_selection_protocol"]==v2.STRATEGY
+    assert verified["original_pixels_measured"] is False
+    preflight=season_support.audit(
+        selected,source_receipt,tmp_path/"private_season.json",
+        tmp_path/"public_season.json",synthetic=True)
+    assert preflight["source_sampling_protocol"]==v2.STRATEGY
+    assert preflight["preclassification_selected_unique_observations"]==8
+    assert preflight["real_classifiable_photos_measured"]==0
+    assert preflight["synthetic_test_only"] is True
+
+
+def test_v2_roi_handoff_refuses_forged_or_missing_seasonal_strategy(tmp_path):
+    handoff=module("mois_v2_roi_handoff_guard",
+                   "scripts/acquisition/mois_build_sample_roi_handoff_20261016.py")
+    source,counts,admission=direct_test.fixture(tmp_path)
+    selected=tmp_path/"v2_private.csv"
+    receipt=tmp_path/"v2_receipt.json"
+    direct.run(source,counts,admission,direct_test.FakeBio12(),
+               selected,receipt,calibration={"synthetic":True},
+               synthetic=True,species_sampler=v2.sample_species_season_v2,
+               selection_protocol=v2.STRATEGY)
+    forged=json.loads(receipt.read_text())
+    forged["sampling_protocol"]="UNKNOWN_FLOWER_OUTCOME_SELECTED_MODEL"
+    receipt.write_text(json.dumps(forged))
+    with pytest.raises(ValueError,match="season-balanced sampler provenance"):
+        handoff.assemble(selected,receipt,tmp_path/"private_packets",synthetic=True)
