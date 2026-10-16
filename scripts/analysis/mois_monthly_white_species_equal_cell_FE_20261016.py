@@ -14,14 +14,17 @@ fixed effects (different climate season profiles among the same geographic
 cells). Weighted Frisch-Waugh-Lovell partialling handles large cell counts
 without dense site dummy matrices. When rank/support is insufficient, refuse
 to print four climate partial-effect coefficients (do NOT fill missing with 0).
-CI, causal effects, genetic colour or true blooming population rates are NOT
-established by this engineering module.
+A cautious one-way geographic-cell sandwich with Bonferroni familywise
+intervals is reported only if >=30 independent repeated climate cells have
+usable source responses; observer/genus dependence, selection bias and causal
+flowering processes remain NOT identified.
 """
 from __future__ import annotations
 import argparse
 import csv
 import json
 import math
+from statistics import NormalDist
 from collections import Counter,defaultdict
 from pathlib import Path
 import numpy as np
@@ -154,7 +157,73 @@ def fit_fe(cell_month:list[dict],*,include_month:bool,min_cells:int=10,
         }
         for name,b,sd in zip(DYNAMIC,beta,scale)
     }
-    return {**base,"status":"ESTIMATED_EXPLORATORY_POINT_ONLY_NO_CLUSTER_UNCERTAINTY"}
+    # One-way geographic-climate-cell sandwich handles repeated month
+    # observations within the same cell. It does NOT replace an observer/
+    # genus/network multi-way cluster design or the missing-photo analysis.
+    # Two-way exact FE can consume most of the data's degrees of freedom.
+    number_cells=len(repeated)
+    month_levels=(len(set(calendar)) if include_month else 0)
+    conservative_parameters=number_cells+month_levels+len(DYNAMIC)
+    residual_df=len(a)-conservative_parameters
+    cluster={
+        "status":"NOT_ESTIMABLE_FEWER_THAN_30_REPEAT_CLIMATE_CELLS",
+        "n_geographic_cell_clusters":number_cells,
+        "n_cell_month_rows":len(a),
+        "conservative_residual_degrees_of_freedom":residual_df,
+        "one_way_geographic_cell_correlation_only":True,
+        "taxon_and_observer_dependence_not_resolved":True,
+        "photographic_missing_not_at_random_not_resolved":True,
+        "intervals_are_exploratory_not_confirmatory":True,
+    }
+    if number_cells>=30 and residual_df>0:
+        # Weighted partialled X; first-order CR1 cluster sandwich.
+        # Score_g = Σ(i∈cell g) w_i X_i u_i.
+        scores=np.zeros((number_cells,len(DYNAMIC)),dtype=np.float64)
+        np.add.at(scores,cat_cell,(w*residual)[:,None]*norm)
+        nonzero_clusters=int(np.count_nonzero(
+            np.linalg.norm(scores,axis=1)>1e-10))
+        cluster["n_climate_cell_clusters_with_nonzero_scores"]=nonzero_clusters
+        if nonzero_clusters>=30:
+            inverse=np.linalg.inv(gram)
+            finite_adjustment=(number_cells/(number_cells-1)
+                               *(len(a)-1)/residual_df)
+            sandwich=finite_adjustment*inverse@(scores.T@scores)@inverse
+            diag=np.diag(sandwich)
+            if np.all(np.isfinite(diag)) and np.all(diag>0):
+                sd_cluster=np.sqrt(diag)
+                z_nominal=NormalDist().inv_cdf(.975)
+                z_familywise=NormalDist().inv_cdf(
+                    1-0.05/(2*len(DYNAMIC)))
+                intervals={}
+                for axis,b,dyn_sd,se in zip(DYNAMIC,beta,scale,sd_cluster):
+                    intervals[axis]={
+                        "cluster_se_pp_per_original_monthly_unit":float(100*se/dyn_sd),
+                        "single_axis_asymptotic_95pct_interval_pp_per_original_unit":[
+                            float(100*(b-z_nominal*se)/dyn_sd),
+                            float(100*(b+z_nominal*se)/dyn_sd)
+                        ],
+                        "four_axis_bonferroni_familywise_95pct_interval_pp_per_original_unit":[
+                            float(100*(b-z_familywise*se)/dyn_sd),
+                            float(100*(b+z_familywise*se)/dyn_sd)
+                        ]
+                    }
+                cluster.update({
+                    "status":"EXPLORATORY_GEO_CELL_CR1_ASYMPTOTIC_AND_4AXIS_BONFERRONI",
+                    "finite_sample_adjustment":float(finite_adjustment),
+                    "n_independent_geographic_cell_clusters":number_cells,
+                    "intervals":intervals,
+                    "nominal_z_multiplier":float(z_nominal),
+                    "familywise_four_climate_axes_z_multiplier":float(z_familywise),
+                    "not_multilevel_genus_observer_robust_or_selection_causal":True
+                })
+            else:
+                cluster["status"]="NOT_ESTIMABLE_DEGENERATE_CELL_CLUSTER_SCORES"
+        else:
+            cluster["status"]="NOT_ESTIMABLE_FEWER_THAN_30_NONZERO_CELL_CLUSTER_SCORES"
+    elif number_cells>=30:
+        cluster["status"]="NOT_ESTIMABLE_TOO_FEW_RESIDUAL_FIXED_EFFECT_DEGREES_OF_FREEDOM"
+    base["geographic_cell_cluster_robust_uncertainty"]=cluster
+    return {**base,"status":"ESTIMATED_EXPLORATORY_POINT_WITH_SEPARATE_CELL_CLUSTER_GATE"}
 
 
 def analyze(climate_csv:Path,climate_receipt:Path,out:Path,*,
@@ -259,7 +328,8 @@ def analyze(climate_csv:Path,climate_receipt:Path,out:Path,*,
         "static_soil_elevation_latitude_terrain_coefficients_absorbed_by_exact_cell_FE":True,
         "unobserved_original_wild_flowering_population_estimated":False,
         "selection_bias_corrected_beyond_source_probability":False,
-        "no_cluster_or_genus_uncertainty_in_this_point_estimator":True,
+        "one_way_geographic_cell_cluster_uncertainty_only_when_support_gates_pass":True,
+        "genus_and_observer_dependence_still_not_adjusted":True,
         "inference_needs_independent_geographic_and_genus_cluster_robustness":True,
         "synthetic_test_only":bool(synthetic)
     }
