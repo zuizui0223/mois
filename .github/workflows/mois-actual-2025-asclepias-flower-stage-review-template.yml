@@ -1,0 +1,82 @@
+name: MOIS actual 2025 Asclepias 64 blinded botanical flowering reviewer form
+
+on:
+  push:
+    branches:
+      - analysis/mois-real-2025-seasonal-climate-20261016
+    paths:
+      - .github/workflows/mois-actual-2025-asclepias-flower-stage-review-template.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  protect-unreviewed-2025-original-photos:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify original 2025 Asclepias source ROI from FCP
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p upstream_source/real64
+          gh api repos/zuizui0223/fcp/actions/runs/38909164068 > upstream_source/original_roi_run.json
+          python - <<'PY'
+          import json
+          d=json.load(open('upstream_source/original_roi_run.json'))
+          assert d['status']=='completed' and d['conclusion']=='success'
+          assert d['id']==38909164068
+          assert d['head_repository']['full_name']=='zuizui0223/fcp'
+          PY
+          gh run download 38909164068 --repo zuizui0223/fcp \
+            --name fcp-actual-2025-original-first64-summer-autumn-colour-ROI-STAGE-UNVERIFIED \
+            --dir upstream_source/real64
+          python - <<'PY'
+          from zipfile import ZipFile,ZIP_DEFLATED
+          from pathlib import Path
+          s=Path('upstream_source/real64')
+          with ZipFile('signed_fcp_original_2025_seasonal64.zip','w',ZIP_DEFLATED) as z:
+              for p in sorted(s.rglob('*')):
+                  if p.is_file():z.write(p,p.relative_to(s).as_posix())
+          PY
+      - name: Produce flower opening / petal ROI reviewers' source sheet without dates or colour labels
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_asclepias_2025_blinded_flower_anthesis_review \
+            --fcp-season64-artifact signed_fcp_original_2025_seasonal64.zip \
+            --outdir botanical_review_2025_summer_autumn
+          python -m scripts.analysis.mois_asclepias_2025_blinded_flower_anthesis_review \
+            --fcp-season64-artifact signed_fcp_original_2025_seasonal64.zip \
+            --filled-independent-review-sheet botanical_review_2025_summer_autumn/UNREVIEWED_2025_asclepias_two_botanist_photo_review.csv \
+            --outdir botanical_unreviewed_original64_QC
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('botanical_unreviewed_original64_QC')
+          x=json.loads((root/'2025_asclepias_open_flower_review_receipt.json').read_text())
+          assert x['status']=='BOTANICAL_OBSERVATION_REVIEW_PENDING'
+          assert x['by_season']['summer']['unreviewed']==32
+          assert x['by_season']['autumn']['unreviewed']==32
+          assert x['enough_confirmed_each_season_to_consider_descriptive_rate'] is False
+          assert x['no_seasonal_white_environment_regression_performed'] is True
+          assert x['reviewers_not_shown_climate_date_or_automated_colour'] is True
+          print('MOIS_REAL_2025_TWO_SEASON_OPEN_FLOWER_REVIEW_SHEET_64_UNREVIEWED_NO_COLOUR_RATE')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-original-2025-asclepias-64-summer-autumn-photo-botanist-blind-unreviewed
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            botanical_review_2025_summer_autumn/
+            botanical_unreviewed_original64_QC/
+            upstream_source/original_roi_run.json
