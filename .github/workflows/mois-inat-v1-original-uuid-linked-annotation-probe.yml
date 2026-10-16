@@ -1,0 +1,81 @@
+name: MOIS iNaturalist V1 public observation plant phenology annotation schema probe
+
+on:
+  push:
+    branches:
+      - analysis/mois-real-2025-seasonal-climate-20261016
+    paths:
+      - .github/workflows/mois-inat-v1-original-uuid-linked-annotation-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate-not-photo-specific-public-phenology-annotations:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests
+      - name: Check whether V1 returns actual plant phenology annotation data for UUID-mapped photo observation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p live_observation_annotations
+          python - <<'PY'
+          import requests,json
+          from pathlib import Path
+          original_uuid="b6f733fa-8457-4a7e-b0c8-21deac1786c1"
+          original_source_photo=569580841
+          obs_id=315304129
+          url=f"https://api.inaturalist.org/v1/observations/{obs_id}"
+          r=requests.get(url,timeout=(7,30),headers={"User-Agent":"MOIS-original-FCP-source-phenology-validation/1.0"})
+          print("MOIS_INAT_V1_PUBLIC_OBSERVATION_ANNOTATION_SCHEMA",r.status_code,len(r.content),url,flush=True)
+          r.raise_for_status()
+          d=r.json()
+          result=d.get("results") or []
+          assert len(result)==1,"Current public observation cannot be mapped unambiguously"
+          o=result[0]
+          assert o.get("uuid")==original_uuid
+          assert int(o.get("id"))==obs_id
+          assert o.get("observed_on")=="2025-09-20"
+          photos=o.get("photos") or []
+          exact_photo=any(int(p["id"])==original_source_photo for p in photos if str(p.get("id","")).isdigit())
+          print("MOIS_INAT_V1_OBS_MATCHED_SOURCE_PHOTO",exact_photo,flush=True)
+          values=o.get("annotations")
+          print("MOIS_INAT_V1_PUBLIC_ANNOTATION_FIELD_TYPE",type(values).__name__,
+                "count",len(values or []),flush=True)
+          print("MOIS_INAT_V1_ANNOTATIONS",str(values)[:2200],flush=True)
+          output={
+            "status":"LIVE_API_CURRENT_ANNO_SCOPE_NOT_SOURCE_SNAPSHOT_NOT_OPEN_PHOTO",
+            "original_source_observation_uuid":original_uuid,
+            "public_observation_numeric_id":obs_id,
+            "original_source_photo_still_associated_with_current_observation":exact_photo,
+            "current_original_observed_day_matches":"2025-09-20",
+            "annotations_field_exists":"annotations" in o,
+            "phenology_annotations":[
+              {"term_id":v.get("controlled_attribute_id"),
+               "term_value_id":v.get("controlled_value_id"),
+               "vote_score":v.get("vote_score")} for v in (values or [])
+              if isinstance(v,dict)],
+            "plant_phenology_term_id":12,
+            "flowering_term_value_id":13,
+            "fruiting_term_value_id":14,
+            "budding_term_value_id":15,
+            "no_bloom_photograph_confirmed_by_observation_annotations":True,
+            "source_is_current_API_not_2026_09_27_snapshot":True
+          }
+          Path("live_observation_annotations/one_uuid_matched_live_v1_annotation_schema.json").write_text(
+             json.dumps(output,indent=2,sort_keys=True)+"\n")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-iNat-v1-one-observation-current-phenology-annotation-validated-not-photo
+          path: live_observation_annotations/
+          if-no-files-found: error
+          retention-days: 30
