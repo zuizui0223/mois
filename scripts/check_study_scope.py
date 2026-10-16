@@ -110,6 +110,25 @@ def main() -> None:
         require(east["paired_24_hue_axis_maxT_95_interval_pp"][0] < 0
                 < east["paired_24_hue_axis_maxT_95_interval_pp"][1],
                 "Spatial matched simultaneous interval must span zero")
+        axes = scope["active_research_axes"]
+        require({axis["programme"] for axis in axes} ==
+                {"historical_global_interspecific_moisture",
+                 "global_seasonal_flower_colour_environment"},
+                "The independent seasonal programme must stay in mois")
+        season = scope["seasonal_upstream_20261016"]
+        require((season["prior_photo_opportunity_ids"], season["n_source_taxa"],
+                 season["n_original_pixel_attempts"], season["n_automatic_colour_classifiable"])
+                == (3430502, 1000, 64, 27),
+                "Pre-colour seasonal opportunities cannot be pooled with measured macros")
+        require(season["n_open_flower_organs_independently_verified"] is False
+                and season["n_within_site_seasonal_climate_effects_estimated"] == 0,
+                "Seasonal biological/climate results have not been demonstrated")
+        if (ROOT / season["source_receipt"]).is_file():
+            season_source = load(season["source_receipt"])
+            require(season_source["original_monthly_source"]["photo_ids"] == 3430502
+                    and season_source["first_real_roi"]["n_original_photo_pixels"] == 64
+                    and season_source["first_real_roi"]["open_flower_organs_independently_verified"] is False,
+                    "Seasonal source receipt does not agree with independent scope")
         foreign = [
             "results/polymorphism_h2_third_cohort_prospective_white_axis_20260917",
             "results/polymorphism_distributed_polymorphism_posthoc_20261007",
