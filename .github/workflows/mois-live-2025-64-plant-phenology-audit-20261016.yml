@@ -1,0 +1,111 @@
+name: MOIS 2025 original Asclepias 64 live iNaturalist phenology availability audit
+
+on:
+  push:
+    branches:
+      - analysis/mois-real-2025-seasonal-climate-20261016
+    paths:
+      - .github/workflows/mois-live-2025-64-plant-phenology-audit-20261016.yml
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-2025-original-64-live-observation-annotation-audit
+  cancel-in-progress: false
+
+jobs:
+  current-public-observation-annotations-not-photo-anthesis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FCP_ORIGINAL_PIXELS: "38909164068"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: python -m pip install -q requests
+
+      - name: Validate exact FCP first64 historical original photo source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p upstream_original_photo
+          gh api "repos/zuizui0223/fcp/actions/runs/$FCP_ORIGINAL_PIXELS" > upstream_original_photo/run.json
+          python - <<'PY'
+          import json
+          r=json.load(open('upstream_original_photo/run.json'))
+          assert r['id']==38909164068
+          assert r['status']=='completed' and r['conclusion']=='success'
+          assert r['head_sha']=='ed80d67ca9e3ef456677a14bedefff47a443e7cb'
+          assert r['head_repository']['full_name']=='zuizui0223/fcp'
+          print('MOIS_REAL_64_FCP_SOURCE_ORIGINAL_ID_AUTHORIZED_FOR_READONLY_PUBLIC_API')
+          PY
+
+      - name: Reuse original 2025 photo identity terminal, no new pixels or labels
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download "$FCP_ORIGINAL_PIXELS" --repo zuizui0223/fcp \
+            --name fcp-actual-2025-original-first64-summer-autumn-colour-ROI-STAGE-UNVERIFIED \
+            --dir upstream_original_photo
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile,ZIP_DEFLATED
+          root=Path('upstream_original_photo')
+          with ZipFile('fcp_2025_original64_provenance.zip','w',ZIP_DEFLATED) as z:
+              for p in sorted(root.rglob('*')):
+                  if p.is_file() and p.name!='run.json':
+                      z.write(p,p.relative_to(root).as_posix())
+          PY
+
+      - name: Fetch current public plant-phenology annotations for frozen 64 observation UUIDs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_audit_live_inat_observation_phenology_2025 \
+            --fcp-original-2025-64-ROI-zip fcp_2025_original64_provenance.zip \
+            --outdir mois_2025_live_plant_phenology_supplement
+          python - <<'PY'
+          import json,csv
+          from pathlib import Path
+          root=Path('mois_2025_live_plant_phenology_supplement')
+          q=json.loads((root/'2025_Asclepias_live_public_observation_phenology_receipt.json').read_text())
+          assert q['status']=='CURRENT_OBSERVATION_PHENOLOGY_METADATA_ONLY_NO_PHOTO_ANTHESIS_CONFIRMED'
+          assert q['n_original_source_photos']==64
+          assert q['by_season_source_photo_counts']=={'summer':32,'autumn':32}
+          assert q['source_original_photos_not_changed_or_replaced'] is True
+          assert q['observation_annotation_does_not_certify_specific_photo_open_flower'] is True
+          assert q['actual_photo_open_flower_petal_tepal_verified_count']==0
+          assert q['never_label_annotation_absence_nonflowering'] is True
+          assert q['no_seasonal_white_flower_rate_or_climate_effect_inferred'] is True
+          with (root/'original_2025_64_live_iNaturalist_observation_plant_phenology_NOT_PHOTO.csv').open(newline='') as f:
+              rows=list(csv.DictReader(f))
+          assert len(rows)==64 and len({r['photo_id'] for r in rows})==64
+          assert all(r['photo_open_flower_petal_tepal_independently_verified']=='False' for r in rows)
+          print('MOIS_LIVE_PHENOLOGY_SCORED_OBSERVATION_ONLY_SOURCE_64_NOT_PETAL_COLOR')
+          PY
+
+      - name: Publish source UUID to live observation-only annotations, not photographic phenotypes
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-2025-real-original64-live-observation-phenology-availability-NOT-PHOTO-STAGE
+          retention-days: 60
+          if-no-files-found: error
+          path: |
+            mois_2025_live_plant_phenology_supplement/
+            upstream_original_photo/run.json
+
+      - name: Preserve only API failure diagnostic and original frozen source ID
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-2025-real-original64-live-annotation-QC-INCOMPLETE
+          retention-days: 14
+          if-no-files-found: warn
+          path: upstream_original_photo/run.json
