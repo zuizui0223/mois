@@ -169,5 +169,9 @@ def test_missing_or_forged_annotation_does_not_create_flowering_claim(tmp_path):
         tmp_path/"c.json",annotation_overlay=overlay,
         annotation_sha256=m.sha256_file(overlay),synthetic=True,min_public_cell=1)
     assert data["annotation_status_selected_counts"]=={"FLOWERS":1}
+    seasonal=data["seasonal_observation_photo_white_conditioned"][0]
+    assert seasonal["confirmed_flowers_annotated_observations"]==1
+    assert seasonal["confirmed_flowers_annotated_roi_classifiable"]==1
+    assert seasonal["confirmed_flowers_annotated_white_given_classifiable_observation_weighted"]==1.0
     assert data["synthetic_test_only"] is True
     assert data["causal_seasonal_phenotype_or_wild_flora_incidence_identified"] is False
