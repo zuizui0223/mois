@@ -174,7 +174,7 @@ def test_more_than_4096_original_photos_of_one_species_are_not_biologically_capp
                    "https://inaturalist-open-data.s3.amazonaws.com/photos/"+pid+"/large.jpg"}
             f.write(json.dumps(one,sort_keys=True)+"\n")
     report={
-        "schema":test_source_date_schema() if False else "mois_original_42111_all_dated_photo_candidate_shard_v1",
+        "schema":"mois_original_42111_all_dated_photo_candidate_shard_v1",
         "status":"ORIGINAL_DATED_PHOTO_OPPORTUNITIES_BLOOM_UNVERIFIED_ROI_NOT_MEASURED",
         "private_full_dated_source_photo_queue_sha256":m.sha(private),
         "source_photo_cap_per_taxon":None,
