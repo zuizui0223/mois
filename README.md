@@ -18,6 +18,14 @@ The relevant 2026-09-27 original FCP acquisition source contains **3,430,502 ver
 
 **Division of work:** `fcp` remains authoritative for original photo-ID source acquisition, blind segmentation, fixed multicolour method, and within-species colour polymorphism; `mois` owns post-measurement date/season processing, paired geographic-site temporal white fractions, climate-grid matching, sensitivity analyses and manuscript interpretation. Signed FCP output artifacts are upstream inputs, never copied over as new MOIS measurements.
 
+### Reproducible seasonal source and botanical quality gates
+
+The original 2026-09-27 calendar metadata are now independently re-analysed in **MOIS**: [real seasonal candidate workflow](https://github.com/zuizui0223/mois/actions/runs/38909941099) confirmed **39 taxa and 268 same-cell/year two-season photographic-opportunity comparisons** under the preregistered in-project 24-observation-per-season cutoff. This is not a floral-colour or genetic polymorphism result. The input is a SHA-verified [FCP source-only artifact](https://github.com/zuizui0223/fcp/actions/runs/38901290387), not an extra copy of millions of photo pixels.
+
+The [independent flower-organ review workflow](https://github.com/zuizui0223/mois/actions/runs/38910580515) produced a botanical review form for all **64 truly measured original FCP ROI photos**. All 64 remain *unreviewed* (0 independently confirmed open-petaloid flower outcomes); coloured ROIs, bracts, flowers and fruits are not conflated. [Twelve regression tests](https://github.com/zuizui0223/mois/actions/runs/38910483078) verify no tampered source identity, independent reviewers, third-party disagreement adjudication and no white-rate claim from unreviewed photos.
+
+The executable methods and decision gates are in [the MOIS temporal-source/anthesis protocol](docs/MOIS_SEASONAL_SOURCE_OPPORTUNITY_AND_ANTHESIS_20261016.md). FCP continues upstream image acquisition/ROI and its own independent W/D polymorphism manuscript; seasonal white frequency, real month-climate comparisons and their ecological interpretation are MOIS-owned.
+
 ## Source files transferred byte-for-byte from fcp
 
 - [Global colour × 36-abiotic direction methods/report](docs/FCP_GLOBAL_COLOUR_ENVIRONMENT_DIRECTION_AND_CAUSAL_GATES_20261013.md); [source script](scripts/analysis/fcp_abiotic_hue_direction_macro_20261013.py); [1,280-colour×environment result ledger](results/fcp_macro_direction_20261013/direction_ledger.csv); [decision receipt](results/fcp_macro_direction_20261013/decision_receipt.json)
