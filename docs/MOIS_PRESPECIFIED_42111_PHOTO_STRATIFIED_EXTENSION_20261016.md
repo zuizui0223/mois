@@ -34,3 +34,25 @@ Three publication estimands must be kept separate: (A) classifiability/flower-de
 After the full original photo-ID reconciliation exists, prepare restricted candidate_taxon_sorted_site_bio12.csv and the two source attestation files. Run the sampler script at scripts/acquisition/mois_stratified_photo_selection_20261016.py using arguments --candidate-csv, --complete-counts, --admission, --out-csv, and --out-receipt. The selected-photo CSV is **PRIVATE**; the receipt is aggregate but still subject to source rights and geoprivacy review. Synthetic checks: tests/test_mois_stratified_photo_selection_20261016.py.
 
 **Current gate:** full admitted photo IDs, candidate climate-annotated original photo manifest, this actual 40-per-taxon source sample, image-pixel acquisition, ROI terminal measurements and new 13-variable results are **NOT** complete. Until they are, the larger source is sampling opportunity only and the existing one-paper retrospective estimates remain the sole measured evidence.
+
+
+## Direct, storage-bounded FCP source-to-Mois bridge (implemented, not yet run on full source)
+
+The first sampler implementation accepts a precomputed, sorted, per-photo original-site BIO12 CSV. A more efficient and safer **direct source-to-selection** implementation now exists at scripts/acquisition/mois_sample_direct_from_fcp_source_20261016.py. It reads the original FCP 128-shard per-taxon photo_manifest.ndjson source directly, authenticates **every original taxon's checkpoint, byte SHA256 and photo count including zero-photo taxa**, and computes the local-site BIO12 group as each original observation is streamed. It does not create a second 93,209,351-row climate-annotated CSV on disk. Its memory use is bounded by the most highly photographed source species plus one small global raster, rather than all species or all original photos at once.
+
+Production input gates are strict: genuine complete source-ID reconciliation; original dated source counts; the immutable per-taxon source hash ledger; a global EPSG:4326, north-up, small WorldClim BIO12 GeoTIFF with a known SHA256; **at least ten held original source-site BIO12 calibration points across at least three geographic strata agreeing within 1mm**; and original source photo licences/URLs/site fields. It refuses source-size or schema drift, missing/duplicated photo IDs within taxa, inconsistent site coordinates per observation, colour/outcome-derived photo replacement, unpinned climate rasters and modified original manifests. Missing raster cells remain missing climate strata rather than being coded as dry conditions.
+
+On a private, adequately provisioned persistent machine **only after FCP completes all-ID source admission**, the direct CLI arguments are:
+
+- --fcp-source-root: private /persistent/fcp/complete_42111_metadata_source containing all finalized 128 per-species source shards
+- --complete-counts: private all_42111_species_source_photo_counts.csv
+- --source-admission: private independent_original_all_ID_source_admission.json
+- --bio12-geotiff and --bio12-sha256: the byte-pinned original WorldClim BIO12 WGS84 raster
+- --archived-site-calibration and --archived-site-calibration-sha256: a private source-archived reference CSV with latitude,longitude,bio12_mm
+- --out-private-photo-csv and --out-aggregate-receipt: new paths; never overwrite or publish original image URLs/observation coordinates
+
+Both historical and new BIO12 sampling methods are explicitly calibration-gated. If independent original-site values do not match, investigate raster version, resolution, extraction and units; do not silently report comparable 13-variable coefficients.
+
+A subsequent **sample-only** source handoff tool, scripts/acquisition/mois_build_sample_roi_handoff_20261016.py, accepts this actual sampled photo CSV and its SHA256-bound receipt. It creates **128 location-blind worker packet CSVs** with only measurement_id, image_filename and photo_license, **128 private acquisition packet CSVs** containing the original provider URL, and one private identity/environment/selection-probability join key. The measurement_id hashing algorithm matches original FCP ROI-v4 worker identities. Its sealed receipt asserts that this is only the **Mois probabilistic subset**, never a claim that all FCP 93 million original images have been measured. The FCP full-census admission and worker must **NOT** be invoked with these subset packets; separately authorize a sample-scoped executor with original ROI-v4 model-byte verification, bounded source rate and full terminal/measurement reassembly. No such full real-pixel subset run has yet been performed.
+
+Synthetic-only guard tests are tests/test_mois_direct_fcp_source_sampling_20261016.py and tests/test_mois_sample_roi_handoff_20261016.py, in addition to tests/test_mois_stratified_photo_selection_20261016.py. GitHub CI demonstrates code/source contract behavior, not successful original-photo classification or 13-variable ecological inference.
