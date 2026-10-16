@@ -67,8 +67,11 @@ def test_end_to_end_real_FCP_format_positive_flower_to_observation_equal_site_mo
     assert r["source_photo_sampling_cap_per_species"] is None
     assert r["monthly_weather_is_1970_2000_climatological_not_photo_year"] is True
     summary=r["real_original_source_calendar_month_by_domain_photo_and_species_white"]
-    assert sum(x.get("n_all_original_image_verified_classifiable_flower_photos",0)
-        for x in summary)==r["n_original_bloom_and_source_date_qualified_photo_IDs"]
+    # Source privacy suppression applies to the small 40-photo fake
+    # cohort: every latitude-zone/month has fewer than ten flowers.
+    # The total source-locked denominator remains complete privately.
+    assert all(x["public_suppressed_below"]==10 for x in summary)
+    assert r["n_original_bloom_and_source_date_qualified_photo_IDs"]==22
     rows=list(csv.DictReader(private.open()))
     assert rows
     assert all(int(z["n_original_independent_observations"])<=int(
