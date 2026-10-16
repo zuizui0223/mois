@@ -206,7 +206,14 @@ def selected_rows_with_bio12(raw_rows, lookup):
 
 def run(root: Path, complete_counts: Path, admission: Path, bio12_lookup,
         output_csv: Path, output_receipt: Path, *,
-        calibration: dict, synthetic: bool = False) -> dict:
+        calibration: dict, synthetic: bool = False,
+        species_sampler=None, selection_protocol: str | None = None) -> dict:
+    if (species_sampler is None) != (selection_protocol is None):
+        raise ValueError("Alternate sampling protocol must be named and have a dedicated sampler")
+    if selection_protocol not in (None,
+            "OUTCOME_BLIND_NESTED_LOCAL_SEASON_WITHIN_ORIGINAL_REGION_BIO12_V2"):
+        raise ValueError("Unknown/unreviewed original-photo probability-sampling design")
+    sampler = species_sampler or sample_species
     if output_csv.exists() or output_receipt.exists():
         raise ValueError("Existing photo selection or receipt cannot be overwritten")
     counts, count_sha = read_verified_counts(complete_counts, admission, synthetic=synthetic)
@@ -228,6 +235,7 @@ def run(root: Path, complete_counts: Path, admission: Path, bio12_lookup,
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     output_receipt.parent.mkdir(parents=True, exist_ok=True)
     photos = observations = selected = pilot = unknown_site = unknown_bio12 = 0
+    sum_local_season_nested = sum_local_season_fallback = 0
     signature = hashlib.sha256()
     try:
         with temp.open("w", newline="", encoding="utf-8") as handle:
@@ -254,7 +262,7 @@ def run(root: Path, complete_counts: Path, admission: Path, bio12_lookup,
                 if expected:
                     src = original_rows(source_path, tax, scientific_name, digest)
                     items = selected_rows_with_bio12(src, bio12_lookup)
-                    n, o, k, p, bins = sample_species(tax, genus, items, writer)
+                    n, o, k, p, bins = sampler(tax, genus, items, writer)
                 else:
                     n = o = k = p = 0
                     bins = {"__unknown_site__": 0, "__unknown_climate__": 0}
@@ -273,11 +281,16 @@ def run(root: Path, complete_counts: Path, admission: Path, bio12_lookup,
                 pilot += p
                 unknown_site += bins["__unknown_site__"]
                 unknown_bio12 += bins["__unknown_climate__"]
+                sum_local_season_nested += bins.get("__nested_observations__", 0)
+                sum_local_season_fallback += bins.get("__fallback_observations__", 0)
         if photos != sum(n for _, n in counts.values()):
             raise ValueError("Whole-source photo opportunity denominator changed")
         selection_sha = sha256_file(temp)
         summary = {
-            "schema": "mois_direct_fcp_source_stratified_photo_selection_v1",
+            "schema": ("mois_direct_fcp_source_stratified_photo_selection_v2"
+                       if selection_protocol else
+                       "mois_direct_fcp_source_stratified_photo_selection_v1"),
+            "sampling_protocol": (selection_protocol or "ORIGINAL_REGION_BIO12_V1"),
             "status": "SOURCE_ADMITTED_SELECTED_PRIVATE_IDS_ONLY_NO_PHOTO_PIXELS_MEASURED",
             "source_snapshot": SNAPSHOT,
             "source_species": len(counts),
@@ -293,6 +306,10 @@ def run(root: Path, complete_counts: Path, admission: Path, bio12_lookup,
             "selected_private_photo_csv_sha256": selection_sha,
             "selected_missing_coordinates": unknown_site,
             "selected_missing_bio12": unknown_bio12,
+            "selected_local_season_nested_observations": (
+                sum_local_season_nested if selection_protocol else None),
+            "selected_local_season_fallback_observations": (
+                sum_local_season_fallback if selection_protocol else None),
             "site_bio12_provenance": getattr(bio12_lookup, "provenance", {}),
             "site_bio12_calibration": calibration,
             "historical_colour_outcomes_seen": False,
