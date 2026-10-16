@@ -86,6 +86,9 @@ jobs:
           assert match['n_cells_with_both_seasons']==both['n_cells']==7
           assert match['n_original_photos_summer_in_matched_cells']==both['n_summer']==15
           assert match['n_original_photos_autumn_in_matched_cells']==both['n_autumn']==24
+          for field,value in both['paired_cell_equal_climate_autumn_minus_summer'].items():
+              actual=match['within_cell_actual_climate_contrasts_not_flower_effects'][field]['autumn_minus_summer_cell_equal_mean']
+              assert math.isclose(actual,value,abs_tol=1e-6), f'Site-paired physical climate mismatch: {field}'
           assert d['scientific_gates']['minimum_botanically_verified_primary_photos_per_season']==q['min_botanical_verified_per_season']==20
           assert d['scientific_gates']['current_max_below_threshold_both_seasons'] is True
           assert d['scientific_gates']['global_white_flower_seasonality_estimable'] is False
