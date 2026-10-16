@@ -1,0 +1,76 @@
+name: MOIS TerraClimate 2025 source point API availability probe
+
+on:
+  push:
+    branches:
+      - analysis/mois-real-2025-seasonal-climate-20261016
+    paths:
+      - .github/workflows/mois-terraclimate-2025-original-api-probe-20261016.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify-provider-does-not-imply-measured-climate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -q requests
+      - name: Probe 2025 monthly TerraClimate NCSS endpoints and source metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data_probe
+          python - <<'PY'
+          import json,requests
+          from pathlib import Path
+          bases=[
+           "http://thredds.northwestknowledge.net:8080/thredds/ncss/agg_terraclimate_tmin_1950_CurrentYear_GLOBE.nc",
+           "http://thredds.northwestknowledge.net:8080/thredds/ncss/agg_terraclimate_tmin_1958_CurrentYear_GLOBE.nc",
+           "http://thredds.northwestknowledge.net:8080/thredds/ncss/grid/agg_terraclimate_tmin_1950_CurrentYear_GLOBE.nc",
+           "https://thredds.northwestknowledge.net/thredds/ncss/agg_terraclimate_tmin_1950_CurrentYear_GLOBE.nc",
+          ]
+          params={"var":"tmin","latitude":"42.375","longitude":"-71.125","time_start":"2025-07-01T00:00:00Z",
+                  "time_end":"2025-07-31T23:59:59Z","accept":"csv"}
+          outcomes=[]
+          for url in bases:
+              try:
+                  r=requests.get(url,params=params,timeout=(8,20),headers={"User-Agent":"MOIS-observed-month-2025-climate-probe/1.0"})
+                  print("MOIS_THREDDS_PROBE",url,r.status_code,len(r.content),r.text[:230].replace("\n"," "),flush=True)
+                  outcomes.append({"endpoint":url,"status_code":r.status_code,"first_200":r.text[:200],
+                    "valid_csv_structure":r.status_code==200 and "time" in r.text[:600].lower() and "tmin" in r.text[:600].lower()})
+              except requests.RequestException as e:
+                  outcomes.append({"endpoint":url,"error":type(e).__name__+":"+str(e)[:240],"valid_csv_structure":False})
+                  print("MOIS_THREDDS_FAILED",url,repr(e)[:200],flush=True)
+          annual="https://climate.northwestknowledge.net/TERRACLIMATE-DATA/TerraClimate_tmin_2025.nc"
+          try:
+              r=requests.get(annual,stream=True,timeout=(8,16),headers={"User-Agent":"MOIS-observed-month-2025-climate-probe/1.0"})
+              outcomes.append({"endpoint":annual,"status_code":r.status_code,
+                 "content_type":r.headers.get("Content-Type"),
+                 "content_length":r.headers.get("Content-Length"),"valid_annual_endpoint":r.status_code==200})
+              print("MOIS_ANNUAL_2025_NETCDF_PROBE",r.status_code,r.headers.get("Content-Type"),r.headers.get("Content-Length"),flush=True)
+              r.close()
+          except requests.RequestException as e:
+              outcomes.append({"endpoint":annual,"error":type(e).__name__+":"+str(e)[:240],"valid_annual_endpoint":False})
+          report={"status":"AVAILABILITY_ONLY_NOT_CLIMATE_VALUES",
+                   "site":"2025 Asclepias syriaca Boston area",
+                   "monthly_provider_ncss_some_csv_accessible":any(q.get("valid_csv_structure") for q in outcomes),
+                   "annual_2025_netcdf_url_accessible":any(q.get("valid_annual_endpoint") for q in outcomes),
+                   "responses":outcomes,
+                   "not_a_monthly_climate_extract_or_flower_effect":True}
+          Path("data_probe/service_probe.json").write_text(json.dumps(report,indent=2))
+          print("MOIS_CLIMATE_ACCESS_PROBE_RESULT",json.dumps({
+               k:v for k,v in report.items() if k!="responses"
+          }),flush=True)
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-terraclimate-2025-provider-availability-only-NOT-ENV-VALUES
+          path: data_probe/
+          retention-days: 30
