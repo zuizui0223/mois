@@ -59,7 +59,7 @@ jobs:
           import json
           from pathlib import Path
           d=json.loads(Path('.trusted/real_climate_atlas/area_weighted_climate_seasonality.json').read_text())
-          assert d['source_original_monthly_manifest_sha256']=='07f45ac2973589d8951ac81b700018c5ab7322e2346dcf7d6723ee23'
+          assert d['source_original_monthly_manifest_sha256']=='07f45ac2973589d8951ac3eb0fa1c81b700018c5ab7322e2346dcf7d6723ee23'
           assert d['source_grid_n_valid_complete_12month_cells']>500000
           assert 30<d['source_complete_valid_grid_cell_area_million_km2']<200
           assert not d['synthetic_test_only']
