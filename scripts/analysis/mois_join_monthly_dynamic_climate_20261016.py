@@ -19,6 +19,7 @@ import hashlib
 import json
 import math
 import sys
+from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
@@ -62,7 +63,10 @@ def saturation_pressure_kpa(tavg_c):
 
 
 class DynamicNormals:
-    def __init__(self, root:Path, expected_manifest_sha:str, *, synthetic=False):
+    def __init__(self, root:Path, expected_manifest_sha:str, *, synthetic=False,
+                 max_cache_cells:int=4096):
+        if not 0<=max_cache_cells<=100000:
+            raise ValueError("Original climate raster cell LRU capacity must be bounded")
         manifest=root/"dynamic_monthly_manifest.json"
         if sha256_file(manifest)!=expected_manifest_sha:
             raise ValueError("Month-by-month 48-layer climate source manifest SHA256 mismatch")
@@ -114,7 +118,8 @@ class DynamicNormals:
         self.height=common[1]
         self.width=common[0]
         self.manifest_sha=expected_manifest_sha
-        self.cache={}
+        self.cache=OrderedDict()
+        self.max_cache_cells=max_cache_cells
         self.synthetic=synthetic
 
     def cell(self, lat,lon):
@@ -133,6 +138,9 @@ class DynamicNormals:
 
     def profile(self, cell):
         if cell is None:return None
+        if cell in self.cache:
+            self.cache.move_to_end(cell)
+            return self.cache[cell]
         if cell not in self.cache:
             row,col=cell
             p={}
@@ -140,15 +148,21 @@ class DynamicNormals:
                 values=np.asarray(b[:,row,col],dtype=np.float64)
                 if np.any(~np.isfinite(values)) or np.any(values<VARIABLES[key]["min"]) \
                    or np.any(values>VARIABLES[key]["max"]):
-                    self.cache[cell]=None
+                    if self.max_cache_cells:
+                        self.cache[cell]=None
+                        if len(self.cache)>self.max_cache_cells:
+                            self.cache.popitem(last=False)
                     return None
                 p[key]=values
             sat=saturation_pressure_kpa(p["tavg"])
             raw=sat-p["vapr"]
             p["vpd"]=np.maximum(0.,raw)
             p["vpd_months_clipped"]=int(np.sum(raw<0))
-            self.cache[cell]=p
-        return self.cache[cell]
+            if self.max_cache_cells:
+                self.cache[cell]=p
+                if len(self.cache)>self.max_cache_cells:
+                    self.cache.popitem(last=False)
+            return p
 
     def site_month(self,lat,lon,observed_on)->dict:
         when=observation_date(observed_on)
