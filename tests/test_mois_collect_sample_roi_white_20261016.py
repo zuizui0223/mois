@@ -48,7 +48,7 @@ def test_complete_blind_measurements_join_only_after_source_hard_gate(tmp_path):
     assert abs(float(alpha["white_given_classified_photo_weighted"])-1)<1e-12
     seen=list(csv.DictReader((out/"private_joined_sample_flower_colours.csv").open()))
     assert len(seen)==3
-    assert set(seen[0])==set(m.JOIN+m.PRIVATE_JOIN_EXTRA)
+    assert set(seen[0])==set(m.JOIN+list(m.PRIVATE_JOIN_EXTRA))
     assert all(len(json.loads(v["nine_colour_fractions_json"]))==9 for v in seen)
     with pytest.raises(ValueError,match="previous final"):
         m.collect(private,units,out,synthetic=True)
@@ -66,7 +66,8 @@ def test_missing_batch_does_not_become_a_biological_data_result(tmp_path):
 
 def test_relabelled_colour_and_mixed_measurement_source_rejected(tmp_path):
     private,units,packet=data(tmp_path)
-    folder=next(units.glob("terminal_p*_b*"))
+    folder=next(folder for folder in units.glob("terminal_p*_b*")
+                if "classified_four_state_morph" in (folder/"original_roi_sample_terminal.csv").read_text())
     csv_path=folder/"original_roi_sample_terminal.csv"
     csv_path.write_text(csv_path.read_text().replace("classified_four_state_morph","modified_colour_outcome"))
     with pytest.raises(ValueError,match="hash"):
