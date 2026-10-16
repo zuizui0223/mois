@@ -81,7 +81,20 @@ def audit(sample_csv:Path,receipt_json:Path,private_json:Path,public_json:Path,
         or public_json.with_name(public_json.name+".partial").exists()):
         raise ValueError("Do not overwrite or use an interrupted seasonal support preflight")
     source=json.loads(receipt_json.read_text(encoding="utf8"))
-    if (source.get("schema")!="mois_direct_fcp_source_stratified_photo_selection_v1"
+    allowed = {
+        "mois_direct_fcp_source_stratified_photo_selection_v1",
+        "mois_direct_fcp_source_stratified_photo_selection_v2"
+    }
+    if (source.get("schema")=="mois_direct_fcp_source_stratified_photo_selection_v2"
+        and (source.get("sampling_protocol") !=
+             "OUTCOME_BLIND_NESTED_LOCAL_SEASON_WITHIN_ORIGINAL_REGION_BIO12_V2"
+             or source.get("selected_local_season_nested_observations", -1)<0
+             or source.get("selected_local_season_fallback_observations", -1)<0
+             or (source["selected_local_season_nested_observations"]
+                 + source["selected_local_season_fallback_observations"]
+                 != source.get("selected_original_photo_ids")))):
+        raise ValueError("Original-season-v2 positive-probability source receipt missing")
+    if (source.get("schema") not in allowed
         or source.get("status")!=
             "SOURCE_ADMITTED_SELECTED_PRIVATE_IDS_ONLY_NO_PHOTO_PIXELS_MEASURED"
         or source.get("selected_private_photo_csv_sha256")!=sha256_file(sample_csv)
@@ -154,6 +167,7 @@ def audit(sample_csv:Path,receipt_json:Path,private_json:Path,public_json:Path,
         "status":STATUS,
         "photo_sample_sha256":sha256_file(sample_csv),
         "frozen_source_receipt_sha256":sha256_file(receipt_json),
+        "sampling_protocol":source.get("sampling_protocol", "ORIGINAL_REGION_BIO12_V1"),
         "season_counts_unsuppressed":[
             {"domain":d,"season":s,"n":n}
             for (d,s),n in sorted(season_domains.items())],
@@ -181,6 +195,7 @@ def audit(sample_csv:Path,receipt_json:Path,private_json:Path,public_json:Path,
         "matched_taxon_same_geographic_precip_stratum_support_upper_bounds":{
             str(th):_pair_count(geo,th) for th in THRESHOLDS},
         "sample_original_photo_observation_cap_per_taxon":CAP,
+        "source_sampling_protocol":source.get("sampling_protocol", "ORIGINAL_REGION_BIO12_V1"),
         "at_least_two_source_observers_per_compared_local_season_required":True,
         "n_source_taxon_with_zero_photos":source["source_species"]-source["source_species_with_photos"],
         "real_classifiable_photos_measured":0,
