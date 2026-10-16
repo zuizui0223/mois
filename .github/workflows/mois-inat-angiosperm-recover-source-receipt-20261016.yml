@@ -1,0 +1,51 @@
+name: Mois audit saved flowering-plant annotation source receipt
+
+on:
+  push:
+    branches:
+      - manuscript/geographic-conditional-moisture-research-20261014
+    paths:
+      - .github/workflows/mois-inat-angiosperm-recover-source-receipt-20261016.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  recover-saved-35-query-angiosperm-counts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-public-angiosperm-phenology-annotation-35-query-20261016
+          run-id: 38844098039
+          github-token: ${{ github.token }}
+          path: .trusted/angiosperm
+      - name: Validate original public API count JSON and expose reproducible source-only provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path('.trusted/angiosperm/real_angiosperm_photo_phenology_counts.json')
+          raw=p.read_bytes()
+          d=json.loads(raw)
+          assert hashlib.sha256(raw).hexdigest()=='67c22183e6919be4ed5f7d466f6047c178ca64d18a34479cee71c51b95ccc03e'
+          assert d['schema']=='mois_bounded_public_inat_photo_phenology_annotation_count_pilot_v1'
+          assert d['status']=='REAL_INAT_API_PUBLIC_PHOTO_OBSERVATION_PHENOLOGY_COUNTS_NOT_FCP_SOURCE'
+          assert d['source_plant_taxon_id']==47125
+          assert d['source_plant_group_name']=='Angiospermae (flowering plants)'
+          assert len(d['cohorts'])==7 and d['queries_total']==35
+          assert d['no_iNaturalist_image_pixels_opened']
+          assert not d['actual_original_source_FCP_42111_taxon_frame_sampled']
+          assert not d['original_93209351_photo_ID_manifest_used']
+          assert d['cohorts']['world_2025_observed']['total_observed_plant_photo_records']==26069247
+          assert d['cohorts']['world_2025_observed']['explicit_flowers_observations']==1615314
+          print('MOIS_VERIFIED_REAL_ANGIOSPERM_COUNT_RECEIPT_START')
+          print(json.dumps(d,sort_keys=True,separators=(',',':')))
+          print('MOIS_VERIFIED_REAL_ANGIOSPERM_COUNT_RECEIPT_END')
+          PY

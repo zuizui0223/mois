@@ -1,0 +1,30 @@
+{
+  "schema": "mois_original_worldclim21_10m_monthly_rainfall_source_verification_v1",
+  "status": "ACTUAL_1970_2000_MONTHLY_WORLDCLIM_RASTERS_BYTE_CHECKED_NOT_PHOTOS",
+  "source_name": "WorldClim 2.1 historical 1970–2000 monthly precipitation normals, 10 arc-minute",
+  "provider_url": "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_prec.zip",
+  "provider_archive_sha256": "1090f578f6402672a2b6438e252156f6cf867a25002a8ad6ffcbfa19e516ddc6",
+  "generated_monthly_manifest_sha256": "07f45ac2973589d8951ac3eb0fa1c81b700018c5ab7322e2346dcf7d6723ee23",
+  "verified_monthly_raster_count": 12,
+  "provider_zip_contains_readme_txt": true,
+  "checks_completed": [
+    "downloaded original official approximately 7 MB ZIP",
+    "sha256 and CRC of downloaded zip members",
+    "exactly 12 byte-pinned georeferenced monthly precipitation GeoTIFFs",
+    "aligned WGS84 gridded 10-arc-minute month rasters",
+    "precipitation normals in mm per month",
+    "no original plant image downloads"
+  ],
+  "github_execution_url": "https://github.com/zuizui0223/mois/actions/runs/38834507200",
+  "github_artifact_id": 12018706765,
+  "github_artifact_name": "mois-worldclim-1970-2000-precip-12-month-source-pins",
+  "artifact_retention_days": 14,
+  "source_version_date": "2026-10-16",
+  "original_FCP_42111_photo_ID_census_complete": false,
+  "annual_BIO12_original_photo_site_reconciliation_complete": false,
+  "new_classifiable_flower_photos": 0,
+  "season_by_flower_colour_new_coefficients_computed": false,
+  "thirteen_variable_macro_models_rerun_on_new_source": false,
+  "original_raster_bytes_deposited_in_GitHub": false,
+  "note": "A real source climate archive and 12 aligned rasters were verified, but no original source photos, phenology annotations, or new ecosystem coefficients were measured. Private source GIS and iNaturalist data rights remain separate."
+}

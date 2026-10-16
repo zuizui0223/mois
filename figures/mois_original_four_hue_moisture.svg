@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="f4title f4desc" width="1450" height="850" viewBox="0 0 1450 850">
+<title id="f4title">All four photographed flower-colour responses to global precipitation and vapour pressure</title>
+<desc id="f4desc">Original 20,694 species genus-equal climate analysis. White has a positive simultaneous confidence interval excluding zero for both water variables. The other three hues show individual intervals including zero. Source-controlled, not a universal causal pigment effect.</desc>
+<rect x="0" y="0" width="1450" height="850" rx="0" fill="#FFFFFF"/>
+<rect x="0" y="0" width="1450" height="14" rx="0" fill="#345670"/>
+<text x="54" y="66" font-family="Arial,Helvetica,sans-serif" font-size="28" font-weight="700" fill="#243649" text-anchor="start">FOUR PHOTO-HUE RESPONSES TO MOISTURE</text>
+<text x="54" y="101" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="400" fill="#526778" text-anchor="start">Genus-equal world climate26 · 20,694 species / 1,934 genera · original 24-contrast maxT intervals</text>
+<rect x="54" y="149" width="653" height="560" rx="13" fill="#F8FAFC"/>
+<text x="75" y="189" font-family="Arial,Helvetica,sans-serif" font-size="21" font-weight="700" fill="#243649" text-anchor="start">A  Annual precipitation (BIO12)</text>
+<text x="75" y="219" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="400" fill="#526778" text-anchor="start">Photo-colour share: change (percentage points per source SD)</text>
+<line x1="319.38461538461536" y1="282" x2="319.38461538461536" y2="596" stroke="#D9E1E6" stroke-width="1"/>
+<text x="319.38461538461536" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">-4</text>
+<line x1="380.1538461538462" y1="282" x2="380.1538461538462" y2="596" stroke="#D9E1E6" stroke-width="1"/>
+<text x="380.1538461538462" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">-2</text>
+<line x1="440.9230769230769" y1="282" x2="440.9230769230769" y2="596" stroke="#596B77" stroke-width="2"/>
+<text x="440.9230769230769" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">0</text>
+<line x1="501.6923076923077" y1="282" x2="501.6923076923077" y2="596" stroke="#D9E1E6" stroke-width="1"/>
+<text x="501.6923076923077" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">2</text>
+<line x1="562.4615384615385" y1="282" x2="562.4615384615385" y2="596" stroke="#D9E1E6" stroke-width="1"/>
+<text x="562.4615384615385" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">4</text>
+<line x1="623.2307692307693" y1="282" x2="623.2307692307693" y2="596" stroke="#D9E1E6" stroke-width="1"/>
+<text x="623.2307692307693" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">6</text>
+<line x1="684" y1="282" x2="684" y2="596" stroke="#D9E1E6" stroke-width="1"/>
+<text x="684" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">8</text>
+<text x="76" y="310" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="700" fill="#243649" text-anchor="start">White</text>
+<line x1="450.60789879612696" y1="315" x2="568.2452347229219" y2="315" stroke="#77838D" stroke-width="5"/>
+<line x1="450.60789879612696" y1="305" x2="450.60789879612696" y2="325" stroke="#77838D" stroke-width="2"/>
+<line x1="568.2452347229219" y1="305" x2="568.2452347229219" y2="325" stroke="#77838D" stroke-width="2"/>
+<circle cx="509.42656675952435" cy="315" r="7" fill="#77838D" stroke="#FFFFFF" stroke-width="1"/>
+<text x="76" y="341" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="600" fill="#526778" text-anchor="start">+2.255 [0.319, 4.190]</text>
+<text x="76" y="393" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="500" fill="#243649" text-anchor="start">Yellow / orange</text>
+<line x1="350.1635795968323" y1="398" x2="457.49428654135113" y2="398" stroke="#D49D32" stroke-width="5"/>
+<line x1="350.1635795968323" y1="388" x2="350.1635795968323" y2="408" stroke="#D49D32" stroke-width="2"/>
+<line x1="457.49428654135113" y1="388" x2="457.49428654135113" y2="408" stroke="#D49D32" stroke-width="2"/>
+<circle cx="403.8289330690917" cy="398" r="7" fill="#D49D32" stroke="#FFFFFF" stroke-width="1"/>
+<text x="76" y="424" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="start">-1.221 [-2.987, 0.545]</text>
+<text x="76" y="476" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="500" fill="#243649" text-anchor="start">Red / pink</text>
+<line x1="394.9483963838277" y1="481" x2="459.7987934069804" y2="481" stroke="#BB6775" stroke-width="5"/>
+<line x1="394.9483963838277" y1="471" x2="394.9483963838277" y2="491" stroke="#BB6775" stroke-width="2"/>
+<line x1="459.7987934069804" y1="471" x2="459.7987934069804" y2="491" stroke="#BB6775" stroke-width="2"/>
+<circle cx="427.37359489540404" cy="481" r="7" fill="#BB6775" stroke="#FFFFFF" stroke-width="1"/>
+<text x="76" y="507" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="start">-0.446 [-1.513, 0.621]</text>
+<text x="76" y="559" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="500" fill="#243649" text-anchor="start">Blue / purple</text>
+<line x1="397.50968026070325" y1="564" x2="448.61674567587204" y2="564" stroke="#7064A2" stroke-width="5"/>
+<line x1="397.50968026070325" y1="554" x2="397.50968026070325" y2="574" stroke="#7064A2" stroke-width="2"/>
+<line x1="448.61674567587204" y1="554" x2="448.61674567587204" y2="574" stroke="#7064A2" stroke-width="2"/>
+<circle cx="423.06321296828764" cy="564" r="7" fill="#7064A2" stroke="#FFFFFF" stroke-width="1"/>
+<text x="76" y="590" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="start">-0.588 [-1.429, 0.253]</text>
+<text x="76" y="676" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="600" fill="#335874" text-anchor="start">Individual CI excludes zero: white only</text>
+<rect x="745" y="149" width="653" height="560" rx="13" fill="#F8FAFC"/>
+<text x="766" y="189" font-family="Arial,Helvetica,sans-serif" font-size="21" font-weight="700" fill="#243649" text-anchor="start">B  Atmospheric vapour pressure</text>
+<text x="766" y="219" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="400" fill="#526778" text-anchor="start">Photo-colour share: change (percentage points per source SD)</text>
+<line x1="1010.3846153846154" y1="282" x2="1010.3846153846154" y2="596" stroke="#D9E1E6" stroke-width="1"/>
+<text x="1010.3846153846154" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">-4</text>
+<line x1="1071.1538461538462" y1="282" x2="1071.1538461538462" y2="596" stroke="#D9E1E6" stroke-width="1"/>
+<text x="1071.1538461538462" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">-2</text>
+<line x1="1131.923076923077" y1="282" x2="1131.923076923077" y2="596" stroke="#596B77" stroke-width="2"/>
+<text x="1131.923076923077" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">0</text>
+<line x1="1192.6923076923076" y1="282" x2="1192.6923076923076" y2="596" stroke="#D9E1E6" stroke-width="1"/>
+<text x="1192.6923076923076" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">2</text>
+<line x1="1253.4615384615386" y1="282" x2="1253.4615384615386" y2="596" stroke="#D9E1E6" stroke-width="1"/>
+<text x="1253.4615384615386" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">4</text>
+<line x1="1314.2307692307693" y1="282" x2="1314.2307692307693" y2="596" stroke="#D9E1E6" stroke-width="1"/>
+<text x="1314.2307692307693" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">6</text>
+<line x1="1375" y1="282" x2="1375" y2="596" stroke="#D9E1E6" stroke-width="1"/>
+<text x="1375" y="627" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="middle">8</text>
+<text x="767" y="310" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="700" fill="#243649" text-anchor="start">White</text>
+<line x1="1168.3619296594834" y1="315" x2="1335.6351285613462" y2="315" stroke="#77838D" stroke-width="5"/>
+<line x1="1168.3619296594834" y1="305" x2="1168.3619296594834" y2="325" stroke="#77838D" stroke-width="2"/>
+<line x1="1335.6351285613462" y1="305" x2="1335.6351285613462" y2="325" stroke="#77838D" stroke-width="2"/>
+<circle cx="1251.998529110415" cy="315" r="7" fill="#77838D" stroke="#FFFFFF" stroke-width="1"/>
+<text x="767" y="341" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="600" fill="#526778" text-anchor="start">+3.952 [1.199, 6.704]</text>
+<text x="767" y="393" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="500" fill="#243649" text-anchor="start">Yellow / orange</text>
+<line x1="1015.9119176815145" y1="398" x2="1163.7424525862707" y2="398" stroke="#D49D32" stroke-width="5"/>
+<line x1="1015.9119176815145" y1="388" x2="1015.9119176815145" y2="408" stroke="#D49D32" stroke-width="2"/>
+<line x1="1163.7424525862707" y1="388" x2="1163.7424525862707" y2="408" stroke="#D49D32" stroke-width="2"/>
+<circle cx="1089.8271851338925" cy="398" r="7" fill="#D49D32" stroke="#FFFFFF" stroke-width="1"/>
+<text x="767" y="424" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="start">-1.385 [-3.818, 1.047]</text>
+<text x="767" y="476" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="500" fill="#243649" text-anchor="start">Red / pink</text>
+<line x1="1031.4978562083606" y1="481" x2="1140.649547770285" y2="481" stroke="#BB6775" stroke-width="5"/>
+<line x1="1031.4978562083606" y1="471" x2="1031.4978562083606" y2="491" stroke="#BB6775" stroke-width="2"/>
+<line x1="1140.649547770285" y1="471" x2="1140.649547770285" y2="491" stroke="#BB6775" stroke-width="2"/>
+<circle cx="1086.0737019893227" cy="481" r="7" fill="#BB6775" stroke="#FFFFFF" stroke-width="1"/>
+<text x="767" y="507" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="start">-1.509 [-3.305, 0.287]</text>
+<text x="767" y="559" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="500" fill="#243649" text-anchor="start">Blue / purple</text>
+<line x1="1058.593552353467" y1="564" x2="1140.9922305638886" y2="564" stroke="#7064A2" stroke-width="5"/>
+<line x1="1058.593552353467" y1="554" x2="1058.593552353467" y2="574" stroke="#7064A2" stroke-width="2"/>
+<line x1="1140.9922305638886" y1="554" x2="1140.9922305638886" y2="574" stroke="#7064A2" stroke-width="2"/>
+<circle cx="1099.7928914586778" cy="564" r="7" fill="#7064A2" stroke="#FFFFFF" stroke-width="1"/>
+<text x="767" y="590" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="400" fill="#526778" text-anchor="start">-1.057 [-2.413, 0.298]</text>
+<text x="767" y="676" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="600" fill="#335874" text-anchor="start">Individual CI excludes zero: white only</text>
+<line x1="53" y1="744" x2="1398" y2="744" stroke="#C7D2D9" stroke-width="1"/>
+<text x="54" y="773" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="400" fill="#526778" text-anchor="start">Photo probabilities sum to 1: colour-class slopes sum to 0; negative point estimates for coloured states do not individually pass maxT.</text>
+<text x="54" y="803" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="400" fill="#526778" text-anchor="start">Original photo labels and bootstrap uncertainty unchanged; study-wide/causal significance is NOT established.</text>
+</svg>

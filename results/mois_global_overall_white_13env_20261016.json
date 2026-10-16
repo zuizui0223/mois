@@ -1,0 +1,383 @@
+{
+  "schema": "mois_source_identical_soil36_overall_white_13predictor_taxonomic_grain_v1",
+  "date": "2026-10-16",
+  "photo_source_archive_SHA256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "environment_source_archive_SHA256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "original_source_cohort": {
+    "eligible_classifiable_photo_rows": 26163,
+    "eligible_species": 16801,
+    "eligible_genera": 1665,
+    "soil36_complete_photo_rows_before_genus_gate": 31925
+  },
+  "white_target": "Per named species, observed proportion of original four-colour-classifiable flower photos labelled white; unclassifiable photos excluded; not a global population true-white census",
+  "predictor_blocks_13_distinct": {
+    "Geography": [
+      "abs_lat",
+      "lon_sin",
+      "lon_cos"
+    ],
+    "Moisture": [
+      "wc_bio12",
+      "wc_vapr_annual_mean"
+    ],
+    "Temperature and radiation": [
+      "wc_bio5",
+      "wc_srad_annual_mean"
+    ],
+    "Elevation": [
+      "wc_elevation_m"
+    ],
+    "Soil5": [
+      "soil_pH",
+      "soil_SOC",
+      "soil_N",
+      "soil_clay",
+      "soil_available_water_proxy"
+    ]
+  },
+  "environment_scale": "Original soil36-complete classified photo-site SD of each source predictor; irrelevant to R2 but applies to pp coefficients",
+  "source_photo_site_sd_for_all13": {
+    "abs_lat": 15.183628965443356,
+    "lon_sin": 0.7568705569296277,
+    "lon_cos": 0.627086621670808,
+    "wc_bio12": 755.7531737277698,
+    "wc_vapr_annual_mean": 0.6525507349970462,
+    "wc_bio5": 5.964402443245944,
+    "wc_srad_annual_mean": 3046.6621219036138,
+    "wc_elevation_m": 937.9990665717227,
+    "soil_pH": 0.8711249874745001,
+    "soil_SOC": 29.505938219905065,
+    "soil_N": 1.6210171839966891,
+    "soil_clay": 8.522090370000006,
+    "soil_available_water_proxy": 4.095907183933776
+  },
+  "pooled_overall_white_genus_equal": {
+    "weighting": "one vote per source genus",
+    "photo_white_mean_of_species_proportions": 0.4738684050252008,
+    "pooled_all13_R2": 0.01999939742187049,
+    "pooled_all13_coefficient_pp_per_original_soil36_photo_site_SD": {
+      "abs_lat": 4.792795101865283,
+      "lon_sin": 0.06309918757834095,
+      "lon_cos": -3.132201344038759,
+      "wc_bio12": 3.7700812278013704,
+      "wc_vapr_annual_mean": 2.788873475082002,
+      "wc_bio5": -1.678741688700192,
+      "wc_srad_annual_mean": 0.34429277363509436,
+      "wc_elevation_m": -1.5054193604967407,
+      "soil_pH": 0.5956297409600847,
+      "soil_SOC": 0.15657389652917036,
+      "soil_N": 0.9834380025569295,
+      "soil_clay": 0.06097684072691917,
+      "soil_available_water_proxy": 0.8350224487609575
+    },
+    "pooled_block_only_R2": {
+      "Geography": 0.00786251108427087,
+      "Moisture": 0.007783223609064307,
+      "Temperature and radiation": 0.0030941840259258884,
+      "Elevation": 0.0029433193761453104,
+      "Soil5": 0.008377486897612557
+    },
+    "pooled_block_unique_partial_R2": {
+      "Geography": 0.004386470262194389,
+      "Moisture": 0.0027279236605120966,
+      "Temperature and radiation": 0.0002535670921651259,
+      "Elevation": 0.00016199495485948873,
+      "Soil5": 0.0003879671822260046
+    },
+    "pooled_block_shapley_fraction_total_white_variance": {
+      "Geography": 0.006490063358000395,
+      "Moisture": 0.0055742911888100105,
+      "Temperature and radiation": 0.0015402591483086928,
+      "Elevation": 0.0023728904031815106,
+      "Soil5": 0.0040218933235698804
+    },
+    "same_cohort_genus_identity_only_R2": 0.44315326849102415,
+    "same_cohort_within_genus_all13_R2_of_remaining_within_white_variance": 0.006202366064066545,
+    "same_cohort_genus_identity_plus_all13_R2": 0.4466070357614218,
+    "added_env_after_genus_R2_of_total_white_variance": 0.0034537672703976465,
+    "genus_identity_R2_is_in_sample_many_group_means_not_species_tree": true
+  },
+  "pooled_overall_white_species_equal": {
+    "weighting": "one vote per sampled source species",
+    "photo_white_mean_of_species_proportions": 0.45466806014457795,
+    "pooled_all13_R2": 0.012823012026220198,
+    "pooled_all13_coefficient_pp_per_original_soil36_photo_site_SD": {
+      "abs_lat": 3.1571724238025385,
+      "lon_sin": 0.07457280306146075,
+      "lon_cos": -1.7061976240768884,
+      "wc_bio12": 3.865443835942721,
+      "wc_vapr_annual_mean": 2.18717182620267,
+      "wc_bio5": 0.21294243809670188,
+      "wc_srad_annual_mean": -0.6315285975972257,
+      "wc_elevation_m": -0.5886353760585915,
+      "soil_pH": 0.45392929333522264,
+      "soil_SOC": 0.5673097509832224,
+      "soil_N": 0.39263881161706604,
+      "soil_clay": 0.6496478442534352,
+      "soil_available_water_proxy": 0.6401604151792246
+    },
+    "pooled_block_only_R2": {
+      "Geography": 0.002497062540122331,
+      "Moisture": 0.007540475060097826,
+      "Temperature and radiation": 0.002288558189310018,
+      "Elevation": 0.002095630628189383,
+      "Soil5": 0.006326091006196679
+    },
+    "pooled_block_unique_partial_R2": {
+      "Geography": 0.001473634421878053,
+      "Moisture": 0.0024244514302739547,
+      "Temperature and radiation": 4.2376994736352536e-05,
+      "Elevation": 2.6805795494005275e-05,
+      "Soil5": 0.0002703046126060534
+    },
+    "pooled_block_shapley_fraction_total_white_variance": {
+      "Geography": 0.0022937476050095057,
+      "Moisture": 0.005068196212234323,
+      "Temperature and radiation": 0.0011407802225968616,
+      "Elevation": 0.0012634444447711644,
+      "Soil5": 0.003056843541608343
+    },
+    "same_cohort_genus_identity_only_R2": 0.34258997766250865,
+    "same_cohort_within_genus_all13_R2_of_remaining_within_white_variance": 0.003399461515192022,
+    "same_cohort_genus_identity_plus_all13_R2": 0.3448248177331465,
+    "added_env_after_genus_R2_of_total_white_variance": 0.0022348400706378294,
+    "genus_identity_R2_is_in_sample_many_group_means_not_species_tree": true
+  },
+  "all_soil36_classifiable_species_without_congeneric_gate_species_equal": {
+    "eligible_species": 20786,
+    "observed_named_genera": 4853,
+    "source_classifiable_photo_rows": 31925,
+    "species_equal_observed_photo_white_mean": 0.4624333889012507,
+    "all13_in_sample_pooled_white_R2": 0.012806646762199388,
+    "all13_five_block_shapley": {
+      "Geography": 0.0023493569301890034,
+      "Moisture": 0.004299204156943364,
+      "Temperature and radiation": 0.001469952924253766,
+      "Elevation": 0.0014472916120755984,
+      "Soil5": 0.0032408411387376576
+    },
+    "BIO12_full13_slope_pp_per_original_source_soil_site_SD": 2.658888954703096,
+    "warning": "Only species-equal descriptive overall environmental fit; no >=3 congeneric species condition; no bootstrap family or independent occurrence-site replication for this sensitivity."
+  },
+  "genus_equal_999_cluster_bootstrap": {
+    "draws": 999,
+    "seed": 202610161210,
+    "unit": "resample full nominal genera; refit weighted pooled WLS including intercept per draw",
+    "pooled_all13_R2_bootstrap_percentile95": [
+      0.015094664666634653,
+      0.03005773211181213
+    ],
+    "genus_identity_only_R2_bootstrap_percentile95": [
+      0.42371935489202844,
+      0.46163996015117914
+    ],
+    "block_shapley_R2_bootstrap_percentile95": {
+      "Geography": [
+        0.0036908282788667697,
+        0.011508800193304063
+      ],
+      "Moisture": [
+        0.0031779158714573237,
+        0.009281444814135103
+      ],
+      "Temperature and radiation": [
+        0.0009211342845657298,
+        0.003240866393388024
+      ],
+      "Elevation": [
+        0.0009289432150522718,
+        0.004850890571993104
+      ],
+      "Soil5": [
+        0.002606267194079698,
+        0.007410141573259632
+      ]
+    },
+    "simultaneous_13_conditional_coefficients_critical_maxT95": 2.8367004212811824,
+    "all13_coefficients": {
+      "abs_lat": {
+        "point_pp_per_original_soil36_photo_site_SD": 4.792795101865283,
+        "genus_bootstrap_percentile95": [
+          1.0672662591853455,
+          8.728264811679466
+        ],
+        "family_13_variable_maxT95": [
+          -0.7012713735861844,
+          10.28686157731675
+        ]
+      },
+      "lon_sin": {
+        "point_pp_per_original_soil36_photo_site_SD": 0.06309918757834095,
+        "genus_bootstrap_percentile95": [
+          -1.376847872408118,
+          1.6501481144908918
+        ],
+        "family_13_variable_maxT95": [
+          -2.0895431849104518,
+          2.215741560067134
+        ]
+      },
+      "lon_cos": {
+        "point_pp_per_original_soil36_photo_site_SD": -3.132201344038759,
+        "genus_bootstrap_percentile95": [
+          -4.527667573528332,
+          -1.671228257101822
+        ],
+        "family_13_variable_maxT95": [
+          -5.20870565515094,
+          -1.0556970329265782
+        ]
+      },
+      "wc_bio12": {
+        "point_pp_per_original_soil36_photo_site_SD": 3.7700812278013704,
+        "genus_bootstrap_percentile95": [
+          1.7841208515057982,
+          5.849977251595965
+        ],
+        "family_13_variable_maxT95": [
+          0.8169999429499883,
+          6.7231625126527526
+        ]
+      },
+      "wc_vapr_annual_mean": {
+        "point_pp_per_original_soil36_photo_site_SD": 2.788873475082002,
+        "genus_bootstrap_percentile95": [
+          -1.0626508099322653,
+          6.58539021647938
+        ],
+        "family_13_variable_maxT95": [
+          -2.912460877716258,
+          8.490207827880262
+        ]
+      },
+      "wc_bio5": {
+        "point_pp_per_original_soil36_photo_site_SD": -1.678741688700192,
+        "genus_bootstrap_percentile95": [
+          -4.1157648645727996,
+          0.9079185375822697
+        ],
+        "family_13_variable_maxT95": [
+          -5.329696642811439,
+          1.972213265411055
+        ]
+      },
+      "wc_srad_annual_mean": {
+        "point_pp_per_original_soil36_photo_site_SD": 0.34429277363509436,
+        "genus_bootstrap_percentile95": [
+          -1.8834905218840603,
+          2.70852292988114
+        ],
+        "family_13_variable_maxT95": [
+          -3.0712630960160983,
+          3.759848643286287
+        ]
+      },
+      "wc_elevation_m": {
+        "point_pp_per_original_soil36_photo_site_SD": -1.5054193604967407,
+        "genus_bootstrap_percentile95": [
+          -4.074814033749104,
+          1.1478355431303902
+        ],
+        "family_13_variable_maxT95": [
+          -5.507520606886813,
+          2.4966818858933317
+        ]
+      },
+      "soil_pH": {
+        "point_pp_per_original_soil36_photo_site_SD": 0.5956297409600847,
+        "genus_bootstrap_percentile95": [
+          -1.3926168589849097,
+          2.497442011146082
+        ],
+        "family_13_variable_maxT95": [
+          -2.1986986335716985,
+          3.3899581154918677
+        ]
+      },
+      "soil_SOC": {
+        "point_pp_per_original_soil36_photo_site_SD": 0.15657389652917036,
+        "genus_bootstrap_percentile95": [
+          -2.006203687431462,
+          2.121166724976472
+        ],
+        "family_13_variable_maxT95": [
+          -2.8567595554998135,
+          3.169907348558154
+        ]
+      },
+      "soil_N": {
+        "point_pp_per_original_soil36_photo_site_SD": 0.9834380025569295,
+        "genus_bootstrap_percentile95": [
+          -1.1205426070520599,
+          2.8263973971699543
+        ],
+        "family_13_variable_maxT95": [
+          -1.944964661037078,
+          3.911840666150937
+        ]
+      },
+      "soil_clay": {
+        "point_pp_per_original_soil36_photo_site_SD": 0.06097684072691917,
+        "genus_bootstrap_percentile95": [
+          -1.512235101569601,
+          1.5453941408368732
+        ],
+        "family_13_variable_maxT95": [
+          -2.0910519116605735,
+          2.213005593114412
+        ]
+      },
+      "soil_available_water_proxy": {
+        "point_pp_per_original_soil36_photo_site_SD": 0.8350224487609575,
+        "genus_bootstrap_percentile95": [
+          -0.6084154595936315,
+          2.3564693619119357
+        ],
+        "family_13_variable_maxT95": [
+          -1.2894822542176771,
+          2.9595271517395925
+        ]
+      }
+    },
+    "scope": "retrospective, conditional 13-variable model, ordinary genus-bootstrap and within-13-family simultaneous limits; not study-wide model-selection correction"
+  },
+  "fixed_genus_size_species_white_permutation_null": {
+    "draws": 1999,
+    "seed": 202610161214,
+    "shuffle": "permute observed species photographed-white fractions across fixed genus membership / genus sizes",
+    "genus_equal": {
+      "observed": 0.44315326849102415,
+      "mean": 0.19063009721271282,
+      "central_95_envelope": [
+        0.17782352095670187,
+        0.20317870619788805
+      ],
+      "one_sided_p_plus_one": 0.0005
+    },
+    "species_equal": {
+      "observed": 0.34258997766250865,
+      "mean": 0.09902315308989651,
+      "central_95_envelope": [
+        0.09315032283109759,
+        0.10502582236663946
+      ],
+      "one_sided_p_plus_one": 0.0005
+    },
+    "interpretation": "many fitted genus group means mechanically explain positive variance even under shuffle; conditional null is not phylogenetic signal or fitness"
+  },
+  "source_replay_consistency": {
+    "original_13_variable_genus_centered_R2": 0.006202366064066511,
+    "same_pop_genus_equal_genus_only_R2": 0.44315326849102415,
+    "different_original_20725_species_genus_clustering_R2": 0.343762761,
+    "cannot_subtract_two_different_population_R2s": true
+  },
+  "limits": [
+    "Pooled 13-variable explanation is in-sample observational association and not prospective predictive validation.",
+    "Between-genus dummy R2 uses 1,665 fitted group means and is not molecular phylogenetic heritability or causal species-pool effect.",
+    "Genus-dummy R2, genus-centred 13-variable R2 and environment-only pooled R2 answer different but here same-source-target questions; genus+13 total R2 is a valid same-source weighted decomposition.",
+    "Five-block Shapley increments are nonnegative allocations of overlapping predictive information, not causal effects or significance tests.",
+    "Source photo labels and complete soil36 data are selected nonrandomly; many source photographs have unclassifiable floral hues.",
+    "No source linked actual terrain slope/aspect/TPI/TRI, pigment production cost, pollinator behaviour or relative reproductive fitness.",
+    "Some original photo/site species names, exact photo IDs and private locations are held only in the rights-controlled source ZIPs; never stored in public JSON."
+  ]
+}

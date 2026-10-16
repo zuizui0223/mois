@@ -1,0 +1,54 @@
+{
+  "schema": "mois_original_source_independent_two_axis_four_hue_wls_20261014_v1",
+  "status": "PASS_INDEPENDENT_ORIGINAL_ZIP_JOIN_AND_EIGHT_WLS_COEFFICIENTS",
+  "photo_source_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "environment_source_sha256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "source_photo_opportunities": 100543,
+  "named_taxa": 42111,
+  "classifiable_photo_hues": 45953,
+  "climate26_classifiable_photo_rows": 45836,
+  "climate26_source_species": 25028,
+  "soil36_classifiable_photo_rows": 31925,
+  "soil36_source_species": 20786,
+  "genus_eligible_species": 20694,
+  "genus_eligible_genera": 1934,
+  "eight_point_slopes_pp_per_source_sd": {
+    "wc_bio12": {
+      "white": 2.254545235123577,
+      "yellow_orange": -1.2208199243083744,
+      "red_pink": -0.4459323198980951,
+      "blue_purple": -0.5877929909171129
+    },
+    "wc_vapr_annual_mean": {
+      "white": 3.951850325152856,
+      "yellow_orange": -1.3854344133149166,
+      "red_pink": -1.50896676997165,
+      "blue_purple": -1.0574491418662968
+    }
+  },
+  "max_abs_difference_from_original_1280_ledger_pp": 3.5083047578154947e-14,
+  "licence_counts": {
+    "cc-by-nc": 78367,
+    "cc-by": 13795,
+    "cc0": 3229,
+    "cc-by-sa": 2715,
+    "cc-by-nc-sa": 2433,
+    "UNSPECIFIED": 2,
+    "cc-by-nc-nd": 2
+  },
+  "source_geo_status_counts": {
+    "VALID_PUBLIC_ORIGINAL_PHOTO_POINT": 100348,
+    "SOURCE_TAXON_IDENTITY_MISMATCH": 91,
+    "CULTIVATED_NOT_WILD": 53,
+    "NO_UNOBSCURED_PUBLIC_COORDINATES": 31,
+    "SOURCE_OBSERVATION_NOT_RETURNED": 14,
+    "EXACT_ORIGINAL_PHOTO_MISSING": 5,
+    "CURRENT_PUBLIC_POSITION_OUTSIDE_HISTORICAL_EQUAL_AREA_CELL": 1
+  },
+  "point_estimates_only": true,
+  "bootstrap_CIs_recomputed": false,
+  "all_original_photo_pixels_present": false,
+  "per_photo_ids_coordinates_and_attribution_released": false,
+  "source_rights_and_geoprivacy_human_review_required": true,
+  "verification_notes": "Computed directly in the 2026-10-14 working container after downloading both GitHub Actions ZIPs. Only aggregate receipt committed. Source archives and any photo IDs/observation IDs/coordinates remain outside mois; CI can validate this receipt against frozen original coefficient CSV but cannot rerun without inputs."
+}

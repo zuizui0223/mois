@@ -1,0 +1,89 @@
+{
+  "schema": "mois_world_genus_equal_predeclared_two_moisture_axis_loo_20261014_v1",
+  "status": "PASS_1934_INDEPENDENT_SINGLE_GENUS_DELETIONS_ON_SOURCE_LOCKED_TWO_MOISTURE_AXES",
+  "source_private_genus_sufficient_moments_sha256": "77dff4acc5756610e463bec3e5877c711f1695d8984be0b675e86f7d8afb4aae",
+  "source_original_measurement_denominator_species": 20694,
+  "source_original_nominal_genera": 1934,
+  "n_single_genus_delete_refits_per_axis": 1934,
+  "n_focal_original_environment_axes": 2,
+  "n_photographed_hues_per_axis": 4,
+  "n_total_leave_one_genus_out_slope_values": 15472,
+  "all_eight_original_full_model_points_match_frozen_source_ledger": true,
+  "all_eight_slope_signs_unchanged_in_all_single_genus_deletions": true,
+  "new_statistical_significance_test": false,
+  "confidence_intervals_reestimated": false,
+  "licence_and_geoprivacy_review_required_before_releasing_source_moments": true,
+  "private_moments_uploaded_to_public_repository": false,
+  "no_source_photo_ids_species_genus_names_or_site_locations_exported": true,
+  "interpretation": "Local single-genus deletion stability within this source and original regression scope; does not establish geography, strict-photo, phylogeny, MNAR, causal water selection, or study-wide inference robustness",
+  "axis_hue_results": {
+    "wc_bio12": {
+      "white": {
+        "all_genera_original_point_pp": 2.2545452351235875,
+        "leave_one_genus_out_min_pp": 2.173598664880904,
+        "leave_one_genus_out_max_pp": 2.3393559066834193,
+        "largest_absolute_point_change_pp": 0.0848106715598318,
+        "p95_absolute_point_change_pp": 0.03226431216524091,
+        "point_sign_changes_over_1934_genus_exclusions": 0
+      },
+      "yellow_orange": {
+        "all_genera_original_point_pp": -1.2208199243083746,
+        "leave_one_genus_out_min_pp": -1.31982158327693,
+        "leave_one_genus_out_max_pp": -1.1330575406466015,
+        "largest_absolute_point_change_pp": 0.0990016589685554,
+        "p95_absolute_point_change_pp": 0.029661873218783726,
+        "point_sign_changes_over_1934_genus_exclusions": 0
+      },
+      "red_pink": {
+        "all_genera_original_point_pp": -0.44593231989809534,
+        "leave_one_genus_out_min_pp": -0.5061356585137857,
+        "leave_one_genus_out_max_pp": -0.3802775273492048,
+        "largest_absolute_point_change_pp": 0.06565479254889056,
+        "p95_absolute_point_change_pp": 0.017239776416348593,
+        "point_sign_changes_over_1934_genus_exclusions": 0
+      },
+      "blue_purple": {
+        "all_genera_original_point_pp": -0.5877929909171155,
+        "leave_one_genus_out_min_pp": -0.6629009003075579,
+        "leave_one_genus_out_max_pp": -0.5204876514429585,
+        "largest_absolute_point_change_pp": 0.07510790939044243,
+        "p95_absolute_point_change_pp": 0.012429551953344308,
+        "point_sign_changes_over_1934_genus_exclusions": 0
+      }
+    },
+    "wc_vapr_annual_mean": {
+      "white": {
+        "all_genera_original_point_pp": 3.9518503251528907,
+        "leave_one_genus_out_min_pp": 3.84275600726764,
+        "leave_one_genus_out_max_pp": 4.0682772827556075,
+        "largest_absolute_point_change_pp": 0.11642695760271682,
+        "p95_absolute_point_change_pp": 0.04815398243667412,
+        "point_sign_changes_over_1934_genus_exclusions": 0
+      },
+      "yellow_orange": {
+        "all_genera_original_point_pp": -1.3854344133149283,
+        "leave_one_genus_out_min_pp": -1.5461835882835553,
+        "leave_one_genus_out_max_pp": -1.2262362857609255,
+        "largest_absolute_point_change_pp": 0.16074917496862695,
+        "p95_absolute_point_change_pp": 0.04244397948388511,
+        "point_sign_changes_over_1934_genus_exclusions": 0
+      },
+      "red_pink": {
+        "all_genera_original_point_pp": -1.508966769971658,
+        "leave_one_genus_out_min_pp": -1.587220200360788,
+        "leave_one_genus_out_max_pp": -1.4123189156227696,
+        "largest_absolute_point_change_pp": 0.09664785434888845,
+        "p95_absolute_point_change_pp": 0.03099874134090624,
+        "point_sign_changes_over_1934_genus_exclusions": 0
+      },
+      "blue_purple": {
+        "all_genera_original_point_pp": -1.057449141866303,
+        "leave_one_genus_out_min_pp": -1.166649941169895,
+        "leave_one_genus_out_max_pp": -0.9760063054465088,
+        "largest_absolute_point_change_pp": 0.10920079930359194,
+        "p95_absolute_point_change_pp": 0.020943477788792086,
+        "point_sign_changes_over_1934_genus_exclusions": 0
+      }
+    }
+  }
+}

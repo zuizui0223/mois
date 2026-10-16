@@ -1,0 +1,375 @@
+{
+  "schema": "mois_original_world_climate26_genus_equal_24_source_ci_replay_20261014_v1",
+  "status": "PASS_ALL_24_ORIGINAL_POINT_NOMINAL_AND_MAXT95_INTERVALS_REPRODUCED_FROM_EXACT_HISTORICAL_ZIPS",
+  "source_original_photo_zip_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "source_original_environment_zip_sha256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "original_results_csv": "results/fcp_macro_direction_20261013/direction_ledger.csv",
+  "independent_source_replay_scope": "world / climate26 / all-photo / genus_geo / genus_equal only",
+  "source_genus_anonymous_group_count": 1934,
+  "original_eligible_species": 20694,
+  "original_photo_hue_classes": 4,
+  "environmental_anchors": [
+    "wc_bio5",
+    "wc_bio12",
+    "wc_bio14",
+    "wc_bio15",
+    "wc_srad_annual_mean",
+    "wc_vapr_annual_mean"
+  ],
+  "n_tests": 24,
+  "bootstrap_draws": 999,
+  "bootstrap_seed": 2026101430,
+  "maxT_critical_value": 3.0109108050453743,
+  "maximum_absolute_point_and_ci_error_pp": 3.552713678800501e-15,
+  "all_24_points_and_percentile_ci_and_maxT_ci_match_original": true,
+  "all_original_24_maxT_significance_flags_match": true,
+  "original_source_programme_wide_selection_adjustment": false,
+  "independent_biological_sample_replication": false,
+  "original_image_pixels_used": false,
+  "computed_from_original_measured_photo_environment_tables": true,
+  "anonymous_genus_sufficient_moments_npz_sha256": "77dff4acc5756610e463bec3e5877c711f1695d8984be0b675e86f7d8afb4aae",
+  "anonymous_genus_sufficient_moments_available_in_public_repo": false,
+  "anonymous_moments_approved_for_public_redistribution": false,
+  "source_photo_original_IDs_or_coordinates_exported": false,
+  "original_license_privacy_review_required": true,
+  "permanent_archive_or_review_link_exists": false,
+  "report_classification": "SOURCE-VERIFIED_REPLAY_NOT_A_NEW_ECOLOGICAL_EFFECT",
+  "source_rows": [
+    {
+      "axis": "wc_bio5",
+      "hue": "white",
+      "point_pp": 1.2565856580995742,
+      "nominal95_pp": [
+        0.015202635964617099,
+        2.5324288530813654
+      ],
+      "maxT95_pp": [
+        -0.6476152256582774,
+        3.160786541857426
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio5",
+      "hue": "yellow_orange",
+      "point_pp": 0.21361189973593073,
+      "nominal95_pp": [
+        -0.9831115810853089,
+        1.2586732052564098
+      ],
+      "maxT95_pp": [
+        -1.5155887727879096,
+        1.9428125722597709
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio5",
+      "hue": "red_pink",
+      "point_pp": -0.6659115334251875,
+      "nominal95_pp": [
+        -1.4137364796211664,
+        0.11582083240324272
+      ],
+      "maxT95_pp": [
+        -1.834884978676339,
+        0.5030619118259644
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio5",
+      "hue": "blue_purple",
+      "point_pp": -0.8042860244103155,
+      "nominal95_pp": [
+        -1.441890270227979,
+        -0.1397940676977427
+      ],
+      "maxT95_pp": [
+        -1.8130247967966826,
+        0.20445274797605167
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio12",
+      "hue": "white",
+      "point_pp": 2.254545235123587,
+      "nominal95_pp": [
+        1.0127939003499047,
+        3.4736826758220927
+      ],
+      "maxT95_pp": [
+        0.31874097303709015,
+        4.190349497210084
+      ],
+      "maxT_excludes_zero": true
+    },
+    {
+      "axis": "wc_bio12",
+      "hue": "yellow_orange",
+      "point_pp": -1.2208199243083746,
+      "nominal95_pp": [
+        -2.3193399880963876,
+        0.00002069508787265567
+      ],
+      "maxT95_pp": [
+        -2.9870214309903296,
+        0.5453815823735803
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio12",
+      "hue": "red_pink",
+      "point_pp": -0.44593231989809534,
+      "nominal95_pp": [
+        -1.1445644965319413,
+        0.24681989440912788
+      ],
+      "maxT95_pp": [
+        -1.5130907519246597,
+        0.6212261121284688
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio12",
+      "hue": "blue_purple",
+      "point_pp": -0.5877929909171159,
+      "nominal95_pp": [
+        -1.1501754761242071,
+        -0.03679105563995595
+      ],
+      "maxT95_pp": [
+        -1.4287953331920458,
+        0.2532093513578139
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio14",
+      "hue": "white",
+      "point_pp": 1.5208803731874192,
+      "nominal95_pp": [
+        0.43015629557386603,
+        2.571465333817234
+      ],
+      "maxT95_pp": [
+        -0.09920812274844884,
+        3.1409688691232875
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio14",
+      "hue": "yellow_orange",
+      "point_pp": -0.9171269831934478,
+      "nominal95_pp": [
+        -1.86129677213999,
+        0.14916770166610507
+      ],
+      "maxT95_pp": [
+        -2.478321261980613,
+        0.6440672955937174
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio14",
+      "hue": "red_pink",
+      "point_pp": 0.09498502334618922,
+      "nominal95_pp": [
+        -0.5454582186407978,
+        0.755922594350395
+      ],
+      "maxT95_pp": [
+        -0.9162235644293044,
+        1.1061936111216828
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio14",
+      "hue": "blue_purple",
+      "point_pp": -0.6987384133401574,
+      "nominal95_pp": [
+        -1.180410813305219,
+        -0.2612746180607237
+      ],
+      "maxT95_pp": [
+        -1.4181746957530255,
+        0.020697869072710835
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio15",
+      "hue": "white",
+      "point_pp": -0.5071573556527378,
+      "nominal95_pp": [
+        -1.629920470850111,
+        0.6018499260584904
+      ],
+      "maxT95_pp": [
+        -2.189630892361364,
+        1.175316181055888
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio15",
+      "hue": "yellow_orange",
+      "point_pp": 0.3167348213804245,
+      "nominal95_pp": [
+        -0.6344215782587781,
+        1.374249335472507
+      ],
+      "maxT95_pp": [
+        -1.2096737511465547,
+        1.8431433939074038
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio15",
+      "hue": "red_pink",
+      "point_pp": -0.6505474686495164,
+      "nominal95_pp": [
+        -1.2834898251529991,
+        -0.017444843842838682
+      ],
+      "maxT95_pp": [
+        -1.6397878099336756,
+        0.3386928726346426
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_bio15",
+      "hue": "blue_purple",
+      "point_pp": 0.8409700029218306,
+      "nominal95_pp": [
+        0.26569175875334095,
+        1.423367965656242
+      ],
+      "maxT95_pp": [
+        -0.048759172076207925,
+        1.7306991779198693
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_srad_annual_mean",
+      "hue": "white",
+      "point_pp": -0.5329040760033743,
+      "nominal95_pp": [
+        -2.0531478322630603,
+        1.0196052614989297
+      ],
+      "maxT95_pp": [
+        -2.943847450590403,
+        1.8780392985836551
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_srad_annual_mean",
+      "hue": "yellow_orange",
+      "point_pp": 1.331409431628657,
+      "nominal95_pp": [
+        -0.10395525145743414,
+        2.8432869121724553
+      ],
+      "maxT95_pp": [
+        -0.930798018026569,
+        3.5936168812838827
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_srad_annual_mean",
+      "hue": "red_pink",
+      "point_pp": -0.4594075441761973,
+      "nominal95_pp": [
+        -1.374999485279222,
+        0.42678313878148877
+      ],
+      "maxT95_pp": [
+        -1.9096825255741208,
+        0.9908674372217263
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_srad_annual_mean",
+      "hue": "blue_purple",
+      "point_pp": -0.33909781144909007,
+      "nominal95_pp": [
+        -1.1656744406914477,
+        0.46061191839625915
+      ],
+      "maxT95_pp": [
+        -1.5646233551805415,
+        0.8864277322823615
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_vapr_annual_mean",
+      "hue": "white",
+      "point_pp": 3.951850325152891,
+      "nominal95_pp": [
+        2.1098286404944333,
+        5.764232349948789
+      ],
+      "maxT95_pp": [
+        1.1992533811981878,
+        6.704447269107594
+      ],
+      "maxT_excludes_zero": true
+    },
+    {
+      "axis": "wc_vapr_annual_mean",
+      "hue": "yellow_orange",
+      "point_pp": -1.3854344133149283,
+      "nominal95_pp": [
+        -3.0224140033974245,
+        0.10212751347383278
+      ],
+      "maxT95_pp": [
+        -3.818088785165346,
+        1.0472199585354895
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_vapr_annual_mean",
+      "hue": "red_pink",
+      "point_pp": -1.508966769971658,
+      "nominal95_pp": [
+        -2.7218540963431845,
+        -0.36609170329118096
+      ],
+      "maxT95_pp": [
+        -3.3051338463071214,
+        0.2872003063638053
+      ],
+      "maxT_excludes_zero": false
+    },
+    {
+      "axis": "wc_vapr_annual_mean",
+      "hue": "blue_purple",
+      "point_pp": -1.057449141866303,
+      "nominal95_pp": [
+        -1.8999704655649998,
+        -0.1752658658761712
+      ],
+      "maxT95_pp": [
+        -2.4133767579871654,
+        0.29847847425455953
+      ],
+      "maxT_excludes_zero": false
+    }
+  ]
+}

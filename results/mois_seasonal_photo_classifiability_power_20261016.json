@@ -1,0 +1,288 @@
+{
+  "schema": "mois_prespecified_photo_classifiability_two_season_design_power_v1",
+  "status": "HISTORICAL_PHOTO_NONRESPONSE_BINOMIAL_PLANNING_ONLY_NO_NEW_PHOTOS",
+  "source_historical_photographs_unique": 100543,
+  "historical_four_hue_classifiable_photographs": 45953,
+  "historical_photo_records_unclassifiable": 54590,
+  "previous_original_source_dry_decile_classifiable_n_of_total": [
+    4981,
+    10084
+  ],
+  "previous_original_source_wet_decile_classifiable_n_of_total": [
+    3904,
+    9990
+  ],
+  "model": "two independent Binomial(n,p) four-hue classifiable counts",
+  "compared_source_seasons": 2,
+  "target_classifiable_in_each_season": 3,
+  "prespecified_original_observation_cap_per_species": 40,
+  "same_historical_classifiability_rate_scenarios": {
+    "all_source": {
+      "previously_classifiable_photo_fraction": 0.45704822812130136,
+      "scenarios": [
+        {
+          "independent_original_observations_per_season": 3,
+          "total_both_seasons": 6,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.009115325419328503
+        },
+        {
+          "independent_original_observations_per_season": 5,
+          "total_both_seasons": 10,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.1762830489748189
+        },
+        {
+          "independent_original_observations_per_season": 7,
+          "total_both_seasons": 14,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.4859971818854696
+        },
+        {
+          "independent_original_observations_per_season": 8,
+          "total_both_seasons": 16,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.6268513585489307
+        },
+        {
+          "independent_original_observations_per_season": 9,
+          "total_both_seasons": 18,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.7399904984866141
+        },
+        {
+          "independent_original_observations_per_season": 10,
+          "total_both_seasons": 20,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.8245309266497869
+        },
+        {
+          "independent_original_observations_per_season": 11,
+          "total_both_seasons": 22,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.8845118583763314
+        },
+        {
+          "independent_original_observations_per_season": 12,
+          "total_both_seasons": 24,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.9254780250714577
+        },
+        {
+          "independent_original_observations_per_season": 14,
+          "total_both_seasons": 28,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.9703225521112142
+        },
+        {
+          "independent_original_observations_per_season": 16,
+          "total_both_seasons": 32,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.988681165531597
+        },
+        {
+          "independent_original_observations_per_season": 20,
+          "total_both_seasons": 40,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.9984889640588867
+        }
+      ],
+      "minimum_equal_original_observations_per_season_for_pair_success": {
+        "0.80": 10,
+        "0.90": 12,
+        "0.95": 13
+      }
+    },
+    "dry_photo_opportunity_decile": {
+      "previously_classifiable_photo_fraction": 0.4939508131693772,
+      "scenarios": [
+        {
+          "independent_original_observations_per_season": 3,
+          "total_both_seasons": 6,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.014524534696710492
+        },
+        {
+          "independent_original_observations_per_season": 5,
+          "total_both_seasons": 10,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.23878750239377958
+        },
+        {
+          "independent_original_observations_per_season": 7,
+          "total_both_seasons": 14,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.5827696129684294
+        },
+        {
+          "independent_original_observations_per_season": 8,
+          "total_both_seasons": 16,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.7180608959792175
+        },
+        {
+          "independent_original_observations_per_season": 9,
+          "total_both_seasons": 18,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.8173178781757605
+        },
+        {
+          "independent_original_observations_per_season": 10,
+          "total_both_seasons": 20,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.8853471186845312
+        },
+        {
+          "independent_original_observations_per_season": 11,
+          "total_both_seasons": 22,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.9297838304185414
+        },
+        {
+          "independent_original_observations_per_season": 12,
+          "total_both_seasons": 24,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.9578127269867811
+        },
+        {
+          "independent_original_observations_per_season": 14,
+          "total_both_seasons": 28,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.985410902637631
+        },
+        {
+          "independent_original_observations_per_season": 16,
+          "total_both_seasons": 32,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.9951617624122545
+        },
+        {
+          "independent_original_observations_per_season": 20,
+          "total_both_seasons": 40,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.9995111171018162
+        }
+      ],
+      "minimum_equal_original_observations_per_season_for_pair_success": {
+        "0.80": 9,
+        "0.90": 11,
+        "0.95": 12
+      }
+    },
+    "wet_photo_opportunity_decile": {
+      "previously_classifiable_photo_fraction": 0.39079079079079077,
+      "scenarios": [
+        {
+          "independent_original_observations_per_season": 3,
+          "total_both_seasons": 6,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.003561770434563616
+        },
+        {
+          "independent_original_observations_per_season": 5,
+          "total_both_seasons": 10,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.09099394525257207
+        },
+        {
+          "independent_original_observations_per_season": 7,
+          "total_both_seasons": 14,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.3134847504780905
+        },
+        {
+          "independent_original_observations_per_season": 8,
+          "total_both_seasons": 16,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.442311875978546
+        },
+        {
+          "independent_original_observations_per_season": 9,
+          "total_both_seasons": 18,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.5632371228417107
+        },
+        {
+          "independent_original_observations_per_season": 10,
+          "total_both_seasons": 20,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.6681472415925691
+        },
+        {
+          "independent_original_observations_per_season": 11,
+          "total_both_seasons": 22,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.7540432003733368
+        },
+        {
+          "independent_original_observations_per_season": 12,
+          "total_both_seasons": 24,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.8213729834532594
+        },
+        {
+          "independent_original_observations_per_season": 14,
+          "total_both_seasons": 28,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.9101183984876252
+        },
+        {
+          "independent_original_observations_per_season": 16,
+          "total_both_seasons": 32,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.9568182419376555
+        },
+        {
+          "independent_original_observations_per_season": 20,
+          "total_both_seasons": 40,
+          "probability_both_seasons_have_at_least_three_classifiable": 0.9908964369002217
+        }
+      ],
+      "minimum_equal_original_observations_per_season_for_pair_success": {
+        "0.80": 12,
+        "0.90": 14,
+        "0.95": 16
+      }
+    }
+  },
+  "unequal_original_dry_wet_classifiability_scenarios": {
+    "dry_photo_classifiability_input": 0.4939508131693772,
+    "wet_photo_classifiability_input": 0.39079079079079077,
+    "minimum_equal_source_observations_per_dry_and_wet_phase": {
+      "0.80": 11,
+      "0.90": 13,
+      "0.95": 15
+    },
+    "scenarios": [
+      {
+        "observations_dry": 3,
+        "observations_wet": 3,
+        "probability_both_have_at_least_three_classifiable": 0.0071925696561477145
+      },
+      {
+        "observations_dry": 5,
+        "observations_wet": 5,
+        "probability_both_have_at_least_three_classifiable": 0.1474049419789513
+      },
+      {
+        "observations_dry": 7,
+        "observations_wet": 7,
+        "probability_both_have_at_least_three_classifiable": 0.4274217901647288
+      },
+      {
+        "observations_dry": 8,
+        "observations_wet": 8,
+        "probability_both_have_at_least_three_classifiable": 0.5635662001641008
+      },
+      {
+        "observations_dry": 9,
+        "observations_wet": 9,
+        "probability_both_have_at_least_three_classifiable": 0.6784863816988571
+      },
+      {
+        "observations_dry": 10,
+        "observations_wet": 10,
+        "probability_both_have_at_least_three_classifiable": 0.7691178292049915
+      },
+      {
+        "observations_dry": 11,
+        "observations_wet": 11,
+        "probability_both_have_at_least_three_classifiable": 0.8373154573660854
+      },
+      {
+        "observations_dry": 12,
+        "observations_wet": 12,
+        "probability_both_have_at_least_three_classifiable": 0.8869732223436255
+      },
+      {
+        "observations_dry": 14,
+        "observations_wet": 14,
+        "probability_both_have_at_least_three_classifiable": 0.9470166801914346
+      },
+      {
+        "observations_dry": 16,
+        "observations_wet": 16,
+        "probability_both_have_at_least_three_classifiable": 0.9758016847468917
+      },
+      {
+        "observations_dry": 20,
+        "observations_wet": 20,
+        "probability_both_have_at_least_three_classifiable": 0.9951944556609778
+      }
+    ]
+  },
+  "proposal_min_original_selected_observations_per_occupied_season_when_quota_allows": 10,
+  "independence_and_constant_p_are_hypothetical_not_empirical": true,
+  "no_new_photo_or_phenology_annotation_labels_measured": true,
+  "no_seasonal_white_climate_effect_computed": true,
+  "no_genetic_or_wild_flora_frequency_claim": true,
+  "note": "Planning probabilities treat original observation-level ROI successes as independent Bernoulli trials with fixed p. Old SOURCE photo-level classifiability is not necessarily the new observation-level, seasonal or wet/dry classifiability. Seasonal selection and annotation may change p; these are sensitivity scenarios, not forecasts or confidence intervals."
+}

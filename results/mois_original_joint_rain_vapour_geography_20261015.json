@@ -1,0 +1,181 @@
+{
+  "schema": "mois_original_20694_joint_moisture_and_geography_v1",
+  "date_jst": "2026-10-15",
+  "original_source_sha256": {
+    "photo": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+    "environment": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca"
+  },
+  "source_support": {
+    "unique_original_photos": 100543,
+    "eligible_climate26_photos": 45836,
+    "main_eligible_photos": 38498,
+    "main_eligible_species": 20694,
+    "main_eligible_genera": 1934
+  },
+  "source_environment_sd": {
+    "abs_lat": 15.439584279847766,
+    "lon_sin": 0.7580543188365638,
+    "lon_cos": 0.6323047606794243,
+    "wc_elevation_m": 884.973608627064,
+    "wc_bio12": 736.4156814228156,
+    "wc_vapr_annual_mean": 0.6755592525330926
+  },
+  "bootstrap": {
+    "draws": 1999,
+    "seed": 202610151330,
+    "genus_cluster_resampling": "same multinomial genus draws across all six model specifications",
+    "interval_definition": "ordinary percentile 95 and centred-error standardized within-specification two-contrast maxT95",
+    "programme_wide_multiplicity_correction": false
+  },
+  "models": {
+    "geo3": {
+      "n_species": 20694,
+      "n_genera": 1934,
+      "nuisance_covariates": [
+        "abs_lat",
+        "lon_sin",
+        "lon_cos"
+      ],
+      "single_axis_pp_per_original_photo_site_sd": {
+        "annual_precipitation": 2.2545452351235875,
+        "atmospheric_vapour": 3.95185032515289
+      },
+      "both_axes_each_adjusted_for_other": {
+        "annual_precipitation": {
+          "point_pp": 1.453779064848697,
+          "ordinary_bootstrap95_pp": [
+            0.11025934777518744,
+            2.7535510832025536
+          ],
+          "two_contrast_simultaneous95_pp": [
+            -0.03916420413064792,
+            2.946722333828042
+          ],
+          "bootstrap_fraction_positive": 0.9824912456228114
+        },
+        "atmospheric_vapour": {
+          "point_pp": 3.181882526709222,
+          "ordinary_bootstrap95_pp": [
+            1.2936664142613725,
+            5.105230746527879
+          ],
+          "two_contrast_simultaneous95_pp": [
+            1.0205103571771525,
+            5.343254696241291
+          ],
+          "bootstrap_fraction_positive": 1
+        },
+        "two_water_axis_maxT95_critical": 2.2240584410619433
+      },
+      "rotated_equal_standardized_moisture_axes": {
+        "common_equal_increase": {
+          "point_pp": 3.277907746676628,
+          "ordinary_bootstrap95_pp": [
+            1.9824093426113154,
+            4.59980546519188
+          ],
+          "two_contrast_simultaneous95_pp": [
+            1.777293176099028,
+            4.778522317254228
+          ],
+          "bootstrap_fraction_positive": 1
+        },
+        "rain_minus_vapour_contrast": {
+          "point_pp": -1.2219536764735255,
+          "ordinary_bootstrap95_pp": [
+            -3.0449410722302797,
+            0.6894624130007947
+          ],
+          "two_contrast_simultaneous95_pp": [
+            -3.356097118490915,
+            0.9121897655438638
+          ],
+          "bootstrap_fraction_positive": 0.112056028014007
+        },
+        "two_rotated_axis_maxT95_critical": 2.2088585086398367,
+        "formula": "common=(source_z_BIO12+source_z_vapour)/sqrt(2); difference=(source_z_BIO12-source_z_vapour)/sqrt(2); both are in same full model"
+      },
+      "water_axis_partial_correlation_given_geography": 0.36508825671260103,
+      "normal_equation_condition_number": 5.285548608239556
+    },
+    "geo4": {
+      "n_species": 20694,
+      "n_genera": 1934,
+      "nuisance_covariates": [
+        "abs_lat",
+        "lon_sin",
+        "lon_cos",
+        "wc_elevation_m"
+      ],
+      "single_axis_pp_per_original_photo_site_sd": {
+        "annual_precipitation": 2.0029467300945116,
+        "atmospheric_vapour": 5.106354961770755
+      },
+      "both_axes_each_adjusted_for_other": {
+        "annual_precipitation": {
+          "point_pp": 1.3832935165449876,
+          "ordinary_bootstrap95_pp": [
+            0.034751763544444106,
+            2.760623778954581
+          ],
+          "two_contrast_simultaneous95_pp": [
+            -0.16710684335627057,
+            2.9336938764462457
+          ],
+          "bootstrap_fraction_positive": 0.9769884942471235
+        },
+        "atmospheric_vapour": {
+          "point_pp": 3.7707679916863994,
+          "ordinary_bootstrap95_pp": [
+            0.23744896645411673,
+            7.177672476353393
+          ],
+          "two_contrast_simultaneous95_pp": [
+            -0.16263101549052106,
+            7.70416699886332
+          ],
+          "bootstrap_fraction_positive": 0.9814907453726863
+        },
+        "two_water_axis_maxT95_critical": 2.220838899225742
+      },
+      "rotated_equal_standardized_moisture_axes": {
+        "common_equal_increase": {
+          "point_pp": 3.644471843122978,
+          "ordinary_bootstrap95_pp": [
+            1.4728232532414847,
+            5.849293236923822
+          ],
+          "two_contrast_simultaneous95_pp": [
+            1.1367687823626471,
+            6.152174903883308
+          ],
+          "bootstrap_fraction_positive": 0.9989994997498749
+        },
+        "rain_minus_vapour_contrast": {
+          "point_pp": -1.6881993912822855,
+          "ordinary_bootstrap95_pp": [
+            -4.621934520410973,
+            1.3510118672712832
+          ],
+          "two_contrast_simultaneous95_pp": [
+            -5.057150803174767,
+            1.6807520206101956
+          ],
+          "bootstrap_fraction_positive": 0.13206603301650827
+        },
+        "two_rotated_axis_maxT95_critical": 2.2060697668231986,
+        "formula": "common=(source_z_BIO12+source_z_vapour)/sqrt(2); difference=(source_z_BIO12-source_z_vapour)/sqrt(2); both are in same full model"
+      },
+      "water_axis_partial_correlation_given_geography": 0.39832573228343104,
+      "normal_equation_condition_number": 23.161407901632376
+    }
+  },
+  "limits": [
+    "The two standardised water axes are derived from annual rainfall and mean atmospheric vapour. Their equal-direction rotated axis is an exploratory climate indicator, NOT soil moisture, water potential or a plant physiological measurement.",
+    "Each 2-contrast maxT refers to that selected model and selected paired contrasts, NOT to all historic climate/colour comparisons; the original 24-contrast maxT estimates remain primary.",
+    "The fitted single- and two-moisture models retain exactly the same 20694 eligible species, genus-equal weights and source SD; coefficients are observational, not biological causal components.",
+    "An interval containing zero does not prove an independent contribution is absent; correlated predictors and nonrandom photographic sampling limit mechanistic identification.",
+    "No original photo IDs, taxon/genus identities, site coordinates, photo media, rights/attribution or individual source rows were exported."
+  ],
+  "biological_interpretation": "Original-world photographed-white composition covaries positively with a joint annual precipitation plus atmospheric vapour climate direction after genus and broad geography/elevation adjustment; unique partial attribution to either moisture axis is not stable under the two-contrast model. No pigment cost-benefit trade-off, natural selection, or evolutionary 50:50 equilibrium established."
+}

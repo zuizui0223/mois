@@ -1,0 +1,83 @@
+name: Mois real WorldClim latitude-season climate atlas
+
+on:
+  push:
+    branches:
+      - manuscript/geographic-conditional-moisture-research-20261014
+    paths:
+      - .github/workflows/mois-real-worldclim-seasonal-climate-atlas-20261016.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-climate-only-atlas:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install exact numerical and GeoTIFF reader dependencies
+        run: python -m pip install numpy==2.1.3 rasterio==1.4.3
+      - name: Verify climate source and analysis code before network access
+        run: |
+          python -m py_compile \
+            scripts/acquisition/mois_pin_worldclim_monthly_precipitation_20261016.py \
+            scripts/analysis/mois_monthly_rainfall_flower_colour_20261016.py \
+            scripts/analysis/mois_real_worldclim_monthly_climate_atlas_20261016.py
+          python -m pip install pytest==8.4.2
+          python -m pytest -q tests/test_mois_real_worldclim_monthly_climate_atlas_20261016.py
+      - name: Recover exact twelve original monthly precipitation layers from WorldClim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .trusted/original
+          curl --fail --location --retry 2 --connect-timeout 20 --max-time 180 \
+            --user-agent 'Mois-original-climate-research/1.0 (github.com/zuizui0223/mois)' \
+            --output .trusted/original/wc2.1_10m_prec.zip \
+            'https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_prec.zip'
+          official_zip_sha='1090f578f6402672a2b6438e252156f6cf867a25002a8ad6ffcbfa19e516ddc6'
+          echo "$official_zip_sha  .trusted/original/wc2.1_10m_prec.zip" | sha256sum -c -
+          python -m scripts.acquisition.mois_pin_worldclim_monthly_precipitation_20261016 \
+            --original-worldclim-zip .trusted/original/wc2.1_10m_prec.zip \
+            --original-zip-sha256 "$official_zip_sha" \
+            --output-private-raster-source .trusted/verified_12_rasters
+          manifest_sha='07f45ac2973589d8951ac3eb0fa1c81b700018c5ab7322e2346dcf7d6723ee23'
+          echo "$manifest_sha  .trusted/verified_12_rasters/monthly_precipitation_manifest.json" | sha256sum -c -
+      - name: Calculate REAL complete-month land-grid area rain seasonality from original cells
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real_worldclim_monthly_climate_atlas_20261016 \
+            --worldclim-monthly-manifest .trusted/verified_12_rasters/monthly_precipitation_manifest.json \
+            --manifest-sha256 07f45ac2973589d8951ac3eb0fa1c81b700018c5ab7322e2346dcf7d6723ee23 \
+            --out-aggregate .trusted/real_climate_atlas/area_weighted_climate_seasonality.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('.trusted/real_climate_atlas/area_weighted_climate_seasonality.json').read_text())
+          assert d['source_original_monthly_manifest_sha256']=='07f45ac2973589d8951ac3eb0fa1c81b700018c5ab7322e2346dcf7d6723ee23'
+          assert d['source_grid_n_valid_complete_12month_cells']>500000
+          assert 30<d['source_complete_valid_grid_cell_area_million_km2']<200
+          assert not d['synthetic_test_only']
+          assert not d['iNaturalist_photo_colour_or_annotation_counts_observed']
+          assert not d['source_42111_taxa_13predictor_refitted']
+          print('MOIS_VERIFIED_REAL_WORLDCLIM_LATITUDE_SEASONALITY_ONLY_NO_FLOWER_COLOUR')
+          for key,v in d['latitude_domains'].items():
+              print(key,json.dumps({k:v.get(k) for k in (
+                  'n_valid_grid_cells','n_seasonal_grid_cells',
+                  'seasonal_area_fraction','aseasonal_area_fraction',
+                  'seasonal_area_fraction_with_wettest_month_in_local_summer',
+                  'seasonal_area_fraction_with_wettest_month_in_local_winter')},sort_keys=True))
+          PY
+      - name: Publish derived anonymous cell-area summaries only
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-original-worldclim-monthly-climate-atlas-aggregate-only
+          path: .trusted/real_climate_atlas/area_weighted_climate_seasonality.json
+          retention-days: 14
+          if-no-files-found: error

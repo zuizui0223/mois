@@ -1,0 +1,64 @@
+name: Mois bounded real iNaturalist flowering-plant annotation pilot
+
+on:
+  push:
+    branches:
+      - manuscript/geographic-conditional-moisture-research-20261014
+    paths:
+      - .github/workflows/mois-inat-angiosperm-phenology-count-pilot-20261016.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-public-angiosperm-observation-counts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify the original source observational frame and no-phenotype parser
+        run: |
+          python -m pip install pytest==8.4.2
+          python -m py_compile scripts/analysis/mois_real_inat_phenology_count_bias_pilot_20261016.py
+          python -m pytest -q tests/test_mois_real_inat_phenology_count_bias_pilot_20261016.py
+      - name: Source-preserving 35 serial public counts for Angiospermae only, no images or raw observation records
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .trusted/angiosperm
+          python -m scripts.analysis.mois_real_inat_phenology_count_bias_pilot_20261016 \
+            --taxon-id 47125 \
+            --out-aggregate .trusted/angiosperm/real_angiosperm_photo_phenology_counts.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('.trusted/angiosperm/real_angiosperm_photo_phenology_counts.json').read_text())
+          assert r['schema']=='mois_bounded_public_inat_photo_phenology_annotation_count_pilot_v1'
+          assert r['status']=='REAL_INAT_API_PUBLIC_PHOTO_OBSERVATION_PHENOLOGY_COUNTS_NOT_FCP_SOURCE'
+          assert r['source_plant_taxon_id']==47125
+          assert r['source_plant_group_name']=='Angiospermae (flowering plants)'
+          assert r['queries_total']==35 and len(r['cohorts'])==7
+          assert not r['original_93209351_photo_ID_manifest_used']
+          assert not r['actual_original_source_FCP_42111_taxon_frame_sampled']
+          assert not r['annotations_assumed_frozen_as_of_2026_09_27']
+          assert r['no_iNaturalist_image_pixels_opened']
+          print('MOIS_REAL_ANGIOSPERM_OBSERVATION_FLOWERS_ANNOTATION_ONLY',json.dumps({
+            label:{k:value[k] for k in ('total_observed_plant_photo_records',
+                 'with_any_phenology_annotation','explicit_flowers_observations',
+                 'explicit_no_flowers_fruits_observations',
+                 'without_phenology_annotation_filter_records',
+                 'any_plus_without_minus_total','explicit_flowers_fraction_observed')}
+            for label,value in r['cohorts'].items()},sort_keys=True))
+          PY
+      - name: Preserve aggregate-only angiosperm source count receipt with original per-query digests
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-public-angiosperm-phenology-annotation-35-query-20261016
+          path: .trusted/angiosperm/real_angiosperm_photo_phenology_counts.json
+          retention-days: 14
+          if-no-files-found: error

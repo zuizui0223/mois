@@ -1,0 +1,166 @@
+{
+  "schema": "mois_original_photo_species_genus_balance_v1",
+  "source_photo_archive_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "sample_scope": "One original photo-ID deduplicated breadth and taxon-cell union; four-class visible hue only; no independent flower-colour reassessment",
+  "n_unique_photo_opportunities": 100543,
+  "n_classified_photos": 45953,
+  "n_classified_white_photos": 21574,
+  "n_classified_coloured_photos": 24379,
+  "n_nominal_species_total": 42111,
+  "n_species_with_classified_photo": 25064,
+  "n_species_with_no_classified_photo": 17047,
+  "n_named_genera_total": 7109,
+  "n_genera_with_classified_photo": 5369,
+  "n_genera_one_classified_species": 2529,
+  "point_white_proportion": {
+    "photo_equal": 0.4694796857658912,
+    "species_equal": 0.46818988468624795,
+    "genus_equal": 0.49890751236413
+  },
+  "paired_whole_genus_bootstrap_95": {
+    "photo_equal": [
+      0.4520934360756039,
+      0.48705639715616217
+    ],
+    "species_equal": [
+      0.45245171819052943,
+      0.4835042702069428
+    ],
+    "genus_equal": [
+      0.48735703201990216,
+      0.5098196677197689
+    ]
+  },
+  "genus_equal_minus_species_equal_white_proportion": 0.030717627677882053,
+  "paired_genus_minus_species_bootstrap_95": [
+    0.01630090691086224,
+    0.04602181614295745
+  ],
+  "bootstrap_seed": 2026101450,
+  "bootstrap_draws": 1999,
+  "grouped_by_sampled_species_per_genus": [
+    {
+      "sampled_species_range": [
+        1,
+        1
+      ],
+      "n_genera": 2529,
+      "n_species": 2529,
+      "genus_equal_white": 0.513513390594727,
+      "species_equal_white": 0.513513390594727
+    },
+    {
+      "sampled_species_range": [
+        2,
+        2
+      ],
+      "n_genera": 905,
+      "n_species": 1810,
+      "genus_equal_white": 0.49375050183695435,
+      "species_equal_white": 0.49375050183695435
+    },
+    {
+      "sampled_species_range": [
+        3,
+        4
+      ],
+      "n_genera": 750,
+      "n_species": 2530,
+      "genus_equal_white": 0.507463528951029,
+      "species_equal_white": 0.5068329708102436
+    },
+    {
+      "sampled_species_range": [
+        5,
+        9
+      ],
+      "n_genera": 629,
+      "n_species": 4036,
+      "genus_equal_white": 0.46867417434325076,
+      "species_equal_white": 0.46648154883700416
+    },
+    {
+      "sampled_species_range": [
+        10,
+        19
+      ],
+      "n_genera": 331,
+      "n_species": 4473,
+      "genus_equal_white": 0.4661851262014609,
+      "species_equal_white": 0.4624699927643873
+    },
+    {
+      "sampled_species_range": [
+        20,
+        999999
+      ],
+      "n_genera": 225,
+      "n_species": 9686,
+      "genus_equal_white": 0.45961727003842534,
+      "species_equal_white": 0.44483917734317524
+    }
+  ],
+  "min_classified_species_thresholds": [
+    {
+      "min_classified_species_per_genus": 1,
+      "n_genera": 5369,
+      "n_species": 25064,
+      "genus_equal_white": 0.49890751236413,
+      "species_equal_white": 0.4681898846862479
+    },
+    {
+      "min_classified_species_per_genus": 2,
+      "n_genera": 2840,
+      "n_species": 22535,
+      "genus_equal_white": 0.48590108065808074,
+      "species_equal_white": 0.4631034348773931
+    },
+    {
+      "min_classified_species_per_genus": 3,
+      "n_genera": 1935,
+      "n_species": 20725,
+      "genus_equal_white": 0.4822299043444474,
+      "species_equal_white": 0.4604268997171129
+    },
+    {
+      "min_classified_species_per_genus": 5,
+      "n_genera": 1185,
+      "n_species": 18195,
+      "genus_equal_white": 0.46625925585926914,
+      "species_equal_white": 0.453974173151264
+    },
+    {
+      "min_classified_species_per_genus": 10,
+      "n_genera": 556,
+      "n_species": 14159,
+      "genus_equal_white": 0.46352727073980077,
+      "species_equal_white": 0.45040896598496366
+    },
+    {
+      "min_classified_species_per_genus": 20,
+      "n_genera": 225,
+      "n_species": 9686,
+      "genus_equal_white": 0.45961727003842534,
+      "species_equal_white": 0.44483917734317524
+    }
+  ],
+  "min3_genus_equal_bootstrap_95": [
+    0.46866855741721075,
+    0.49585309668564814
+  ],
+  "breadth_one_photo_per_nominal_taxon": {
+    "n_classified": 18457,
+    "n_genera": 4559,
+    "white_species_equal": 0.46578533889581186,
+    "white_genus_equal": 0.49244308343400695
+  },
+  "n_species_one_classified_photo": 16425,
+  "n_species_multiclass_labels": 3096,
+  "hypothetical_all_42111_taxon_white_mean_bounds": [
+    0.2786614250380214,
+    0.6834725195263973
+  ],
+  "hypothetical_missing_species_white_mean_for_full_half": 0.5467700316902612,
+  "interpretation": "Photo, species and genus weights refer to classifiable opportunistic photo hues, NOT a census of all world plant species, stable within-population phenotypes, cost-benefit fitness trade-offs or a frequency-dependent selection equilibrium.",
+  "inference_limit": "Genus bootstrap resamples the observed genera as sampling clusters and does not correct missing photo hues, observation selection, genus/species phylogeny or nonrandom species coverage. No source positions, photo IDs or named genera are included in this output."
+}

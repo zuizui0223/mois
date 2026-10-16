@@ -1,0 +1,59 @@
+name: Mois audit saved iNaturalist phenotype annotation count receipt
+
+on:
+  push:
+    branches:
+      - manuscript/geographic-conditional-moisture-research-20261014
+    paths:
+      - .github/workflows/mois-inat-phenology-promote-source-receipt-20261016.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  recover-saved-35-query-public-aggregate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download existing successful real 2025 observed-on public API count receipt; NO new iNat requests
+        uses: actions/download-artifact@v4
+        with:
+          name: mois-public-inat-phenology-annotation-availability-35-queries-20261016
+          run-id: 38843210801
+          github-token: ${{ github.token }}
+          path: .trusted/public_api_counts
+      - name: Validate all source-query counts and export only public aggregate JSON to execution log
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('.trusted/public_api_counts/real_inat_public_photo_phenology_counts.json')
+          raw=p.read_text(encoding='utf8')
+          a=json.loads(raw)
+          assert a['schema']=='mois_bounded_public_inat_photo_phenology_annotation_count_pilot_v1'
+          assert a['status']=='REAL_INAT_API_PUBLIC_PHOTO_OBSERVATION_PHENOLOGY_COUNTS_NOT_FCP_SOURCE'
+          assert a['queries_total']==35 and len(a['cohorts'])==7
+          assert a['source_plant_taxon_id']==47126
+          assert not a['actual_original_source_FCP_42111_taxon_frame_sampled']
+          assert not a['original_93209351_photo_ID_manifest_used']
+          assert not a['whole_plant_population_or_all_flowering_species_inferred']
+          assert a['no_iNaturalist_image_pixels_opened']
+          expected=set(('all_plant_photo_observations','any_flowers_fruits_annotation',
+                        'explicit_flowers_annotation','explicit_no_flowers_fruits_annotation',
+                        'without_flowers_fruits_annotation'))
+          for _,v in a['cohorts'].items():
+              assert set(v['source_query_provenance'])==expected
+              for src in v['source_query_provenance'].values():
+                  assert src['request_url'].startswith('https://api.inaturalist.org/v1/observations?')
+                  assert len(src['original_api_response_sha256'])==64
+                  assert src['n_observations']>=0
+              assert v['total_observed_plant_photo_records']>100
+          print('MOIS_INAT_REAL_PUBLIC_AGGREGATE_JSON_START')
+          print(json.dumps(a,sort_keys=True,separators=(',',':')))
+          print('MOIS_INAT_REAL_PUBLIC_AGGREGATE_JSON_END')
+          PY

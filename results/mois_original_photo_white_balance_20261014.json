@@ -1,0 +1,103 @@
+{
+  "schema": "mois_original_photo_white_balance_exploration_v1",
+  "role": "New deterministic calculations from frozen source aggregate receipts; descriptive and hypothetical only, not evolutionary selection or biological replication",
+  "sources": {
+    "world": "results/source_receipts/global_classified_white_fraction_and_compensation.json",
+    "lat": "results/source_receipts/photo_white_latitudinal_null.json",
+    "missing": "results/source_receipts/photo_colour_missingness_mnar.json",
+    "original_photo_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0"
+  },
+  "photos": {
+    "unique_opportunities": 100543,
+    "classified": 45953,
+    "white": 21574,
+    "coloured": 24379,
+    "unclassified": 54590,
+    "white_of_classified_percent": 46.947969,
+    "coloured_of_classified_percent": 53.052031,
+    "white_minus_exact_50_percentage_points": -3.052031,
+    "classified_coloured_to_white_relabels_to_exceed_half": 1403
+  },
+  "hypothetical_all_photo_balance": {
+    "all_opportunities_white_percent_bounds": [
+      21.457486,
+      75.752663
+    ],
+    "fraction_white_among_unclassified_needed_for_exact_50_percent": 0.52569152,
+    "missing_white_assumption_scenarios": [
+      {
+        "unclassified_white_assumed_fraction": 0,
+        "hypothetical_all_opportunities_white_percent": 21.457486
+      },
+      {
+        "unclassified_white_assumed_fraction": 0.25,
+        "hypothetical_all_opportunities_white_percent": 35.03128
+      },
+      {
+        "unclassified_white_assumed_fraction": 0.5,
+        "hypothetical_all_opportunities_white_percent": 48.605074
+      },
+      {
+        "unclassified_white_assumed_fraction": 0.52569152,
+        "hypothetical_all_opportunities_white_percent": 50
+      },
+      {
+        "unclassified_white_assumed_fraction": 0.75,
+        "hypothetical_all_opportunities_white_percent": 62.178869
+      },
+      {
+        "unclassified_white_assumed_fraction": 1,
+        "hypothetical_all_opportunities_white_percent": 75.752663
+      }
+    ],
+    "interpretation": "Unclassified photo opportunities may lack identifiable flower organs; these are hypothetical latent hue assignments, not measured missing phenotypes. A photo-weighted 50:50 cannot establish taxon-weighted, individual or genetically maintained morph frequencies."
+  },
+  "latitudinal": {
+    "classified_geotagged_photo_n": 45879,
+    "original_absolute_latitude_groups": [
+      {
+        "absolute_latitude_deg": "0-30",
+        "photo_n": 19642,
+        "classified_white_n": 9247,
+        "classified_white_percent": 47.077691
+      },
+      {
+        "absolute_latitude_deg": "30-60",
+        "photo_n": 25033,
+        "classified_white_n": 11713,
+        "classified_white_percent": 46.790237
+      },
+      {
+        "absolute_latitude_deg": "60-90",
+        "photo_n": 1204,
+        "classified_white_n": 590,
+        "classified_white_percent": 49.003322
+      }
+    ],
+    "range_pp": 2.213085,
+    "within_species_photo_label_shuffle_one_sided_p_unusually_even": 0.214,
+    "within_genus_photo_label_shuffle_one_sided_p_unusually_even": 0.053,
+    "null_draws": 999,
+    "interpretation": "These preserve observed group photo-white totals and photo opportunities; they test unusual latitudinal evenness conditional on group labels, not biologically regulated 50:50."
+  },
+  "spatial_components": {
+    "n_evaluable_source_cells": 96,
+    "n_repeat_species": 8620,
+    "photo_n": 29117,
+    "variance_between_species_composition": 0.001952560976886504,
+    "variance_within_species_local": 0.0002907471481398027,
+    "covariance_between_and_within": 0.0001814445034021115,
+    "null_one_sided_p_negative_compensation": 0.997,
+    "original_negative_compensation_supported": false,
+    "source_depth_sensitivity_positive_not_bootstrap_stable": true,
+    "interpretation": "The hypothesized negative species-turnover versus local-phenotype compensation was not supported; these covariance components are photographic geographic decompositions, not fitness or inverse-frequency selection."
+  },
+  "conclusions": {
+    "observed_classified_photos_exactly_half": false,
+    "all_photo_white_half_ruled_out": false,
+    "biological_species_half_ratio_estimable_from_aggregate": false,
+    "evidence_for_frequency_dependent_balancing_selection": false,
+    "evidence_for_pigment_cost_or_fitness_crossing": false,
+    "observational_hypothesis": "White frequency varies with rainfall across source genus-conditioned species, but frequency-dependent maintenance and pigment benefits/costs are distinct, as-yet-untested mechanisms."
+  }
+}

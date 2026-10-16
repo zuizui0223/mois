@@ -1,0 +1,163 @@
+{
+  "cell_FE_primary_four_dynamic_months_estimable_in_this_pilot": false,
+  "climatology_years": "1970-2000 NOT actual photographic weather",
+  "n_monthly_source_site_climate_joined": 96,
+  "n_monthly_source_site_climate_missing": 0,
+  "n_original_distinct_observations": 96,
+  "n_original_source_photo_IDs": 96,
+  "n_original_taxa": 4,
+  "n_roi_original_classified_white": 3,
+  "n_roi_original_four_colour_classifiable": 20,
+  "no_photo_identifiers_coordinates_or_individual_observer_IDs_published": true,
+  "note": "Twenty original ROI classifiable photos and three white across four deliberately chosen species; source photos had high nonclassification. Group climate means are simple descriptive original site-month averages and cannot estimate population seasonal effects.",
+  "observed_season_rows": [
+    {
+      "classified_white": 0,
+      "domain": "NORTH_EXTRATROPICAL",
+      "four_hue_classifiable": 0,
+      "local_season": "AUTUMN",
+      "n_classifiable_with_known_monthly_climate": 0,
+      "n_original_monthly_climate_joined_of_all_source": 3,
+      "n_taxa_with_at_least_one_classifiable_photo": 0,
+      "sampled_original_photo_opportunities": 3,
+      "source_classified_monthly_climate_means": null,
+      "species_equal_white_fraction_in_same_season": null,
+      "white_fraction_among_classifiable": null
+    },
+    {
+      "classified_white": 1,
+      "domain": "NORTH_EXTRATROPICAL",
+      "four_hue_classifiable": 7,
+      "local_season": "SPRING",
+      "n_classifiable_with_known_monthly_climate": 7,
+      "n_original_monthly_climate_joined_of_all_source": 45,
+      "n_taxa_with_at_least_one_classifiable_photo": 3,
+      "sampled_original_photo_opportunities": 45,
+      "source_classified_monthly_climate_means": {
+        "monthly_prec_mm": 28.428571428571427,
+        "monthly_srad_kj_m2_day": 22395.14285714286,
+        "monthly_tavg_c": 13.538253852299281,
+        "monthly_vapr_kpa": 0.8594028098242623,
+        "monthly_vpd_kpa": 0.7313202705294432
+      },
+      "species_equal_white_fraction_in_same_season": 0.1111111111111111,
+      "white_fraction_among_classifiable": 0.14285714285714285
+    },
+    {
+      "classified_white": 1,
+      "domain": "NORTH_EXTRATROPICAL",
+      "four_hue_classifiable": 9,
+      "local_season": "SUMMER",
+      "n_classifiable_with_known_monthly_climate": 9,
+      "n_original_monthly_climate_joined_of_all_source": 25,
+      "n_taxa_with_at_least_one_classifiable_photo": 2,
+      "sampled_original_photo_opportunities": 25,
+      "source_classified_monthly_climate_means": {
+        "monthly_prec_mm": 9,
+        "monthly_srad_kj_m2_day": 26025.88888888889,
+        "monthly_tavg_c": 17.57780541314019,
+        "monthly_vapr_kpa": 0.904497226079305,
+        "monthly_vpd_kpa": 1.146363719791248
+      },
+      "species_equal_white_fraction_in_same_season": 0.16666666666666666,
+      "white_fraction_among_classifiable": 0.1111111111111111
+    },
+    {
+      "classified_white": 1,
+      "domain": "NORTH_EXTRATROPICAL",
+      "four_hue_classifiable": 3,
+      "local_season": "WINTER",
+      "n_classifiable_with_known_monthly_climate": 3,
+      "n_original_monthly_climate_joined_of_all_source": 18,
+      "n_taxa_with_at_least_one_classifiable_photo": 1,
+      "sampled_original_photo_opportunities": 18,
+      "source_classified_monthly_climate_means": {
+        "monthly_prec_mm": 87,
+        "monthly_srad_kj_m2_day": 10831.333333333334,
+        "monthly_tavg_c": 10.171749750773111,
+        "monthly_vapr_kpa": 0.7220750053723654,
+        "monthly_vpd_kpa": 0.5222332167229969
+      },
+      "species_equal_white_fraction_in_same_season": 0.3333333333333333,
+      "white_fraction_among_classifiable": 0.3333333333333333
+    },
+    {
+      "classified_white": 0,
+      "domain": "SOUTH_EXTRATROPICAL",
+      "four_hue_classifiable": 0,
+      "local_season": "AUTUMN",
+      "n_classifiable_with_known_monthly_climate": 0,
+      "n_original_monthly_climate_joined_of_all_source": 1,
+      "n_taxa_with_at_least_one_classifiable_photo": 0,
+      "sampled_original_photo_opportunities": 1,
+      "source_classified_monthly_climate_means": null,
+      "species_equal_white_fraction_in_same_season": null,
+      "white_fraction_among_classifiable": null
+    },
+    {
+      "classified_white": 0,
+      "domain": "SOUTH_EXTRATROPICAL",
+      "four_hue_classifiable": 0,
+      "local_season": "SPRING",
+      "n_classifiable_with_known_monthly_climate": 0,
+      "n_original_monthly_climate_joined_of_all_source": 2,
+      "n_taxa_with_at_least_one_classifiable_photo": 0,
+      "sampled_original_photo_opportunities": 2,
+      "source_classified_monthly_climate_means": null,
+      "species_equal_white_fraction_in_same_season": null,
+      "white_fraction_among_classifiable": null
+    },
+    {
+      "classified_white": 0,
+      "domain": "SOUTH_EXTRATROPICAL",
+      "four_hue_classifiable": 0,
+      "local_season": "WINTER",
+      "n_classifiable_with_known_monthly_climate": 0,
+      "n_original_monthly_climate_joined_of_all_source": 1,
+      "n_taxa_with_at_least_one_classifiable_photo": 0,
+      "sampled_original_photo_opportunities": 1,
+      "source_classified_monthly_climate_means": null,
+      "species_equal_white_fraction_in_same_season": null,
+      "white_fraction_among_classifiable": null
+    },
+    {
+      "classified_white": 0,
+      "domain": "TROPICAL",
+      "four_hue_classifiable": 1,
+      "local_season": "CALENDAR_Q4",
+      "n_classifiable_with_known_monthly_climate": 1,
+      "n_original_monthly_climate_joined_of_all_source": 1,
+      "n_taxa_with_at_least_one_classifiable_photo": 1,
+      "sampled_original_photo_opportunities": 1,
+      "source_classified_monthly_climate_means": {
+        "monthly_prec_mm": 101,
+        "monthly_srad_kj_m2_day": 16084,
+        "monthly_tavg_c": 14.741250038146973,
+        "monthly_vapr_kpa": 1.2773250341415405,
+        "monthly_vpd_kpa": 0.3998193198144502
+      },
+      "species_equal_white_fraction_in_same_season": 0,
+      "white_fraction_among_classifiable": 0
+    }
+  ],
+  "original_photo_selection_is_nonrepresentative_four_taxon_technical_pilot": true,
+  "original_source_population_42111_taxa_photo_IDs_joined": false,
+  "prespecified_site_cell_season_FE_within_month_estimated": false,
+  "real_10m_source_climate_cells_with_any_original_photo": 60,
+  "real_10m_source_climate_cells_with_classifiable_photos": 16,
+  "real_10m_source_climate_cells_with_classifiable_photos_in_two_or_more_months": 3,
+  "real_10m_source_climate_cells_with_original_photos_in_two_or_more_months": 11,
+  "roi_status_counts": {
+    "classified_four_state_morph": 20,
+    "not_evaluable_ambiguous_palette_composition": 9,
+    "not_evaluable_roi_or_flip_gate": 67
+  },
+  "schema": "mois_real_fcp96_original_photo_monthly_climate_technical_pilot_v1",
+  "seasonal_climate_white_association_or_fitness_estimated": false,
+  "source_48_worldclim_monthly_manifest_sha256": "9d0cf37a64534542d7788debef28c13f106a15c3bf7bf91be0653f3ce106baae",
+  "source_original_FCP_96_pilot_csv_sha256": "911ec9edd10a7126bee28cfa67738cef0ff4d275b1f0ca1c06e3f26e7e290039",
+  "status": "ACTUAL_96_IMAGE_ROI_TECHNICAL_PILOT_CLIMATE_JOIN_NOT_GLOBAL_SEASON_EFFECT",
+  "synthetic_test_only": false,
+  "verified_original_FCP_photo_climate_execution_url": "https://github.com/zuizui0223/mois/actions/runs/38849479497",
+  "original_FCP_96_photo_ROI_source_run_url": "https://github.com/zuizui0223/fcp/actions/runs/38673995478"
+}

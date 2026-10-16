@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="820" viewBox="0 0 1500 820" role="img" aria-labelledby="title description">
+<title id="title">How environmental prediction transfers across taxa and geography</title>
+<desc id="description">Original source genus-equal squared-error improvement from adding environment. Grouped results differ by biological target, geography removal, and model form; no direct causal fitness or universal environmental response is inferred.</desc>
+<rect x="0" y="0" width="1500" height="820" rx="0" fill="#FFFFFF"/>
+<rect x="0" y="0" width="1500" height="15" rx="0" fill="#305872"/>
+<text x="47" y="63" font-family="Arial,sans-serif" font-size="29" font-weight="700" text-anchor="start" fill="#223747">WHERE DOES ENVIRONMENTAL HUE INFORMATION TRANSFER?</text>
+<text x="47" y="100" font-family="Arial,sans-serif" font-size="18" font-weight="400" text-anchor="start" fill="#54687A">Original source genus-equal loss reduction • positive = improved prediction</text>
+<rect x="45" y="140" width="463" height="535" rx="12" fill="#F8FAFC"/>
+<text x="66" y="183" font-family="Arial,sans-serif" font-size="20" font-weight="700" text-anchor="start" fill="#223747">A | Change the prediction target</text>
+<text x="66" y="215" font-family="Arial,sans-serif" font-size="14" font-weight="400" text-anchor="start" fill="#5C6E7F">Different biological/photographic target cohorts</text>
+<line x1="107" y1="280" x2="107" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="107" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">-0.002</text>
+<line x1="181" y1="280" x2="181" y2="601" stroke="#718190" stroke-width="2"/>
+<text x="181" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.000</text>
+<line x1="255" y1="280" x2="255" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="255" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.002</text>
+<line x1="329" y1="280" x2="329" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="329" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.004</text>
+<line x1="403" y1="280" x2="403" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="403" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.006</text>
+<line x1="477" y1="280" x2="477" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="477" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.008</text>
+<rect x="64" y="271" width="420" height="29" rx="4" fill="#F8FAFC"/>
+<text x="66" y="295" font-family="Arial,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#223747">Absolute species hue (20,786 spp.)</text>
+<line x1="271.1753312518488" y1="330" x2="425.28300306111913" y2="330" stroke="#2A7599" stroke-width="5"/>
+<line x1="271.1753312518488" y1="321" x2="271.1753312518488" y2="339" stroke="#2A7599" stroke-width="2"/>
+<line x1="425.28300306111913" y1="321" x2="425.28300306111913" y2="339" stroke="#2A7599" stroke-width="2"/>
+<circle cx="348.1835082246199" cy="330" r="7" fill="#2A7599"/>
+<rect x="64" y="342" width="420" height="27" rx="4" fill="#F8FAFC"/>
+<text x="67" y="360" font-family="Arial,sans-serif" font-size="13" font-weight="400" text-anchor="start" fill="#586D7F">+0.004518 [0.00244, 0.00660]</text>
+<rect x="64" y="385" width="420" height="29" rx="4" fill="#F8FAFC"/>
+<text x="66" y="409" font-family="Arial,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#223747">Within-genus deviation (16,801 spp.)</text>
+<line x1="153.31471298465493" y1="444" x2="197.0301790623119" y2="444" stroke="#9C6F9A" stroke-width="5"/>
+<line x1="153.31471298465493" y1="435" x2="153.31471298465493" y2="453" stroke="#9C6F9A" stroke-width="2"/>
+<line x1="197.0301790623119" y1="435" x2="197.0301790623119" y2="453" stroke="#9C6F9A" stroke-width="2"/>
+<circle cx="175.74442762650477" cy="444" r="7" fill="#9C6F9A"/>
+<rect x="64" y="456" width="420" height="27" rx="4" fill="#F8FAFC"/>
+<text x="67" y="474" font-family="Arial,sans-serif" font-size="13" font-weight="400" text-anchor="start" fill="#586D7F">-0.000142 [-0.00075, 0.00043]</text>
+<rect x="64" y="499" width="420" height="29" rx="4" fill="#F8FAFC"/>
+<text x="66" y="523" font-family="Arial,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#223747">Within-species photos (5,939 spp.)</text>
+<line x1="142.58997128255382" y1="558" x2="169.56965304748607" y2="558" stroke="#36566F" stroke-width="5"/>
+<line x1="142.58997128255382" y1="549" x2="142.58997128255382" y2="567" stroke="#36566F" stroke-width="2"/>
+<line x1="169.56965304748607" y1="549" x2="169.56965304748607" y2="567" stroke="#36566F" stroke-width="2"/>
+<circle cx="156.2061029768289" cy="558" r="7" fill="#36566F"/>
+<rect x="64" y="570" width="420" height="27" rx="4" fill="#F8FAFC"/>
+<text x="67" y="588" font-family="Arial,sans-serif" font-size="13" font-weight="400" text-anchor="start" fill="#586D7F">-0.000670 [-0.00104, -0.00031]</text>
+<rect x="535" y="140" width="463" height="535" rx="12" fill="#F8FAFC"/>
+<text x="556" y="183" font-family="Arial,sans-serif" font-size="20" font-weight="700" text-anchor="start" fill="#223747">B | Exclude other geographic support</text>
+<text x="556" y="215" font-family="Arial,sans-serif" font-size="14" font-weight="400" text-anchor="start" fill="#5C6E7F">Same 20,786 original target species</text>
+<line x1="597" y1="280" x2="597" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="597" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">-0.002</text>
+<line x1="671" y1="280" x2="671" y2="601" stroke="#718190" stroke-width="2"/>
+<text x="671" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.000</text>
+<line x1="745" y1="280" x2="745" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="745" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.002</text>
+<line x1="819" y1="280" x2="819" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="819" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.004</text>
+<line x1="893" y1="280" x2="893" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="893" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.006</text>
+<line x1="967" y1="280" x2="967" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="967" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.008</text>
+<rect x="554" y="271" width="420" height="29" rx="4" fill="#F8FAFC"/>
+<text x="556" y="295" font-family="Arial,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#223747">Unseen genus only</text>
+<line x1="751.4400471070282" y1="330" x2="906.1978684610712" y2="330" stroke="#2A7599" stroke-width="5"/>
+<line x1="751.4400471070282" y1="321" x2="751.4400471070282" y2="339" stroke="#2A7599" stroke-width="2"/>
+<line x1="906.1978684610712" y1="321" x2="906.1978684610712" y2="339" stroke="#2A7599" stroke-width="2"/>
+<circle cx="830.5396719224477" cy="330" r="7" fill="#2A7599"/>
+<rect x="554" y="342" width="420" height="27" rx="4" fill="#F8FAFC"/>
+<text x="557" y="360" font-family="Arial,sans-serif" font-size="13" font-weight="400" text-anchor="start" fill="#586D7F">+0.004312 [0.00217, 0.00636]</text>
+<rect x="554" y="385" width="420" height="29" rx="4" fill="#F8FAFC"/>
+<text x="556" y="409" font-family="Arial,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#223747">Unseen genus + sector</text>
+<line x1="596.6069659005643" y1="444" x2="801.7779281622954" y2="444" stroke="#9C6F9A" stroke-width="5"/>
+<line x1="596.6069659005643" y1="435" x2="596.6069659005643" y2="453" stroke="#9C6F9A" stroke-width="2"/>
+<line x1="801.7779281622954" y1="435" x2="801.7779281622954" y2="453" stroke="#9C6F9A" stroke-width="2"/>
+<circle cx="699.0821120692567" cy="444" r="7" fill="#9C6F9A"/>
+<rect x="554" y="456" width="420" height="27" rx="4" fill="#F8FAFC"/>
+<text x="557" y="474" font-family="Arial,sans-serif" font-size="13" font-weight="400" text-anchor="start" fill="#586D7F">+0.000759 [-0.00201, 0.00353]</text>
+<rect x="554" y="499" width="420" height="29" rx="4" fill="#F8FAFC"/>
+<text x="556" y="523" font-family="Arial,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#223747">Plus all source photos within 500 km</text>
+<line x1="573.729712819905" y1="558" x2="776.2926197493946" y2="558" stroke="#36566F" stroke-width="5"/>
+<line x1="573.729712819905" y1="549" x2="573.729712819905" y2="567" stroke="#36566F" stroke-width="2"/>
+<line x1="776.2926197493946" y1="549" x2="776.2926197493946" y2="567" stroke="#36566F" stroke-width="2"/>
+<circle cx="677.4400214911789" cy="558" r="7" fill="#36566F"/>
+<rect x="554" y="570" width="420" height="27" rx="4" fill="#F8FAFC"/>
+<text x="557" y="588" font-family="Arial,sans-serif" font-size="13" font-weight="400" text-anchor="start" fill="#586D7F">+0.000174 [-0.00263, 0.00285]</text>
+<rect x="1025" y="140" width="463" height="535" rx="12" fill="#F8FAFC"/>
+<text x="1046" y="183" font-family="Arial,sans-serif" font-size="20" font-weight="700" text-anchor="start" fill="#223747">C | Model-form sensitivity at 500 km</text>
+<text x="1046" y="215" font-family="Arial,sans-serif" font-size="14" font-weight="400" text-anchor="start" fill="#5C6E7F">Same 20,786 source species, genus-equal loss</text>
+<line x1="1087" y1="280" x2="1087" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="1087" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">-0.002</text>
+<line x1="1161" y1="280" x2="1161" y2="601" stroke="#718190" stroke-width="2"/>
+<text x="1161" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.000</text>
+<line x1="1235" y1="280" x2="1235" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="1235" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.002</text>
+<line x1="1309" y1="280" x2="1309" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="1309" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.004</text>
+<line x1="1383" y1="280" x2="1383" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="1383" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.006</text>
+<line x1="1457" y1="280" x2="1457" y2="601" stroke="#D8E1E7" stroke-width="1"/>
+<text x="1457" y="626" font-family="Arial,sans-serif" font-size="12" font-weight="400" text-anchor="middle" fill="#617387">0.008</text>
+<rect x="1044" y="271" width="420" height="29" rx="4" fill="#F8FAFC"/>
+<text x="1046" y="295" font-family="Arial,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#223747">Ridge: adding all36</text>
+<line x1="1063.0553642750658" y1="330" x2="1268.90931570964" y2="330" stroke="#2A7599" stroke-width="5"/>
+<line x1="1063.0553642750658" y1="321" x2="1063.0553642750658" y2="339" stroke="#2A7599" stroke-width="2"/>
+<line x1="1268.90931570964" y1="321" x2="1268.90931570964" y2="339" stroke="#2A7599" stroke-width="2"/>
+<circle cx="1167.4400214911789" cy="330" r="7" fill="#2A7599"/>
+<rect x="1044" y="342" width="420" height="27" rx="4" fill="#F8FAFC"/>
+<text x="1047" y="360" font-family="Arial,sans-serif" font-size="13" font-weight="400" text-anchor="start" fill="#586D7F">+0.000174 [-0.00265, 0.00292]</text>
+<rect x="1044" y="385" width="420" height="29" rx="4" fill="#F8FAFC"/>
+<text x="1046" y="409" font-family="Arial,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#223747">Nonlinear: adding all36</text>
+<line x1="1246.8455084879915" y1="444" x2="1438.33797931834" y2="444" stroke="#9C6F9A" stroke-width="5"/>
+<line x1="1246.8455084879915" y1="435" x2="1246.8455084879915" y2="453" stroke="#9C6F9A" stroke-width="2"/>
+<line x1="1438.33797931834" y1="435" x2="1438.33797931834" y2="453" stroke="#9C6F9A" stroke-width="2"/>
+<circle cx="1341.6264154056096" cy="444" r="7" fill="#9C6F9A"/>
+<rect x="1044" y="456" width="420" height="27" rx="4" fill="#F8FAFC"/>
+<text x="1047" y="474" font-family="Arial,sans-serif" font-size="13" font-weight="400" text-anchor="start" fill="#586D7F">+0.004882 [0.00232, 0.00750]</text>
+<rect x="1044" y="499" width="420" height="29" rx="4" fill="#F8FAFC"/>
+<text x="1046" y="523" font-family="Arial,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#223747">Nonlinear full over ridge full</text>
+<line x1="1123.59522024995" y1="558" x2="1288.5260287348997" y2="558" stroke="#36566F" stroke-width="5"/>
+<line x1="1123.59522024995" y1="549" x2="1123.59522024995" y2="567" stroke="#36566F" stroke-width="2"/>
+<line x1="1288.5260287348997" y1="549" x2="1288.5260287348997" y2="567" stroke="#36566F" stroke-width="2"/>
+<circle cx="1205.477277365702" cy="558" r="7" fill="#36566F"/>
+<rect x="1044" y="570" width="420" height="27" rx="4" fill="#F8FAFC"/>
+<text x="1047" y="588" font-family="Arial,sans-serif" font-size="13" font-weight="400" text-anchor="start" fill="#586D7F">+0.001202 [-0.00101, 0.00345]</text>
+<line x1="46" y1="709" x2="1453" y2="709" stroke="#D4DEE5" stroke-width="1"/>
+<text x="48" y="740" font-family="Arial,sans-serif" font-size="16" font-weight="400" text-anchor="start" fill="#596B79">Panel A uses different source target cohorts; Panel B fixes the 20,786 evaluation species while training support changes.</text>
+<text x="48" y="772" font-family="Arial,sans-serif" font-size="16" font-weight="400" text-anchor="start" fill="#596B79">Panel C compares distinct geography baselines: nonlinear environmental gain does not imply full nonlinear model superiority.</text>
+</svg>

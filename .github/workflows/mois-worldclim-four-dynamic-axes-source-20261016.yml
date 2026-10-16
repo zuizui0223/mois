@@ -1,0 +1,116 @@
+name: Mois original monthly sun temperature moisture 48-raster verification
+
+on:
+  push:
+    branches:
+      - manuscript/geographic-conditional-moisture-research-20261014
+    paths:
+      - .github/workflows/mois-worldclim-four-dynamic-axes-source-20261016.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-worldclim-original-48:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install exact GeoTIFF/source checksum prerequisites and test 48 synthetic rasters
+        run: |
+          python -m pip install numpy==2.1.3 rasterio==1.4.3 pytest==8.4.2
+          python -m py_compile scripts/acquisition/mois_pin_worldclim_dynamic_monthly_climate_20261016.py
+          python -m pytest -q tests/test_mois_pin_worldclim_dynamic_monthly_climate_20261016.py
+      - name: Recover four original 1970-2000 10m climate source ZIP archives with one serial download stream
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .trusted/source
+          for variable in tavg srad prec vapr; do
+            original=".trusted/source/wc2.1_10m_$variable.zip"
+            echo "Original source: $variable"
+            curl --fail --location --retry 2 --connect-timeout 25 --max-time 300 \
+              --user-agent 'Mois-original-48-climate-source/1.0 (github.com/zuizui0223/mois)' \
+              --output "$original" \
+              "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_$variable.zip"
+            bytes=$(stat -c%s "$original")
+            if (( bytes < 300000 || bytes > 120000000 )); then
+              echo "Wrong source size for $variable: $bytes"; exit 1
+            fi
+            unzip -t "$original" >/dev/null
+            echo "MOIS_ORIGINAL_MONTHLY_ZIP_PIN_$variable $(sha256sum "$original")"
+          done
+          echo '1090f578f6402672a2b6438e252156f6cf867a25002a8ad6ffcbfa19e516ddc6  .trusted/source/wc2.1_10m_prec.zip' | sha256sum -c -
+      - name: Verify original raster units, aligned WGS84 monthly grids, and 48 source band hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          tavg=$(sha256sum .trusted/source/wc2.1_10m_tavg.zip | cut -d' ' -f1)
+          srad=$(sha256sum .trusted/source/wc2.1_10m_srad.zip | cut -d' ' -f1)
+          prec=$(sha256sum .trusted/source/wc2.1_10m_prec.zip | cut -d' ' -f1)
+          vapr=$(sha256sum .trusted/source/wc2.1_10m_vapr.zip | cut -d' ' -f1)
+          python -m scripts.acquisition.mois_pin_worldclim_dynamic_monthly_climate_20261016 \
+            --original-tavg-zip .trusted/source/wc2.1_10m_tavg.zip --original-tavg-sha256 "$tavg" \
+            --original-srad-zip .trusted/source/wc2.1_10m_srad.zip --original-srad-sha256 "$srad" \
+            --original-prec-zip .trusted/source/wc2.1_10m_prec.zip --original-prec-sha256 "$prec" \
+            --original-vapr-zip .trusted/source/wc2.1_10m_vapr.zip --original-vapr-sha256 "$vapr" \
+            --out-private-source .trusted/verified_48_rasters
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('.trusted/verified_48_rasters/dynamic_climate_source_receipt.json')
+          a=json.loads(p.read_text())
+          assert a['status']=='VERIFIED_48_REAL_MONTHLY_GEOSPATIAL_CLIMATE_NORMALS_NO_PLANT_PHOTOS'
+          assert a['n_georeferenced_original_raster_layers']==48
+          assert a['climate_grid_shape']==[2160,1080]
+          assert a['provider_geotiff_data_units']['srad']=='kJ m-2 day-1'
+          assert a['provider_geotiff_data_units']['tavg']=='degC'
+          assert a['provider_geotiff_data_units']['vapr']=='kPa'
+          assert a['provider_geotiff_data_units']['prec']=='mm/month'
+          assert not a['global_white_fraction_estimated']
+          assert not a['biological_photo_pixels_measured']
+          print('MOIS_ORIGINAL_48_DYNAMIC_MONTHLY_SOURCE_PIN_COMPLETE',json.dumps(a,sort_keys=True))
+          PY
+      - name: Compute real 12-month T/S/P/VPD collinearity after cell and latitude-zone calendar-month controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_actual_48_monthly_climate_covariance_20261016 \
+            --verified-worldclim48-root .trusted/verified_48_rasters \
+            --verified-worldclim48-sha256 9d0cf37a64534542d7788debef28c13f106a15c3bf7bf91be0653f3ce106baae \
+            --out-public-climate-collinearity .trusted/verified_48_rasters/real_four_axis_monthly_climate_collinearity.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          f=Path('.trusted/verified_48_rasters/real_four_axis_monthly_climate_collinearity.json')
+          a=json.loads(f.read_text())
+          assert a['status']=='REAL_MONTHLY_CLIMATE_ONLY_FIXED_CELL_SEASON_COLLINEARITY_NO_WHITE_PHOTOS'
+          assert a['source_complete_all_48_monthly_climate_cells']>500000
+          assert set(a['latitude_domains'])=={'TROPICAL','NORTH_EXTRATROPICAL','SOUTH_EXTRATROPICAL'}
+          assert a['original_fcp_sampled_flower_photographs_joined'] is False
+          assert a['real_13_env_genus_spatial_colour_model_reestimated'] is False
+          assert a['synthetic_test_only'] is False
+          print('MOIS_REAL_48_MONTHLY_CELL_CENTERED_CLIMATE_COLLINEARITY_SOURCE_ATTESTED',
+                json.dumps({k:{
+                  'source_cells':z['n_complete_48layer_original_source_cells'],
+                  'correlation_cell_only':z['model_A_after_exact_cell_fixed_effects']['correlation_matrix'],
+                  'correlation_cell_and_zone_calendar_month':z['model_B_after_cell_and_latitude_zone_calendar_month_fixed_effects']['correlation_matrix'],
+                  'climate_condition_cell_only':z['model_A_after_exact_cell_fixed_effects']['condition_number_correlation'],
+                  'climate_condition_cell_zone_month':z['model_B_after_cell_and_latitude_zone_calendar_month_fixed_effects']['condition_number_correlation'],
+                } for k,z in a['latitude_domains'].items()},sort_keys=True))
+          PY
+      - name: Save only original hashes and month-alignment receipts (no third-party raster bytes)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-worldclim21-1970-2000-48-monthly-tavg-srad-prec-vapr-source-pins
+          path: |
+            .trusted/verified_48_rasters/dynamic_climate_source_receipt.json
+            .trusted/verified_48_rasters/dynamic_monthly_manifest.json
+            .trusted/verified_48_rasters/real_four_axis_monthly_climate_collinearity.json
+          retention-days: 14
+          if-no-files-found: error

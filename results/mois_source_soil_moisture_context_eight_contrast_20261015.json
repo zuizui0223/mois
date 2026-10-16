@@ -1,0 +1,330 @@
+{
+  "schema": "mois_source_soil_moisture_context_eight_contrast_v1",
+  "source_sha256": {
+    "photo": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+    "environment": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca"
+  },
+  "original_support": {
+    "species": 16801,
+    "genera": 1665,
+    "photos_in_eligible_taxa": 26163
+  },
+  "models": [
+    "geography",
+    "water2",
+    "soil5",
+    "other24",
+    "climate26",
+    "climate26_soil5",
+    "climate26_soil10"
+  ],
+  "model_heldout_equal_genus_mse": {
+    "geography": 0.22981006389209194,
+    "water2": 0.22745535180555312,
+    "soil5": 0.22877848491320574,
+    "other24": 0.22817320453678566,
+    "climate26": 0.22813288536129273,
+    "climate26_soil5": 0.22853734681634522,
+    "climate26_soil10": 0.2286610993702406
+  },
+  "soil5_addition_to_full26": {
+    "point_gain": -0.0004044614550525017,
+    "ordinary95": [
+      -0.0006743876180280556,
+      -0.0001292287780571995
+    ]
+  },
+  "context": {
+    "annual_rainfall": {
+      "source_median": 834,
+      "halves": {
+        "lower": {
+          "n_species": 8398,
+          "n_genera_present": 1299,
+          "metrics": {
+            "water_gain_vs_geography": {
+              "gain": 0.0007409716708440279,
+              "ordinary95": [
+                -0.0009935693408947208,
+                0.002337567065738323
+              ]
+            },
+            "soil5_increment_vs_climate26": {
+              "gain": -0.0002777346205647578,
+              "ordinary95": [
+                -0.0006972888149216845,
+                0.00012639574163630455
+              ]
+            }
+          }
+        },
+        "higher": {
+          "n_species": 8403,
+          "n_genera_present": 1396,
+          "metrics": {
+            "water_gain_vs_geography": {
+              "gain": 0.0015860157042691702,
+              "ordinary95": [
+                -0.00006911986900754244,
+                0.003222490602774208
+              ]
+            },
+            "soil5_increment_vs_climate26": {
+              "gain": -0.00047950319274500544,
+              "ordinary95": [
+                -0.0009182505097235921,
+                -0.000005392648182482439
+              ]
+            }
+          }
+        }
+      },
+      "high_minus_low": {
+        "water_gain_vs_geography": {
+          "higher_minus_lower": 0.0008450440334251412,
+          "paired_genus_ordinary95": [
+            -0.0014486412851753047,
+            0.0031805506596620996
+          ],
+          "eight_selected_contrast_maxT95": [
+            -0.0024931821038433875,
+            0.00418327017069367
+          ]
+        },
+        "soil5_increment_vs_climate26": {
+          "higher_minus_lower": -0.00020176857218024802,
+          "paired_genus_ordinary95": [
+            -0.0008356858900676319,
+            0.0003707498229236832
+          ],
+          "eight_selected_contrast_maxT95": [
+            -0.0010349881272048358,
+            0.0006314509828443399
+          ]
+        }
+      }
+    },
+    "peak_temperature": {
+      "source_median": 27.527999877929688,
+      "halves": {
+        "lower": {
+          "n_species": 8391,
+          "n_genera_present": 1355,
+          "metrics": {
+            "water_gain_vs_geography": {
+              "gain": 0.0017646735793320184,
+              "ordinary95": [
+                0.00020407716477829476,
+                0.0033161183314298313
+              ]
+            },
+            "soil5_increment_vs_climate26": {
+              "gain": -0.0005093427843806624,
+              "ordinary95": [
+                -0.0009759804627612255,
+                -0.000017704607041644997
+              ]
+            }
+          }
+        },
+        "higher": {
+          "n_species": 8410,
+          "n_genera_present": 1437,
+          "metrics": {
+            "water_gain_vs_geography": {
+              "gain": 0.0031023157777090708,
+              "ordinary95": [
+                0.001493233008398391,
+                0.004707581126746342
+              ]
+            },
+            "soil5_increment_vs_climate26": {
+              "gain": -0.00024010580749926158,
+              "ordinary95": [
+                -0.0006194418598639924,
+                0.00015977755042931823
+              ]
+            }
+          }
+        }
+      },
+      "high_minus_low": {
+        "water_gain_vs_geography": {
+          "higher_minus_lower": 0.0013376421983770524,
+          "paired_genus_ordinary95": [
+            -0.0008504901649635887,
+            0.0035427292331462966
+          ],
+          "eight_selected_contrast_maxT95": [
+            -0.0017608815535725727,
+            0.004436165950326677
+          ]
+        },
+        "soil5_increment_vs_climate26": {
+          "higher_minus_lower": 0.00026923697688139973,
+          "paired_genus_ordinary95": [
+            -0.0003093038840433452,
+            0.0008536823405410108
+          ],
+          "eight_selected_contrast_maxT95": [
+            -0.0005653571560111061,
+            0.0011038311097739057
+          ]
+        }
+      }
+    },
+    "elevation": {
+      "source_median": 547.5,
+      "halves": {
+        "lower": {
+          "n_species": 8400,
+          "n_genera_present": 1475,
+          "metrics": {
+            "water_gain_vs_geography": {
+              "gain": 0.002183984142577106,
+              "ordinary95": [
+                0.0005195864929058429,
+                0.003914504719151582
+              ]
+            },
+            "soil5_increment_vs_climate26": {
+              "gain": -0.00021930228529474144,
+              "ordinary95": [
+                -0.0006165599853250539,
+                0.00016353406921224895
+              ]
+            }
+          }
+        },
+        "higher": {
+          "n_species": 8401,
+          "n_genera_present": 1429,
+          "metrics": {
+            "water_gain_vs_geography": {
+              "gain": 0.001997753164530599,
+              "ordinary95": [
+                0.0002639155876284144,
+                0.0037073963330094546
+              ]
+            },
+            "soil5_increment_vs_climate26": {
+              "gain": -0.00036041858902204424,
+              "ordinary95": [
+                -0.0007858052863082382,
+                0.00007287984843028682
+              ]
+            }
+          }
+        }
+      },
+      "high_minus_low": {
+        "water_gain_vs_geography": {
+          "higher_minus_lower": -0.00018623097804650957,
+          "paired_genus_ordinary95": [
+            -0.0023167839247220153,
+            0.0020582996801491254
+          ],
+          "eight_selected_contrast_maxT95": [
+            -0.003384010866947329,
+            0.0030115489108543097
+          ]
+        },
+        "soil5_increment_vs_climate26": {
+          "higher_minus_lower": -0.00014111630372730247,
+          "paired_genus_ordinary95": [
+            -0.0007381017395111031,
+            0.0004455111802025438
+          ],
+          "eight_selected_contrast_maxT95": [
+            -0.0009646422256355487,
+            0.0006824096181809437
+          ]
+        }
+      }
+    },
+    "latitude_abs": {
+      "source_median": 32.2769737052,
+      "halves": {
+        "lower": {
+          "n_species": 8400,
+          "n_genera_present": 1378,
+          "metrics": {
+            "water_gain_vs_geography": {
+              "gain": 0.0016248597009680915,
+              "ordinary95": [
+                -0.0003606096131415812,
+                0.003588734531987453
+              ]
+            },
+            "soil5_increment_vs_climate26": {
+              "gain": -0.0003219025724043099,
+              "ordinary95": [
+                -0.000793762518191355,
+                0.00012751037709483147
+              ]
+            }
+          }
+        },
+        "higher": {
+          "n_species": 8401,
+          "n_genera_present": 1167,
+          "metrics": {
+            "water_gain_vs_geography": {
+              "gain": 0.002782028753947198,
+              "ordinary95": [
+                0.0015479684525994651,
+                0.004050181524569262
+              ]
+            },
+            "soil5_increment_vs_climate26": {
+              "gain": -0.000588624293141357,
+              "ordinary95": [
+                -0.0010228382894577322,
+                -0.00015715012589966062
+              ]
+            }
+          }
+        }
+      },
+      "high_minus_low": {
+        "water_gain_vs_geography": {
+          "higher_minus_lower": 0.001157169052979106,
+          "paired_genus_ordinary95": [
+            -0.0009906488854339445,
+            0.003351643472280821
+          ],
+          "eight_selected_contrast_maxT95": [
+            -0.0019401992009338695,
+            0.004254537306892081
+          ]
+        },
+        "soil5_increment_vs_climate26": {
+          "higher_minus_lower": -0.00026672172073704734,
+          "paired_genus_ordinary95": [
+            -0.0008984647659474984,
+            0.00039581280274427193
+          ],
+          "eight_selected_contrast_maxT95": [
+            -0.0011684048812417558,
+            0.0006349614397676613
+          ]
+        }
+      }
+    }
+  },
+  "uncertainty": {
+    "bootstrap_draws": 1999,
+    "half_seed_base": 202610151755,
+    "paired_seed": 202610151801,
+    "eight_selected_contrast_maxT_critical": 2.7490115072913506,
+    "maxT_only_eight_posthoc_contrasts": true,
+    "no_study_wide_multiple_testing_or_nested_model_refitting": true
+  },
+  "interpretation": "Water-related climate adds predictive information relative to source geography alone. Adding soil5 to all26 does not gain predictive accuracy globally and shows no positive point increment in any evaluated environmental median half. Eight climate-context differences of water2 or soil5 gain have intervals spanning zero after a joint eight-selected-contrast maxT adjustment; no stable evidence that soil increment or water2 gain is modified by these studied climate/altitude/latitude context splits.",
+  "limitations": [
+    "Source photo labels and SoilGrids eligibility nonrandom, and no actual terrain geometry measured.",
+    "These four splits across same species, with genera present in both halves, are retrospective diagnostics of a frozen predictor family; not independent biome replications.",
+    "No genetic morph frequencies, lifetime fitness, exact local soil water or causal pigment mechanisms.",
+    "No source photo ID, coordinates, taxon names or original image/soil rows published."
+  ]
+}

@@ -19,6 +19,31 @@ jobs:
           python-version: "3.11"
       - name: Verify exact transferred FCP source blobs, scoped numbers and negative gates
         run: python scripts/check_mois_migration.py
+      - name: Recompute sharp original-photo nonresponse identification receipt
+        run: python scripts/analysis/mois_photo_nonresponse_bounds_20261014.py --check
+      - name: Verify global photo-white near-parity and balancing-selection nonclaim
+        run: python scripts/analysis/mois_original_photo_white_balance_20261014.py --check
+      - name: Verify cross-scale ecological arithmetic on independent existing aggregate receipts
+        run: python scripts/analysis/mois_ecological_scale_synthesis_20261015.py --check
+      - name: Test external clade colour benchmark on synthetic rows only (NO downloaded dataset)
+        run: python scripts/analysis/mois_external_clade_flower_colour_benchmark_20261015.py --self-test
+      - name: Test external name-derived genus sensitivity on synthetic rows only
+        run: python scripts/analysis/mois_external_nominal_genus_sensitivity_20261015.py --self-test
+      - name: Syntax-check original raw source recovery without downloading or publishing images
+        run: bash -n scripts/recover_mois_original_inputs.sh
+      - name: Compile separately implemented original-source coefficient verification code
+        run: python -m py_compile scripts/analysis/verify_mois_original_source_two_axis_wls_20261014.py scripts/analysis/replay_mois_world24_from_genus_moments_20261014.py scripts/analysis/replay_mois_original_matched_spatial_576_20261014.py scripts/analysis/replay_mois_world_quality_geocell_soil36_from_original_zips_20261014.py scripts/analysis/loo_mois_world_genus_moisture_20261014.py scripts/analysis/mois_replay_species_genus_balance_20261014.py scripts/analysis/mois_replay_genus_clustering_20261015.py scripts/analysis/replay_mois_genus_between_within_moisture_20261015.py scripts/analysis/replay_mois_genus_sign_mosaic_20261015.py scripts/analysis/mois_replay_climate_regime_moisture_20261015.py scripts/analysis/mois_geography_vapour_ovb_20261015.py scripts/analysis/mois_joint_rain_vapour_geography_20261015.py scripts/analysis/mois_full_biogeography_climate_soil_audit_20261015.py scripts/analysis/mois_dem_terrain_metrics_gate_20261015.py scripts/analysis/mois_full26_soil10_transfer_20261015.py scripts/analysis/mois_environment_block_shapley_residual_cv_20261015.py scripts/analysis/mois_soil_full26_alpha_fold_robustness_20261015.py scripts/analysis/mois_soil_vs_climate_blocks_20261015.py scripts/analysis/mois_soil_moisture_context_20261015.py scripts/analysis/mois_pairwise_congeneric_transfer_20261015.py
+      - name: Build and verify internally redistributable numerical-source snapshot (no original photo IDs)
+        run: |
+          python scripts/build_mois_internal_evidence_package.py --write
+          python scripts/build_mois_internal_evidence_package.py --check
+      - name: Retain temporary internal numerical audit snapshot (not reviewer data archive)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-internal-numerical-evidence-snapshot
+          path: dist/mois_internal_numerical_evidence_20261014.zip
+          retention-days: 14
+          if-no-files-found: error
 
   synthetic-model-tests:
     runs-on: ubuntu-24.04
@@ -29,6 +54,140 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install exact synthetic test dependencies
-        run: python -m pip install numpy==2.1.3 pandas==2.2.3 pytest==8.4.2
+        run: python -m pip install numpy==2.1.3 pandas==2.2.3 pytest==8.4.2 rasterio==1.4.3
+      - name: Verify terrain mathematics without pretending original terrain rasters exist
+        run: python scripts/analysis/mois_dem_terrain_metrics_gate_20261015.py --self-test
+      - name: Verify global pooled vs genus-centred flower-white 13-variable model algebra
+        run: python scripts/analysis/mois_global_pooled_white_13env_20261016.py --self-test
+      - name: Verify real WorldClim monthly source digest receipt without claiming new phenotypes
+        run: python -m pytest -q tests/test_mois_real_monthly_rainfall_source_receipt_20261016.py
+      - name: Verify metadata-only full FCP source measurement budget and checksum gate
+        run: python scripts/acquisition/mois_plan_from_fcp_full_source_counts_20261016.py --self-test
+      - name: Test outcome-blind 42,111-taxon stratified sampling admission and selection on synthetic manifests
+        run: python -m pytest -q tests/test_mois_stratified_photo_selection_20261016.py
+      - name: Synthetic replay of SHA-sealed original FCP photo manifests and BIO12 sampling bridge
+        run: python -m pytest -q tests/test_mois_direct_fcp_source_sampling_20261016.py
+      - name: Compare independent season-balanced V2 source photo quotas against original V1 with correct positive weights
+        run: python -m pytest -q tests/test_mois_outcome_blind_local_season_balanced_selection_v2_20261016.py
+      - name: Test source-bound Mois subset ROI packets without opening pixels
+        run: python -m pytest -q tests/test_mois_sample_roi_handoff_20261016.py
+      - name: Synthetic-only original ROI-v4 subset executor and fail-closed batch audit
+        run: python -m pytest -q tests/test_mois_execute_sample_roi_v4_20261016.py
+      - name: Synthetic original-photo terminal full-sample collection and photo-white design weighting
+        run: python -m pytest -q tests/test_mois_collect_sample_roi_white_20261016.py
+      - name: Synthetic iNaturalist flowering annotation and observer-season observation bias audit
+        run: python -m pytest -q tests/test_mois_phenology_observer_bias_audit_20261016.py
+      - name: Test frozen iNaturalist observation-annotation export overlay without API downloads
+        run: python -m pytest -q tests/test_mois_annotation_overlay_from_inat_export_20261016.py
+      - name: Verify flowering-annotated photos run first without reducing the complete Mois sample
+        run: python -m pytest -q tests/test_mois_prioritize_sampled_flowers_20261016.py
+      - name: Synthetic local-season photographic white, opposite hemispheres and same-species turnover diagnostics
+        run: python -m pytest -q tests/test_mois_seasonal_flower_colour_opportunity_20261016.py
+      - name: Guard actually computed original WorldClim latitude-season rainfall atlas as climate-only result
+        run: python -m pytest -q tests/test_mois_real_worldclim_monthly_climate_atlas_receipt_20261016.py
+      - name: Recover four synthetic T/S/P/VPD slopes after two-way cell+calendar-month fixed effects and refuse underpowered source sites
+        run: python -m pytest -q tests/test_mois_monthly_white_species_equal_cell_FE_20261016.py
+      - name: Recompute original image seasonal ROI missingness and worst-case colour opportunity bounds without floral inference
+        run: python -m pytest -q tests/test_mois_real_original96_seasonal_photo_nonresponse_bounds_20261016.py
+      - name: Verify actual original 96 photo ROI×month climate and only three repeated classifiable 10m cells; prohibit FE overclaims
+        run: python -m pytest -q tests/test_mois_actual_original96_monthly_climate_technical_pilot_receipt_20261016.py
+      - name: Synthetic FCP original 96-photo four-species pilot mapped to real-classifier months and T/S/P/VPD without worldwide generalization
+        run: python -m pytest -q tests/test_mois_original96_monthly_climate_technical_pilot_20261016.py
+      - name: Verify real source pins for all 48 historical monthly temperature solar rain and vapour GeoTIFFs
+        run: python -m pytest -q tests/test_mois_worldclim21_dynamic48_actual_source_receipt_20261016.py
+      - name: Verify actual 808053-cell WorldClim monthly four-axis correlations after site and zone-calendar controls
+        run: python -m pytest -q tests/test_mois_actual_worldclim48_monthly_climate_covariance_receipt_20261016.py
+      - name: Test area-weighted monthly climate T/S/P/VPD source collinearity after same-cell and climate-zone month fixed effects
+        run: python -m pytest -q tests/test_mois_actual_48_monthly_climate_covariance_20261016.py
+      - name: Synthetic 48-layer T/S/P/vapour source-normal original-site monthly climate and exact photo-date VPD join
+        run: python -m pytest -q tests/test_mois_join_monthly_dynamic_climate_20261016.py
+      - name: Synthetic WorldClim global latitude climate-seasonality area, tie and hemisphere diagnostics
+        run: python -m pytest -q tests/test_mois_real_worldclim_monthly_climate_atlas_20261016.py
+      - name: Test 12 SHA-pinned georeferenced monthly precipitation rasters and source-matched wet-dry seasons
+        run: python -m pytest -q tests/test_mois_monthly_rainfall_flower_colour_20261016.py
+      - name: Verify offline WorldClim 2.1 12-month provider-ZIP hash sealing and raster alignment
+        run: python -m pytest -q tests/test_mois_pin_worldclim_monthly_precipitation_20261016.py
+      - name: Verify season-matched same-species sampling support upper bounds before image colours
+        run: python -m pytest -q tests/test_mois_seasonal_sample_support_preflight_20261016.py
+      - name: Replay historically observed photographic classifiability probabilities for independent two-season sampling
+        run: python -m pytest -q tests/test_mois_seasonal_photo_classifiability_power_20261016.py
+      - name: Guard real FCP full source candidate-photo depth upper bounds for seasonal support
+        run: python -m pytest -q tests/test_mois_real_photo_count_seasonal_support_bounds_20261016.py
+      - name: Test paced observation-only iNaturalist phenology annotation count query and missingness semantics
+        run: python -m pytest -q tests/test_mois_real_inat_phenology_count_bias_pilot_20261016.py
+      - name: Verify actual 2025 iNaturalist 35-query photographed-plant annotation pilot and non-atomic totals
+        run: python -m pytest -q tests/test_mois_real_inat_photo_phenology_count_receipt_20261016.py
+      - name: Verify real Angiospermae-only 2025 photo-observation Flower/Fruit annotation availability and Plantae denominator sensitivity
+        run: python -m pytest -q tests/test_mois_real_inat_angiosperm_annotation_receipt_20261016.py
+      - name: Audit original full FCP 42111-taxon SQLite 93M photo observed_on month eligibility before expensive 128 photo shard emission
+        run: python -m pytest -q tests/test_mois_real_fcp_staged_sqlite_original_observed_on_counts_20261016.py
+      - name: Test uncapped actual FCP source dated-photo bloom-unverified input from original 42111 full-photo shards
+        run: python -m pytest -q tests/test_mois_full_source_dated_flower_candidates_20261016.py
+      - name: Full original 128-source date-first FCP photo ROI blooming census to observation-first WorldClim T/S/P/VPD, synthetic end-to-end
+        run: python -m pytest -q tests/test_mois_complete_original_date_first_blooming_photo_census_20261016.py
+      - name: Reassemble every source date-valid flower ROI packet for one full original provider shard, failing closed on missing work units
+        run: python -m pytest -q tests/test_mois_reassemble_dated_original_roi_shard_20261016.py
+      - name: Check blinded source-date-first 64-original-photo FCP ROI work units with synthetic image loader, no source metadata leakage
+        run: python -m pytest -q tests/test_mois_execute_all_dated_original_roi_workunit_20261016.py
+      - name: Test outcome-blind all-original date-known photo to 4096-batch ROI work packets without photo sampling limits
+        run: python -m pytest -q tests/test_mois_prepare_all_dated_original_roi_packets_20261016.py
+      - name: Reverify or restart bounded blocks of original FCP all-photo date candidates without photo selection caps
+        run: python -m pytest -q tests/test_mois_run_resumable_full_original_date_shard_range_20261016.py
+      - name: Aggregate every FCP original dated photo source shard and refuse even one missing/unverified shard before global 93M claim
+        run: python -m pytest -q tests/test_mois_aggregate_all_original_dated_shards_20261016.py
+      - name: Test actual original photo blooming+observed-on versus 48-month T/S/P/VPD observation-first and species-equal FE analysis
+        run: python -m pytest -q tests/test_mois_full_bloom_monthly_TSPVPD_observation_species_FE_20261016.py
+      - name: Test original 93M all-photo complete ROI bloom and source observed_on positive gated monthly white
+        run: python -m pytest -q tests/test_mois_original_full_fcp_dated_flower_ROI_20261016.py
+      - name: Test source-independent herbarium rainfall estimator on synthetic sites
+        run: python scripts/analysis/mois_external_independent_bio12_transfer_20261016.py --self-test
+      - name: Test reproducible public GBIF search and taxonomic alias pilot on mock API records
+        run: python scripts/analysis/mois_independent_gbif_search_coverage_pilot_20261016.py --self-test
       - name: Assert global hue model and matched geographic support invariants
-        run: python -m pytest -q tests/test_fcp_macro_abiotic_direction_20261013.py tests/test_spatial_support_decomposition.py
+        run: python -m pytest -q tests/test_fcp_macro_abiotic_direction_20261013.py tests/test_spatial_support_decomposition.py tests/test_mois_species_genus_source_balance_20261014.py tests/test_mois_genus_clustering_20261015.py tests/test_mois_between_within_genus_moisture_20261015.py tests/test_mois_genus_sign_mosaic_20261015.py tests/test_mois_climate_regime_moisture_20261015.py tests/test_mois_geography_vapour_ovb_20261015.py tests/test_mois_joint_moisture_original_source_20261015.py tests/test_mois_biogeography_climate_soil_terrain_20261015.py tests/test_mois_env_shapley_residual_transfer_20261015.py tests/test_mois_soil_moisture_context_20261015.py tests/test_mois_soil_full26_alpha_fold_robustness_20261015.py tests/test_mois_soil_crossdomain_block_audit_20261015.py tests/test_mois_congeneric_pairwise_transfer_20261015.py
+
+  paper-claims-and-figures:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install narrow manuscript regression dependencies
+        run: python -m pip install pytest==8.4.2
+      - name: Verify GEB-structured manuscript, source-receipt statistical claims and publication boundaries
+        run: python -m pytest -q tests/test_mois_geb_manuscript_20261014.py tests/test_mois_geb_submission_integrity_20261014.py tests/test_mois_original_source_recovery_20261014.py tests/test_mois_world24_bootstrap_replay_20261014.py tests/test_mois_original_matched_spatial_full576_20261014.py tests/test_mois_world_quality_spatial_soil36_maxT_20261014.py tests/test_mois_single_genus_influence_20261014.py tests/test_mois_photo_nonresponse_bounds_20261014.py tests/test_mois_original_photo_white_balance_20261014.py tests/test_mois_figure5_ecological_scales_20261015.py tests/test_mois_original_geography_20261015.py tests/test_mois_external_clade_precedent_20261015.py tests/test_mois_external_independent_bio12_gate_20261016.py tests/test_mois_global_pooled_white_13env_20261016.py tests/test_mois_flower_only_scope_20261016.py tests/test_mois_gbif_public_search_pilot_20261016.py
+      - name: Verify reproducible Figure 2 is identical to source JSON receipt generation
+        run: node scripts/render_mois_figure2_source_receipts.mjs --check
+      - name: Verify Figure 3 taxonomic and geographic transfer from source receipts
+        run: node scripts/render_mois_figure3_transfer.mjs --check
+      - name: Verify Figure 4 all photographed hue directions and original maxT source intervals
+        run: node scripts/render_mois_four_hue_moisture.mjs --check
+      - name: Verify source-locked Figure 5 of photo-white weighting and taxonomic scales
+        run: node scripts/render_mois_figure5_ecological_scales.mjs --check
+      - name: Render Figure 5 at full and downscaled sizes for visual inspection
+        run: |
+          python -m pip install --quiet cairosvg==2.8.2
+          python - <<'PY'
+          from pathlib import Path
+          import cairosvg
+          fig = Path("figures/mois_white_moisture_ecological_scales.svg")
+          out = Path("artifacts/mois_figure5_visual")
+          out.mkdir(parents=True, exist_ok=True)
+          for width in (1560, 780):
+              cairosvg.svg2png(url=str(fig), write_to=str(out / f"figure5_{width}px.png"), output_width=width)
+          print("Rendered both source-backed Figure 5 visual proofs")
+          PY
+      - name: Preserve temporary Figure 5 PNG visual proofs (not reviewer source data)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-figure5-ecological-scales-visual-proof
+          path: artifacts/mois_figure5_visual/*.png
+          retention-days: 14
+          if-no-files-found: error
+      - name: Verify regenerated double-anonymous and continuously numbered GEB review copies
+        run: node scripts/build_mois_blinded_review_copy.mjs --check

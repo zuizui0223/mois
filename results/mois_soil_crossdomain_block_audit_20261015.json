@@ -1,0 +1,356 @@
+{
+  "schema": "mois_soil_crossdomain_block_audit_v1",
+  "date_jst": "2026-10-15",
+  "source_sha256": {
+    "photo": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+    "environment": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca"
+  },
+  "population": {
+    "n_species": 16801,
+    "n_genera": 1665,
+    "n_original_classifiable_photos": 26163
+  },
+  "protocol": {
+    "folds": 5,
+    "fold_species_counts": [
+      3212,
+      3505,
+      3803,
+      3306,
+      2975
+    ],
+    "same_taxa": true,
+    "genus_holdout": true,
+    "ridge_alpha_grid": [
+      0.001,
+      0.01,
+      0.1
+    ],
+    "training_only_feature_scaling": true,
+    "target": "taxon mean of originally classified photo-white fractions",
+    "loss": "equal-genus mean squared prediction error",
+    "bootstrap_draws": 1999,
+    "bootstrap_seed_base": 202610151515,
+    "bootstrap_is_fixed_prediction_resampling_not_nested_refitting": true
+  },
+  "by_alpha": {
+    "0.001": {
+      "models": {
+        "geography": {
+          "loss": 0.229811808,
+          "gain_vs_geography": 0,
+          "gain_ci95": [
+            0,
+            0
+          ]
+        },
+        "geography_soil5": {
+          "loss": 0.228792954,
+          "gain_vs_geography": 0.001018853,
+          "gain_ci95": [
+            0.000014963,
+            0.002048355
+          ]
+        },
+        "geography_soil10": {
+          "loss": 0.229039463,
+          "gain_vs_geography": 0.000772344,
+          "gain_ci95": [
+            -0.000229912,
+            0.001817354
+          ]
+        },
+        "geography_water": {
+          "loss": 0.227459426,
+          "gain_vs_geography": 0.002352382,
+          "gain_ci95": [
+            0.001097007,
+            0.003601433
+          ]
+        },
+        "geography_other24climate": {
+          "loss": 0.228421004,
+          "gain_vs_geography": 0.001390803,
+          "gain_ci95": [
+            -0.000093258,
+            0.002767894
+          ]
+        },
+        "geography_full26climate": {
+          "loss": 0.228383569,
+          "gain_vs_geography": 0.001428239,
+          "gain_ci95": [
+            -0.000085013,
+            0.002798384
+          ]
+        },
+        "geography_full26climate_soil5": {
+          "loss": 0.22877887,
+          "gain_vs_geography": 0.001032937,
+          "gain_ci95": [
+            -0.000485242,
+            0.002465079
+          ]
+        },
+        "geography_full26climate_soil10": {
+          "loss": 0.228901396,
+          "gain_vs_geography": 0.000910411,
+          "gain_ci95": [
+            -0.00059334,
+            0.00237981
+          ]
+        }
+      },
+      "contrasts": {
+        "water_vs_soil5": {
+          "gain": 0.001333528,
+          "genus_bootstrap95": [
+            0.000346647,
+            0.00224053
+          ]
+        },
+        "water_vs_soil10": {
+          "gain": 0.001580038,
+          "genus_bootstrap95": [
+            0.000595777,
+            0.002502489
+          ]
+        },
+        "increment_water_given_other24climate": {
+          "gain": 0.000037435,
+          "genus_bootstrap95": [
+            -0.000207378,
+            0.000278988
+          ]
+        },
+        "increment_soil5_given_full26": {
+          "gain": -0.000395301,
+          "genus_bootstrap95": [
+            -0.000683939,
+            -0.000101356
+          ]
+        },
+        "increment_soil10_given_full26": {
+          "gain": -0.000517827,
+          "genus_bootstrap95": [
+            -0.000872597,
+            -0.00013962
+          ]
+        }
+      }
+    },
+    "0.01": {
+      "models": {
+        "geography": {
+          "loss": 0.229810064,
+          "gain_vs_geography": 0,
+          "gain_ci95": [
+            0,
+            0
+          ]
+        },
+        "geography_soil5": {
+          "loss": 0.228778485,
+          "gain_vs_geography": 0.001031579,
+          "gain_ci95": [
+            -0.000012109,
+            0.001996729
+          ]
+        },
+        "geography_soil10": {
+          "loss": 0.22901347,
+          "gain_vs_geography": 0.000796594,
+          "gain_ci95": [
+            -0.0002995,
+            0.001812977
+          ]
+        },
+        "geography_water": {
+          "loss": 0.227455352,
+          "gain_vs_geography": 0.002354712,
+          "gain_ci95": [
+            0.001134097,
+            0.003573684
+          ]
+        },
+        "geography_other24climate": {
+          "loss": 0.228173204,
+          "gain_vs_geography": 0.001636859,
+          "gain_ci95": [
+            0.000291007,
+            0.003006908
+          ]
+        },
+        "geography_full26climate": {
+          "loss": 0.228132885,
+          "gain_vs_geography": 0.001677179,
+          "gain_ci95": [
+            0.000299546,
+            0.003086711
+          ]
+        },
+        "geography_full26climate_soil5": {
+          "loss": 0.228537347,
+          "gain_vs_geography": 0.001272717,
+          "gain_ci95": [
+            -0.000129118,
+            0.002709799
+          ]
+        },
+        "geography_full26climate_soil10": {
+          "loss": 0.228661099,
+          "gain_vs_geography": 0.001148965,
+          "gain_ci95": [
+            -0.000252683,
+            0.002617005
+          ]
+        }
+      },
+      "contrasts": {
+        "water_vs_soil5": {
+          "gain": 0.001323133,
+          "genus_bootstrap95": [
+            0.000436165,
+            0.002214169
+          ]
+        },
+        "water_vs_soil10": {
+          "gain": 0.001558118,
+          "genus_bootstrap95": [
+            0.000662319,
+            0.002473787
+          ]
+        },
+        "increment_water_given_other24climate": {
+          "gain": 0.000040319,
+          "genus_bootstrap95": [
+            -0.00014103,
+            0.000225607
+          ]
+        },
+        "increment_soil5_given_full26": {
+          "gain": -0.000404461,
+          "genus_bootstrap95": [
+            -0.00069226,
+            -0.000128696
+          ]
+        },
+        "increment_soil10_given_full26": {
+          "gain": -0.000528214,
+          "genus_bootstrap95": [
+            -0.000880554,
+            -0.000171323
+          ]
+        }
+      }
+    },
+    "0.1": {
+      "models": {
+        "geography": {
+          "loss": 0.229805928,
+          "gain_vs_geography": 0,
+          "gain_ci95": [
+            0,
+            0
+          ]
+        },
+        "geography_soil5": {
+          "loss": 0.228690404,
+          "gain_vs_geography": 0.001115524,
+          "gain_ci95": [
+            0.000180748,
+            0.002041249
+          ]
+        },
+        "geography_soil10": {
+          "loss": 0.228844747,
+          "gain_vs_geography": 0.000961181,
+          "gain_ci95": [
+            -0.000017988,
+            0.001930627
+          ]
+        },
+        "geography_water": {
+          "loss": 0.227511866,
+          "gain_vs_geography": 0.002294061,
+          "gain_ci95": [
+            0.001246127,
+            0.003399225
+          ]
+        },
+        "geography_other24climate": {
+          "loss": 0.227803143,
+          "gain_vs_geography": 0.002002785,
+          "gain_ci95": [
+            0.000718175,
+            0.003257849
+          ]
+        },
+        "geography_full26climate": {
+          "loss": 0.227764393,
+          "gain_vs_geography": 0.002041535,
+          "gain_ci95": [
+            0.000734624,
+            0.003309454
+          ]
+        },
+        "geography_full26climate_soil5": {
+          "loss": 0.228065612,
+          "gain_vs_geography": 0.001740316,
+          "gain_ci95": [
+            0.000409865,
+            0.003029346
+          ]
+        },
+        "geography_full26climate_soil10": {
+          "loss": 0.228163773,
+          "gain_vs_geography": 0.001642155,
+          "gain_ci95": [
+            0.000315375,
+            0.002954736
+          ]
+        }
+      },
+      "contrasts": {
+        "water_vs_soil5": {
+          "gain": 0.001178537,
+          "genus_bootstrap95": [
+            0.000391483,
+            0.001991462
+          ]
+        },
+        "water_vs_soil10": {
+          "gain": 0.001332881,
+          "genus_bootstrap95": [
+            0.000516093,
+            0.002161243
+          ]
+        },
+        "increment_water_given_other24climate": {
+          "gain": 0.00003875,
+          "genus_bootstrap95": [
+            -0.000050226,
+            0.000129147
+          ]
+        },
+        "increment_soil5_given_full26": {
+          "gain": -0.000301219,
+          "genus_bootstrap95": [
+            -0.000528465,
+            -0.000072527
+          ]
+        },
+        "increment_soil10_given_full26": {
+          "gain": -0.00039938,
+          "genus_bootstrap95": [
+            -0.00067325,
+            -0.000109885
+          ]
+        }
+      }
+    }
+  },
+  "scope": "retrospective source association and prediction, not independent ecological replication or fitness selection",
+  "terrain": "No original DEM neighbourhoods; local slope/aspect/TPI/TRI still not tested.",
+  "no_raw_rows_exported": true
+}

@@ -1,0 +1,65 @@
+{
+  "schema": "mois_external_nominal_genus_colour_sensitivity_v1",
+  "external_data_doi": "10.5061/dryad.r4xgxd2sc",
+  "original_csv_sha256": "a253308785e4cbd0e361b3ca04cdfdae29c523eefa843375cebf8030ee0874af",
+  "original_source_rows": 2960,
+  "source_clades": 51,
+  "all_unique_nominal_genus_tokens": 118,
+  "source_rows_genus_token_differs_from_study_clade": 159,
+  "minimum_species_per_nominal_genus": 3,
+  "qualifying_nominal_genera": 68,
+  "qualifying_source_species": 2902,
+  "white_species_in_eligible_genera": 1426,
+  "white_species_equal_eligible_genera": 0.4913852515506547,
+  "white_equal_nominal_genus_means": 0.43788559529682863,
+  "nominal_genus_eta2": {
+    "observed": 0.28565106059472606,
+    "global_species_colour_shuffle_mean": 0.023090826983744445,
+    "global_species_colour_shuffle_95": [
+      0.01632586926266567,
+      0.03114794266111843
+    ],
+    "one_sided_upper_tail_permutation_p": 0.0001
+  },
+  "nominal_genus_near_pure_fraction_ge3": {
+    "observed": 0.27941176470588236,
+    "global_species_colour_shuffle_mean": 0.034794655936181855,
+    "global_species_colour_shuffle_95": [
+      0,
+      0.07352941176470588
+    ],
+    "one_sided_upper_tail_permutation_p": 0.0001
+  },
+  "n_eligible_nominal_genera_ge5": 58,
+  "nominal_genus_near_pure_fraction_ge5": 0.27586206896551724,
+  "nominal_genus_near_pure_fraction_ge5_null": {
+    "observed": 0.27586206896551724,
+    "global_species_colour_shuffle_mean": 0.008659486638319005,
+    "global_species_colour_shuffle_95": [
+      0,
+      0.034482758620689655
+    ],
+    "one_sided_upper_tail_permutation_p": 0.0001
+  },
+  "source_clade_eta2_on_identical_species": 0.27968702615385255,
+  "group_bootstrap": {
+    "seed": 202610152329,
+    "draws": 9999,
+    "selected_clade_bootstrap95_white_species_equal": [
+      0.4105161127433656,
+      0.5847909380656409
+    ],
+    "selected_clade_bootstrap95_white_clade_equal": [
+      0.3661504384874313,
+      0.5108790271383693
+    ],
+    "selected_clade_bootstrap95_eta_squared": [
+      0.1825338749767476,
+      0.4060785879548429
+    ],
+    "warning": "Clades were not drawn at random from the world flora; intervals are conditional descriptive resampling, not population-universal confidence limits."
+  },
+  "fixed_genus_size_permutations": 9999,
+  "permutation_seed": 202610152330,
+  "limits": "Nominal genus is only the first species-name token, not a vetted taxonomic synonym or phylogenetic genus. This source does not independently test rainfall, water vapour, UV pigment costs, pollinators, selection, or fitness."
+}

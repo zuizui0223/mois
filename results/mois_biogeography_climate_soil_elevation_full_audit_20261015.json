@@ -1,0 +1,377 @@
+{
+  "schema": "mois_biogeography_climate_soil_elevation_full_audit_safe_summary_v1",
+  "date_jst": "2026-10-15",
+  "source_scope": {
+    "source_sha256": {
+      "photo": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+      "environment": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca"
+    },
+    "photo_opportunities": 100543,
+    "classifiable_photos": 45953,
+    "climate26_photos": 45836,
+    "soil36_photos": 31925,
+    "climate26_species": 20694,
+    "climate26_genera": 1934,
+    "soil36_species": 16801,
+    "soil36_genera": 1665,
+    "soil36_sampled_photos": 26163,
+    "soil36_photo_coverage_fraction": 0.6965049306222183,
+    "original_soil36_BIO12_genus_equal_coef_pp_per_photo_SD": 2.2569369298253363
+  },
+  "global_same_soil36_taxa_OLS_congeneric": {
+    "original_source_BIO12_geography_model": {
+      "point_pp_per_source_soil36_photo_site_SD": 2.2569369298253363,
+      "ordinary_genus_bootstrap95_pp": [
+        0.864,
+        3.732
+      ],
+      "selected_within_model_maxT95_pp": [
+        0.817,
+        3.696
+      ]
+    },
+    "geography_climate_elevation": {
+      "weighted_within_genus_R2": 0.004946730764640472,
+      "condition_number": 30.618598431183706,
+      "rainfall": {
+        "point_pp_per_source_soil36_photo_site_SD": 1.501,
+        "ordinary_genus_bootstrap95_pp": [
+          -0.134,
+          3.147
+        ],
+        "selected_within_model_maxT95_pp": [
+          -0.305,
+          3.308
+        ]
+      },
+      "vapour": {
+        "point_pp_per_source_soil36_photo_site_SD": 3.149,
+        "ordinary_genus_bootstrap95_pp": [
+          -0.426,
+          6.7
+        ],
+        "selected_within_model_maxT95_pp": [
+          -0.917,
+          7.215
+        ]
+      },
+      "elevation": {
+        "point_pp_per_source_soil36_photo_site_SD": 0.332,
+        "ordinary_genus_bootstrap95_pp": [
+          -2.129,
+          2.997
+        ],
+        "selected_within_model_maxT95_pp": null
+      }
+    },
+    "adding_soil5": {
+      "weighted_within_genus_R2": 0.0062023660640665446,
+      "condition_number": 51.725382576683046,
+      "rainfall": {
+        "point_pp_per_source_soil36_photo_site_SD": 1.552,
+        "ordinary_genus_bootstrap95_pp": [
+          -0.321,
+          3.53
+        ],
+        "selected_within_model_maxT95_pp": [
+          -1.108,
+          4.213
+        ]
+      },
+      "vapour": {
+        "point_pp_per_source_soil36_photo_site_SD": 3.496,
+        "ordinary_genus_bootstrap95_pp": [
+          -0.089,
+          7.071
+        ],
+        "selected_within_model_maxT95_pp": [
+          -1.365,
+          8.356
+        ]
+      },
+      "soil_available_water_proxy": {
+        "point_pp_per_source_soil36_photo_site_SD": 1.907,
+        "ordinary_genus_bootstrap95_pp": [
+          0.586,
+          3.119
+        ],
+        "selected_within_model_maxT95_pp": [
+          0.199,
+          3.615
+        ]
+      },
+      "soil_pH": {
+        "point_pp_per_source_soil36_photo_site_SD": 0.605,
+        "ordinary_genus_bootstrap95_pp": [
+          -1.169,
+          2.385
+        ],
+        "selected_within_model_maxT95_pp": [
+          -1.769,
+          2.98
+        ]
+      },
+      "soil_SOC": {
+        "point_pp_per_source_soil36_photo_site_SD": 0.856,
+        "ordinary_genus_bootstrap95_pp": [
+          -1.183,
+          2.782
+        ],
+        "selected_within_model_maxT95_pp": [
+          -1.793,
+          3.504
+        ]
+      },
+      "soil_N": {
+        "point_pp_per_source_soil36_photo_site_SD": -0.663,
+        "ordinary_genus_bootstrap95_pp": [
+          -2.555,
+          1.27
+        ],
+        "selected_within_model_maxT95_pp": [
+          -3.215,
+          1.888
+        ]
+      },
+      "soil_clay": {
+        "point_pp_per_source_soil36_photo_site_SD": 0.592,
+        "ordinary_genus_bootstrap95_pp": [
+          -0.788,
+          1.961
+        ],
+        "selected_within_model_maxT95_pp": [
+          -1.276,
+          2.46
+        ]
+      },
+      "selection_scope": "post hoc within-model 7 axes maximum-t 95%; not corrected across all source analysis families"
+    },
+    "soil10_unpenalized_collinearity": {
+      "soil_texture_closure": "sand_raw + silt_raw + 10*clay ≈ 1000",
+      "soil_texture_mean": 1000.0108578390225,
+      "soil_texture_sd": 0.28731218702183425,
+      "unpenalized_condition_number_about": 1172912,
+      "interpretation": "source sand, silt and clay describe an almost closed composition; reject unconstrained independent coefficient reading"
+    }
+  },
+  "heldout_genus_cv": {
+    "folds": 5,
+    "genus_holdout": true,
+    "source_qualifier": "Five preassigned SHA256 hashed genus folds, same soil36 complete-case species and equal-genus species-fraction squared loss; predictor standardization training-only and ridge lambda=0.01; CI bootstraps heldout genus losses without refitting models",
+    "boot_draws": 1999,
+    "seed": 202610151702,
+    "fold_species_counts": [
+      3212,
+      3505,
+      3803,
+      3306,
+      2975
+    ],
+    "models": {
+      "geography": {
+        "loss": 0.22981006389209194,
+        "gain_vs_geography": 0
+      },
+      "geography_elevation": {
+        "loss": 0.22930583771130747,
+        "gain_vs_geography": 0.0005042261807844672,
+        "gain_ci": [
+          -0.00006274016530180142,
+          0.0010551075650952076
+        ]
+      },
+      "geography_moisture": {
+        "loss": 0.22745535180555312,
+        "gain_vs_geography": 0.0023547120865388127,
+        "gain_ci": [
+          0.0011252571242782769,
+          0.003607745404973518
+        ]
+      },
+      "geography_climate_elevation": {
+        "loss": 0.2274813680681632,
+        "gain_vs_geography": 0.0023286958239287503,
+        "gain_ci": [
+          0.0010139732379897376,
+          0.0036433052285880507
+        ]
+      },
+      "geography_climate_elevation_soil5": {
+        "loss": 0.2279164120294332,
+        "gain_vs_geography": 0.0018936518626587462,
+        "gain_ci": [
+          0.0006227624630352451,
+          0.0032123518802605953
+        ],
+        "increment_vs_climate_elevation": -0.0004350439612700041,
+        "increment_ci": [
+          -0.0007001865159607836,
+          -0.0001712224628930699
+        ]
+      },
+      "geography_climate_elevation_soil10": {
+        "loss": 0.2281012671443486,
+        "gain_vs_geography": 0.0017087967477433241,
+        "increment_vs_climate_elevation": -0.0006198990761854262,
+        "increment_ci": [
+          -0.0009577995340417422,
+          -0.00028422904585181393
+        ]
+      }
+    }
+  },
+  "biogeography": {
+    "continent_definition": "Natural Earth 110m country polygons, point-in-polygon of MEAN photographed species coordinates, not ecoregion or actual biogeographic realm; country fixture SHP SHA256 08e341606e8391e458c3f08deb312de664b56bfae376064c5aa0aee6681a5f55",
+    "climate26_species_polygon_matched": 17536,
+    "climate26_species_polygon_unresolved": 3158,
+    "continent_white_species_equal_from_classified_photos": [
+      {
+        "continent": "Africa",
+        "taxa": 2984,
+        "white": 0.414
+      },
+      {
+        "continent": "Asia",
+        "taxa": 3323,
+        "white": 0.4887
+      },
+      {
+        "continent": "Europe",
+        "taxa": 2050,
+        "white": 0.4432
+      },
+      {
+        "continent": "North America",
+        "taxa": 3286,
+        "white": 0.4757
+      },
+      {
+        "continent": "Oceania",
+        "taxa": 2713,
+        "white": 0.4742
+      },
+      {
+        "continent": "South America",
+        "taxa": 3180,
+        "white": 0.4337
+      },
+      {
+        "continent": "Unresolved at 110m",
+        "taxa": 3158,
+        "white": 0.4854
+      }
+    ],
+    "longitude_sector_leaveout_exclude_target_genera": [
+      {
+        "sector": "W180_W90",
+        "test_taxa": 2031,
+        "train_taxa": 8416,
+        "moisture_gain_vs_geography": 0.0042823,
+        "soil5_increment_vs_climate_elevation": 0.0003344
+      },
+      {
+        "sector": "W90_E0",
+        "test_taxa": 4733,
+        "train_taxa": 4769,
+        "moisture_gain_vs_geography": 0.0021838,
+        "soil5_increment_vs_climate_elevation": -0.0011346
+      },
+      {
+        "sector": "E0_E90",
+        "test_taxa": 5842,
+        "train_taxa": 4618,
+        "moisture_gain_vs_geography": -0.0002334,
+        "soil5_increment_vs_climate_elevation": -0.000058
+      },
+      {
+        "sector": "E90_E180",
+        "test_taxa": 4195,
+        "train_taxa": 5841,
+        "moisture_gain_vs_geography": 0.0025347,
+        "soil5_increment_vs_climate_elevation": 0.0003868
+      }
+    ]
+  },
+  "soil_missingness": {
+    "altitude_photo_quartiles": [
+      {
+        "rank": 1,
+        "bounds_m": [
+          -330,
+          96
+        ],
+        "photo_count": 11396,
+        "soil36_count": 5081,
+        "completeness": 0.44585819585819586
+      },
+      {
+        "rank": 2,
+        "bounds_m": [
+          96,
+          289
+        ],
+        "photo_count": 11504,
+        "soil36_count": 7461,
+        "completeness": 0.64855702364395
+      },
+      {
+        "rank": 3,
+        "bounds_m": [
+          289,
+          941
+        ],
+        "photo_count": 11469,
+        "soil36_count": 9325,
+        "completeness": 0.8130612956665795
+      },
+      {
+        "rank": 4,
+        "bounds_m": [
+          941,
+          6104
+        ],
+        "photo_count": 11467,
+        "soil36_count": 10058,
+        "completeness": 0.8771256649516003
+      }
+    ],
+    "longitude_soil36_photo_completion": [
+      {
+        "sector": "W180_W90",
+        "success": 0.667566709021601
+      },
+      {
+        "sector": "W90_E0",
+        "success": 0.6704879704351762
+      },
+      {
+        "sector": "E0_E90",
+        "success": 0.743148769574944
+      },
+      {
+        "sector": "E90_E180",
+        "success": 0.6848125574016866
+      }
+    ]
+  },
+  "terrain": {
+    "original_measurements": [
+      "wc_elevation_m"
+    ],
+    "independent_dem_supplied": false,
+    "actual_slope": null,
+    "aspect": null,
+    "topographic_position_index": null,
+    "terrain_ruggedness_index": null,
+    "interpretation": "NO original terrain-geometry signal estimated. DEM neighborhood raster and scale/projection checks required; 1 point elevation does not identify slope/aspect/TPI/TRI."
+  },
+  "source_integrity": "Complete original source photo and environment SHA256 and ZIP members checked; original world soil36 congeneric rainfall coefficient reproduced; local owner-only source script --write/--check passed using the two original ZIPs and independent Natural Earth 110m shapefile.",
+  "scientific_limits": [
+    "Water-related climate provides additional out-of-genus predictive information on same soil complete-case source; soil5 and soil10 additions worsen fixed-ridge heldout error, not proof of absence of edaphic effects.",
+    "Selected within-model positive soil available-water PROXY coefficient does not equal a causal or transferred effect; source soil available water is a model proxy not measured field capacity.",
+    "Source soil completeness varies markedly by elevation, selected source population may differ and photo classifiability has substantial missingness.",
+    "Longitude sectors are arbitrary geographic partitions, not historical biogeographic realms; continent 110m maps miss 3158 of 20694 taxa including small islands, and species mean points can be nonrepresentative.",
+    "No DEM terrain morphology, molecular phylogeny, flower chemistry, pollinator visitation/fitness or maintained genetic morph 50:50 equilibrium measured.",
+    "Out-of-genus CV fixed lambda, folds and source data, bootstrap heldout predictions (no nested refitting), overfitting/other choices still possible."
+  ]
+}

@@ -1,0 +1,269 @@
+{
+  "schema": "mois_soil_full26_alpha_fold_predictive_robustness_v1",
+  "source_photo_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "source_environment_sha256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "population": {
+    "original_classifiable_soil36_photos": 31925,
+    "qualified_source_photos": 26163,
+    "qualified_species": 16801,
+    "qualified_genera": 1665
+  },
+  "same_species_across_all_models": true,
+  "ridge_alpha_grid": [
+    0.0003,
+    0.001,
+    0.003,
+    0.01,
+    0.03,
+    0.1,
+    0.3,
+    1
+  ],
+  "genus_split_salts": [
+    "original",
+    "salt202610151",
+    "salt202610152",
+    "salt202610153"
+  ],
+  "n_settings": 32,
+  "summary": {
+    "soil5_negative_gain_settings": 31,
+    "soil10_negative_gain_settings": 32,
+    "soil5_positive_gain_settings": 1,
+    "soil10_positive_gain_settings": 0,
+    "by_alpha_signs": {
+      "1": {
+        "soil5_negative": 3,
+        "soil10_negative": 4
+      },
+      "0.0003": {
+        "soil5_negative": 4,
+        "soil10_negative": 4
+      },
+      "0.001": {
+        "soil5_negative": 4,
+        "soil10_negative": 4
+      },
+      "0.003": {
+        "soil5_negative": 4,
+        "soil10_negative": 4
+      },
+      "0.01": {
+        "soil5_negative": 4,
+        "soil10_negative": 4
+      },
+      "0.03": {
+        "soil5_negative": 4,
+        "soil10_negative": 4
+      },
+      "0.1": {
+        "soil5_negative": 4,
+        "soil10_negative": 4
+      },
+      "0.3": {
+        "soil5_negative": 4,
+        "soil10_negative": 4
+      }
+    }
+  },
+  "results": {
+    "original": {
+      "source_species_per_heldout_fold": [
+        3212,
+        3505,
+        3803,
+        3306,
+        2975
+      ],
+      "soil_block_increment_by_alpha": {
+        "soil5": [
+          -0.000389195,
+          -0.000395301,
+          -0.000404387,
+          -0.000404461,
+          -0.000379201,
+          -0.000301219,
+          -0.000183475,
+          -0.000027768
+        ],
+        "soil10": [
+          -0.000510725,
+          -0.000517827,
+          -0.000527746,
+          -0.000528214,
+          -0.000500097,
+          -0.00039938,
+          -0.000234867,
+          -0.000027502
+        ]
+      },
+      "at_original_alpha_001": {
+        "climate26_loss": 0.228132885,
+        "soil5_increment": -0.000404461,
+        "soil10_increment": -0.000528214,
+        "soil5_bootstrap95": [
+          -0.000682541,
+          -0.00013029
+        ],
+        "soil10_bootstrap95": [
+          -0.000873834,
+          -0.000176147
+        ],
+        "bootstrap_seed": 202610151888
+      }
+    },
+    "salt202610151": {
+      "source_species_per_heldout_fold": [
+        3204,
+        3472,
+        3062,
+        3803,
+        3260
+      ],
+      "soil_block_increment_by_alpha": {
+        "soil5": [
+          -0.000163439,
+          -0.000160208,
+          -0.000154419,
+          -0.000148869,
+          -0.000145591,
+          -0.000134164,
+          -0.000099909,
+          -0.000004162
+        ],
+        "soil10": [
+          -0.000205307,
+          -0.000206429,
+          -0.000203837,
+          -0.000199222,
+          -0.000195061,
+          -0.000177758,
+          -0.000134754,
+          -0.000030086
+        ]
+      },
+      "at_original_alpha_001": {
+        "climate26_loss": 0.228433164,
+        "soil5_increment": -0.000148869,
+        "soil10_increment": -0.000199222,
+        "soil5_bootstrap95": [
+          -0.000398983,
+          0.000109162
+        ],
+        "soil10_bootstrap95": [
+          -0.000493969,
+          0.00011623
+        ],
+        "bootstrap_seed": 202610151889
+      }
+    },
+    "salt202610152": {
+      "source_species_per_heldout_fold": [
+        3430,
+        3085,
+        3456,
+        3217,
+        3613
+      ],
+      "soil_block_increment_by_alpha": {
+        "soil5": [
+          -0.000207412,
+          -0.000201477,
+          -0.000190262,
+          -0.000174034,
+          -0.000160325,
+          -0.00014013,
+          -0.000098645,
+          -0.000006228
+        ],
+        "soil10": [
+          -0.000328072,
+          -0.000325437,
+          -0.000316508,
+          -0.000302779,
+          -0.000287558,
+          -0.000242535,
+          -0.000159047,
+          -0.000027272
+        ]
+      },
+      "at_original_alpha_001": {
+        "climate26_loss": 0.22826912,
+        "soil5_increment": -0.000174034,
+        "soil10_increment": -0.000302779,
+        "soil5_bootstrap95": [
+          -0.000439281,
+          0.000086577
+        ],
+        "soil10_bootstrap95": [
+          -0.000631837,
+          0.000024763
+        ],
+        "bootstrap_seed": 202610151890
+      }
+    },
+    "salt202610153": {
+      "source_species_per_heldout_fold": [
+        3435,
+        3670,
+        2781,
+        3110,
+        3805
+      ],
+      "soil_block_increment_by_alpha": {
+        "soil5": [
+          -0.000293129,
+          -0.000290895,
+          -0.000289343,
+          -0.00028425,
+          -0.000264689,
+          -0.000204021,
+          -0.000113805,
+          0.000011947
+        ],
+        "soil10": [
+          -0.000436479,
+          -0.000441194,
+          -0.000450058,
+          -0.00045775,
+          -0.000443806,
+          -0.000365572,
+          -0.000238666,
+          -0.000070328
+        ]
+      },
+      "at_original_alpha_001": {
+        "climate26_loss": 0.227890298,
+        "soil5_increment": -0.00028425,
+        "soil10_increment": -0.00045775,
+        "soil5_bootstrap95": [
+          -0.000544787,
+          -0.000007859
+        ],
+        "soil10_bootstrap95": [
+          -0.000791073,
+          -0.000105363
+        ],
+        "bootstrap_seed": 202610151891
+      }
+    }
+  },
+  "prediction_protocol": {
+    "target": "original classifiable photographed-white fraction per named source taxon",
+    "training_test_split": "5 heldout SHA256 genus folds for every scheme, no shared genus",
+    "training_feature_standardization": "equal-genus training means and SD only",
+    "ridge_penalty": "fixed for every model within one setting, intercept unpenalized",
+    "prediction_range": "clipped [0,1]",
+    "loss": "heldout squared error averaged by named genus, not fitness",
+    "bootstrap": "1999 resamples of fixed whole-genus heldout losses at alpha=.01, no model refitting"
+  },
+  "limitations": [
+    "Four heldout assignments and eight penalties are 32 nonindependent checks on the identical original photo-derived flora.",
+    "Changing penalty and fold changes prediction tasks; tiny positive single-settings can occur. No one setting demonstrates a soil adaptation mechanism.",
+    "Even persistently negative soil predictive increments are not proof that soil is biologically irrelevant or cannot matter at local scale.",
+    "Soil36 photo/site eligibility is nonrandom by elevation and region; photo hue labels are incomplete and classifier-dependent.",
+    "Actual slope, aspect, TPI, TRI and terrain moisture accumulation are unmeasured without an independent original site-linked DEM.",
+    "The source contains no relative fitness, flower pigment chemistry or genetically validated white/coloured morph frequencies.",
+    "Original attributed photo/site, original individual named taxon/genus and positions are not exported."
+  ]
+}

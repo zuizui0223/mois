@@ -1,0 +1,254 @@
+{
+  "schema": "mois_original_16801_environmental_block_partition_plus_residual_transfer_v1",
+  "date": "2026-10-15",
+  "original_photo_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "original_environment_sha256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "eligible_species": 16801,
+  "eligible_genera": 1665,
+  "source_photo_hue_observations_of_eligible_species": 26163,
+  "same_support_soil36_photo_opportunities": 31925,
+  "shapley_explanatory_in_sample": {
+    "genus_centered_photo_white_SST": 214.29253574857768,
+    "in_sample_total_R2": 0.006202366064066511,
+    "predictor_blocks": {
+      "Geography": [
+        "abs_lat",
+        "lon_sin",
+        "lon_cos"
+      ],
+      "Moisture": [
+        "wc_bio12",
+        "wc_vapr_annual_mean"
+      ],
+      "Temperature and radiation": [
+        "wc_bio5",
+        "wc_srad_annual_mean"
+      ],
+      "Elevation": [
+        "wc_elevation_m"
+      ],
+      "Soil5": [
+        "soil_pH",
+        "soil_SOC",
+        "soil_N",
+        "soil_clay",
+        "soil_available_water_proxy"
+      ]
+    },
+    "shapley_bootstrap": {
+      "unit": "original whole genus",
+      "seed": 202610151610,
+      "draws": 999,
+      "method": "genus-resampled WLS moment reweighting; positive Shapley values are nonnegative by construction, not P-values"
+    },
+    "block_attribution": {
+      "Geography": {
+        "shapley_fraction_of_total_within_genus_white_variance": 0.001792034597461285,
+        "shapley_genus_bootstrap95": [
+          0.0007389615765985931,
+          0.004330560478314313
+        ],
+        "partial_R2_given_all_other_four_blocks": 0.0016078433199467395,
+        "partial_R2_genus_bootstrap95": [
+          0.0005435331265282304,
+          0.004091788981607365
+        ]
+      },
+      "Moisture": {
+        "shapley_fraction_of_total_within_genus_white_variance": 0.0014328880453865125,
+        "shapley_genus_bootstrap95": [
+          0.0004211455093256643,
+          0.003735559249453914
+        ],
+        "partial_R2_given_all_other_four_blocks": 0.0011884998337681665,
+        "partial_R2_genus_bootstrap95": [
+          0.00017502146313714227,
+          0.0036739963590112865
+        ]
+      },
+      "Temperature and radiation": {
+        "shapley_fraction_of_total_within_genus_white_variance": 0.0004767824157067833,
+        "shapley_genus_bootstrap95": [
+          0.0002121114424325145,
+          0.0018262246737355315
+        ],
+        "partial_R2_given_all_other_four_blocks": 0.00011139632423128216,
+        "partial_R2_genus_bootstrap95": [
+          0.000009645513109561882,
+          0.0012927543797627203
+        ]
+      },
+      "Elevation": {
+        "shapley_fraction_of_total_within_genus_white_variance": 0.0007730556197516594,
+        "shapley_genus_bootstrap95": [
+          0.0002515156596678357,
+          0.001958649823094243
+        ],
+        "partial_R2_given_all_other_four_blocks": 0.000045266807407925644,
+        "partial_R2_genus_bootstrap95": [
+          1.5692711958863702e-7,
+          0.0008976022896199074
+        ]
+      },
+      "Soil5": {
+        "shapley_fraction_of_total_within_genus_white_variance": 0.001727605385760271,
+        "shapley_genus_bootstrap95": [
+          0.0008308921205935409,
+          0.0044852742172270576
+        ],
+        "partial_R2_given_all_other_four_blocks": 0.0012556352994260262,
+        "partial_R2_genus_bootstrap95": [
+          0.0004489906447692677,
+          0.0038803944570463375
+        ]
+      }
+    }
+  },
+  "within_genus_residual_out_of_genus": {
+    "target": "Sample-mean-centred photo-white fraction among species within a heldout genus. The test-genus mean is retrospectively used to define label/predictors: this is NOT prospective unknown-genus absolute-white prediction.",
+    "loss": "squared error of genus-centred species photograph-white fractions, weighted equally by test genus",
+    "source_folds": "five SHA256 original genus-disjoint folds",
+    "fold_species_counts": [
+      3212,
+      3505,
+      3803,
+      3306,
+      2975
+    ],
+    "model_setup": "training-only equal-genus standardization, zero intercept on genus-centred target, fixed ridge alpha=0.01, no residual prediction clipping",
+    "bootstrap": {
+      "seed": 202610151710,
+      "draws": 1999,
+      "unit": "resample already-heldout genus mean losses; no model refitting"
+    },
+    "model_results": {
+      "null_mean_genus_fraction": {
+        "heldout_residual_squared_error": 0.1287042256748215,
+        "gain_over_geography": -0.00014978729218370623,
+        "gain_over_geography_genus_bootstrap95": [
+          -0.00039879178980850723,
+          0.00009626468117354533
+        ],
+        "increment_vs_geo_climate_elevation": -0.00021619149826992978,
+        "increment_vs_geo_climate_elevation_genus_bootstrap95": [
+          -0.0006737403881626635,
+          0.00019683641295786117
+        ]
+      },
+      "geography": {
+        "heldout_residual_squared_error": 0.1285544383826378,
+        "gain_over_geography": 0,
+        "gain_over_geography_genus_bootstrap95": [
+          0,
+          0
+        ],
+        "increment_vs_geo_climate_elevation": -0.00006640420608622355,
+        "increment_vs_geo_climate_elevation_genus_bootstrap95": [
+          -0.0004173401710372851,
+          0.00028501469715770867
+        ]
+      },
+      "geography_elevation": {
+        "heldout_residual_squared_error": 0.1284346455751141,
+        "gain_over_geography": 0.00011979280752369426,
+        "gain_over_geography_genus_bootstrap95": [
+          -0.00008513955505284609,
+          0.0003294559076600977
+        ],
+        "increment_vs_geo_climate_elevation": 0.000053388601437470706,
+        "increment_vs_geo_climate_elevation_genus_bootstrap95": [
+          -0.00020222455612073365,
+          0.00030087055365986883
+        ]
+      },
+      "geography_moisture": {
+        "heldout_residual_squared_error": 0.12832249589315428,
+        "gain_over_geography": 0.00023194248948352203,
+        "gain_over_geography_genus_bootstrap95": [
+          -0.00010444901300427356,
+          0.0005635880385636324
+        ],
+        "increment_vs_geo_climate_elevation": 0.00016553828339729848,
+        "increment_vs_geo_climate_elevation_genus_bootstrap95": [
+          0.00008308738838236767,
+          0.00025727829029398156
+        ]
+      },
+      "geography_moisture_temperature_elevation": {
+        "heldout_residual_squared_error": 0.12848803417655158,
+        "gain_over_geography": 0.00006640420608622355,
+        "gain_over_geography_genus_bootstrap95": [
+          -0.0002850146971577087,
+          0.00041734017103728507
+        ],
+        "increment_vs_geo_climate_elevation": 0,
+        "increment_vs_geo_climate_elevation_genus_bootstrap95": [
+          0,
+          0
+        ]
+      },
+      "geography_moisture_temperature_elevation_soil5": {
+        "heldout_residual_squared_error": 0.12857031129739863,
+        "gain_over_geography": -0.000015872914760822754,
+        "gain_over_geography_genus_bootstrap95": [
+          -0.0004091614034102811,
+          0.00038403769106756244
+        ],
+        "increment_vs_geo_climate_elevation": -0.0000822771208470463,
+        "increment_vs_geo_climate_elevation_genus_bootstrap95": [
+          -0.00031041758787956757,
+          0.0001271951092380568
+        ]
+      },
+      "geography_soil5": {
+        "heldout_residual_squared_error": 0.12861462736060686,
+        "gain_over_geography": -0.000060188977969055646,
+        "gain_over_geography_genus_bootstrap95": [
+          -0.0003292847944612945,
+          0.0002012064604516514
+        ],
+        "increment_vs_geo_climate_elevation": -0.0001265931840552792,
+        "increment_vs_geo_climate_elevation_genus_bootstrap95": [
+          -0.0005070819151801062,
+          0.0002606412905882017
+        ]
+      },
+      "soil5_only": {
+        "heldout_residual_squared_error": 0.12867260160521024,
+        "gain_over_geography": -0.00011816322257243717,
+        "gain_over_geography_genus_bootstrap95": [
+          -0.00046909951995701413,
+          0.0002327665206961523
+        ],
+        "increment_vs_geo_climate_elevation": -0.00018456742865866071,
+        "increment_vs_geo_climate_elevation_genus_bootstrap95": [
+          -0.000626546269793106,
+          0.000263334860207097
+        ]
+      },
+      "moisture_only": {
+        "heldout_residual_squared_error": 0.12858910175211644,
+        "gain_over_geography": -0.000034663369478632466,
+        "gain_over_geography_genus_bootstrap95": [
+          -0.00041669904642467755,
+          0.0003342397546283598
+        ],
+        "increment_vs_geo_climate_elevation": -0.00010106757556485602,
+        "increment_vs_geo_climate_elevation_genus_bootstrap95": [
+          -0.00043739532814391773,
+          0.0002444064843580035
+        ]
+      }
+    }
+  },
+  "interpretation": "Soil5 can have measurable descriptive within-genus explained-photo-white variance in the source while failing to incrementally improve absolute white fraction prediction for new genera. A second genus-residual prediction diagnostic is not a forward prediction and also does not establish a reproducible incremental soil signal.",
+  "limitations": [
+    "Source colour outcomes are digitally classified photographs, not independently validated plant pigments, genetically segregating colours or reproductive fitness.",
+    "Source soil36 is a highly selected subset with geographic and altitude-dependent predictor availability.",
+    "All13-model total within-genus in-sample R2 is tiny. Shapley shares are noncausal and nonnegative by mathematical construction, not discovery P-values.",
+    "Genus-heldout residual diagnostic uses the TEST genus's own observed species mean to define the target; comparing it with prospective absolute unseen-genus predictions requires keeping this target distinction explicit.",
+    "Resampling already-generated heldout predictions does not resample training or fix nonrandom photographic source selection.",
+    "This block set uses five selected soil variables, not all ten redundant soil texture terms.",
+    "Elevation is point altitude; no actual independently sampled DEM slope/aspect/TPI/TRI terrain effect was estimated."
+  ]
+}

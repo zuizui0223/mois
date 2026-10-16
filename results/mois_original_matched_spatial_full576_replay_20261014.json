@@ -1,0 +1,103 @@
+{
+  "schema": "mois_source_zip_independent_spatial_576_ci_20261014_v1",
+  "status": "PASS_ORIGINAL_576_POINTS_PERCENTILE_AND_MAXT_INTERVALS",
+  "source_class": "RETROSPECTIVE_ORIGINAL_PHOTOGRAPHIC_SOURCE_STATISTICAL_REPLAY",
+  "photo_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "environment_sha256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "frozen_original_spatial_ledger_sha256": "c5ce1502531e2a83d077d3bd6c6b1adf2bdaa9c16c003929923137d7b1f49ba6",
+  "n_original_source_photo_opportunities": 100543,
+  "n_climate26_classifiable_photo_rows": 45836,
+  "original_source_ledger_rows": 576,
+  "bootstrap_resamples": 999,
+  "original_seed_rule": "2026101422 + 11 * len(region_label); same multinomial genus draws for A/B/C and both weighting modes",
+  "regions": [
+    "world",
+    "E90_E180"
+  ],
+  "weights": [
+    "species_equal",
+    "genus_equal"
+  ],
+  "original_three_stages": [
+    "full_photo_in_matched_genera",
+    "same_species_with_broad_geography",
+    "same_species_with_genus_cell"
+  ],
+  "original_three_paired_contrasts": [
+    "opportunity_within_matched_genera",
+    "spatial_adjustment_on_same_species",
+    "combined_coverage_and_spatial_adjustment"
+  ],
+  "n_axes": 6,
+  "n_hues": 4,
+  "comparison_fields": {
+    "points": 576,
+    "percentile_interval_endpoints": 1152,
+    "maxT_interval_endpoints": 576
+  },
+  "max_abs_difference_pp": 1.5987211554602254e-14,
+  "main_results": {
+    "world|genus_equal": {
+      "n_matched_species": 9370,
+      "n_matched_genera": 845,
+      "n_matched_photos": 14268,
+      "stage_B_broad_white_BIO12_pp": 1.3258599317611819,
+      "stage_C_cell_white_BIO12_pp": 0.8079760812355006,
+      "B_minus_C_white_BIO12_pp": 0.5178838505256812,
+      "B_minus_C_white_BIO12_maxT95_pp": [
+        -1.2535069594335995,
+        2.289274660484962
+      ]
+    },
+    "E90_E180|genus_equal": {
+      "n_matched_species": 2886,
+      "n_matched_genera": 280,
+      "n_matched_photos": 4149,
+      "stage_B_broad_white_BIO12_pp": 1.1020024446255747,
+      "stage_C_cell_white_BIO12_pp": -2.075679148633834,
+      "B_minus_C_white_BIO12_pp": 3.1776815932594085,
+      "B_minus_C_white_BIO12_maxT95_pp": [
+        -0.2580350282277273,
+        6.613398214746543
+      ]
+    },
+    "world|species_equal": {
+      "n_matched_species": 9370,
+      "n_matched_genera": 845,
+      "n_matched_photos": 14268,
+      "stage_B_broad_white_BIO12_pp": 1.950173684313247,
+      "stage_C_cell_white_BIO12_pp": 0.7088259754389582,
+      "B_minus_C_white_BIO12_pp": 1.2413477088742888,
+      "B_minus_C_white_BIO12_maxT95_pp": [
+        -1.2430466898347512,
+        3.7257421075833284
+      ]
+    },
+    "E90_E180|species_equal": {
+      "n_matched_species": 2886,
+      "n_matched_genera": 280,
+      "n_matched_photos": 4149,
+      "stage_B_broad_white_BIO12_pp": 4.591499666876066,
+      "stage_C_cell_white_BIO12_pp": 1.247675593692838,
+      "B_minus_C_white_BIO12_pp": 3.3438240731832285,
+      "B_minus_C_white_BIO12_maxT95_pp": [
+        -0.5102932660498383,
+        7.197941412416295
+      ]
+    }
+  },
+  "interpretation": {
+    "same_species_B_C_identical_photographic_hue_and_environment": true,
+    "world_genus_equal_spatial_adjustment_difference_maxT95_excludes_zero": false,
+    "eastern_genus_equal_spatial_adjustment_difference_maxT95_excludes_zero": false,
+    "matched_geography_is_causal_intervention": false,
+    "source_photo_selection_mnar_solved": false,
+    "programme_wide_post_outcome_multiple_testing_controlled": false,
+    "independent_biological_replication": false,
+    "original_image_pixels_remeasured": false,
+    "original_taxon_photo_ids_or_coordinates_exported": false,
+    "photo_rights_and_geoprivacy_review_required": true
+  },
+  "verification_provenance": "Independently computed locally 2026-10-14 from exact SHA256 original photo/environment ZIPs, independent specimen/photo join and weighted genus + genus-by-cell normal equations, 999 paired genus resamples, compared against 576 stored original source rows. No new photos or hypotheses.",
+  "ci_scope": "Public CI checks aggregate receipt against preserved original 576 rows and science limits; raw photo/coordinate ZIPs are not committed or accessible in CI. Independent reproduction requires the original original-source files."
+}

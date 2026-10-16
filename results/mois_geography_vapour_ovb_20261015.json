@@ -1,0 +1,121 @@
+{
+  "schema": "mois_within_genus_geography_vapour_omitted_variable_identity_v1",
+  "source_photo_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "source_environment_sha256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "source_support": {
+    "photo_opportunities": 100543,
+    "photo_climate26_classified": 45836,
+    "taxa": 20694,
+    "genera": 1934,
+    "original_classified_photos_in_eligible_taxa": 38498
+  },
+  "original_genus_equal_BIO12_pp_per_sd_reproduced": 2.254545235,
+  "normalization": {
+    "abs_lat": 15.43958428,
+    "lon_sin": 0.758054319,
+    "lon_cos": 0.632304761,
+    "wc_elevation_m": 884.973608627,
+    "wc_bio12": 736.415681423,
+    "wc_vapr_annual_mean": 0.675559253
+  },
+  "within_genus_genus_equal_correlations": {
+    "absolute_latitude_vs_vapour": -0.517281222,
+    "elevation_vs_vapour": -0.489200084,
+    "precipitation_vs_vapour": 0.444753932
+  },
+  "paired_genus_bootstrap": {
+    "repetitions": 1999,
+    "seed": 202610151216,
+    "uncertainty": "ordinary paired percentile 95% within-design, NOT selection-, multiple-model- or phylogeny-corrected"
+  },
+  "identity_comparisons": {
+    "add_vapour_to_geography": {
+      "reduced": "geography_only",
+      "full": "geography_plus_vapour",
+      "vapour_model_coefficient_pp_per_source_sd": 5.106354962,
+      "vapour_variation_explained_by_reduced_geo_and_climate_predictors_R2": 0.745324772,
+      "vapour_collinearity_vif": 3.926569567,
+      "regression_of_vapour_on_reduced_predictors_standardized_gamma": {
+        "abs_lat": -0.786071902,
+        "lon_sin": 0.020571079,
+        "lon_cos": -0.021134316,
+        "wc_elevation_m": -0.504949374
+      },
+      "geographic_coef_changes": {
+        "abs_lat": {
+          "unit": "10_deg_absolute_latitude",
+          "reduced_white_coef_pp": 0.483200287,
+          "with_vapour_white_coef_pp": 3.082986707,
+          "increase_after_adding_vapour_pp": 2.59978642,
+          "exact_omitted_variable_identity_contribution_pp": 2.59978642,
+          "source_conditional_paired_genus_bootstrap95_for_coef_increase_pp": [
+            0.994976,
+            4.232787
+          ],
+          "reduced_vs_full_same_taxa": true
+        },
+        "wc_elevation_m": {
+          "unit": "1000_m_elevation",
+          "reduced_white_coef_pp": -1.902574654,
+          "with_vapour_white_coef_pp": 1.011015896,
+          "increase_after_adding_vapour_pp": 2.91359055,
+          "exact_omitted_variable_identity_contribution_pp": 2.91359055,
+          "source_conditional_paired_genus_bootstrap95_for_coef_increase_pp": [
+            1.109637,
+            4.759014
+          ],
+          "reduced_vs_full_same_taxa": true
+        }
+      }
+    },
+    "add_vapour_to_geography_and_rain": {
+      "reduced": "geography_plus_rain",
+      "full": "geography_both_moisture",
+      "vapour_model_coefficient_pp_per_source_sd": 3.770767992,
+      "vapour_variation_explained_by_reduced_geo_and_climate_predictors_R2": 0.785732407,
+      "vapour_collinearity_vif": 4.667061335,
+      "regression_of_vapour_on_reduced_predictors_standardized_gamma": {
+        "abs_lat": -0.707830307,
+        "lon_sin": 0.018430463,
+        "lon_cos": 0.016108339,
+        "wc_elevation_m": -0.480343374,
+        "wc_bio12": 0.164330772
+      },
+      "geographic_coef_changes": {
+        "abs_lat": {
+          "unit": "10_deg_absolute_latitude",
+          "reduced_white_coef_pp": 1.100864719,
+          "with_vapour_white_coef_pp": 2.829579572,
+          "increase_after_adding_vapour_pp": 1.728714852,
+          "exact_omitted_variable_identity_contribution_pp": 1.728714852,
+          "source_conditional_paired_genus_bootstrap95_for_coef_increase_pp": [
+            0.127154,
+            3.369675
+          ],
+          "reduced_vs_full_same_taxa": true
+        },
+        "wc_elevation_m": {
+          "unit": "1000_m_elevation",
+          "reduced_white_coef_pp": -1.563682736,
+          "with_vapour_white_coef_pp": 0.483003631,
+          "increase_after_adding_vapour_pp": 2.046686367,
+          "exact_omitted_variable_identity_contribution_pp": 2.046686367,
+          "source_conditional_paired_genus_bootstrap95_for_coef_increase_pp": [
+            0.148322,
+            3.98563
+          ],
+          "reduced_vs_full_same_taxa": true
+        }
+      }
+    }
+  },
+  "interpretation": "On identical source species/genus weights, geography-coefficient changes after adding vapour are exactly explained algebraically by the fitted vapour-white association times the projection of vapour on included geography/rain variables. This is omitted-variable algebra, not ecological causal mediation, independent altitude selection or floral-pigment economics.",
+  "limits": [
+    "Genus-centred photographic species associations: not a species-tree or genetically identified floral morph outcome.",
+    "Omitted-variable identity holds in observational weighted least squares and does NOT estimate causal mediation.",
+    "VIF is source-conditional shared support, not a standalone biological trait effect.",
+    "Bootstrap sensitivity intervals are post hoc and lack study-wide hypothesis/model selection correction.",
+    "Source photo-classification missingness and geography-specific opportunistic sampling remain unaddressed.",
+    "No original photo IDs, taxon names, genotype frequencies, photo media or geographic source rows are exported."
+  ]
+}

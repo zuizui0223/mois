@@ -1,0 +1,167 @@
+{
+  "schema": "mois_moisture_white_genus_climate_regime_v1",
+  "analysis_date": "2026-10-15",
+  "source_photo_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "source_environment_sha256": "6e287294b3a05eaa383be3de644551825915bfecca9c4bde6950b4890f5e16ca",
+  "n_original_photo_opportunities": 100543,
+  "n_original_climate26_classifiable_photos": 45836,
+  "n_primary_qualified_species": 20694,
+  "n_primary_qualified_genera": 1934,
+  "n_primary_qualified_classifiable_photos": 38498,
+  "source_original_photo_moisture_sd": {
+    "wc_bio12": 736.415681423,
+    "wc_vapr_annual_mean": 0.675559253
+  },
+  "source_original_genus_equal_within_coefficients_pp": {
+    "wc_bio12": 2.254545235,
+    "wc_vapr_annual_mean": 3.951850325
+  },
+  "frozen_original_species_and_genus_support": true,
+  "source_photo_colours_relabelled": false,
+  "bootstrap_seed_base": 2026101608,
+  "bootstrap_replicates": 1999,
+  "moderator_definitions": {
+    "wc_srad_annual_mean": "annual mean surface solar radiation (archived source units)",
+    "wc_bio5": "warmest month maximum temperature (archived source units)",
+    "wc_bio12": "annual precipitation (archived source units)"
+  },
+  "design": "Split the 1934 source-eligible genera into equal halves at the median of equally weighted eligible species environmental averages per genus. For each half, fit the original genus-centred photographic-white/moisture slope with genus-equal species weighting, globally fixed original photo-site moisture/geography SD and broad within-genus geography covariates. Draw 1999 multinomial genus bootstrap replicates independently within halves and compare high minus low. All three moderator splits are retrospective source-exposed, not prospective ecological treatments.",
+  "results_by_genus_mean_environment": {
+    "wc_srad_annual_mean": {
+      "median_genus_mean_in_archived_source_unit": 16945.083333,
+      "n_low_mean_genera": 967,
+      "n_high_mean_genera": 967,
+      "axes": {
+        "wc_bio12": {
+          "low_genus_pp_per_original_photo_environment_sd": 2.076415,
+          "low_percentile_genus_bootstrap95_pp": [
+            0.58139,
+            3.616692
+          ],
+          "high_genus_pp_per_original_photo_environment_sd": 2.481364,
+          "high_percentile_genus_bootstrap95_pp": [
+            0.566831,
+            4.431913
+          ],
+          "high_minus_low_pp": 0.404949,
+          "high_minus_low_percentile_bootstrap95_pp": [
+            -1.995676,
+            2.929692
+          ],
+          "bootstrap_fraction_high_greater_than_low": 0.635318
+        },
+        "wc_vapr_annual_mean": {
+          "low_genus_pp_per_original_photo_environment_sd": 4.191521,
+          "low_percentile_genus_bootstrap95_pp": [
+            1.438327,
+            6.685497
+          ],
+          "high_genus_pp_per_original_photo_environment_sd": 4.159049,
+          "high_percentile_genus_bootstrap95_pp": [
+            1.484934,
+            6.614575
+          ],
+          "high_minus_low_pp": -0.032472,
+          "high_minus_low_percentile_bootstrap95_pp": [
+            -3.519059,
+            3.584493
+          ],
+          "bootstrap_fraction_high_greater_than_low": 0.495248
+        }
+      }
+    },
+    "wc_bio5": {
+      "median_genus_mean_in_archived_source_unit": 28.113153,
+      "n_low_mean_genera": 967,
+      "n_high_mean_genera": 967,
+      "axes": {
+        "wc_bio12": {
+          "low_genus_pp_per_original_photo_environment_sd": 1.781415,
+          "low_percentile_genus_bootstrap95_pp": [
+            0.180245,
+            3.337812
+          ],
+          "high_genus_pp_per_original_photo_environment_sd": 2.485231,
+          "high_percentile_genus_bootstrap95_pp": [
+            0.7037,
+            4.322512
+          ],
+          "high_minus_low_pp": 0.703816,
+          "high_minus_low_percentile_bootstrap95_pp": [
+            -1.582908,
+            3.059569
+          ],
+          "bootstrap_fraction_high_greater_than_low": 0.71986
+        },
+        "wc_vapr_annual_mean": {
+          "low_genus_pp_per_original_photo_environment_sd": 3.878977,
+          "low_percentile_genus_bootstrap95_pp": [
+            1.284181,
+            6.504918
+          ],
+          "high_genus_pp_per_original_photo_environment_sd": 4.030609,
+          "high_percentile_genus_bootstrap95_pp": [
+            1.35983,
+            6.776298
+          ],
+          "high_minus_low_pp": 0.151633,
+          "high_minus_low_percentile_bootstrap95_pp": [
+            -3.406229,
+            4.055593
+          ],
+          "bootstrap_fraction_high_greater_than_low": 0.544272
+        }
+      }
+    },
+    "wc_bio12": {
+      "median_genus_mean_in_archived_source_unit": 951.614583,
+      "n_low_mean_genera": 967,
+      "n_high_mean_genera": 967,
+      "axes": {
+        "wc_bio12": {
+          "low_genus_pp_per_original_photo_environment_sd": 3.380609,
+          "low_percentile_genus_bootstrap95_pp": [
+            1.059443,
+            5.639538
+          ],
+          "high_genus_pp_per_original_photo_environment_sd": 2.021435,
+          "high_percentile_genus_bootstrap95_pp": [
+            0.622996,
+            3.496901
+          ],
+          "high_minus_low_pp": -1.359174,
+          "high_minus_low_percentile_bootstrap95_pp": [
+            -4.074002,
+            1.314276
+          ],
+          "bootstrap_fraction_high_greater_than_low": 0.169085
+        },
+        "wc_vapr_annual_mean": {
+          "low_genus_pp_per_original_photo_environment_sd": 4.454509,
+          "low_percentile_genus_bootstrap95_pp": [
+            1.511168,
+            7.34167
+          ],
+          "high_genus_pp_per_original_photo_environment_sd": 3.748766,
+          "high_percentile_genus_bootstrap95_pp": [
+            1.351008,
+            6.18496
+          ],
+          "high_minus_low_pp": -0.705743,
+          "high_minus_low_percentile_bootstrap95_pp": [
+            -4.360449,
+            3.210454
+          ],
+          "bootstrap_fraction_high_greater_than_low": 0.369185
+        }
+      }
+    }
+  },
+  "limits": [
+    "Within each split, 95% percentile intervals are ordinary genus bootstraps, not original 24-hue-axis maxT nor study-wide post-selection adjustment.",
+    "The observed environmental-median cutpoints are fixed during bootstrap; all environmental regimes are nonrandom samples of genera.",
+    "Group coefficients concern different sampled taxa and different within-group covariate supports; no causal moderator or relative plant fitness is estimated.",
+    "The dataset lacks calibrated floral/UV pigment, photosynthetic energy budgets, pollen or seed success, genotypes and frequency-dependent fitness.",
+    "No original photo IDs, species names, genus names, geographic observations, original photo media or site coordinates are exported in this report."
+  ]
+}

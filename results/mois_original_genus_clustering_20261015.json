@@ -1,0 +1,194 @@
+{
+  "schema": "mois_photo_genus_clustering_source_perm_v1",
+  "date": "2026-10-15",
+  "original_photo_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "photographic_source": "original 42111 breadth and 85337 taxon-cell rows; 26905 photo-ID overlaps removed; source four-hue class labels unchanged",
+  "data_n": {
+    "unique_original_photos": 100543,
+    "source_classifiable_photos": 45953,
+    "taxa_with_classifiable_photos": 25064,
+    "genera_with_classifiable_photos": 5369
+  },
+  "analysis": "Taxon-level mean of classifiable photo-white(1)/coloured(0). Restrict to genera with >=3 classifiable taxa; weighted genus-mean explained fraction of across-taxon colour variance, and fractions of eligible genera with genus mean <=0.1 or >=0.9. Source-locked species-value permutation keeps genus sample sizes and p_i intact. Four exploratory tests: photo-union and original one-photo breadth, with global and rainfall/latitude/photo-depth conditional permutations. These are post hoc, not programme-wide error controlled.",
+  "near_pure_threshold": "Taxon-mean classified-photo white <=10% or >=90%; not genetically fixed morphological states",
+  "comparisons": {
+    "union_global": {
+      "n_species": 20725,
+      "n_genera": 1935,
+      "n_genera_ge5": 1185,
+      "species_equal_white_fraction": 0.4604269,
+      "conditioning": "global",
+      "conditioning_detail": {
+        "n_blocks": 1,
+        "photo_depth_categories": "not conditioned",
+        "rainfall_quintile_categories": "not conditioned",
+        "absolute_latitude_categories": "not conditioned"
+      },
+      "permutations": 1999,
+      "seed": 2026101501,
+      "metrics": {
+        "genus_r2_species_white_fraction": {
+          "observed": 0.343762761,
+          "null_mean": 0.093329281,
+          "null_95": [
+            0.088427361,
+            0.098794382
+          ],
+          "upper_tail_permutation_p": 0.0005
+        },
+        "genera_nearly_white_or_nonwhite_ge3_fraction": {
+          "observed": 0.295090439,
+          "null_mean": 0.076950361,
+          "null_95": [
+            0.066149871,
+            0.088888889
+          ],
+          "upper_tail_permutation_p": 0.0005
+        },
+        "genera_nearly_white_or_nonwhite_ge5_fraction": {
+          "observed": 0.233755274,
+          "null_mean": 0.021870429,
+          "null_95": [
+            0.01350211,
+            0.030379747
+          ],
+          "upper_tail_permutation_p": 0.0005
+        }
+      }
+    },
+    "union_conditioned": {
+      "n_species": 20725,
+      "n_genera": 1935,
+      "n_genera_ge5": 1185,
+      "species_equal_white_fraction": 0.4604269,
+      "conditioning": "rainfall_latitude_photo_depth",
+      "conditioning_detail": {
+        "n_blocks": 46,
+        "photo_depth_categories": "1, 2, >=3 classifiable photos/taxon",
+        "rainfall_quintile_categories": "five original species-mean rainfall quintiles plus unknown",
+        "absolute_latitude_categories": "0-30, 30-60, >=60 degrees plus unknown"
+      },
+      "permutations": 1999,
+      "seed": 2026101502,
+      "metrics": {
+        "genus_r2_species_white_fraction": {
+          "observed": 0.343762761,
+          "null_mean": 0.096172404,
+          "null_95": [
+            0.090768792,
+            0.101493721
+          ],
+          "upper_tail_permutation_p": 0.0005
+        },
+        "genera_nearly_white_or_nonwhite_ge3_fraction": {
+          "observed": 0.295090439,
+          "null_mean": 0.079441012,
+          "null_95": [
+            0.068217054,
+            0.090956072
+          ],
+          "upper_tail_permutation_p": 0.0005
+        },
+        "genera_nearly_white_or_nonwhite_ge5_fraction": {
+          "observed": 0.233755274,
+          "null_mean": 0.022050688,
+          "null_95": [
+            0.014345992,
+            0.030379747
+          ],
+          "upper_tail_permutation_p": 0.0005
+        }
+      }
+    },
+    "breadth_global": {
+      "n_species": 14639,
+      "n_genera": 1529,
+      "n_genera_ge5": 895,
+      "species_equal_white_fraction": 0.456656875,
+      "conditioning": "global",
+      "conditioning_detail": {
+        "n_blocks": 1,
+        "photo_depth_categories": "not conditioned",
+        "rainfall_quintile_categories": "not conditioned",
+        "absolute_latitude_categories": "not conditioned"
+      },
+      "permutations": 1999,
+      "seed": 2026101503,
+      "metrics": {
+        "genus_r2_species_white_fraction": {
+          "observed": 0.33855601,
+          "null_mean": 0.104498256,
+          "null_95": [
+            0.098197974,
+            0.111054926
+          ],
+          "upper_tail_permutation_p": 0.0005
+        },
+        "genera_nearly_white_or_nonwhite_ge3_fraction": {
+          "observed": 0.313276651,
+          "null_mean": 0.098801526,
+          "null_95": [
+            0.085022891,
+            0.113145847
+          ],
+          "upper_tail_permutation_p": 0.0005
+        },
+        "genera_nearly_white_or_nonwhite_ge5_fraction": {
+          "observed": 0.217877095,
+          "null_mean": 0.022739303,
+          "null_95": [
+            0.013407821,
+            0.032402235
+          ],
+          "upper_tail_permutation_p": 0.0005
+        }
+      }
+    },
+    "breadth_conditioned": {
+      "n_species": 14639,
+      "n_genera": 1529,
+      "n_genera_ge5": 895,
+      "species_equal_white_fraction": 0.456656875,
+      "conditioning": "rainfall_latitude_photo_depth",
+      "conditioning_detail": {
+        "n_blocks": 18,
+        "photo_depth_categories": "1, 2, >=3 classifiable photos/taxon",
+        "rainfall_quintile_categories": "five original species-mean rainfall quintiles plus unknown",
+        "absolute_latitude_categories": "0-30, 30-60, >=60 degrees plus unknown"
+      },
+      "permutations": 1999,
+      "seed": 2026101504,
+      "metrics": {
+        "genus_r2_species_white_fraction": {
+          "observed": 0.33855601,
+          "null_mean": 0.10639749,
+          "null_95": [
+            0.099652708,
+            0.113217205
+          ],
+          "upper_tail_permutation_p": 0.0005
+        },
+        "genera_nearly_white_or_nonwhite_ge3_fraction": {
+          "observed": 0.313276651,
+          "null_mean": 0.099985244,
+          "null_95": [
+            0.086330935,
+            0.114453891
+          ],
+          "upper_tail_permutation_p": 0.0005
+        },
+        "genera_nearly_white_or_nonwhite_ge5_fraction": {
+          "observed": 0.217877095,
+          "null_mean": 0.023464805,
+          "null_95": [
+            0.01452514,
+            0.032458101
+          ],
+          "upper_tail_permutation_p": 0.0005
+        }
+      }
+    }
+  },
+  "interpretation": "Visible photographed flower-colour values cluster much more strongly within nominal genera than expected from reallocating the same observed species colour fractions among size-matched genera, including in a coarse environment/photo-depth stratification. This alone neither identifies phylogenetic signal beyond genus labels, nor local sympatric balance, nor a pigment synthesis cost or rare-morph fitness advantage. The global near-half genus-equal mean masks heterogeneous genus-level observational composition.",
+  "publication_boundary": "No raw/source photo IDs, names, sites, photograph attributions or licensed original tables exported. Original photos and classification mechanism not remeasured; null permutations concern retrospective species fractions and observed genus memberships only. Raw original ZIP is needed for source replay; public CI tests aggregate-only and synthetic properties."
+}

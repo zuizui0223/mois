@@ -1,0 +1,39 @@
+{
+  "schema": "mois_photo_nonresponse_sharp_bounds_v1",
+  "role": "Reporting-only hypothetical latent-white sharp bounds; no reclassification, no model refit, no new biological observations",
+  "source_receipt": "results/source_receipts/photo_colour_missingness_mnar.json",
+  "original_photo_source_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+  "n_all_original_photo_opportunities": 100543,
+  "n_georeferenced_rain_photo_opportunities": 100255,
+  "comparison": "unweighted original photo opportunity rainfall deciles 0 and 9; classified-only observed white fractions",
+  "dry_decile": {
+    "n_photo_opportunities": 10084,
+    "n_classified": 4981,
+    "n_unclassified": 5103,
+    "n_classified_white": 2082,
+    "classified_white_fraction": 0.41798836,
+    "hypothetical_all_photo_white_share_percent_bounds": [
+      20.646569,
+      71.251488
+    ]
+  },
+  "wet_decile": {
+    "n_photo_opportunities": 9990,
+    "n_classified": 3904,
+    "n_unclassified": 6086,
+    "n_classified_white": 2079,
+    "classified_white_fraction": 0.53253074,
+    "hypothetical_all_photo_white_share_percent_bounds": [
+      20.810811,
+      81.731732
+    ]
+  },
+  "observed_classified_only_wet_minus_dry_pp": 11.454238,
+  "hypothetical_all_photo_wet_minus_dry_sharp_bounds_pp": [
+    -50.440677,
+    61.085163
+  ],
+  "original_mnar_tipping_wet_unknown_white_if_dry_unknown_white_is_0_5": 0.412637,
+  "identification_assumption": "Every unclassifiable photo opportunity is hypothetically assigned a latent binary white/nonwhite status; photo without a diagnosable floral organ may have no such well-defined latent trait.",
+  "scope_restriction": "Extreme logical bounds, not bootstrap confidence intervals or sensitivity bounds for genus-adjusted BIO12 regression; no adjusted causal or ecological population inference."
+}
