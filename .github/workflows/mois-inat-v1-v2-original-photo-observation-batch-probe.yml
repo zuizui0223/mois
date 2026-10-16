@@ -1,0 +1,69 @@
+name: MOIS iNat batch observation UUID and numeric ID read-only test
+
+on:
+  push:
+    branches:
+      - analysis/mois-real-2025-seasonal-climate-20261016
+    paths:
+      - .github/workflows/mois-inat-v1-v2-original-photo-observation-batch-probe.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  check-read-only-api-multiple-original-uuids:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests
+      - name: Retrieve the same original 64-source test artifact without image downloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p provider_archive observation_api_probe
+          gh run download 38909164068 --repo zuizui0223/fcp \
+            --name fcp-actual-2025-original-first64-summer-autumn-colour-ROI-STAGE-UNVERIFIED \
+            --dir provider_archive
+          python - <<'PY'
+          import csv,json,requests,uuid
+          from pathlib import Path
+          rows=list(csv.DictReader(open('provider_archive/postblind/first_original_source_matched_season_64_photo_roi_QC.csv')))
+          original_ids=[r['observation_id'] for r in rows[:4]]
+          assert all(str(uuid.UUID(v))==v for v in original_ids)
+          joined=','.join(original_ids)
+          s=requests.Session()
+          v2=s.get('https://api.inaturalist.org/v2/observations/'+joined,
+             params={'fields':'uuid,id,observed_on,photos,annotations'},
+             timeout=(8,30),headers={'User-Agent':'MOIS-original-photo-phenology-audit/1.0'})
+          print('MOIS_MULTIPLE_OBSERVATION_UUID_V2_RESULT',v2.status_code,len(v2.content),v2.url,flush=True)
+          a=v2.json() if v2.ok else {}
+          result=a.get('results') or []
+          print('MOIS_V2_BATCH_OBSERVATION_COUNT',len(result),[(r.get('uuid'),r.get('id')) for r in result[:4]],flush=True)
+          numeric=[str(r['id']) for r in result if str(r.get('id','')).isdigit()]
+          status={'v2':{'status':v2.status_code,'requested':4,'returned':len(result),'ids':numeric}}
+          if numeric:
+              v1=s.get('https://api.inaturalist.org/v1/observations/'+','.join(numeric),
+                 timeout=(8,30),headers={'User-Agent':'MOIS-original-photo-phenology-audit/1.0'})
+              print('MOIS_MULTIPLE_NUMERIC_V1_RESULT',v1.status_code,len(v1.content),flush=True)
+              b=v1.json() if v1.ok else {}
+              results=b.get('results') or []
+              print('MOIS_V1_MULTI_ANNOTATION_FIELDS',len(results),
+                [(r.get('uuid'),'annotations' in r,len(r.get('annotations') or [])) for r in results],flush=True)
+              status['v1']={'status':v1.status_code,'requested':len(numeric),'returned':len(results)}
+          Path('observation_api_probe/batch_original_source_observation_API_2025_v1_v2.json').write_text(
+              json.dumps({'status':'LIVE_CURRENT_OBSERVATION_ONLY_NOT_20260927_ANTHESIS',
+                          'data':status,'not_verified_photo_organ':True},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-iNat-v1v2-2025-photo-source-observation-read-only-batch-test
+          path: observation_api_probe/
+          retention-days: 30
