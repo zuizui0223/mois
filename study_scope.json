@@ -40,5 +40,27 @@
     "genetic polymorphism prevalence or fitness equilibrium",
     "universal moisture causal response"
   ],
-  "prospective_analyses": "Separate seasonal flowering-photo opportunity from classified hue; require observed date and flower-visible status, month/year-specific climate, spatial and taxonomic adjustment, missing-colour sensitivity; do not relabel monthly climate from long-term BIO rasters"
+  "prospective_analyses": "Separate seasonal flowering-photo opportunity from classified hue; require observed date and flower-visible status, month/year-specific climate, spatial and taxonomic adjustment, missing-colour sensitivity; do not relabel monthly climate from long-term BIO rasters",
+  "active_research_axes": [
+    {
+      "programme": "historical_global_interspecific_moisture",
+      "unit": "species hue proportions nested in genus and sampled geographic support",
+      "status": "frozen_analysis_receipts"
+    },
+    {
+      "programme": "global_seasonal_flower_colour_environment",
+      "unit": "dated photographed open flowers within taxon, local site and season-year, then globally synthesized",
+      "status": "dated_source_opportunity_and_technical_ROI_only_NO_SEASONAL_COLOUR_CLIMATE_EFFECT"
+    }
+  ],
+  "seasonal_upstream_20261016": {
+    "prior_photo_opportunity_ids": 3430502,
+    "n_source_taxa": 1000,
+    "n_original_pixel_attempts": 64,
+    "n_automatic_colour_classifiable": 27,
+    "n_open_flower_organs_independently_verified": false,
+    "n_within_site_seasonal_climate_effects_estimated": 0,
+    "source_receipt": "docs/MOIS_SEASONAL_FCP_SOURCE_TRANSFER_20261016.json",
+    "notes": "Not added to the historical 100543/45953 classifier denominator"
+  }
 }
