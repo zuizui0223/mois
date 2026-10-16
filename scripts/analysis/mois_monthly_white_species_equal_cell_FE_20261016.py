@@ -238,6 +238,9 @@ def analyze(climate_csv:Path,climate_receipt:Path,out:Path,*,
         or not synthetic and source.get("original_48_raster_manifest_sha256")!=REAL_MANIFEST_SHA):
         raise ValueError("Not a full SHA-bound selected-original-photo 48-month climate measurement")
     original=Counter()
+    by_obs_month=defaultdict(lambda:{
+        "opportunities":0,"classified":0,"white":0,"sumw":0.,
+        "classifiedw":0.,"whitew":0.})
     taxa=defaultdict(lambda:[0.,0.,0])
     monthly_x={}
     monthly_domain={}
@@ -255,9 +258,29 @@ def analyze(climate_csv:Path,climate_receipt:Path,out:Path,*,
             four=row["measurement_status"]=="classified_four_state_morph"
             if four!=(row["morph"] in COLOUR):
                 raise ValueError("Unclassifiable photograph cannot count as coloured or white")
+            weight=float(row["sample_observation_weight"])
+            if not math.isfinite(weight) or weight<1:
+                raise ValueError("Invalid original independent observation inclusion probability")
+            month_token=row["original_month"]
+            if month_token and (not month_token.isdecimal() or
+                                not 1<=int(month_token)<=12):
+                raise ValueError("Invalid source observation month or calendar assignment")
+            annotation_domain=row["domain"]
+            if annotation_domain not in (
+                "NORTH_EXTRATROPICAL","SOUTH_EXTRATROPICAL",
+                "TROPICAL","UNKNOWN_GEOGRAPHY"):
+                raise ValueError("Unknown source observation hemisphere or tropic")
+            monthly=by_obs_month[(annotation_domain,month_token or "UNKNOWN_MONTH")]
+            white=four and row["morph"]=="white"
+            monthly["opportunities"]+=1
+            monthly["classified"]+=int(four)
+            monthly["white"]+=int(white)
+            monthly["sumw"]+=weight
+            monthly["classifiedw"]+=weight*four
+            monthly["whitew"]+=weight*white
             original["class"]+=int(four)
+            original["white"]+=int(white)
             if not four:continue
-            original["white"]+=int(row["morph"]=="white")
             if row["source_climate_join_status"]!="VALID":
                 original["class_photo_climate_missing"]+=1
                 continue
@@ -267,9 +290,6 @@ def analyze(climate_csv:Path,climate_receipt:Path,out:Path,*,
             cell=(row["climate_grid_row"],row["climate_grid_col"])
             if not all(x.isdecimal() for x in cell):
                 raise ValueError("No source climate-cell identity")
-            weight=float(row["sample_observation_weight"])
-            if not math.isfinite(weight) or weight<1:
-                raise ValueError("Invalid original independent observation inclusion probability")
             q=tuple(float(row[k]) for k in DYNAMIC)
             if not all(math.isfinite(v) for v in q):
                 raise ValueError("Missing monthly source climate for classified photo")
@@ -312,6 +332,30 @@ def analyze(climate_csv:Path,climate_receipt:Path,out:Path,*,
     model_a=fit_fe(aggregates,include_month=False,min_cells=min_cells)
     model_b=fit_fe(aggregates,include_month=True,min_cells=min_cells)
     model_c=fit_fe(aggregates,include_month=True,min_cells=min_cells,zone_month=True)
+    source_photo_by_month=[]
+    for (domain,observed_month),b in sorted(by_obs_month.items()):
+        if b["opportunities"]<10:
+            source_photo_by_month.append({
+                "domain":domain,"original_observed_month":observed_month,
+                "public_small_opp_cell_suppressed_below":10
+            })
+            continue
+        source_photo_by_month.append({
+            "domain":domain,"original_observed_month":observed_month,
+            "original_selected_source_observations":b["opportunities"],
+            "n_roi_four_colour_classifiable":b["classified"],
+            "n_roi_classified_white":b["white"],
+            "observation_weighted_photo_classifiability":(
+                b["classifiedw"]/b["sumw"] if b["sumw"] else None),
+            "observation_weighted_photo_white_given_classifiable":(
+                b["whitew"]/b["classifiedw"] if b["classifiedw"] else None),
+            "hypothetical_all_photo_white_lower":(
+                b["whitew"]/b["sumw"] if b["sumw"] else None),
+            "hypothetical_all_photo_white_upper":(
+                (b["whitew"]+b["sumw"]-b["classifiedw"])/b["sumw"]
+                if b["sumw"] else None),
+            "unclassifiable_photo_may_have_no_flower_trait":True,
+        })
     public={
         "schema":SCHEMA,"status":STATUS,
         "verified_private_climate_photo_source_receipt_sha256":sha256_file(climate_receipt),
@@ -319,6 +363,10 @@ def analyze(climate_csv:Path,climate_receipt:Path,out:Path,*,
         "n_classifiable_four_hue":original["class"],
         "n_classifiable_white":original["white"],
         "n_classifiable_with_missing_monthly_climate":original["class_photo_climate_missing"],
+        "original_observation_weighted_monthly_photo_classifiability_and_missingness":
+            source_photo_by_month,
+        "monthly_photo_roi_success_is_not_actual_population_flowering":True,
+        "hypothetical_all_photo_color_assignments_not_biological_white_prevalence":True,
         "n_species_cell_month_rows":len(taxa),
         "n_month_source_climate_cells":len(aggregates),
         "n_distinct_climate_cells_with_classified_flowers":len(months_by_cell),
