@@ -72,7 +72,12 @@ def climate_atlas(normals, *, synthetic=False):
     cv=np.std(data,axis=0)/np.where(mean>0,mean,1)
     aseasonal=(cv<CV_LIMIT)|((maximum-minimum)<MONTHLY_SPAN_LIMIT_MM)
     seasonal=valid&(~aseasonal)
-    peak_month=np.argmax(data,axis=0)+1
+    # Equal highest-precipitation normal months are common where the source
+    # rounds monthly data. Share a cell's area equally among peak months;
+    # do NOT spuriously mark the first tied month as the rainy season.
+    ties=(data==maximum[None,:,:])&valid[None,:,:]
+    n_tied=np.maximum(1,np.sum(ties,axis=0))
+    weighted_tied_area=km2/n_tied
     tropic=np.abs(lat_mid)<23.5
     north=lat_mid>=23.5
     south=lat_mid<=-23.5
@@ -103,11 +108,11 @@ def climate_atlas(normals, *, synthetic=False):
             "area_fraction_of_seasonal_cells_peak_rainfall_in_calendar_quarter":{},
         }
         for quarter in range(1,5):
-            quarter_mask=mask_seasonal&(
-                ((peak_month-1)//3+1)==quarter)
+            peak_share=np.sum(ties[(quarter-1)*3:quarter*3],axis=0)
             result["area_fraction_of_seasonal_cells_peak_rainfall_in_calendar_quarter"][
                 f"Q{quarter}"]=_finite_fraction(
-                    float(np.sum(km2[quarter_mask])),seasonal_area)
+                    float(np.sum((weighted_tied_area*peak_share)[mask_seasonal])),
+                    seasonal_area)
         if domain!="TROPICAL":
             if domain=="NORTH_EXTRATROPICAL":
                 summer=(6,7,8)
@@ -115,10 +120,12 @@ def climate_atlas(normals, *, synthetic=False):
             else:
                 summer=(12,1,2)
                 winter=(6,7,8)
-            summer_area=float(np.sum(km2[mask_seasonal&
-                                     np.isin(peak_month,summer)]))
-            winter_area=float(np.sum(km2[mask_seasonal&
-                                     np.isin(peak_month,winter)]))
+            summer_share=np.sum(ties[np.array(summer)-1],axis=0)
+            winter_share=np.sum(ties[np.array(winter)-1],axis=0)
+            summer_area=float(np.sum(
+                (weighted_tied_area*summer_share)[mask_seasonal]))
+            winter_area=float(np.sum(
+                (weighted_tied_area*winter_share)[mask_seasonal]))
             result["seasonal_area_fraction_with_wettest_month_in_local_summer"]=_finite_fraction(
                 summer_area,seasonal_area)
             result["seasonal_area_fraction_with_wettest_month_in_local_winter"]=_finite_fraction(
@@ -158,7 +165,7 @@ def climate_atlas(normals, *, synthetic=False):
         "aseasonal_cv_threshold":CV_LIMIT,
         "aseasonal_max_minus_min_monthly_mm_threshold":MONTHLY_SPAN_LIMIT_MM,
         "region_definitions":"TROPICAL if abs(lat)<23.5; northern extratropical if lat>=23.5; southern extratropical if lat<=-23.5",
-        "wettest_month_ties_resolved_by_first_calendar_month_for_descriptive_area_only":True,
+        "wettest_month_ties_split_equally_across_tied_months_for_aggregate_area":True,
         "latitude_domains":outputs,
         "normal_precipitation_not_observed_weather_at_photo_date":True,
         "flora_phenotype_occurrences_or_fitness_observed":False,
