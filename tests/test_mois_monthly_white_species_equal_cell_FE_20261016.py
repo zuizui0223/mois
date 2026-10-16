@@ -128,6 +128,12 @@ def test_source_bound_photo_classifiability_and_equal_species_cellmonth(tmp_path
     assert report["n_month_source_climate_cells"]==2
     assert report["n_species_cell_month_rows"]==4
     assert report["n_climate_cells_with_at_least_two_distinct_classified_flower_months"]==1
+    # Monthly sample bins with fewer than 10 original selected opportunities
+    # stay in the denominator but do not expose tiny-colour percentages.
+    monthly=report["original_observation_weighted_monthly_photo_classifiability_and_missingness"]
+    assert len(monthly)==2
+    assert all(x["public_small_opp_cell_suppressed_below"]==10 for x in monthly)
+    assert report["monthly_photo_roi_success_is_not_actual_population_flowering"] is True
     assert len(report["three_exploratory_fixed_effect_support_and_models"])==3
     assert all(x["status"].startswith("NOT_ESTIMABLE") for x in report[
         "three_exploratory_fixed_effect_support_and_models"])
@@ -240,3 +246,63 @@ def test_exactly_29_repeat_month_cells_may_have_a_point_but_must_not_get_cluster
     assert fit["geographic_cell_cluster_robust_uncertainty"]["status"]==(
         "NOT_ESTIMABLE_FEWER_THAN_30_REPEAT_CLIMATE_CELLS")
     assert "intervals" not in fit["geographic_cell_cluster_robust_uncertainty"]
+
+
+
+def test_monthly_roi_nonresponse_weighted_bounds_never_impute_blank_flower_as_colour(tmp_path):
+    photo=tmp_path/"protected_flower_month.csv"
+    rows=[]
+    for month in (3,7):
+        for i in range(12):
+            hue="white" if i<2 else "red_pink" if i<6 else "mixed_uncertain"
+            rows.append({
+                "measurement_id":f"FCPR-{month}-{i}",
+                "observation_id":f"unique-{month}-{i}",
+                "inat_taxon_id":str(i%3+1),
+                "genus":"Fictional",
+                "domain":"NORTH_EXTRATROPICAL",
+                "original_month":str(month),
+                "climate_grid_row":"400",
+                "climate_grid_col":"990",
+                "source_climate_join_status":"VALID",
+                "sample_observation_weight":"2" if i<2 else "1",
+                "morph":hue,
+                "measurement_status":(
+                    "classified_four_state_morph" if hue!="mixed_uncertain"
+                    else "not_evaluable_roi_or_flip_gate"),
+                **dict(zip(m.DYNAMIC,
+                           [float(month),month*1000.,month*30.,month*.1]))
+            })
+    with photo.open("w",newline="") as f:
+        w=csv.DictWriter(f,fieldnames=sorted(m.REQUIRED))
+        w.writeheader()
+        w.writerows(rows)
+    receipt=tmp_path/"original_measurement_receipt.json"
+    receipt.write_text(json.dumps({
+        "schema":"mois_original_photo_all_monthly_dynamic_climate_site_join_v1",
+        "status":"COMPLETE_EXACT_ORIGINAL_SOURCE_PHOTO_MONTHLY_T_S_P_VAPR_JOIN_NOT_13ENV_REGRESSION",
+        "new_private_photo_monthly_climate_csv_sha256":m.sha256_file(photo),
+        "seasonal_photo_white_environment_regression_fitted":False,
+        "original_48_raster_manifest_sha256":"SYNTHETIC_ONLY",
+        "synthetic_test_only":True,
+        "selected_original_photographs":24,
+        "source_four_colour_classifiable_photos":12,
+        "source_classifiable_white_photos":4
+    }))
+    report=m.analyze(photo,receipt,tmp_path/"actual_model.json",synthetic=True)
+    groups=report["original_observation_weighted_monthly_photo_classifiability_and_missingness"]
+    assert len(groups)==2
+    for g in groups:
+        assert g["original_selected_source_observations"]==12
+        assert g["n_roi_four_colour_classifiable"]==6
+        assert g["n_roi_classified_white"]==2
+        # Two white photos with weight 2, four coloured with weight 1,
+        # six with unclassifiable original source pixels and weight 1.
+        assert g["observation_weighted_photo_classifiability"]==pytest.approx(8/14)
+        assert g["observation_weighted_photo_white_given_classifiable"]==pytest.approx(.5)
+        assert g["hypothetical_all_photo_white_lower"]==pytest.approx(4/14)
+        assert g["hypothetical_all_photo_white_upper"]==pytest.approx(10/14)
+        assert g["unclassifiable_photo_may_have_no_flower_trait"] is True
+    assert report["hypothetical_all_photo_color_assignments_not_biological_white_prevalence"] is True
+    assert all(x["status"].startswith("NOT_ESTIMABLE")
+        for x in report["three_exploratory_fixed_effect_support_and_models"])
