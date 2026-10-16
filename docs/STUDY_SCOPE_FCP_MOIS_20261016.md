@@ -24,6 +24,12 @@ Original source-classifiable white fraction 21,574/45,953 = 46.95% is a **condit
 - Neither shared climatic measurement, nominal genus conditioning, missing-colour photos, nor photographic colour classifiers identify physiological pigment costs, universal local adaptation or a robust geographic causal moisture mechanism.
 - The original same-photo *within-species* rainfall contrast in `results/source_receipts/` is a **cross-scale falsification/sensitivity audit** for the mois interspecific association. It is not an FCP prospective W result, not an independent sample source, and not a replacement for FCP's species-composition-preserving geographic null.
 
+## Seasonality already transferred to mois as *source-only* evidence (16 October)
+
+Since this firewall branch was created, mois main has received a separate seasonal source/QA transfer under `docs/MOIS_SEASONAL_WHITE_MOISTURE_RESEARCH_20261016.md` and `docs/MOIS_SEASONAL_FCP_SOURCE_TRANSFER_20261016.json`. The dated opportunity ledger already covers **3,430,502 original photo IDs / 1,000 taxa**; a first 64 original-pixel technical pilot yielded 27 automatic colour classifications, but **open-flower organ identity has not been independently validated**. The separately reserved within-site seasonal strata contain **no opened colour pixels**. These are source and technical measurement achievements, **not measured seasonal white-frequency/climate effects**.
+
+The seasonal programme uses within-taxon/site contrasts to **control geographic and taxonomic turnover**, but its global target is flowering-photo hue composition and observed-month environment. It must not import FCP's photograph-pair `D`/prospective `W` as a seasonality result, and it must not pool the 3.43-million photo *opportunities* with the historical 45,953 classifiable hues. The technical source code was copied from an FCP development branch with hashes; the ecological result ownership is now mois.
+
 ## Next mois-specific analysis: seasons + more of the upstream floral photographic opportunity
 
 Keep the **global between-species** biological target. Extend the original photo-ledger coverage upstream where permitted and identify photographed *open flowers* plus actual `observed_on` dates. Do not treat plant-present/no-open-flower photographs as classified flowering-colour observations, nor silently add unknown photo colour to the white denominator.
