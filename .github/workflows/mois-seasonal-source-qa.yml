@@ -1,0 +1,51 @@
+name: MOIS seasonal flower-colour source and monthly QA
+
+on:
+  push:
+    paths:
+      - "scripts/acquisition/audit_fcp_original_rgfca_monthly_photo_opportunities.py"
+      - "scripts/analysis/fcp_original_dated_flowering_season_qc.py"
+      - "scripts/analysis/fcp_match_original_season_site_year.py"
+      - "scripts/analysis/fcp_prepare_observed_month_terraclimate.py"
+      - "tests/test_audit_fcp_original_rgfca_monthly_photo_opportunities.py"
+      - "tests/test_fcp_original_dated_flowering_season_qc.py"
+      - "tests/test_fcp_match_original_season_site_year.py"
+      - "tests/test_fcp_prepare_observed_month_terraclimate.py"
+      - ".github/workflows/mois-seasonal-source-qa.yml"
+      - "docs/MOIS_SEASONAL_*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  date-season-photo-climate-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run original blind-photo source and seasonal source-to-climate tests
+        run: |
+          python -m pip install -q pytest
+          python -m pytest -q \
+            tests/test_audit_fcp_original_rgfca_monthly_photo_opportunities.py \
+            tests/test_fcp_original_dated_flowering_season_qc.py \
+            tests/test_fcp_match_original_season_site_year.py \
+            tests/test_fcp_prepare_observed_month_terraclimate.py
+      - name: Verify archived FCP provenance and do not imply new 3.43M flower measurements
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('docs/MOIS_SEASONAL_FCP_SOURCE_TRANSFER_20261016.json').read_text())
+          assert d['original_monthly_source']['photo_ids']==3430502
+          assert d['original_monthly_date_audit']['dated_photo_ids']==3430502
+          assert d['first_real_roi']['n_original_photo_pixels']==64
+          assert d['first_real_roi']['open_flower_organs_independently_verified'] is False
+          assert d['local_season_priority']['source_only'] is True
+          print('MOIS_SEASONAL_PROVENANCE_CONTRACTS_PASS; NOT CLIMATE EFFECTS')
+          PY
