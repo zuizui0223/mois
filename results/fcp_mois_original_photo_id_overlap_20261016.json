@@ -1,0 +1,64 @@
+{
+  "schema": "fcp_mois_cross_paper_original_photo_id_overlap_result_v1",
+  "date_jst": "2026-10-16",
+  "provenance": {
+    "original_audit_run": "https://github.com/zuizui0223/fcp/actions/runs/38911659260",
+    "original_audit_artifact_id": 12049893936,
+    "original_audit_artifact_filename": "photo_id_overlap_20261016.json",
+    "mois_original_photo_archive_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+    "fcp_csv_sha256": {
+      "discovery": "ee854126eed2cfe23e333abe2c28d14df24895a5c52cbc389c060a5a4d6f91f4",
+      "validation": "0e2ed349122739eecfc725fb2d5e313d284cf30752da91f9a0429cff0eeaa5e6",
+      "prospective": "57630fc9f281bce94a0c40a70aaf7bce879dde93d6154175adcd021e8f5c1186"
+    }
+  },
+  "source_denominators": {
+    "mois_unique_photos": 100543,
+    "mois_classified_photos": 45953,
+    "mois_unclassified_photos": 54590,
+    "fcp_total_photos": 149900,
+    "fcp_cohort_photo_ids": {
+      "discovery": 50000,
+      "validation": 50000,
+      "prospective": 49900
+    },
+    "fcp_cohort_photo_id_duplicates": 0
+  },
+  "measured_overlap": {
+    "shared_photo_ids": 3411,
+    "fraction_of_fcp_photos": 0.02275517011340894,
+    "fraction_of_mois_photos": 0.03392578299831913,
+    "shared_photo_id_set_sha256": "56db5b4b9a4ab7a200ae5530d502347ac2bb3ec8c8a62bc75b80e2875a99d269",
+    "cohorts": {
+      "discovery": {
+        "shared_ids": 1248,
+        "shared_both_classifiable": 652,
+        "shared_both_colour_agreement": 652,
+        "shared_taxon_id_conflicts": 0
+      },
+      "validation": {
+        "shared_ids": 1326,
+        "shared_both_classifiable": 634,
+        "shared_both_colour_agreement": 634,
+        "shared_taxon_id_conflicts": 1
+      },
+      "prospective": {
+        "shared_ids": 837,
+        "shared_both_classifiable": 407,
+        "shared_both_colour_agreement": 407,
+        "shared_taxon_id_conflicts": 0
+      }
+    },
+    "all_shared_both_classifiable": 1693,
+    "all_shared_both_colour_agreement": 1693,
+    "all_shared_both_colour_disagreement": 0,
+    "original_mois_duplicate_conflicting_row_count": 1
+  },
+  "scientific_boundary": {
+    "same_original_photo_ids_measured": true,
+    "independent_photographic_source_replication": false,
+    "new_biological_colour_estimate": false,
+    "new_environmental_or_temporal_effect": false,
+    "interpretation": "The papers answer distinct within-versus-between species questions but share original photographs and a measurement system. The double-classifiable label agreement is not independent validation. Do not pool model coefficients or treat cross-paper effects as independent replications."
+  }
+}

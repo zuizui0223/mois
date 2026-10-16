@@ -12,9 +12,17 @@ The 2026-10-14 transfer was a byte-preserving migration from historical fcp macr
 | Primary frame | 100,543 unique original photographic opportunities / 42,111 named taxa; **45,953 classified, 54,590 missing hue** | 149,900 separately sampled high-depth photographs / 1,499 named species |
 | Main environmental comparison | 20,694 named species / 1,934 qualified genera, climate26 | Conspecific spatial/phenotype structure in three high-depth cohorts |
 | Primary analytical unit | Species hue proportion, genus-centred, geographic-support-aware | Conspecific observations/pairs and within-species phenotype variation |
-| Data relation | Same iNaturalist original-photo ecosystem/source lineage; **cross-repository fixed photo-ID intersection not yet measured** | Not an independent botanical source; no cross-paper pooling |
+| Data relation | Same iNaturalist original-photo ecosystem/source lineage; **3,411 exact original photo IDs shared** (2.28% of FCP / 3.39% of MOIS), source-SHA-verified on 16 October 2026 | Not an independent botanical source; no cross-paper pooling |
 
 Original source-classifiable white fraction 21,574/45,953 = 46.95% is a **conditional photographic fraction**, not white morph genetic prevalence or 50:50 fitness equilibrium.
+
+## Exact cross-repository photo reuse is now measured
+
+The FCP original-source audit [Actions run 38911659260](https://github.com/zuizui0223/fcp/actions/runs/38911659260) recovered the MOIS 100,543-unique original photo archive and the immutable FCP discovery (50,000), validation (50,000) and prospective (49,900) measured tables. All four input-file SHA256 checks passed.
+
+**3,411 actual photo IDs appear in both study samples**: discovery 1,248, validation 1,326, prospective 837. The three internal FCP cohorts share **zero** original photo IDs with one another. The overlap is 2.28% of FCP photographs and 3.39% of the original MOIS photographic census. Of 1,693 common photos with classifiable four-colour labels in both original studies, the 1,693 labels matched; **this is shared algorithm/source concordance, not independent biological validation**. One shared source photo had discordant taxon IDs, and one MOIS cross-ledger duplicate had discrepant incomplete colour metadata; both remain disclosed without redefining the fixed source.
+
+The exact SHA-verified aggregate audit is mirrored without original raw photo IDs as `results/fcp_mois_original_photo_id_overlap_20261016.json`, and required by `scripts/check_study_scope.py`. **No MOIS congeneric white–moisture slope is a replication of the FCP prospective H2 colour-axis result, even after excluding overlapping photo IDs, because their estimands differ.** 
 
 ## mois primary findings with compulsory counterevidence
 
