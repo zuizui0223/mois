@@ -75,6 +75,7 @@ def reorder(source:Path, overlay:Path, overlay_sha256:str, destination:Path)->di
         raise ValueError("Annotation overlay must cover the selected original observation universe exactly")
     counts=Counter()
     copy_hashes={}
+    batch_order=[]
     for p in range(N_PARTITIONS):
         name_w=f"worker_partition_{p:03}.csv"
         name_a=f"acquisition_partition_{p:03}.csv"
@@ -99,6 +100,14 @@ def reorder(source:Path, overlay:Path, overlay_sha256:str, destination:Path)->di
             paired.append((priority[ident],ordinal,w,a))
             counts[priority[ident]]+=1
         paired.sort(key=lambda item:(item[0],item[1]))
+        for b in range((len(paired)+63)//64):
+            chunk=paired[b*64:(b+1)*64]
+            batch_order.append({
+                "partition":p,"batch":b,"batch_size":64,
+                "first_priority":chunk[0][0],
+                "n_flowers_annotated":sum(z[0]==0 for z in chunk),
+                "n_selected":len(chunk),
+            })
         for name,cols,position in ((name_w,WORKER,2),(name_a,ACQUISITION,3)):
             with (stage/name).open("w",newline="",encoding="utf8") as out:
                 writer=csv.DictWriter(out,fieldnames=cols)
@@ -108,6 +117,18 @@ def reorder(source:Path, overlay:Path, overlay_sha256:str, destination:Path)->di
             copy_hashes[name]=sha256_file(stage/name)
     if sum(counts.values())!=evidence["selected_photo_ids"]:
         raise ValueError("Flowering-priority reordering did not preserve photo sample")
+    with (stage/"private_phenology_roi_work_order.csv").open("w",newline="",encoding="utf8") as out:
+        writer=csv.DictWriter(out,fieldnames=[
+            "partition","batch","batch_size","first_priority",
+            "n_flowers_annotated","n_selected"
+        ])
+        writer.writeheader()
+        writer.writerows(sorted(batch_order,key=lambda z:(
+            z["first_priority"],-z["n_flowers_annotated"],z["partition"],z["batch"]
+        )))
+    copy_hashes["private_phenology_roi_work_order.csv"]=sha256_file(
+        stage/"private_phenology_roi_work_order.csv"
+    )
     shutil.copyfile(metadata,stage/"private_metadata_join.csv")
     copy_hashes["private_metadata_join.csv"]=sha256_file(stage/"private_metadata_join.csv")
     result={**evidence,
@@ -117,7 +138,8 @@ def reorder(source:Path, overlay:Path, overlay_sha256:str, destination:Path)->di
         "phenology_priority":list(PRI),
         "phenology_annotation_overlay_sha256":overlay_sha256,
         "phenology_source_date":origin["annotation_snapshot_date"],
-        "phenology_priority_counts":{stage:counts[value] for stage,value in PRI.items()},
+        "phenology_priority_counts":{label:counts[value] for label,value in PRI.items()},
+        "phenology_first_batch_schedule_preserves_all_sample_units":True,
         "parent_unmodified_sample_packet_receipt_sha256":sha256_file(root_receipt),
         "photographs_dropped_or_added":0,
         "sampling_inclusion_probabilities_changed":False,
