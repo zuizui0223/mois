@@ -57,7 +57,20 @@
     "n_cells": 7,
     "n_photo_attempts_total": 39,
     "n_summer": 15,
-    "n_autumn": 24
+    "n_autumn": 24,
+    "paired_cell_equal_climate_autumn_minus_summer": {
+      "tmean_C": -11.091539,
+      "ppt_mm": 11.55051,
+      "srad_W_m2": -117.359439,
+      "def_mm": -47.564541,
+      "vpd_kPa": -0.508155,
+      "tmean_C_anomaly_1991_2020_same_month": -0.434942,
+      "ppt_mm_anomaly_1991_2020_same_month": 2.236364,
+      "srad_W_m2_anomaly_1991_2020_same_month": -1.891667,
+      "def_mm_anomaly_1991_2020_same_month": -13.932222,
+      "vpd_kPa_anomaly_1991_2020_same_month": -0.016042
+    },
+    "paired_cell_means_are_climate_only_not_flower_colour_effect": true
   },
   "min_botanical_verified_per_season": 20,
   "analysis_gates": {
