@@ -85,7 +85,13 @@ def test_every_original_date_known_photo_dispatched_without_flower_annotation(tm
             photoids.add(original["original_photo_id"])
             observationids.add(original["original_observation_uuid"])
     assert len(mids)==len(photoids)==len(observationids)==5
-    assert "original_photo_id" not in (packets/"full_dated_roi_dispatch_receipt.json").read_text()
+    public=json.loads((packets/"full_dated_roi_dispatch_receipt.json").read_text())
+    assert "original_photo_id" not in public
+    assert "original_observation_uuid" not in public
+    assert "latitude" not in public and "longitude" not in public
+    assert "photo_url_large" not in public
+    assert all(set(z)=={"packet_index","packet_receipt_sha256","n_source_dated_photos"}
+               for z in public["per_original_packet"])
     with pytest.raises(ValueError,match="overwrite"):
         m.dispatch(private,receipt,packets,packet_size=2,synthetic=True)
 
