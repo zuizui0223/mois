@@ -1,0 +1,70 @@
+{
+  "schema": "mois_2025_original_photo_exact_observed_month_climate_support_v1",
+  "source": "Original FCP blind-photo ROI and MOIS TerraClimate v1.1 CF-unpacked 1991-2025 provider histories; no botanical colour verification",
+  "photo_source_run": 38914197937,
+  "climate_provider_run": 38914456992,
+  "source_sha256": {
+    "photo": "d5c4bdcd632d0de8f2d20a663674e87f35e323a42b896291efefb93c46023053",
+    "photo_grid_month_keys": "4a181971255218aa2645313aaecd3d16739c1dd00ca7a365d6e1b4e1d974024d",
+    "photo_source_receipt": "489ff4fe5bc7298d81a8961bb05ca9aff71834a68859c6b1e188866e1ab97b0f",
+    "physical_grid_month_climate": "e70e9d643c8b53139d6b2dd5ad774f486c8c043c0fb39d88f350c7d512f1e402",
+    "climate_provider_receipt": "98bd9f1743c6857de518a3a5ae89f89d6359b33d7ea6cc8ad8033e71fc2d7ca9"
+  },
+  "n_source_photos": 64,
+  "n_source_observations": 64,
+  "n_source_observers": 64,
+  "n_source_climate_cells": 21,
+  "n_actual_grid_month_keys": 40,
+  "calendar_month_observation_counts": {
+    "2025-06": 11,
+    "2025-07": 11,
+    "2025-08": 10,
+    "2025-09": 13,
+    "2025-10": 12,
+    "2025-11": 7
+  },
+  "seasonal": {
+    "summer": {
+      "n_photos": 32,
+      "automatic_roi_classifiable": 12,
+      "unreviewed_automatic_colour_unmixed": 9,
+      "n_mixed_roi": 3,
+      "n_open_flower_botanically_confirmed": 0,
+      "observation_weighted_climate": {
+        "tmean_C": 21.971875,
+        "ppt_mm": 63.6125,
+        "srad_W_m2": 235.415625,
+        "def_mm": 53.60625,
+        "vpd_kPa": 0.993437
+      }
+    },
+    "autumn": {
+      "n_photos": 32,
+      "automatic_roi_classifiable": 6,
+      "unreviewed_automatic_colour_unmixed": 6,
+      "n_mixed_roi": 0,
+      "n_open_flower_botanically_confirmed": 0,
+      "observation_weighted_climate": {
+        "tmean_C": 13.439063,
+        "ppt_mm": 84.60625,
+        "srad_W_m2": 132.834375,
+        "def_mm": 9.60625,
+        "vpd_kPa": 0.555937
+      }
+    }
+  },
+  "matched_same_climate_grid_across_seasons": {
+    "n_cells": 7,
+    "n_photo_attempts_total": 39,
+    "n_summer": 15,
+    "n_autumn": 24
+  },
+  "min_botanical_verified_per_season": 20,
+  "analysis_gates": {
+    "biological_white_flower_rate_estimable": false,
+    "seasonal_white_vs_environment_effect_estimable": false,
+    "within_observer_matched_comparison_estimable": false,
+    "original_photo_id_replacement_allowed": false
+  },
+  "note": "All 64 photos have original observed-on dates and exact TerraClimate cell-month values. 20-per-season biological flower-colour threshold is impossible in the current original 64 as at most nine summer and six autumn automated ROI colours remain after excluding organ mixtures, before independent botanical review. Historical genus-level global coefficients remain a distinct MOIS estimand."
+}
