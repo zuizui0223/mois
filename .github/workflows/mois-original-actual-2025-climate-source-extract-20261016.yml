@@ -1,0 +1,123 @@
+name: MOIS real 2025 Asclepias summer-autumn exact-month TerraClimate v1.1 (NO floral effect)
+
+on:
+  push:
+    branches:
+      - analysis/mois-real-2025-seasonal-climate-20261016
+    paths:
+      - .github/workflows/mois-original-actual-2025-climate-source-extract-20261016.yml
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-real-2025-asseason-thredds-official-CF-21-grid-1991-2025
+  cancel-in-progress: false
+
+jobs:
+  physical-monthly-climate-from-cf-metadata-not-flowers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REAL_MOIS_SEASON_SOURCE_RUN: "38914197937"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test CF unpack and original observed-month temporal coverage first
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests pytest
+          python -m pytest tests/test_mois_terraclimate_cf_packing_2025.py -q
+          python -m py_compile \
+            scripts/analysis/mois_fetch_terraclimate_v11_2025_by_original_month.py \
+            scripts/analysis/mois_asclepias_2025_original_season_postroi.py
+
+      - name: Verify source-bounded original 64 photos and 40 geolocated month-cell queries
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source_grid_mois
+          gh api "repos/zuizui0223/mois/actions/runs/$REAL_MOIS_SEASON_SOURCE_RUN" \
+            > source_grid_mois/source_2025_asclepias_run.json
+          python - <<'PY'
+          import json
+          d=json.load(open('source_grid_mois/source_2025_asclepias_run.json'))
+          assert d['id']==38914197937
+          assert d['status']=='completed' and d['conclusion']=='success'
+          assert d['head_sha']=='bd0b1e7203a54c4dadfa8d3b6056af51e28f649b'
+          assert d['head_repository']['full_name']=='zuizui0223/mois'
+          print('MOIS_SIGNED_REAL_ORIGINAL_2025_BLOOM_STAGE_UNKNOWN_PHOTOS_ADMITTED')
+          PY
+          gh run download "$REAL_MOIS_SEASON_SOURCE_RUN" --repo zuizui0223/mois \
+            --name mois-real-2025-asclepias-64-postblind-40-grids-months-unreviewed \
+            --dir source_grid_mois
+
+      - name: Retrieve actual 1991-2025 CF-decoded TerraClimate v1.1 monthly histories in physical units
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_fetch_terraclimate_v11_2025_by_original_month \
+            --source-2025-terraclimate-grid-keys \
+              source_grid_mois/mois_original_asclepias2025/source_month_terraclimate_v11_point_grid_keys.csv \
+            --source-2025-roi-receipt \
+              source_grid_mois/mois_original_asclepias2025/mois_original_asclepias_source_rois_seasons_receipt.json \
+            --outdir mois_physical_2025_original_temporal_climate \
+            --workers 5
+
+      - name: Verify physical units, real year, all 40 grid-months and no bogus white-rate inference
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,csv,hashlib
+          from pathlib import Path
+          root=Path('mois_physical_2025_original_temporal_climate')
+          q=json.loads((root/'verified_2025_terraclimate_source_month_receipt.json').read_text())
+          assert q['status']=='AUTHENTIC_2025_MONTHLY_CLIMATE_VALUES_NOT_WHITE_FLOWER_ASSOCIATION'
+          assert q['genuine_original_monthly_photo_observations']==64
+          assert q['independent_source_observers']==64
+          assert q['unique_original_source_grid_cells']==21
+          assert q['original_source_photo_grid_months']==40
+          assert q['provider_request_count']==126
+          assert q['monthly_climate_is_actual_2025_not_1991_2020_normal'] is True
+          assert q['no_botanically_confirmed_open_flower_colour_data'] is True
+          assert q['no_white_fraction_vs_climate_regression_or_causal_inference'] is True
+          assert q['official_cf_scaling']['tmin']['scale']==0.01
+          assert q['official_cf_scaling']['tmin']['offset']==-99.0
+          with (root/'authentic_2025_asclepias_terraclimate_physical_month_grid.csv').open(newline='') as f:
+              rows=list(csv.DictReader(f))
+          assert len(rows)==40 and all(x['year_month'].startswith('2025-') for x in rows)
+          assert set(x['flowering_organ_is_botanically_unreviewed'] for x in rows)=={'True'}
+          with (root/'2025_source_observation_weighted_summer_autumn_climate_NOT_flower_effect.csv').open(newline='') as f:
+              seasons=list(csv.DictReader(f))
+          assert {x['local_season'] for x in seasons}=={'summer','autumn'}
+          assert sorted(int(x['n_independent_original_observations']) for x in seasons)==[32,32]
+          print('MOIS_2025_ORIGINAL_TEMPERATURE_SOLAR_RADIATION_PRECIP_VPD_DEFICIT_CF_VERIFIED_PHYSICAL_UNITS')
+          PY
+
+      - name: Preserve real provider raw CF receipts plus decoded and independently sampled monthly climate
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-actual-2025-terraclimate-v11-source-40-grid-months-64-original-observations-NOT-FLOWER-EFFECT
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            source_grid_mois/source_2025_asclepias_run.json
+            mois_physical_2025_original_temporal_climate/
+
+      - name: Retain failed provider/source diagnostics only, never partial climate as final
+        if: ${{ failure() || cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-2025-terraclimate-raw-source-CF-INCOMPLETE-NOT-WHITE-EFFECT
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            source_grid_mois/source_2025_asclepias_run.json
+            mois_physical_2025_original_temporal_climate/FAILURE_missing_actual_original_monthly_provider_values.json
