@@ -52,12 +52,16 @@ def weighted_covariance(delta:np.ndarray,area:np.ndarray):
                 "condition_number_correlation":None,
                 "n_approx_independent_dynamic_axes":int(np.sum(spread>1e-12))}
     correlation=cov/spread[:,None]/spread[None,:]
+    rank=int(np.linalg.matrix_rank(correlation,tol=1e-8))
+    condition=float(np.linalg.cond(correlation))
     return {
-        "status":"MOMENTS_COMPUTED_CORRELATIONS_NOT_HUE_RESPONSE",
+        "status":("MOMENTS_COMPUTED_CORRELATIONS_NOT_HUE_RESPONSE" if
+                  rank==4 else "RANK_DEFICIENT_DYNAMIC_CLIMATE_PROFILES"),
         "covariance_matrix_original_units":cov.tolist(),
         "correlation_matrix":correlation.tolist(),
-        "condition_number_correlation":float(np.linalg.cond(correlation)),
-        "n_approx_independent_dynamic_axes":int(np.linalg.matrix_rank(correlation,tol=1e-8)),
+        "condition_number_correlation":(
+            condition if rank==4 and math.isfinite(condition) else None),
+        "n_approx_independent_dynamic_axes":rank,
         "source_weighted_within_grid_monthly_SD":spread.tolist(),
     }
 
