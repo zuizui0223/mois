@@ -44,7 +44,7 @@ def test_same_place_climate_vs_white_fixed_effects_recover_known_synthetic_slope
     result=clean_cell_month(result)
     for month_effect in (False,True):
         fit=m.fit_fe(result,include_month=month_effect,min_cells=10)
-        assert fit["status"]=="ESTIMATED_EXPLORATORY_POINT_ONLY_NO_CLUSTER_UNCERTAINTY"
+        assert fit["status"]=="ESTIMATED_EXPLORATORY_POINT_WITH_SEPARATE_CELL_CLUSTER_GATE"
         assert fit["n_qualified_geographic_cells"]==24
         assert fit["joint_dynamic_4axis_effective_rank"]==4
         assert fit["stable_geographic_soil_elevation_terrain_cell_means_absorbed"] is True
@@ -167,7 +167,7 @@ def test_latitude_zone_calendar_month_fixed_effects_recover_known_dynamic_axes()
                **dict(zip(m.DYNAMIC,x))
             })
     fit=m.fit_fe(points,include_month=True,zone_month=True,min_cells=10)
-    assert fit["status"]=="ESTIMATED_EXPLORATORY_POINT_ONLY_NO_CLUSTER_UNCERTAINTY"
+    assert fit["status"]=="ESTIMATED_EXPLORATORY_POINT_WITH_SEPARATE_CELL_CLUSTER_GATE"
     assert fit["fixed_effect_model"]=="cell_and_latitude_zone_month"
     for name,coef in zip(m.DYNAMIC,(.01,.000012,.0003,-.06)):
         assert fit["four_dynamic_partial_effect_coefficients"][name][
@@ -175,3 +175,68 @@ def test_latitude_zone_calendar_month_fixed_effects_recover_known_dynamic_axes()
                 coef*100,abs=1e-8)
     with pytest.raises(ValueError,match="requires month FE"):
         m.fit_fe(points,include_month=False,zone_month=True,min_cells=10)
+
+
+
+def test_at_least_30_independent_geographic_cells_obtain_only_exploratory_cr1_cluster_intervals():
+    rng=np.random.default_rng(20261016)
+    points=[]
+    for c in range(80):
+        for month in range(1,13):
+            t=2*math.pi*month/12
+            x=[(1+c%4)*math.sin(t),
+               (1+c%5)*math.cos(t)*800,
+               (1+c%7)*math.sin(2*t)*8,
+               (1+c%3)*math.cos(3*t)*.08]
+            white=(.28+.0015*c+.015*math.cos(t)+
+                   .004*x[0]+.000007*x[1]+.0002*x[2]-.03*x[3]+
+                   rng.normal(0,.008))
+            points.append({
+                "cell":f"source_cell_{c:03}","domain":"NORTH_EXTRATROPICAL",
+                "month":month,"white_species_equal":white,"n_species":4,
+                **dict(zip(m.DYNAMIC,x))
+            })
+    for include_month,zone_month in ((False,False),(True,False),(True,True)):
+        fit=m.fit_fe(points,include_month=include_month,
+                     zone_month=zone_month,min_cells=30)
+        assert fit["status"]=="ESTIMATED_EXPLORATORY_POINT_WITH_SEPARATE_CELL_CLUSTER_GATE"
+        cl=fit["geographic_cell_cluster_robust_uncertainty"]
+        assert cl["status"]=="EXPLORATORY_GEO_CELL_CR1_ASYMPTOTIC_AND_4AXIS_BONFERRONI"
+        assert cl["n_independent_geographic_cell_clusters"]==80
+        assert cl["n_climate_cell_clusters_with_nonzero_scores"]==80
+        assert cl["conservative_residual_degrees_of_freedom"]>0
+        assert cl["taxon_and_observer_dependence_not_resolved"] is True
+        assert cl["photographic_missing_not_at_random_not_resolved"] is True
+        assert cl["familywise_four_climate_axes_z_multiplier"]>cl["nominal_z_multiplier"]
+        assert set(cl["intervals"])==set(m.DYNAMIC)
+        for name in m.DYNAMIC:
+            axis=cl["intervals"][name]
+            lo,hi=axis["single_axis_asymptotic_95pct_interval_pp_per_original_unit"]
+            flo,fhi=axis["four_axis_bonferroni_familywise_95pct_interval_pp_per_original_unit"]
+            estimate=fit["four_dynamic_partial_effect_coefficients"][name][
+                "slope_pp_per_original_monthly_climate_unit"]
+            assert flo<=lo<estimate<hi<=fhi
+            assert axis["cluster_se_pp_per_original_monthly_unit"]>0
+
+
+def test_exactly_29_repeat_month_cells_may_have_a_point_but_must_not_get_cluster_intervals():
+    items=[]
+    for c in range(29):
+        for month in range(1,13):
+            t=2*math.pi*month/12
+            x=[(c%5+1)*math.sin(t),
+               (c%7+1)*math.cos(t)*1000,
+               (c%3+1)*math.sin(2*t)*10,
+               (c%4+1)*math.cos(3*t)*.1]
+            items.append({
+                "cell":f"c{c}","month":month,
+                "domain":"NORTH_EXTRATROPICAL",
+                "n_species":4,
+                "white_species_equal":.3+.004*x[0]+.000006*x[1],
+                **dict(zip(m.DYNAMIC,x))
+            })
+    fit=m.fit_fe(items,include_month=True,zone_month=True,min_cells=10)
+    assert fit["status"]=="ESTIMATED_EXPLORATORY_POINT_WITH_SEPARATE_CELL_CLUSTER_GATE"
+    assert fit["geographic_cell_cluster_robust_uncertainty"]["status"]==(
+        "NOT_ESTIMABLE_FEWER_THAN_30_REPEAT_CLIMATE_CELLS")
+    assert "intervals" not in fit["geographic_cell_cluster_robust_uncertainty"]
