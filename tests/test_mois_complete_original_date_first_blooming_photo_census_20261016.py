@@ -95,6 +95,9 @@ def test_full_original_2shard_photo_date_eligibility_bloom_classification_counts
     assert r["full_42111_original_source_not_selectively_date_sampled"] is True
     assert r["all_missing_date_source_photos_were_excluded_before_roi"] is True
     assert r["all_original_date_eligible_photo_pixels_attempted"] is True
+    assert r["all_original_monthly_photo_classifiability_denominators_reconciled"] is True
+    assert r["n_original_date_known_roi_other_unclassifiable_photo_opportunities"]==0
+    assert r["n_original_source_month_bins_with_attempted_photo_ROI"]==4
     assert r["no_old_100543_photo_ROI_hues_reused"] is True
     assert r["original_photo_population_random_sample_of_all_wild_blooms"] is False
     assert r["synthetic_test_only"] is True
@@ -157,3 +160,16 @@ def test_all_date_eligible_roi_count_incomplete_cannot_be_relabelled_complete(tm
         m.aggregate_all(audit,shards,tmp_path/"positive.ndjson",
             tmp_path/"public.json",synthetic=True,
             partitions=2,expected_photos=6,expected_taxa=4)
+
+
+def test_tamper_private_monthly_roi_effort_is_rejected_even_when_photo_colors_unchanged(tmp_path):
+    dates,shards=prepare_full(tmp_path)
+    p=shards/"shard_001_of_002/original_roi_month_effort_private.json"
+    raw=json.loads(p.read_text())
+    raw["latitude_domain_month_photo_effort"][0]["n_original_roi_other_unclassifiable"]+=1
+    p.write_text(json.dumps(raw))
+    with pytest.raises(ValueError,match="private source monthly ROI effort not sealed"):
+        m.aggregate_all(dates,shards,tmp_path/"positive.ndjson",
+             tmp_path/"published.json",synthetic=True,partitions=2,
+             expected_photos=6,expected_taxa=4)
+    assert not (tmp_path/"published.json").exists()
