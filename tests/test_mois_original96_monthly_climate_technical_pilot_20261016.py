@@ -67,6 +67,11 @@ def test_exact_original_four_species_photo_source_classifiability_and_monthly_cl
     assert out["n_roi_original_four_colour_classifiable"]==20
     assert out["n_roi_original_classified_white"]==3
     assert out["n_monthly_source_site_climate_joined"]==96
+    assert out["real_10m_source_climate_cells_with_any_original_photo"]==1
+    assert out["real_10m_source_climate_cells_with_original_photos_in_two_or_more_months"]==1
+    assert out["real_10m_source_climate_cells_with_classifiable_photos"]==1
+    assert out["real_10m_source_climate_cells_with_classifiable_photos_in_two_or_more_months"]==0
+    assert out["cell_FE_primary_four_dynamic_months_estimable_in_this_pilot"] is False
     assert out["prespecified_site_cell_season_FE_within_month_estimated"] is False
     assert out["original_source_population_42111_taxa_photo_IDs_joined"] is False
     rows=out["observed_season_rows"]
