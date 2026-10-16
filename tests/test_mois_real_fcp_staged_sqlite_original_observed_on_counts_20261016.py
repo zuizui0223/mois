@@ -134,7 +134,7 @@ def test_true_production_42k_not_created_from_synthetic_fcp_sqlite(tmp_path):
 def test_date_month_conservation_does_not_assume_unannotated_photographs_have_no_flowers(tmp_path):
     stage,counts=fixture(tmp_path)
     result=m.audit_staged_original_dates(stage,counts,tmp_path/"month.json",synthetic=True)
-    assert result["all_original_photo_ids_permanently_manifested_in_this_report"] is False
+    assert result["all_source_photo_ids_permanently_manifested_in_this_report"] is False
     assert result["historic_100543_photo_colour_outcomes_reused"] is False
     assert result["source_original_date_not_created_or_uploaded_at"] is True
     assert result["snapshot_photo_count_denominator_not_wild_blooming_individuals"] is True
