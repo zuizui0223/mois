@@ -1,0 +1,96 @@
+{
+  "area_weighting": "spherical geographic grid area; excludes missing source cells",
+  "aseasonal_cv_threshold": 0.15,
+  "aseasonal_max_minus_min_monthly_mm_threshold": 30,
+  "climate_source": "WorldClim 2.1 1970-2000 monthly precipitation normals 10m",
+  "climatology_years": "1970-2000",
+  "flora_phenotype_occurrences_or_fitness_observed": false,
+  "grid_resolution_degrees": 0.16666666666666666,
+  "iNaturalist_photo_colour_or_annotation_counts_observed": false,
+  "latitude_domains": {
+    "NORTH_EXTRATROPICAL": {
+      "area_fraction_of_seasonal_cells_peak_rainfall_in_calendar_quarter": {
+        "Q1": 0.08058932111276489,
+        "Q2": 0.13806080706679233,
+        "Q3": 0.690812469802374,
+        "Q4": 0.09053740201806884
+      },
+      "aseasonal_area_fraction": 0.2436383882901309,
+      "mean_annual_precipitation_mm_area_weighted": 523.3883833321574,
+      "n_aseasonal_grid_cells": 96550,
+      "n_seasonal_grid_cells": 289815,
+      "n_valid_grid_cells": 386365,
+      "seasonal_area_fraction": 0.756361611709869,
+      "seasonal_area_fraction_summer_rainfall_over_winter_by_annual_10pp": 0.7521603393257333,
+      "seasonal_area_fraction_winter_rainfall_over_summer_by_annual_10pp": 0.12862693366208516,
+      "seasonal_area_fraction_with_wettest_month_in_local_summer": 0.7351034257937507,
+      "seasonal_area_fraction_with_wettest_month_in_local_winter": 0.0815838972664569,
+      "share_of_all_valid_source_cell_area": 0.499274803339092,
+      "valid_cell_area_million_km2": 77.00757695472139
+    },
+    "SOUTH_EXTRATROPICAL": {
+      "area_fraction_of_seasonal_cells_peak_rainfall_in_calendar_quarter": {
+        "Q1": 0.3767914308792994,
+        "Q2": 0.22031823656435537,
+        "Q3": 0.348822170504599,
+        "Q4": 0.05406816205174605
+      },
+      "aseasonal_area_fraction": 0.4490085529775555,
+      "mean_annual_precipitation_mm_area_weighted": 385.91766155290264,
+      "n_aseasonal_grid_cells": 154826,
+      "n_seasonal_grid_cells": 108122,
+      "n_valid_grid_cells": 262948,
+      "seasonal_area_fraction": 0.5509914470224445,
+      "seasonal_area_fraction_summer_rainfall_over_winter_by_annual_10pp": 0.3824547054624933,
+      "seasonal_area_fraction_winter_rainfall_over_summer_by_annual_10pp": 0.5539242953494231,
+      "seasonal_area_fraction_with_wettest_month_in_local_summer": 0.3116188387687902,
+      "seasonal_area_fraction_with_wettest_month_in_local_winter": 0.38221331438039013,
+      "share_of_all_valid_source_cell_area": 0.15782132867556803,
+      "valid_cell_area_million_km2": 24.342181964319845
+    },
+    "TROPICAL": {
+      "area_fraction_of_seasonal_cells_peak_rainfall_in_calendar_quarter": {
+        "Q1": 0.35899277434476656,
+        "Q2": 0.14716570538846604,
+        "Q3": 0.30859932380127897,
+        "Q4": 0.18524219646548865
+      },
+      "aseasonal_area_fraction": 0.11265206983068927,
+      "mean_annual_precipitation_mm_area_weighted": 1276.269140762104,
+      "n_aseasonal_grid_cells": 18329,
+      "n_seasonal_grid_cells": 140411,
+      "n_valid_grid_cells": 158740,
+      "seasonal_area_fraction": 0.8873479301693107,
+      "share_of_all_valid_source_cell_area": 0.3429038679853395,
+      "valid_cell_area_million_km2": 52.889102004249125
+    }
+  },
+  "normal_precipitation_not_observed_weather_at_photo_date": true,
+  "note": "Independent real rainfall-only spatial availability evidence for seasonal study design. Climate cell areas do NOT approximate the frequency of species or actual blooming flowers.",
+  "original_12_monthly_raster_sha256": {
+    "10": "965414cd14fc88c5556f6b6cd4fa58e938b89517b2d55deb27809095351d13c4",
+    "11": "20ac7e50aee6b402707110143060dc1eacf5ed8b8463d9d08ee2aef7f8a0a53d",
+    "12": "b2b9501a4f81555a39144e069df11789f38f3774e5b577df7ef85cb11d6876e4",
+    "01": "363320dccd55c20634fe38e3710509591be59fd155cf5accbd0ac6bf1ebf19af",
+    "02": "d0d277c5f15e0ea1d601170ec1f3d788c24a3f200991132ac0025c298ae0085d",
+    "03": "4c954b674ab1e088ca0f2acd1c8b3e08eca31eacfb2771f1eff626c57890e6d6",
+    "04": "65ca696e0a3184e73bf8257d553c493ba83ade4e654eb596cc0c192fcb2de590",
+    "05": "9c4be295e36e0fcc823a04d1984f2831747169f3c8ee22fb3f0d8b51c83b6029",
+    "06": "8154f1b35affd3572d76b8d21976a176f459daabdbcdebe02203eeb44bf28588",
+    "07": "d45bdf6cf7cbac920250a1e30d0a17be99782f37a0dfd50d233175c86697e899",
+    "08": "9b11f6b884568a45ac3df17a51fea290a696b0776950659102847716e46d7578",
+    "09": "eac6167eb1d08e2333063ab87ca31d6940c733aa6ebbe64f2e25dfd4c691ae57"
+  },
+  "region_definitions": "TROPICAL if abs(lat)<23.5; northern extratropical if lat>=23.5; southern extratropical if lat<=-23.5",
+  "schema": "mois_global_historical_monthly_precipitation_land_area_seasonality_v1",
+  "source_42111_taxa_13predictor_refitted": false,
+  "source_complete_valid_grid_cell_area_million_km2": 154.23886092329042,
+  "source_grid_n_columns": 2160,
+  "source_grid_n_rows": 1080,
+  "source_grid_n_valid_complete_12month_cells": 808053,
+  "source_original_monthly_manifest_sha256": "07f45ac2973589d8951ac3eb0fa1c81b700018c5ab7322e2346dcf7d6723ee23",
+  "status": "REAL_WORLDCLIM_ONLY_NO_PLANT_PHOTO_COLOUR_OR_OBSERVER_INFERENCE",
+  "synthetic_test_only": false,
+  "wettest_month_ties_split_equally_across_tied_months_for_aggregate_area": true,
+  "original_source_execution_url": "https://github.com/zuizui0223/mois/actions/runs/38840741791"
+}
