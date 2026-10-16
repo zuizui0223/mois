@@ -42,7 +42,11 @@ from scripts.acquisition.mois_sample_direct_from_fcp_source_20261016 import (
 
 SCHEMA="mois_direct_fcp_source_stratified_photo_selection_v2"
 STRATEGY="OUTCOME_BLIND_NESTED_LOCAL_SEASON_WITHIN_ORIGINAL_REGION_BIO12_V2"
-MIN_TARGET_PER_OCCUPIED_SEASON=3
+# Original historical source: 45,953/100,543 classifiable photos.
+# At p=0.457 independently per observation, 10 per each of two seasons
+# yields ~0.825 probability that BOTH have >=3 classifiable images.
+# This is a design scenario, not a guarantee about new season/region photos.
+MIN_TARGET_PER_OCCUPIED_SEASON=10
 
 
 def nested_season_quotas(opportunities:dict[str,int],quota:int)->dict[str,int]|None:
@@ -59,8 +63,8 @@ def nested_season_quotas(opportunities:dict[str,int],quota:int)->dict[str,int]|N
         return None
     chosen={phase:1 for phase in sorted(opportunities)}
     while sum(chosen.values())<quota:
-        # First try to lift all feasible seasons to three independent original
-        # observations, then spend remaining quota by the original sqrt(N)
+        # First lift occupied seasons toward a 10-observation planning target
+        # (or actual available source count), then allocate by sqrt(N)
         # allocation principle (bounded by actual seasonal opportunities).
         support=[
             phase for phase in chosen
