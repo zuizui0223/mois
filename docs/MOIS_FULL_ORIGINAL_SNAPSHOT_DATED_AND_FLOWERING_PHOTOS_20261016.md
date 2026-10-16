@@ -100,3 +100,59 @@ Three exploratory conditional models are calculated only when supported: exact g
 ### Source status and scientific claims
 
 The genuine provider-level 42,111-taxon 93,209,351-photo **candidate counts** are independently audited. The full original date-known candidate extraction, open-flower/colour ROI measurement across all date-qualified photographs, complete original positive-photo-to-monthly-climate join and worldwide adjusted seasonal T/S/P/VPD flower-white model remain **UNEXECUTED on the entire real source**: FCP's 36GB original archive, permanent SQLite and all 128 source shard identities still need source-host durable execution. These scripts passed synthetic full-chain/duplicate-observation/partial-shard tests; no real worldwide seasonal white rate or climate coefficient has been manufactured.
+
+
+## 7. Date-first photo image processing: all valid-day original pictures, no undated-image waste
+
+**Optimization confirmed on 16 October 2026:** The main Mois seasonal study does not require reprocessing the pictures which lack the original snapshot observed_on day at all. It *does* require processing **EVERY date-valid original photo**, not just the old 100,543 pictures, any 40-photos/taxon sample, or only positively annotated iNaturalist Flowers observations. The independently attested 93,209,351 source PHOTO opportunity frame and the ORIGINAL DATE EXCLUSION denominators remain intact.
+
+**The DATE-FIRST pipeline is implemented as its own separate whole-source Mois scientific scope.** It is not a false claim that FCP's separate all-93M-photo polymorphism study has completed: all original FCP source-ID shards are still required, but the subsequent pixel ROI work is restricted by the user's explicit original-date eligibility condition.
+
+After one of the complete, source-SHA-pinned original FCP date-shard queues has been generated:
+
+1. [Full date-known photo → location-blind ROI packet dispatch](../scripts/acquisition/mois_prepare_all_dated_original_roi_packets_20261016.py) consumes the COMPLETE per-shard private date-known photo queue, validates all source UUID/taxon/observer/calendar/site/photo URL and SHA ledger, then emits protected worker/acquisition/private join files in **at most 4,096-photo compute packets**. The source photo roster is not sampled, and all original photo IDs with usable observed_on are dispatched. A **4,097-photo single-species/observation synthetic regression** verifies the source overflows into the next compute packet instead of dropping picture 4,097. The worker sees only anonymized method-unique IDs, image filename, image licence and image bytes, **never genus, source date, latitude/longitude or historical flower-colour results**.
+
+2. [Original frozen FCP ROI-v4 work unit](../scripts/acquisition/mois_execute_all_dated_original_roi_workunit_20261016.py) runs **64 real original pictures maximum per machine batch** from those packets, enforcing the original source-measurement Git blob hash, YOLO and EfficientSAM file hashes, photo-source licensing, and host-global image-provider pacing. This is a bounded *compute unit* and never a seasonal photo cap. Temporary original image pixels are discarded. Transient provider errors abort the whole unit; explicit permanent source-photo acquisition failures are recorded **unclassifiable**, never as absent/coloured/white flowers.
+
+3. [Source-hash sealed per-shard photo-result reassembly](../scripts/analysis/mois_reassemble_dated_original_roi_shard_20261016.py) requires **EVERY original date-valid photo** to have an attested ROI terminal (including documented failures) before the shard may be marked completed. It joins private original photo ID, observed_on, original observer/taxon/site and actual source four-hue morphology only AFTER the location-blind image evaluator. Only positive photo ROI-v4 four-hue classifications are exported to protected actual-bloom NDJSON. The public result separately counts date-valid image opportunities, image acquisition failure, ROI missing/ambiguous, classified flower colour and white. An absent work unit or an altered photo/method/receipt hard-fails without global success.
+
+4. [All-128-shard **global DATE-FIRST blooming-photo census**](../scripts/analysis/mois_complete_original_date_first_blooming_photo_census_20261016.py) requires the complete independently verified original metadata date census, PLUS every separately sealed source-shard photo ROI result. It reconciles the exact full 42,111-taxon and 93,209,351-photo source denominator, the number with an original snapshot date, the exact number of date-known pictures on which image ROI was attempted, classified positive floral-hue photos, their white subset, distinct original observation UUIDs, taxa and genera, and photo-classification missingness. Original duplicate photo IDs across shards are prohibited. Species-equal white fractions average *observation-level* white composition first, not raw photo repetitions. **Even ONE incomplete date-shard or image-work-unit stops the worldwide claim.**
+
+5. [Full photo-positive original month × 48-source-layer climate and spatial controls](../scripts/analysis/mois_full_bloom_monthly_TSPVPD_observation_species_FE_20261016.py) accepts this distinct **DATE-FIRST full 128-shard positive-flower census** OR FCP's separately completed full-photo remeasurement census, with different explicit metadata/image-work denominators. The prior version demanded FCP image measurement of **every single** source photo, even without original observation day; now the Mois seasonal method can skip those uninformative photo pixels while retaining their counts. It extracts actual WorldClim original-site climatological month temperature, solar radiation, precipitation and mean-month-derived VPD; multi-photo observations collapse before species-equal cell/month community white statistics. The three exploratory models still control exact climate cell, cell+month, and cell+latitude-zone/month, subject to real repeated-classified-site and collinearity/cluster uncertainty gates.
+
+**Protected host execution skeleton**, for each 128-source-shard whose frozen original dated queue is already complete (using one packet number and image work-batch example here):
+
+    python -m scripts.acquisition.mois_prepare_all_dated_original_roi_packets_20261016 \
+      --original-private-dated-photo-queue "$MOIS_PRIVATE_ROOT/dated_original_42111/dated_candidates_shard_000.ndjson" \
+      --original-source-date-receipt "$MOIS_PRIVATE_ROOT/dated_original_42111/dated_candidates_shard_000_receipt.json" \
+      --out-private-roi-packets "$MOIS_PRIVATE_ROOT/dated_roi_shards/shard_000_of_128"
+
+    # Original provider rights and global rate limits MUST be reviewed before downloading.
+    # FCP_PROVIDER_GLOBAL_RATE_FILE must be configured for coordinated permitted access.
+    python -m scripts.acquisition.mois_execute_all_dated_original_roi_workunit_20261016 \
+      --private-original-photo-roi-packet-dir "$MOIS_PRIVATE_ROOT/dated_roi_shards/shard_000_of_128/packet_000000" \
+      --private-original-date-dispatch-root "$MOIS_PRIVATE_ROOT/dated_roi_shards/shard_000_of_128" \
+      --private-original-roi-terminals-root "$MOIS_PRIVATE_ROOT/sealed_roi_shard_000" \
+      --packet-number 0 --batch-number 0 \
+      --fcp-source-repository "$FCP_SOURCE_REPO" \
+      --original-fcp-roi-measure-script "$ORIGINAL_FCP_ROI_SCRIPT" \
+      --original-fcp-yolo-detector "$ORIGINAL_FCP_DETECTOR" \
+      --original-fcp-efficient-sam "$ORIGINAL_FCP_EFFICIENT_SAM" \
+      --provider-access-reviewed
+
+    # Run EVERY bounded work unit, then and only then:
+    python -m scripts.analysis.mois_reassemble_dated_original_roi_shard_20261016 \
+      --protected-date-first-packet-root "$MOIS_PRIVATE_ROOT/dated_roi_shards/shard_000_of_128" \
+      --protected-sealed-original-roi-terminal-root "$MOIS_PRIVATE_ROOT/sealed_roi_shard_000" \
+      --out-private-original-actual-bloom-photo-ndjson "$MOIS_PRIVATE_ROOT/roi_positive_shards/shard_000_of_128/positive_actual_bloom_photos.ndjson" \
+      --out-public-original-date-roi-shard-receipt "$MOIS_PRIVATE_ROOT/roi_positive_shards/shard_000_of_128/roi_shard_receipt.json"
+
+After all 128 such ROI shards **and** the independently sealed all-128 original-date metadata census:
+
+    python -m scripts.analysis.mois_complete_original_date_first_blooming_photo_census_20261016 \
+      --all-original-date-census-receipt "$MOIS_PRIVATE_ROOT/all_original_dates_audit.json" \
+      --all-128-complete-original-roi-shard-root "$MOIS_PRIVATE_ROOT/roi_positive_shards" \
+      --out-private-global-photo-bloom-records "$MOIS_PRIVATE_ROOT/all_original_date_verified_bloom_photos.ndjson" \
+      --out-public-date-verified-global-photo-white "$MOIS_PRIVATE_ROOT/all_source_date_first_month_white.json"
+
+That final private positive photo file then feeds the climate model documented in section 6, using the **date-first completed global ROI receipt** instead of FCP's separate full-image ROI remeasurement receipt. The pipeline **cannot yet be executed worldwide** because the real 128 original source-ID manifests are not durably completed. Synthetic tests of complete source-date → blinded photo ROI → shard/global photo outcomes → month WorldClim, including multiple original photos per observation and a missing packet/shard, have passed; they are *engineering tests only*, not new world phenological/climatic results.
