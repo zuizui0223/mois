@@ -1,0 +1,94 @@
+name: MOIS real first 64 photo botanical review sheet (no flower claims)
+
+on:
+  push:
+    branches:
+      - analysis/mois-seasonal-white-climate-20261016
+    paths:
+      - .github/workflows/mois-first64-botanical-review-real-one-shot-20261016.yml
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-first64-original-20260927-open-flower-two-reviewer-template
+  cancel-in-progress: false
+
+jobs:
+  source-verified-unreviewed-original-photo-template:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FCP_REAL_ROI_RUN: "38901816890"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify original real FCP photo measurement identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p external_fcp/roi64
+          gh api "repos/zuizui0223/fcp/actions/runs/$FCP_REAL_ROI_RUN" > external_fcp/fcp_roi_run.json
+          python - <<'PY'
+          import json
+          q=json.load(open("external_fcp/fcp_roi_run.json"))
+          assert q["id"]==38901816890
+          assert q["status"]=="completed" and q["conclusion"]=="success"
+          assert q["head_repository"]["full_name"]=="zuizui0223/fcp"
+          assert q["head_sha"]=="843a2ffc6858295a91b4a64d7ee71a5569ae0d9f"
+          print("MOIS_ORIGINAL_FIRST64_MEASURED_SOURCE_SIGNED_NOT_RECLASSIFIED")
+          PY
+
+      - name: Retrieve only original FCP terminal/source metadata (no new image download)
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download "$FCP_REAL_ROI_RUN" --repo zuizui0223/fcp \
+            --name fcp-rgfca-first-ACTUAL-20260927-monthly-original-broad-narrow-ROI-pixels-NOT-FULL \
+            --dir external_fcp/roi64
+
+      - name: Create original-source-linked botanical two-reviewer sheet with NO filled phenology labels
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile,ZIP_DEFLATED
+          from scripts.analysis.mois_validate_open_flower_photo_review import make_blank,audit
+          import json
+          source=Path("external_fcp/roi64")
+          archive=Path("original_first64_source_metadata.zip")
+          with ZipFile(archive,"w",ZIP_DEFLATED) as z:
+              for p in sorted(source.rglob("*")):
+                  if p.is_file():
+                      z.write(p,p.relative_to(source).as_posix())
+          form=Path("first64_independent_open_flower_review_sheet.csv")
+          f=make_blank(archive,form)
+          assert f["original_photos"]==64
+          assert f["original_source_photo_terminal_sha256"]=="11b926334ecfc8a5aaeb1f254fafa8e6b8725119cc927ee8c13a4c58e8f8fba3"
+          q=audit(form,archive,Path("botanical_review_audit"))
+          assert q["status"]=="BOTANICAL_REVIEW_INCOMPLETE_NO_FLOWER_WHITE_RATE"
+          assert q["n_original_pixels"]==64
+          assert q["botanical_statuses"]=={"unreviewed":64}
+          assert q["n_reviewed_primary_flower_organs"]==0
+          assert q["original_image_pixels_not_reopened"] is True
+          assert q["no_white_rate_without_complete_bloom_and_organ_validation"] is True
+          print("MOIS_FIRST64_AUTHENTIC_UNREVIEWED_BOTANICAL_SHEET_CREATED_NOT_WHITE_FLOWER_RATE")
+          PY
+
+      - name: Archive empty botanical review form and audit only
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-original64-real-botanical-two-independent-reviewers-unreviewed
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            first64_independent_open_flower_review_sheet.csv
+            botanical_review_audit/
+            external_fcp/fcp_roi_run.json
