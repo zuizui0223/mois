@@ -36,6 +36,7 @@ jobs:
             echo 'Official WorldClim archive byte size unexpected: stop'
             exit 1
           fi
+          # The official archive has 12 monthly TIFFs plus its own small readme.txt.
           unzip -Z1 .trusted/source/wc2.1_10m_prec.zip | sed -n '1,25p'
           original_sha=$(sha256sum .trusted/source/wc2.1_10m_prec.zip | cut -d' ' -f1)
           python -m scripts.acquisition.mois_pin_worldclim_monthly_precipitation_20261016 \
