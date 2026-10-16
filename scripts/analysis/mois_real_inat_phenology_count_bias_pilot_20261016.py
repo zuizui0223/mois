@@ -27,7 +27,8 @@ from pathlib import Path
 API = "https://api.inaturalist.org/v1/observations"
 SCHEMA = "mois_bounded_public_inat_photo_phenology_annotation_count_pilot_v1"
 STATUS = "REAL_INAT_API_PUBLIC_PHOTO_OBSERVATION_PHENOLOGY_COUNTS_NOT_FCP_SOURCE"
-TAXON = 47126  # Plantae; official example in iNaturalist API documentation.
+TAXON = 47126  # Original comparison: Plantae.
+ANGIOSPERMS = 47125  # Angiospermae, proper flowering-plant frame.
 MAX_QUERIES = 35
 QUERY_MIN_DELAY_SEC = 1.35
 FILTERS = {
@@ -74,8 +75,10 @@ def validate_cohorts(cohorts:list[dict]) -> None:
                 raise ValueError("Invalid original observation regional pilot bounding box")
 
 
-def uri_query(cohort:dict, extra:dict)->str:
-    params={"taxon_id":TAXON,"photos":"true","per_page":1,"page":1,
+def uri_query(cohort:dict, extra:dict, *, taxon_id:int=TAXON)->str:
+    if taxon_id not in (TAXON,ANGIOSPERMS):
+        raise ValueError("Unknown/unreviewed source Plant/Angiospermae taxon")
+    params={"taxon_id":taxon_id,"photos":"true","per_page":1,"page":1,
             **{k:v for k,v in cohort.items() if k!="name"},**extra}
     return API+"?"+urllib.parse.urlencode(params)
 
@@ -141,8 +144,11 @@ def summarize(counts:dict)->dict:
     }
 
 
-def run(out_path:Path,*,cohorts=COHORTS,get_count=query_count,sleep=time.sleep)->dict:
+def run(out_path:Path,*,cohorts=COHORTS,get_count=query_count,sleep=time.sleep,
+        taxon_id:int=TAXON)->dict:
     validate_cohorts(cohorts)
+    if taxon_id not in (TAXON,ANGIOSPERMS):
+        raise ValueError("Unreviewed public platform taxon group cannot replace original source frame")
     if out_path.exists() or out_path.with_name(out_path.name+".INCOMPLETE").exists():
         raise ValueError("No overwrite or interrupted iNaturalist count audit")
     out_path.parent.mkdir(parents=True,exist_ok=True)
@@ -156,7 +162,7 @@ def run(out_path:Path,*,cohorts=COHORTS,get_count=query_count,sleep=time.sleep)-
                 # API guidance requests ~one per second. This pilot is more
                 # conservative and NEVER starts concurrent requests.
                 sleep(QUERY_MIN_DELAY_SEC)
-            url=uri_query(cohort,term)
+            url=uri_query(cohort,term,taxon_id=taxon_id)
             source=get_count(url)
             last_request_time=True
             if set(source)!={"n_observations","raw_response_sha256"}:
@@ -179,7 +185,9 @@ def run(out_path:Path,*,cohorts=COHORTS,get_count=query_count,sleep=time.sleep)-
         "queries_total":len(cohorts)*len(FILTERS),
         "queries_rate_limited_and_sequential":True,
         "minimum_inter_request_spacing_seconds":QUERY_MIN_DELAY_SEC,
-        "source_plant_taxon_id":TAXON,
+        "source_plant_taxon_id":taxon_id,
+        "source_plant_group_name":("Angiospermae (flowering plants)" if
+                                   taxon_id==ANGIOSPERMS else "Plantae (all plants)"),
         "source_photo_only":True,
         "observation_date_windows":True,
         "retrieved_on_utc":datetime.now(timezone.utc).isoformat(),
@@ -202,8 +210,9 @@ def run(out_path:Path,*,cohorts=COHORTS,get_count=query_count,sleep=time.sleep)-
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-aggregate",type=Path,required=True)
+    parser.add_argument("--taxon-id",type=int,choices=[TAXON,ANGIOSPERMS],default=TAXON)
     args=parser.parse_args()
-    result=run(args.out_aggregate)
+    result=run(args.out_aggregate,taxon_id=args.taxon_id)
     print("MOIS_REAL_INAT_PHENOLOGY_COUNT_PILOT_ONLY_NO_FLOWER_COLOUR",
           json.dumps({name:{k:v[k] for k in (
               "total_observed_plant_photo_records",
