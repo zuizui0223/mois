@@ -1,0 +1,66 @@
+{
+  "schema": "flower_colour_study_inference_boundary_v1",
+  "date": "2026-10-16",
+  "study": "mois",
+  "repository": "zuizui0223/mois",
+  "other_repository": "zuizui0223/fcp",
+  "estimand_level": "between_named_species_global_photographed_hue_environment",
+  "unit": "species-level photographed hue proportions compared within nominal genera and geographic support",
+  "shared_upstream": {
+    "origin": "iNaturalist flowering-photo ecosystem (historical FCP source lineage)",
+    "relationship": "Shared source family and measurement lineage; frozen study photo-ID intersection is not yet audited",
+    "photo_id_intersection_status": "not_measured",
+    "independent_source_replication": false,
+    "can_pool_model_estimates": false
+  },
+  "fixed_analysis_frame": {
+    "unique_original_photos": 100543,
+    "named_taxa": 42111,
+    "colour_classified_photos": 45953,
+    "unclassified_photos": 54590,
+    "global_climate26_comparison_species": 20694,
+    "global_climate26_genera": 1934
+  },
+  "active_manuscript": "docs/MOIS_GLOBAL_MOISTURE_MANUSCRIPT_20261014.md",
+  "primary_result_paths": [
+    "results/fcp_macro_direction_20261013/decision_receipt.json",
+    "results/fcp_m1_matched_spatial_support_20261014/decision_receipt.json"
+  ],
+  "outcomes": [
+    "species-level photographed white and three other coarse hue proportions",
+    "genus-centred global rainfall and atmospheric vapour direction",
+    "same-species-support spatial-conditioning sensitivity"
+  ],
+  "null_family": [
+    "whole-genus bootstrap and within-family maxT intervals",
+    "strict-quality and genus-by-cell spatial sensitivity"
+  ],
+  "excluded_primary_claims": [
+    "FCP within-species H2 W is independent proof of moisture effect",
+    "genetic polymorphism prevalence or fitness equilibrium",
+    "universal moisture causal response"
+  ],
+  "prospective_analyses": "Separate seasonal flowering-photo opportunity from classified hue; require observed date and flower-visible status, month/year-specific climate, spatial and taxonomic adjustment, missing-colour sensitivity; do not relabel monthly climate from long-term BIO rasters",
+  "active_research_axes": [
+    {
+      "programme": "historical_global_interspecific_moisture",
+      "unit": "species hue proportions nested in genus and sampled geographic support",
+      "status": "frozen_analysis_receipts"
+    },
+    {
+      "programme": "global_seasonal_flower_colour_environment",
+      "unit": "dated photographed open flowers within taxon, local site and season-year, then globally synthesized",
+      "status": "dated_source_opportunity_and_technical_ROI_only_NO_SEASONAL_COLOUR_CLIMATE_EFFECT"
+    }
+  ],
+  "seasonal_upstream_20261016": {
+    "prior_photo_opportunity_ids": 3430502,
+    "n_source_taxa": 1000,
+    "n_original_pixel_attempts": 64,
+    "n_automatic_colour_classifiable": 27,
+    "n_open_flower_organs_independently_verified": false,
+    "n_within_site_seasonal_climate_effects_estimated": 0,
+    "source_receipt": "docs/MOIS_SEASONAL_FCP_SOURCE_TRANSFER_20261016.json",
+    "notes": "Not added to the historical 100543/45953 classifier denominator"
+  }
+}
