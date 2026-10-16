@@ -143,3 +143,56 @@ def test_reject_tampered_original_snapshot_sha_source_queuing(tmp_path):
         m.dispatch(private,receipt,tmp_path/"bad_packets",packet_size=2,synthetic=True)
     with pytest.raises(ValueError,match="4096"):
         m.dispatch(private,receipt,tmp_path/"bad_packets",packet_size=4097,synthetic=True)
+
+
+
+def test_more_than_4096_original_photos_of_one_species_are_not_biologically_capped(tmp_path):
+    """4096 is a compute packet boundary; ALL 4097 IDs must be dispatched."""
+    private=tmp_path/"source_full_dated.ndjson"
+    record={
+        "inat_taxon_id":101,"species":"Campanula synthetica",
+        "observation_id":"the_same_original_observation_uuid",
+        "photo_license":"cc-by",
+        "observer_id":"501",
+        "observed_on":"2020-05-16",
+        "latitude":35.,
+        "longitude":139.,
+        "observed_month":5,
+        "observed_year":2020,
+        "source_snapshot_date":"2026-09-27",
+        "latitude_domain":"NORTH_EXTRATROPICAL",
+        "local_season":"SPRING",
+        "original_photo_flowering_state":"NOT_YET_PHOTO_VERIFIED",
+        "origin":"ORIGINAL_DATED_FCP_SHARD_NO_PHOTO_PIXELS",
+    }
+    with private.open("w") as f:
+        for i in range(4097):
+            pid=str(100000+i)
+            one={**record,
+                 "photo_id":pid,
+                 "photo_url_large":
+                   "https://inaturalist-open-data.s3.amazonaws.com/photos/"+pid+"/large.jpg"}
+            f.write(json.dumps(one,sort_keys=True)+"\n")
+    report={
+        "schema":test_source_date_schema() if False else "mois_original_42111_all_dated_photo_candidate_shard_v1",
+        "status":"ORIGINAL_DATED_PHOTO_OPPORTUNITIES_BLOOM_UNVERIFIED_ROI_NOT_MEASURED",
+        "private_full_dated_source_photo_queue_sha256":m.sha(private),
+        "source_photo_cap_per_taxon":None,
+        "photo_hue_classification_attempted":False,
+        "actual_flower_photographs_verified_from_pixels":0,
+        "metadata_date_known_is_not_blooming_photo_confirmation":True,
+        "synthetic_test_only":True,
+        "shard_number":0,
+        "n_original_eligible_source_photographs_examined":4097,
+        "n_original_photo_observation_dates_usable":4097,
+    }
+    receipt=tmp_path/"source_dated_receipt.json"
+    receipt.write_text(json.dumps(report))
+    result=m.dispatch(private,receipt,tmp_path/"photo_packets",
+                      packet_size=4096,synthetic=True)
+    assert result["n_date_known_original_photo_ids_dispatched_to_roi"]==4097
+    assert result["n_original_independent_observation_uuids_dispatched"]==1
+    assert result["n_bounded_original_roi_packets"]==2
+    assert [x["n_source_dated_photos"] for x in result["per_original_packet"]]==[4096,1]
+    assert result["n_original_photo_ids_omitted_despite_valid_source_date"]==0
+    assert result["all_photo_ids_with_source_date_included_without_sampling_cap"] is True
