@@ -50,3 +50,53 @@
 現時点で実際の「観察日判明写真の全件数」「開花画像として分類可能な全件数」「月別の全球白花率」「白花率×日射・気温・水分の全球係数」は**未算出**。追加した2つのソース監査・花色採用コードは合成データでテスト済みで、未測定の画像を開花扱いしない。
 
 [FCP元全写真IDの永続化手順](https://github.com/zuizui0223/fcp/blob/analysis/fcp-fresh-uncapped-zero-20261015/docs/FCP_REAL_42111_PHOTO_ID_FREEZE_HANDOFF_20261016.md) を参照する。
+
+
+## 6. 128 original-source shards to actual monthly T/S/P/VPD seasonal white inference (implemented)
+
+The source workflow is now runnable in distinct, SHA-verified durable phases. Its workers MUST have access to the frozen original provider archive and the completed FCP durable source; no GitHub-hosted short CI run has been claimed to complete these 93-million-source stages.
+
+### Recover original observation dates in bounded, idempotent source units
+
+[Safe original full-source shard range runner](../scripts/acquisition/mois_run_resumable_full_original_date_shard_range_20261016.py) takes at most four consecutive FCP source shards **per COMPUTE job**. Four is NOT a photo/taxon sampling limit; it simply bounds one resumable work unit. Previously completed source date queues are independently SHA-verified and skipped, and partial/unsealed outputs are rejected for inspection instead of overwritten.
+
+    python -m scripts.acquisition.mois_run_resumable_full_original_date_shard_range_20261016 \
+      --fcp-source-shards-root "$FCP_DURABLE_ROOT/complete_42111_metadata_source" \
+      --original-42111-count-ledger "$FCP_ORIGINAL_COUNT_CSV" \
+      --private-dated-photos-root "$MOIS_PRIVATE_ROOT/dated_original_42111" \
+      --start-shard 0 --stop-shard-exclusive 4 \
+      --out-progress-receipt "$MOIS_PRIVATE_ROOT/progress_000_004.json"
+
+Run remaining disjoint ranges 4:8, 8:12, etc through 124:128, with unique progress receipt filenames, only AFTER their original FCP FCP-SHA-sealed source shards exist. Each result is specifically labelled **PARTIAL DATE-KNOWN PLANT PHOTO CANDIDATES, ZERO FLOWERING CONFIRMED**.
+
+Once and only once all 128 original dated source queues are sealed, execute the independent [128-shard full metadata observed-on reconciliation](../scripts/acquisition/mois_aggregate_all_original_dated_shards_20261016.py):
+
+    python -m scripts.acquisition.mois_aggregate_all_original_dated_shards_20261016 \
+      --fcp-sealed-shards-root "$FCP_DURABLE_ROOT/complete_42111_metadata_source" \
+      --mois-private-dated-shards-root "$MOIS_PRIVATE_ROOT/dated_original_42111" \
+      --original-42111-count-csv "$FCP_ORIGINAL_COUNT_CSV" \
+      --out-public-all-original-dated-photo-receipt "$MOIS_PRIVATE_ROOT/all_original_dates_audit.json"
+
+This independently checks each sealed shard source and date-queue SHA, disjoint source taxon membership, all 42,111 original taxon identities, exactly 93,209,351 total photo opportunities, snapshot-date validity/exclusion conservation and geographically localized original-photo month counts. Missing one shard/one taxon/one photo opportunity is not silently called complete. The output is **original observed_on candidate incidence only**, not actual flowers, blooming photographs or measured white flowers. Source protected IDs, observation UUIDs, users and coordinates remain outside public reports.
+
+### Real flower-positive photos: observation-first, species-equal, then climate comparison
+
+The completed *original FCP whole-photo* fresh ROI-v4 reassembly supplies an exact date-verified, **visibly classifiable flower photo** manifest through [positive bloom and original date gate](../scripts/analysis/mois_original_full_fcp_dated_flower_ROI_20261016.py). This gate requires the original ROI-v4 source method fingerprints; it does NOT reuse old 100,543 measured photos or infer absent Flowers annotations as nonblooming. A classifiable flower photograph is evidence of visible floral hue; precise anther/stigma-stage anthesis and open-bud phenology are **not independently classified**, so avoid claims about exact flowering developmental state.
+
+The newly implemented [full original bloom-photo → 48 monthly WorldClim → seasonal species-equal FE analysis](../scripts/analysis/mois_full_bloom_monthly_TSPVPD_observation_species_FE_20261016.py) now directly accepts the SHA-sealed complete photographed bloom positives (private NDJSON), the receipt from the complete 93M-photo ROI run, and the [real source-verified 48-band WorldClim rasters](../results/mois_worldclim21_dynamic_48_real_source_receipt_20261016.json). It validates EVERY positive bloom's original date, taxon, observer, month, hemisphere and provider-attested ROI hue; the private output keeps only taxon × month × climate grid-cell aggregates. Temperature (°C), solar radiation (kJ m-2 day-1), precipitation (mm/month) and derived average-month VPD (kPa) are extracted from the photo's *original* location and observed month. Source 1970–2000 normals are not observations from the photographed year.
+
+    python -m scripts.analysis.mois_full_bloom_monthly_TSPVPD_observation_species_FE_20261016 \
+      --original-full-date-and-bloom-positive-photo-ndjson "$MOIS_PRIVATE_ROOT/actual_dated_blooms.ndjson" \
+      --original-full-positive-bloom-receipt "$MOIS_PRIVATE_ROOT/global_month_white_summary.json" \
+      --verified-original-worldclim48-root "$MOIS_CLIMATE_REAL_ROOT" \
+      --verified-original-worldclim48-manifest-sha256 9d0cf37a64534542d7788debef28c13f106a15c3bf7bf91be0653f3ce106baae \
+      --out-private-observation-species-site-month-climate "$MOIS_PRIVATE_ROOT/original_species_cell_month.csv" \
+      --out-public-species-equal-month-white-climate "$MOIS_PRIVATE_ROOT/season_white_TSPVPD_site_FE.json"
+
+**Distinct photographs are NOT necessarily distinct observations:** the full original FCP source can have several original pictures belonging to the same iNaturalist observation_uuid. All photo information is preserved, but the source UUID is first collapsed to an **equal-weight observation-level white fraction**, then averaged among original named taxa within source 10-minute climate cell × calendar month; otherwise a 20-photo single observer event falsely counts as 20 independent flowering observations. For the worldwide zone × observed-month report, a named taxon has one vote after aggregating its independent observed photographs. Standard photo-count-weighted white is retained as a clearly separate descriptive denominator. These observed flowering-community means deliberately preserve species turnover; the same-genus/species-only analysis remains secondary.
+
+Three exploratory conditional models are calculated only when supported: exact geographic-cell fixed effects; cell + common month fixed effects; and cell + Northern/Southern/tropical climate-zone × month effects. The original stable latitude/longitude/soil/altitude/terrain terms at the climate cell scale are absorbed, not separately identified. Full-rank 4-axis T/S/P/VPD support and >=30 independent repeated-month climate cells gate preliminary one-way geographic-cell cluster intervals. These do NOT fix observation detectability, shared genus/observer correlation, source photo ROI nonresponse, or identify evolutionary floral fitness.
+
+### Source status and scientific claims
+
+The genuine provider-level 42,111-taxon 93,209,351-photo **candidate counts** are independently audited. The full original date-known candidate extraction, open-flower/colour ROI measurement across all date-qualified photographs, complete original positive-photo-to-monthly-climate join and worldwide adjusted seasonal T/S/P/VPD flower-white model remain **UNEXECUTED on the entire real source**: FCP's 36GB original archive, permanent SQLite and all 128 source shard identities still need source-host durable execution. These scripts passed synthetic full-chain/duplicate-observation/partial-shard tests; no real worldwide seasonal white rate or climate coefficient has been manufactured.
