@@ -78,6 +78,7 @@ def aggregate_all(dates_receipt:Path,roi_shard_root:Path,
     species=set()
     genera=set()
     calendar=defaultdict(Counter)
+    complete_roi_month_effort=defaultdict(Counter)
     receipts=[]
     try:
         with sqlite3.connect(scratch) as db, stage.open("w",encoding="utf8") as out:
@@ -118,6 +119,53 @@ def aggregate_all(dates_receipt:Path,roi_shard_root:Path,
                     or proof.get("this_shard_alone_is_NOT_complete_global_42111_source") is not True
                     or proof.get("actual_all_128_original_photo_shards_complete") is not False):
                     raise ValueError("Original shard/date/photo bloom double-positive counts unsealed")
+                private_month_name=proof.get("private_all_month_roi_effort_file_name")
+                private_month_path=src/"original_roi_month_effort_private.json"
+                if (private_month_name!=private_month_path.name
+                    or proof.get("private_all_month_roi_effort_schema")!=
+                       "mois_private_original_source_photo_month_roi_effort_v1"
+                    or not private_month_path.is_file()
+                    or proof.get("private_all_month_roi_effort_sha256")!=
+                       sha(private_month_path)):
+                    raise ValueError("Original full-shard private source monthly ROI effort not sealed")
+                private_month=json.loads(private_month_path.read_text(encoding="utf8"))
+                if (private_month.get("schema")!=
+                    "mois_private_original_source_photo_month_roi_effort_v1"
+                    or private_month.get("status")!=
+                    "SOURCE_COMPLETE_SHARD_ALL_DATE_KNOWN_PHOTO_MONTH_ROI_COUNTS"
+                    or private_month.get("source_original_roi_shard")!=shard
+                    or private_month.get("source_original_dated_photo_dispatch_sha256")!=
+                        proof.get("source_original_dated_photo_dispatch_sha256")
+                    or private_month.get("synthetic_test_only") is not synthetic
+                    or private_month.get("small_source_month_bins_private_only") is not True):
+                    raise ValueError("Original all-date private monthly source ascertainment missing")
+                shard_roi_effort=Counter()
+                for monthrow in private_month.get("latitude_domain_month_photo_effort",[]):
+                    dom=monthrow.get("latitude_domain")
+                    month=monthrow.get("original_month")
+                    if (dom not in (
+                          "NORTH_EXTRATROPICAL","SOUTH_EXTRATROPICAL","TROPICAL")
+                        or type(month) is not int or month not in range(1,13)):
+                        raise ValueError("Source month/hemisphere ascertainment drift")
+                    key=(dom,month)
+                    if key in shard_roi_effort:
+                        raise ValueError("Repeated source month-bin in original shard ascertainment")
+                    numeric=(
+                        "n_original_date_known_photo_roi_terminals",
+                        "n_original_four_hue_classifiable",
+                        "n_original_photo_roi_white",
+                        "n_source_image_permanent_acquisition_failures",
+                        "n_roi_other_unclassifiable"
+                    )
+                    vals=[monthrow.get(k) for k in numeric]
+                    if (any(type(n) is not int or n<0 for n in vals)
+                        or vals[2]>vals[1]
+                        or vals[0]!=vals[1]+vals[3]+vals[4]):
+                        raise ValueError("Date-known original photo ROI missingness does not sum")
+                    shard_roi_effort[key]=True
+                    aggregate=complete_roi_month_effort[key]
+                    for label,value in zip(numeric,vals):
+                        aggregate[label]+=value
                 count=white_one=0
                 with p.open(encoding="utf8") as f:
                     for line in f:
@@ -173,7 +221,13 @@ def aggregate_all(dates_receipt:Path,roi_shard_root:Path,
                         genera.add(genus)
                         out.write(json.dumps(r,sort_keys=True)+"\n")
                 if (count!=proof["n_original_bloom_four_hue_classified_photo_pixels"]
-                    or white_one!=proof["n_original_bloom_white_four_hue_classified_photo_pixels"]):
+                    or white_one!=proof["n_original_bloom_white_four_hue_classified_photo_pixels"]
+                    or private_month["n_original_dated_photo_roi_terminals"]!=
+                        proof["n_original_date_known_photo_ROI_terminals"]
+                    or private_month["n_original_roi_four_hue_classifiable"]!=count
+                    or private_month["n_original_roi_white"]!=white_one
+                    or private_month["n_permanently_unavailable_photo_pixels"]!=
+                        proof["n_original_permanent_photo_acquisition_failures"]):
                     raise ValueError("Original FCP photo ROI shard positive flowering-hue conservation failed")
                 photo_total+=proof["original_photo_opportunities_in_source_shard"]
                 dated_total+=proof["n_original_date_known_photos_dispatched"]
@@ -185,6 +239,7 @@ def aggregate_all(dates_receipt:Path,roi_shard_root:Path,
                     "original_shard":shard,
                     "original_date_photo_source_sha256":original["dated_shard_receipt_sha256"],
                     "completed_roi_source_shard_receipt_sha256":sha(q),
+                    "completed_roi_month_effort_private_sha256":sha(private_month_path),
                     "n_date_known_roi_photo_terminals":proof[
                         "n_original_date_known_photo_ROI_terminals"],
                     "n_real_source_flower_colour_classifiable_photos":count
@@ -203,23 +258,44 @@ def aggregate_all(dates_receipt:Path,roi_shard_root:Path,
         if (photo_total!=expected_photos
             or dated_total!=dated["n_original_snapshot_observed_on_valid_photo_candidates"]
             or roi_total!=dated_total or classified>roi_total or white>classified
-            or independent>classified):
-            raise ValueError("All original ROI/date/photo opportunity counts do not conserve the source")
+            or independent>classified
+            or sum(v["n_original_date_known_photo_roi_terminals"]
+                   for v in complete_roi_month_effort.values())!=roi_total
+            or sum(v["n_original_four_hue_classifiable"]
+                   for v in complete_roi_month_effort.values())!=classified
+            or sum(v["n_original_photo_roi_white"]
+                   for v in complete_roi_month_effort.values())!=white
+            or sum(v["n_source_image_permanent_acquisition_failures"]
+                   for v in complete_roi_month_effort.values())!=source_failed):
+            raise ValueError("All original photo/date/month-classification source denominators do not conserve")
         public_month=[]
-        for (dom,month),c in sorted(calendar.items()):
-            if c["classified"]<min_public:
+        for (dom,month),effort in sorted(complete_roi_month_effort.items()):
+            c=calendar[(dom,month)]
+            attempted=effort["n_original_date_known_photo_roi_terminals"]
+            classified_month=effort["n_original_four_hue_classifiable"]
+            white_month=effort["n_original_photo_roi_white"]
+            if (c["classified"]!=classified_month or c["white"]!=white_month):
+                raise ValueError("Original all-photo month-level classified ROI totals diverge from private effort census")
+            if attempted<min_public:
                 public_month.append({
                     "latitude_domain":dom,"original_month":month,
                     "public_suppressed_below":min_public
                 })
                 continue
-            ns,mean_white=species_means[(dom,month)]
+            ns,mean_white=species_means.get((dom,month),(0,None))
             public_month.append({
                 "latitude_domain":dom,"original_month":month,
-                "n_four_hue_classifiable_real_source_bloom_photos":c["classified"],
-                "n_verified_original_white_bloom_photos":c["white"],
+                "n_original_date_known_photo_roi_attempted":attempted,
+                "n_four_hue_classifiable_real_source_bloom_photos":classified_month,
+                "n_verified_original_white_bloom_photos":white_month,
+                "n_original_source_image_permanently_unavailable":
+                    effort["n_source_image_permanent_acquisition_failures"],
+                "n_original_photo_roi_other_unclassifiable":
+                    effort["n_roi_other_unclassifiable"],
+                "original_photo_roi_classifiability_fraction_given_source_date":
+                    classified_month/attempted,
                 "photo_white_fraction_given_photo_verified_bloom":
-                    c["white"]/c["classified"],
+                    white_month/classified_month if classified_month else None,
                 "n_original_named_species_with_classifiable_photographs":ns,
                 "species_equal_observation_equal_white_fraction":mean_white
             })
@@ -240,6 +316,11 @@ def aggregate_all(dates_receipt:Path,roi_shard_root:Path,
             "source_shards_completed":partitions,
             "per_completed_shard_source_sha256":receipts,
             "source_original_domain_month_classified_photo_white_and_species_equal":public_month,
+            "all_original_monthly_photo_classifiability_denominators_reconciled":True,
+            "n_original_date_known_roi_other_unclassifiable_photo_opportunities":
+                roi_total-classified-source_failed,
+            "n_original_source_month_bins_with_attempted_photo_ROI":
+                len(complete_roi_month_effort),
             "private_actual_bloom_photo_month_hue_manifest_sha256":sha(stage),
             "full_42111_original_source_not_selectively_date_sampled":True,
             "per_species_source_photo_cap":None,
