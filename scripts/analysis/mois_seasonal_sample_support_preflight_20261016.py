@@ -143,9 +143,6 @@ def audit(sample_csv:Path,receipt_json:Path,private_json:Path,public_json:Path,
         or len(chosen_taxa)!=source["source_species_with_photos"]
         or chosen>CAP*source["source_species_with_photos"]):
         raise ValueError("Sample species/photo counts differ from frozen source sampling receipt")
-    if any(v>CAP for v in Counter(t for t,d,s in taxa_season_support for _ in range(0)).values()):
-        # Unreachable by construction, retained as a self-documenting no-op.
-        raise AssertionError("Unexpected taxon photo count")
     by_tax=Counter()
     for (tax,_,domain),phases in species.items():
         by_tax[tax]+=sum(z["n"] for z in phases.values())
