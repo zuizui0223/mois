@@ -41,7 +41,7 @@ DYNAMIC=[
     "delta_tavg_c","delta_srad_kj_m2_day","delta_prec_mm","delta_vpd_kpa"
 ]
 REQUIRED={
-    "measurement_id","observation_id","inat_taxon_id","genus","original_month",
+    "measurement_id","observation_id","inat_taxon_id","genus","domain","original_month",
     "climate_grid_row","climate_grid_col","source_climate_join_status",
     "sample_observation_weight","measurement_status","morph",*DYNAMIC
 }
@@ -70,14 +70,18 @@ def partial_out(y_x:np.ndarray,w:np.ndarray,labels:list[np.ndarray],
     raise ValueError("Sparse cell×month fixed effect graph did not converge")
 
 
-def fit_fe(cell_month:list[dict],*,include_month:bool,min_cells:int=10)->dict:
+def fit_fe(cell_month:list[dict],*,include_month:bool,min_cells:int=10,
+           zone_month:bool=False)->dict:
     if min_cells<2:raise ValueError("Require >=2 independent climate cells for model diagnostics")
+    if zone_month and not include_month:
+        raise ValueError("Latitude-zone × calendar-month FE requires month FE")
     months_by_cell=defaultdict(set)
     for row in cell_month:
         months_by_cell[row["cell"]].add(row["month"])
     repeated={cell for cell,months in months_by_cell.items() if len(months)>=2}
     a=[row for row in cell_month if row["cell"] in repeated]
-    name="cell_and_month" if include_month else "cell_only"
+    name=("cell_and_latitude_zone_month" if zone_month else
+          "cell_and_month" if include_month else "cell_only")
     basic={
         "fixed_effect_model":name,
         "n_qualified_geographic_cells":len(repeated),
@@ -92,7 +96,14 @@ def fit_fe(cell_month:list[dict],*,include_month:bool,min_cells:int=10)->dict:
     cat_cell=np.unique([r["cell"] for r in a],return_inverse=True)[1]
     labels=[cat_cell]
     if include_month:
-        labels.append(np.unique([r["month"] for r in a],return_inverse=True)[1])
+        if zone_month:
+            if any(r.get("domain") not in (
+                "NORTH_EXTRATROPICAL","SOUTH_EXTRATROPICAL","TROPICAL") for r in a):
+                raise ValueError("Original observation hemisphere/tropics source domain missing")
+            calendar=[str(r["domain"])+":"+str(r["month"]) for r in a]
+        else:
+            calendar=[r["month"] for r in a]
+        labels.append(np.unique(calendar,return_inverse=True)[1])
     w=np.array([r["n_species"] for r in a],dtype=np.float64)
     y=np.array([r["white_species_equal"] for r in a],dtype=np.float64)
     x=np.array([[float(r[v]) for v in DYNAMIC] for r in a],dtype=np.float64)
@@ -160,6 +171,7 @@ def analyze(climate_csv:Path,climate_receipt:Path,out:Path,*,
     original=Counter()
     taxa=defaultdict(lambda:[0.,0.,0])
     monthly_x={}
+    monthly_domain={}
     seen=set();observations=set()
     with climate_csv.open(newline="",encoding="utf8") as f:
         reader=csv.DictReader(f)
@@ -196,6 +208,12 @@ def analyze(climate_csv:Path,climate_receipt:Path,out:Path,*,
             if pair in monthly_x and any(abs(a-b)>1e-4 for a,b in zip(monthly_x[pair],q)):
                 raise ValueError("Different climate values for same month and original WorldClim cell")
             monthly_x[pair]=q
+            dom=row["domain"]
+            if dom not in ("NORTH_EXTRATROPICAL","SOUTH_EXTRATROPICAL","TROPICAL"):
+                raise ValueError("Original month-grid latitude domain missing")
+            if pair in monthly_domain and monthly_domain[pair]!=dom:
+                raise ValueError("One climate grid/month spans incompatible source latitude zones")
+            monthly_domain[pair]=dom
             key=(cell,month,row["inat_taxon_id"])
             x=taxa[key]
             x[0]+=weight
@@ -213,6 +231,7 @@ def analyze(climate_csv:Path,climate_receipt:Path,out:Path,*,
         vals=monthly_x[(cell,month)]
         aggregates.append({
             "cell":f"{cell[0]}_{cell[1]}","month":month,
+            "domain":monthly_domain[(cell,month)],
             "white_species_equal":sum(fractions)/len(fractions),
             "n_species":len(fractions),
             **dict(zip(DYNAMIC,vals))
@@ -223,6 +242,7 @@ def analyze(climate_csv:Path,climate_receipt:Path,out:Path,*,
     enough=sum(len(v)>=2 for v in months_by_cell.values())
     model_a=fit_fe(aggregates,include_month=False,min_cells=min_cells)
     model_b=fit_fe(aggregates,include_month=True,min_cells=min_cells)
+    model_c=fit_fe(aggregates,include_month=True,min_cells=min_cells,zone_month=True)
     public={
         "schema":SCHEMA,"status":STATUS,
         "verified_private_climate_photo_source_receipt_sha256":sha256_file(climate_receipt),
@@ -234,7 +254,7 @@ def analyze(climate_csv:Path,climate_receipt:Path,out:Path,*,
         "n_month_source_climate_cells":len(aggregates),
         "n_distinct_climate_cells_with_classified_flowers":len(months_by_cell),
         "n_climate_cells_with_at_least_two_distinct_classified_flower_months":enough,
-        "two_exploratory_fixed_effect_support_and_models":[model_a,model_b],
+        "three_exploratory_fixed_effect_support_and_models":[model_a,model_b,model_c],
         "target_is_photographed_blooming_species_turnover_not_individual_colour_plasticity":True,
         "static_soil_elevation_latitude_terrain_coefficients_absorbed_by_exact_cell_FE":True,
         "unobserved_original_wild_flowering_population_estimated":False,
