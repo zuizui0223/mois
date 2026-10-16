@@ -89,6 +89,10 @@ jobs:
         run: python -m pytest -q tests/test_mois_pin_worldclim_monthly_precipitation_20261016.py
       - name: Verify season-matched same-species sampling support upper bounds before image colours
         run: python -m pytest -q tests/test_mois_seasonal_sample_support_preflight_20261016.py
+      - name: Replay historically observed photographic classifiability probabilities for independent two-season sampling
+        run: python -m pytest -q tests/test_mois_seasonal_photo_classifiability_power_20261016.py
+      - name: Guard real FCP full source candidate-photo depth upper bounds for seasonal support
+        run: python -m pytest -q tests/test_mois_real_photo_count_seasonal_support_bounds_20261016.py
       - name: Test source-independent herbarium rainfall estimator on synthetic sites
         run: python scripts/analysis/mois_external_independent_bio12_transfer_20261016.py --self-test
       - name: Test reproducible public GBIF search and taxonomic alias pilot on mock API records
