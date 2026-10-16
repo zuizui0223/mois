@@ -1,0 +1,128 @@
+name: MOIS real 2025 photo ROI vs iNaturalist phenology bias cross-check
+
+on:
+  push:
+    branches:
+      - analysis/mois-2025-phenology-sharedclimate-qc-20261016
+    paths:
+      - .github/workflows/mois-real-2025-source-ROI-current-observation-phenology-qc.yml
+      - scripts/analysis/mois_crosscheck_2025_photo_roi_current_phenology.py
+      - tests/test_mois_photo_phenology_crosscheck_2025.py
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-2025-frozen-original-64-photo-and-live-annotation-sha-crosscheck
+  cancel-in-progress: false
+
+jobs:
+  source-identical-original-photo-automated-roi-vs-observation-annotations:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test ROI organ-mix and current plant phenology code 21 guardrails
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests pytest
+          python -m pytest -q \
+            tests/test_mois_live_inat_phenology_2025.py \
+            tests/test_mois_photo_phenology_crosscheck_2025.py
+          python -m py_compile \
+            scripts/analysis/mois_audit_live_inat_observation_phenology_2025.py \
+            scripts/analysis/mois_crosscheck_2025_photo_roi_current_phenology.py
+
+      - name: Verify immutable real 2025 photo source and already-saved 64 current observation annotations
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_fcp original_mois_annotations
+          gh api repos/zuizui0223/fcp/actions/runs/38909164068 > original_fcp/locked_original_FCP_pixel_run.json
+          gh api repos/zuizui0223/mois/actions/runs/38919740652 > original_mois_annotations/live_2025_observation_phenology_run.json
+          python - <<'PY'
+          import json
+          a=json.load(open('original_fcp/locked_original_FCP_pixel_run.json'))
+          b=json.load(open('original_mois_annotations/live_2025_observation_phenology_run.json'))
+          assert (a['id']==38909164068 and a['status']=='completed'
+                  and a['conclusion']=='success'
+                  and a['head_sha']=='ed80d67ca9e3ef456677a14bedefff47a443e7cb'
+                  and a['head_repository']['full_name']=='zuizui0223/fcp')
+          assert (b['id']==38919740652 and b['status']=='completed'
+                  and b['conclusion']=='success'
+                  and b['head_sha']=='31b94fc9ce830b4dbe2ad1eef63b843f2a8b6518'
+                  and b['head_repository']['full_name']=='zuizui0223/mois')
+          print('MOIS_FROZEN_64_PHOTO_AND_LIVE_CODE21_SOURCE_PROVENANCE_ACCEPTED')
+          PY
+
+      - name: Retrieve historical original FCP ROI source and frozen current iNat phenology receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download 38909164068 --repo zuizui0223/fcp \
+            --name fcp-actual-2025-original-first64-summer-autumn-colour-ROI-STAGE-UNVERIFIED \
+            --dir original_fcp
+          gh run download 38919740652 --repo zuizui0223/mois \
+            --name mois-2025-real-original64-live-observation-phenology-availability-NOT-PHOTO-STAGE \
+            --dir original_mois_annotations
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile,ZIP_DEFLATED
+          for folder,name in (('original_fcp','fcp_2025_original_photo_source.zip'),
+                              ('original_mois_annotations','mois_2025_live_annotation_archive.zip')):
+              root=Path(folder)
+              with ZipFile(name,'w',ZIP_DEFLATED) as z:
+                  for p in sorted(root.rglob('*')):
+                      if p.is_file() and not p.name.endswith('_run.json'):
+                          z.write(p,p.relative_to(root).as_posix())
+          PY
+
+      - name: Preserve original photo/observation link and quantify any fruiting-versus-white ROI conflicts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_crosscheck_2025_photo_roi_current_phenology \
+            --original-FCP-2025-photo-ROI-zip fcp_2025_original_photo_source.zip \
+            --current-MOIS-2025-observation-annotations-zip mois_2025_live_annotation_archive.zip \
+            --outdir mois_2025_original_observation_photo_phenology_crosscheck
+          python - <<'PY'
+          import json,csv
+          from pathlib import Path
+          root=Path('mois_2025_original_observation_photo_phenology_crosscheck')
+          r=json.loads((root/'signed_2025_original_roi_observation_phenology_QC_receipt.json').read_text())
+          assert r['status']=='REAL_AUTOMATED_PHOTO_ROI_VS_LIVE_OBSERVATION_ANNOTATION_BIAS_NOT_BOTANICAL_BLOOM'
+          assert r['original_photo_observations']==64
+          assert r['live_original_photo_and_observation_day_both_match']==64
+          assert r['source_photo_observations_by_season']=={'summer':32,'autumn':32}
+          assert r['observations_with_current_no_evidence_annotation']==3
+          assert r['summer_flowering_annotated_original_observation_with_white_automated_ROI_UNREVIEWED']==2
+          assert r['autumn_fruiting_annotated_original_observation_with_white_automated_ROI_UNREVIEWED']==1
+          assert r['flower_petal_tepal_BOTANICALLY_CONFIRMED_photo_count']==0
+          assert r['organ_and_live_observation_annotations_are_not_independent_photo_bloom_proof'] is True
+          assert r['no_open_flower_colour_white_frequency_computed'] is True
+          with (root/'2025_original_photo_ROI_x_current_observation_phenology_contingency_NOT_OPEN_FLOWER.csv').open(newline='') as f:
+              rows=list(csv.DictReader(f))
+          assert sum(int(q['n_original_photo_observations']) for q in rows)==64
+          assert set(q['all_photo_open_petal_tepal_unreviewed'] for q in rows)=={'True'}
+          print('MOIS_REAL_SEASONAL_PHENOLOGY_2_FLOWERING_4_FRUIT_3_NO_EVIDENCE_1_FRUIT_ROI_WHITE_NOT_OPEN_FLOWER')
+          PY
+
+      - name: Preserve only aggregate cross-classification and source SHA receipts, no new photos
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-real-2025-original64-ROI-vs-iNat-live-phenology-crosscheck-NOT-BLOOM
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            mois_2025_original_observation_photo_phenology_crosscheck/
+            original_fcp/locked_original_FCP_pixel_run.json
+            original_mois_annotations/live_2025_observation_phenology_run.json
