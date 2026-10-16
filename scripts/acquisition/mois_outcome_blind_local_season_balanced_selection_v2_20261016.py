@@ -33,7 +33,7 @@ if str(ROOT) not in sys.path:
 from scripts.acquisition.mois_stratified_photo_selection_20261016 import (
     CAP, PRIVATE_FIELDS, classify_site, priority, quotas,
 )
-from scripts.acquisition.mois_seasonal_sample_support_preflight_20261016 import (
+from scripts.analysis.mois_seasonal_flower_colour_opportunity_20261016 import (
     local_season,
 )
 from scripts.acquisition.mois_sample_direct_from_fcp_source_20261016 import (
