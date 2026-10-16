@@ -22,6 +22,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import os
 import re
 import sqlite3
@@ -130,10 +131,11 @@ def dispatch(date_queue:Path,date_receipt:Path,packet_dir:Path, *,
     stage=packet_dir.with_name(packet_dir.name+".INCOMPLETE")
     if packet_dir.exists() or stage.exists():
         raise ValueError("No overwrite of already sealed or interrupted original photo ROI packets")
+    original_queue_sha=sha(date_queue)
     source=json.loads(date_receipt.read_text(encoding="utf8"))
     if (source.get("schema")!=DATE_SCHEMA
         or source.get("status")!=DATE_STATUS
-        or source.get("private_full_dated_source_photo_queue_sha256")!=sha(date_queue)
+        or source.get("private_full_dated_source_photo_queue_sha256")!=original_queue_sha
         or source.get("source_photo_cap_per_taxon","INVALID") is not None
         or source.get("photo_hue_classification_attempted") is not False
         or source.get("actual_flower_photographs_verified_from_pixels")!=0
@@ -174,7 +176,8 @@ def dispatch(date_queue:Path,date_receipt:Path,packet_dir:Path, *,
                    r.get("observed_month")!=day.month or r.get("observed_year")!=day.year:
                     raise ValueError("Date-first ROI source must retain real original observed_on")
                 lat=float(r["latitude"]);lon=float(r["longitude"])
-                if not (-90<=lat<=90 and -180<=lon<=180):
+                if not (math.isfinite(lat) and math.isfinite(lon)
+                        and -90<=lat<=90 and -180<=lon<=180):
                     raise ValueError("Original source photo has out-of-range geography")
                 zone,season=climatic_season(lat,day.month)
                 if zone!=r["latitude_domain"] or season!=r["local_season"]:
@@ -204,10 +207,10 @@ def dispatch(date_queue:Path,date_receipt:Path,packet_dir:Path, *,
                 count+=1
                 domains[zone]=domains.get(zone,0)+1
                 if len(buffer)==packet_size:
-                    packets.append(_write_packet(stage,len(packets),buffer,sha(date_queue)))
+                    packets.append(_write_packet(stage,len(packets),buffer,original_queue_sha))
                     buffer=[]
                 if count%10000==0:db.commit()
-        if buffer:packets.append(_write_packet(stage,len(packets),buffer,sha(date_queue)))
+        if buffer:packets.append(_write_packet(stage,len(packets),buffer,original_queue_sha))
         db.commit()
     sqlite.unlink()
     if count!=source.get("n_original_photo_observation_dates_usable") or \
@@ -216,7 +219,7 @@ def dispatch(date_queue:Path,date_receipt:Path,packet_dir:Path, *,
     result={
         "schema":SCHEMA,"status":STATUS,
         "source_full_dated_shard_receipt_sha256":sha(date_receipt),
-        "source_private_dated_photo_queue_sha256":sha(date_queue),
+        "source_private_dated_photo_queue_sha256":original_queue_sha,
         "source_original_shard":source["shard_number"],
         "n_original_photo_opportunities_in_sealed_shard":source[
             "n_original_eligible_source_photographs_examined"],
@@ -232,7 +235,10 @@ def dispatch(date_queue:Path,date_receipt:Path,packet_dir:Path, *,
         "photos_from_source_without_date_not_sent_to_image_evaluator":True,
         "all_photo_ids_with_source_date_included_without_sampling_cap":True,
         "per_original_packet":packets,
-        "date_known_geographic_zone_candidate_counts":domains,
+        "date_known_geographic_zone_candidate_counts":{
+            zone:({"n_source_dated_candidate_photos":n} if n>=10 else
+                  {"public_suppressed_below":10})
+            for zone,n in sorted(domains.items())},
         "protected_source_photo_ids_and_coordinates_in_public_receipt":False,
         "synthetic_test_only":bool(synthetic)
     }
