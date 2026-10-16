@@ -134,7 +134,7 @@ def test_strict_original_source_sha_prevents_renaming_nonflowers_as_white(tmp_pa
     first["original_ROI_v4_hue"]="white" if first["original_ROI_v4_hue"]!="white" else "blue_purple"
     lines[0]=json.dumps(first)
     positive.write_text("\n".join(lines)+"\n")
-    with pytest.raises(ValueError,match="Unsealed all-photo"):
+    with pytest.raises(ValueError,match="Unsealed full FCP source"):
         m.evaluate(positive,receipt,climate,tmp_path/"priv.csv",
                    tmp_path/"pub.json",synthetic=True)
     assert not (tmp_path/"pub.json").exists()
