@@ -1,0 +1,110 @@
+name: MOIS real TerraClimate v1.1 2025 June-Nov at frozen source-site centre
+
+on:
+  push:
+    branches:
+      - analysis/mois-real-2025-seasonal-climate-20261016
+    paths:
+      - .github/workflows/mois-2025-asclepias-actual-site-centre-climate-20261016.yml
+
+permissions:
+  contents: read
+
+jobs:
+  month-climate-six-variables-one-original-photo-site-centre:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests
+      - name: Retrieve June-November 2025 actual provider monthly climate at frozen site centre
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site_centre_actual2025
+          python - <<'PY'
+          import requests,csv,io,json,hashlib
+          from pathlib import Path
+          from scripts.analysis.mois_fetch_terraclimate_v11_2025_by_original_month import (
+              metadata,unpack,VARS,ENDPOINT,ATTR,sha,UNITS)
+          # This SITE centre is derived exactly from the frozen original
+          # 2025 Asclepias source 0.25-degree cell indices 529,435.
+          lat=-90+(529+.5)/4
+          lon=-180+(435+.5)/4
+          assert lat==42.375 and lon==-71.125
+          month_values={}
+          variable_receipts={}
+          with requests.Session() as session:
+              for var in VARS:
+                  a=session.get(ATTR.format(var=var),timeout=(8,30))
+                  a.raise_for_status()
+                  meta=metadata(var,a.text)
+                  q={'var':var,'latitude':str(lat),'longitude':str(lon),
+                     'time_start':'2025-06-01T00:00:00Z','time_end':'2025-11-30T23:59:59Z',
+                     'accept':'csv'}
+                  reply=session.get(ENDPOINT.format(var=var),params=q,timeout=(8,40))
+                  reply.raise_for_status()
+                  rows=list(csv.DictReader(io.StringIO(reply.text)))
+                  value_col=[c for c in (rows[0] if rows else []) if c==var or c.startswith(var+'[')]
+                  assert len(value_col)==1 and len(rows)==6
+                  actual={}
+                  for row in rows:
+                      ym=row['time'][:7]
+                      assert ym in [f'2025-{m:02d}' for m in range(6,12)]
+                      if ym in actual:raise ValueError('Duplicate actual 2025 observation month')
+                      actual[ym]=unpack(var,float(row[value_col[0]]),meta)
+                  if len(actual)!=6:raise ValueError('Incomplete six actual 2025 months')
+                  variable_receipts[var]={
+                    'official_v11_scale_factor':meta['scale'],
+                    'official_v11_add_offset':meta['offset'],
+                    'das_sha256':sha(a.content),'raw_provider_2025_months_sha256':sha(reply.content),
+                    'intended_physical_unit':UNITS[var],
+                  }
+                  month_values[var]=actual
+                  print('MOIS_2025_AUTHENTIC_FROZEN_SITE_MONTH_VARIABLE',
+                        var,[(m,round(n,4)) for m,n in sorted(actual.items())],flush=True)
+          keys=[f'2025-{m:02d}' for m in range(6,12)]
+          records=[]
+          for ym in keys:
+              vals={var:month_values[var][ym] for var in VARS}
+              if vals['tmin']>vals['tmax']:raise ValueError('Bad CF climate min-max conversion')
+              records.append({'year_month':ym,'source_site_center_lat':lat,'source_site_center_lon':lon,
+                'tmean_C':f"{(vals['tmin']+vals['tmax'])/2:.5f}",
+                'ppt_mm':f"{vals['ppt']:.5f}",'srad_W_m2':f"{vals['srad']:.5f}",
+                'def_mm':f"{vals['def']:.5f}",'vpd_kPa':f"{vals['vpd']:.5f}",
+                'site_centre_not_every_photo_location':True,
+                'no_botanically_confirmed_open_flower_photo':True})
+          path=Path('site_centre_actual2025/actual_2025_6_months_site_center_physically_decoded.csv')
+          with path.open('w',newline='') as f:
+              wr=csv.DictWriter(f,fieldnames=list(records[0]),lineterminator='\n')
+              wr.writeheader();wr.writerows(records)
+          summaries={}
+          for season,select in [('summer',records[:3]),('autumn',records[3:])]:
+              summaries[season]={field:round(sum(float(r[field]) for r in select)/3,5)
+                                  for field in ('tmean_C','ppt_mm','srad_W_m2','def_mm','vpd_kPa')}
+          result={'schema':'mois_real_2025_source_site_center_temporal_climate_v11_v1',
+              'status':'REAL_CFCORRECT_2025_SITE_CENTRE_SEASON_CLIMATE_NOT_64_PHOTO_LOCATIONS',
+              'source_original_site_lat0p25_cell':529,'source_original_site_lon0p25_cell':435,
+              'original_photo_cell_center':[lat,lon],
+              'months':keys,'n_photo_source_site_cell_year':1,
+              'no_photo_or_flower_colour_used_in_climate_request':True,
+              'no_monthly_climate_assigned_to_each_original_photo_yet':True,
+              'no_colour_or_season_climate_causal_inference':True,
+              'observed_actual_monthly_season_means':summaries,
+              'cf_attribute_original_provider_receipts':variable_receipts,
+              'observed_climate_csv_sha256':sha(path.read_bytes())}
+          (Path('site_centre_actual2025')/'original_cf_verified_site_2025_receipt.json').write_text(
+              json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print('MOIS_PHYSICAL_CFCORRECT_2025_SITE_CENTRE_MONTHLY_SEASONS_COMPLETE',
+                json.dumps(summaries,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-2025-asclepias-source-site-42p375N-71p125W-real-months-cf-physical-not-flower
+          path: site_centre_actual2025/
+          if-no-files-found: error
+          retention-days: 90

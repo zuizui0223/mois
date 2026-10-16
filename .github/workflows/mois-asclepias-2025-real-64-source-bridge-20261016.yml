@@ -1,0 +1,95 @@
+name: MOIS genuine FCP Asclepias summer autumn 2025 source-to-climate keys
+
+on:
+  push:
+    branches:
+      - analysis/mois-real-2025-seasonal-climate-20261016
+    paths:
+      - .github/workflows/mois-asclepias-2025-real-64-source-bridge-20261016.yml
+      - scripts/analysis/mois_asclepias_2025_original_season_postroi.py
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  real-original-64-seasons-not-flowering-confirmation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FCP_PIXEL_RUN: "38909164068"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate genuine 2025 original photo read-only source origin
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p fcp_upstream/season64
+          gh api "repos/zuizui0223/fcp/actions/runs/$FCP_PIXEL_RUN" > fcp_upstream/original_seasonal_pixel_run.json
+          python - <<'PY'
+          import json
+          p=json.load(open('fcp_upstream/original_seasonal_pixel_run.json'))
+          assert p['id']==38909164068
+          assert p['status']=='completed' and p['conclusion']=='success'
+          assert p['head_sha']=='ed80d67ca9e3ef456677a14bedefff47a443e7cb'
+          assert p['head_repository']['full_name']=='zuizui0223/fcp'
+          print('MOIS_FCP_ORIGINAL_SUMMER_AUTUMN_2025_PIXELS_PROVENANCE_VALID')
+          PY
+      - name: Import the exact originally source-signed first 64 FCP pixel terminals
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download "$FCP_PIXEL_RUN" --repo zuizui0223/fcp \
+            --name fcp-actual-2025-original-first64-summer-autumn-colour-ROI-STAGE-UNVERIFIED \
+            --dir fcp_upstream/season64
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile,ZIP_DEFLATED
+          root=Path('fcp_upstream/season64')
+          with ZipFile('source_original_2025_seasonal64.zip','w',ZIP_DEFLATED) as z:
+              for p in sorted(root.rglob('*')):
+                  if p.is_file():z.write(p,p.relative_to(root).as_posix())
+          PY
+      - name: Join source month and genuine ROI output after original blind imaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_asclepias_2025_original_season_postroi \
+            --fcp-season64-artifact source_original_2025_seasonal64.zip \
+            --outdir mois_original_asclepias2025
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads((Path('mois_original_asclepias2025')/'mois_original_asclepias_source_rois_seasons_receipt.json').read_text())
+          assert a['status']=='REAL_DATE_AND_ROI_ATTEMPTS_NO_BOTANICAL_WHITE_CLIMATE_EFFECT'
+          assert a['source_original_postblind_sha256']=='1b16cdabd2936567dee87b8344019f40f315600c6510dfc1f25a03835024b6a0'
+          assert a['n_original_photo_attempts']==64 and a['n_original_unique_observers']==64
+          assert a['n_original_source_grid_cells']==21
+          assert a['n_exact_2025_grid_and_month_climate_requests']==40
+          assert a['by_season']['summer']['original_photos']==32
+          assert a['by_season']['autumn']['original_photos']==32
+          assert a['by_season']['summer']['automated_roi_four_state']==12
+          assert a['by_season']['autumn']['automated_roi_four_state']==6
+          assert a['open_flower_botanically_validated'] is False
+          assert a['no_climate_values_extracted_or_effect_estimated'] is True
+          print('MOIS_REAL_2025_ASCLEPIAS_64_SIGNED_SOURCE_40_CLIMATE_GRID_MONTH_KEYS_NO_WHITE_EFFECT')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-real-2025-asclepias-64-postblind-40-grids-months-unreviewed
+          if-no-files-found: error
+          retention-days: 90
+          path: |
+            mois_original_asclepias2025/
+            fcp_upstream/original_seasonal_pixel_run.json
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: mois-asclepias-original-2025-bridge-FAIL-CLOSED
+          if-no-files-found: warn
+          path: fcp_upstream/original_seasonal_pixel_run.json
