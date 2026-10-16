@@ -6,6 +6,7 @@ on:
       - analysis/mois-real-2025-seasonal-climate-20261016
     paths:
       - .github/workflows/mois-asclepias-2025-real-64-source-bridge-20261016.yml
+      - scripts/analysis/mois_asclepias_2025_original_season_postroi.py
 
 permissions:
   contents: read
