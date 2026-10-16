@@ -26,8 +26,27 @@ def main() -> None:
     study = scope["study"]
     require(study in ("fcp", "mois"), "Unknown scientific study")
     require(scope["repository"] == f"zuizui0223/{study}", "Wrong repository identity")
-    require(scope["shared_upstream"]["photo_id_intersection_status"] == "not_measured",
-            "Claimed cross-paper photo-ID overlap requires an actual ID-level audit")
+    require(scope["shared_upstream"]["photo_id_intersection_status"] == "measured_frozen_original_photo_ids",
+            "Cross-paper photo-ID overlap must be based on the verified frozen source audit")
+    overlap = load(scope["shared_upstream"]["receipt_path"])
+    measured = overlap["measured_overlap"]
+    common = scope["shared_upstream"]
+    require(measured["shared_photo_ids"] == common["shared_original_photo_ids"] == 3411,
+            "Original-photo overlap has changed or conflicts with the audit receipt")
+    require(overlap["source_denominators"]["fcp_total_photos"] == 149900
+            and overlap["source_denominators"]["mois_unique_photos"] == 100543,
+            "Cross-paper source denominators must be kept distinct")
+    require(measured["all_shared_both_classifiable"] == 1693
+            and measured["all_shared_both_colour_agreement"] == 1693,
+            "Shared-photo label concordance receipt has changed")
+    require(overlap["scientific_boundary"]["independent_photographic_source_replication"] is False,
+            "Shared original photos do not provide independent source confirmation")
+    require(measured["shared_photo_id_set_sha256"] ==
+            "56db5b4b9a4ab7a200ae5530d502347ac2bb3ec8c8a62bc75b80e2875a99d269",
+            "Actual shared source-photo identifier set differs from frozen audit")
+    require(overlap["provenance"]["mois_original_photo_archive_sha256"] ==
+            "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+            "MOIS original source fingerprint changed")
     require(scope["shared_upstream"]["independent_source_replication"] is False,
             "Shared iNaturalist photos are not independent source replication")
     require(scope["shared_upstream"]["can_pool_model_estimates"] is False,
