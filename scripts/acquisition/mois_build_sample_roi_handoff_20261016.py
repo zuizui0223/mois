@@ -48,7 +48,24 @@ def worker_partition(measurement_id: str) -> int:
 
 def verify_sample(sample: Path, receipt_path: Path, *, synthetic: bool = False) -> dict:
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
-    if (receipt.get("schema") != "mois_direct_fcp_source_stratified_photo_selection_v1"
+    selected_source_schema = receipt.get("schema")
+    known_versions = {
+        "mois_direct_fcp_source_stratified_photo_selection_v1",
+        "mois_direct_fcp_source_stratified_photo_selection_v2",
+    }
+    if selected_source_schema == "mois_direct_fcp_source_stratified_photo_selection_v2":
+        if (receipt.get("sampling_protocol")
+            != "OUTCOME_BLIND_NESTED_LOCAL_SEASON_WITHIN_ORIGINAL_REGION_BIO12_V2"
+            or receipt.get("selected_local_season_nested_observations", -1) < 0
+            or receipt.get("selected_local_season_fallback_observations", -1) < 0
+            or (receipt["selected_local_season_nested_observations"]
+                + receipt["selected_local_season_fallback_observations"]
+                != receipt.get("selected_original_photo_ids"))):
+            raise ValueError("V2 local-season-balanced sampler provenance or fallback counts missing")
+    elif selected_source_schema == "mois_direct_fcp_source_stratified_photo_selection_v1":
+        if receipt.get("sampling_protocol", "ORIGINAL_REGION_BIO12_V1") != "ORIGINAL_REGION_BIO12_V1":
+            raise ValueError("V1 source sample unexpectedly claims another seasonal design")
+    if (selected_source_schema not in known_versions
         or receipt.get("status") != "SOURCE_ADMITTED_SELECTED_PRIVATE_IDS_ONLY_NO_PHOTO_PIXELS_MEASURED"
         or receipt.get("selected_private_photo_csv_sha256") != sha256_file(sample)
         or receipt.get("historical_colour_outcomes_seen") is not False
@@ -139,6 +156,9 @@ def assemble(sample: Path, receipt_path: Path, outdir: Path, *, synthetic: bool 
             "schema": "mois_sample_scoped_original_roi_v4_blind_packets_v1",
             "status": "SAMPLE_ONLY_BLIND_METADATA_SEALED_PIXELS_NOT_MEASURED",
             "original_photo_sample_receipt_sha256": sha256_file(receipt_path),
+            "original_source_selection_schema": receipt["schema"],
+            "original_source_selection_protocol": receipt.get(
+                "sampling_protocol", "ORIGINAL_REGION_BIO12_V1"),
             "original_selected_private_photo_csv_sha256": sha256_file(sample),
             "selected_photo_ids": total,
             "selected_original_taxa_with_photo": len(by_species),
