@@ -75,6 +75,34 @@ jobs:
           assert not a['biological_photo_pixels_measured']
           print('MOIS_ORIGINAL_48_DYNAMIC_MONTHLY_SOURCE_PIN_COMPLETE',json.dumps(a,sort_keys=True))
           PY
+      - name: Compute real 12-month T/S/P/VPD collinearity after cell and latitude-zone calendar-month controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_actual_48_monthly_climate_covariance_20261016 \
+            --verified-worldclim48-root .trusted/verified_48_rasters \
+            --verified-worldclim48-sha256 9d0cf37a64534542d7788debef28c13f106a15c3bf7bf91be0653f3ce106baae \
+            --out-public-climate-collinearity .trusted/verified_48_rasters/real_four_axis_monthly_climate_collinearity.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          f=Path('.trusted/verified_48_rasters/real_four_axis_monthly_climate_collinearity.json')
+          a=json.loads(f.read_text())
+          assert a['status']=='REAL_MONTHLY_CLIMATE_ONLY_FIXED_CELL_SEASON_COLLINEARITY_NO_WHITE_PHOTOS'
+          assert a['source_complete_all_48_monthly_climate_cells']>500000
+          assert set(a['latitude_domains'])=={'TROPICAL','NORTH_EXTRATROPICAL','SOUTH_EXTRATROPICAL'}
+          assert a['original_fcp_sampled_flower_photographs_joined'] is False
+          assert a['real_13_env_genus_spatial_colour_model_reestimated'] is False
+          assert a['synthetic_test_only'] is False
+          print('MOIS_REAL_48_MONTHLY_CELL_CENTERED_CLIMATE_COLLINEARITY_SOURCE_ATTESTED',
+                json.dumps({k:{
+                  'source_cells':z['n_complete_48layer_original_source_cells'],
+                  'correlation_cell_only':z['model_A_after_exact_cell_fixed_effects']['correlation_matrix'],
+                  'correlation_cell_and_zone_calendar_month':z['model_B_after_cell_and_latitude_zone_calendar_month_fixed_effects']['correlation_matrix'],
+                  'climate_condition_cell_only':z['model_A_after_exact_cell_fixed_effects']['condition_number_correlation'],
+                  'climate_condition_cell_zone_month':z['model_B_after_cell_and_latitude_zone_calendar_month_fixed_effects']['condition_number_correlation'],
+                } for k,z in a['latitude_domains'].items()},sort_keys=True))
+          PY
       - name: Save only original hashes and month-alignment receipts (no third-party raster bytes)
         if: success()
         uses: actions/upload-artifact@v4
@@ -83,5 +111,6 @@ jobs:
           path: |
             .trusted/verified_48_rasters/dynamic_climate_source_receipt.json
             .trusted/verified_48_rasters/dynamic_monthly_manifest.json
+            .trusted/verified_48_rasters/real_four_axis_monthly_climate_collinearity.json
           retention-days: 14
           if-no-files-found: error
