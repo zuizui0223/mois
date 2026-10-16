@@ -46,12 +46,19 @@ def test_same_place_climate_vs_white_fixed_effects_recover_known_synthetic_slope
         assert fit["status"]=="ESTIMATED_EXPLORATORY_POINT_ONLY_NO_CLUSTER_UNCERTAINTY"
         assert fit["n_qualified_geographic_cells"]==24
         assert fit["joint_dynamic_4axis_effective_rank"]==4
-        assert fit["within_fixed_effect_adjusted_variation_R2"]==pytest.approx(1,abs=1e-10)
-        truth=(.020,.000015,.0005,-.10)
-        for name,beta in zip(m.DYNAMIC,truth):
-            out=fit["four_dynamic_partial_effect_coefficients"][name]
-            assert out["slope_pp_per_original_monthly_climate_unit"]==pytest.approx(100*beta,abs=1e-8)
-        assert fit["static_soil_elevation_latitude_terrain_cell_means_absorbed"] is True if "static_soil_elevation_latitude_terrain_cell_means_absorbed" in fit else fit["stable_geographic_soil_elevation_terrain_cell_means_absorbed"] is True
+        assert fit["stable_geographic_soil_elevation_terrain_cell_means_absorbed"] is True
+        if month_effect:
+            # Month fixed effects absorb the deliberately injected common
+            # seasonal signal and recover all FOUR original climate axes.
+            assert fit["within_fixed_effect_adjusted_variation_R2"]==pytest.approx(1,abs=1e-10)
+            truth=(.020,.000015,.0005,-.10)
+            for name,beta in zip(m.DYNAMIC,truth):
+                out=fit["four_dynamic_partial_effect_coefficients"][name]
+                assert out["slope_pp_per_original_monthly_climate_unit"]==pytest.approx(100*beta,abs=1e-8)
+        else:
+            # With only geographic-cell fixed effects, the unmodelled
+            # calendar-month term remains, confounding seasonal solar T/P.
+            assert .9<fit["within_fixed_effect_adjusted_variation_R2"]<1
 
 
 def test_sparse_sites_refuse_joint_temperature_solar_water_slopes():
