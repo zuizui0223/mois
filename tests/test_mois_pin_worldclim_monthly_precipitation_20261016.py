@@ -82,3 +82,14 @@ def test_single_digit_original_filenames_are_source_accepted_without_changing_pi
     assert report['n_byte_verified_monthly_rasters']==12
     manifest=json.loads((tmp_path/'admitted/monthly_precipitation_manifest.json').read_text())
     assert manifest['months']['01']['path']=='wc2.1_10m_prec_1.tif'
+
+
+
+def test_official_readme_is_whitelisted_and_source_hash_preserved(tmp_path):
+    archive=zip_fixture(tmp_path,extra='readme.txt')
+    summary=m.seal(archive,m.sha256_file(archive),tmp_path/'precip_admitted',
+                   _synthetic_small=True)
+    metadata=json.loads((tmp_path/'precip_admitted/monthly_precipitation_manifest.json').read_text())
+    assert summary['n_byte_verified_monthly_rasters']==12
+    assert len(metadata['original_source_readme_sha256'])==64
+    assert metadata['source_photo_colour_outcomes_read'] is False
