@@ -1,0 +1,356 @@
+{
+  "actual_original_source_FCP_42111_taxon_frame_sampled": false,
+  "annotations_assumed_frozen_as_of_2026_09_27": false,
+  "cohorts": {
+    "northern_east_asia_spring_2025": {
+      "any_annotation_fraction_observed": 0.12533633570597102,
+      "any_plus_without_minus_total": 0,
+      "any_plus_without_partitions_exactly": true,
+      "explicit_flowers_fraction_observed": 0.1021124744766521,
+      "explicit_flowers_observations": 5351,
+      "explicit_no_flowers_fruits_observations": 647,
+      "filters": {
+        "d1": "2025-03-01",
+        "d2": "2025-05-31",
+        "nelat": 45,
+        "nelng": 145,
+        "swlat": 31,
+        "swlng": 129
+      },
+      "no_annotation_filter_fraction_observed": 0.874663664294029,
+      "source_query_provenance": {
+        "all_plant_photo_observations": {
+          "n_observations": 52403,
+          "original_api_response_sha256": "6450a5e13edf0b5323b25c2f0890f6443be16e7433aea1e6367b3cfe3c44b966",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-03-01&d2=2025-05-31&swlat=31&swlng=129&nelat=45&nelng=145"
+        },
+        "any_flowers_fruits_annotation": {
+          "n_observations": 6568,
+          "original_api_response_sha256": "12943d91617333d7895bb779b72b8743d3a8349a747d97dca6606e3f4f7b30d9",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-03-01&d2=2025-05-31&swlat=31&swlng=129&nelat=45&nelng=145&term_id=12"
+        },
+        "explicit_flowers_annotation": {
+          "n_observations": 5351,
+          "original_api_response_sha256": "bae8833fdfce0310a6a96002abf8f828d14e30aace8a327985d22e53aa68f730",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-03-01&d2=2025-05-31&swlat=31&swlng=129&nelat=45&nelng=145&term_id=12&term_value_id=13"
+        },
+        "explicit_no_flowers_fruits_annotation": {
+          "n_observations": 647,
+          "original_api_response_sha256": "6f519ba734bb359399dc02229e2c7e9d37ecfb0fab04fd8a8b76c109a9e25c8a",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-03-01&d2=2025-05-31&swlat=31&swlng=129&nelat=45&nelng=145&term_id=12&term_value_id=21"
+        },
+        "without_flowers_fruits_annotation": {
+          "n_observations": 45835,
+          "original_api_response_sha256": "a81c3998a0ad6b3337481576dcd9164596d6cc58a3f990fc85f557e6b21e656d",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-03-01&d2=2025-05-31&swlat=31&swlng=129&nelat=45&nelng=145&without_term_id=12"
+        }
+      },
+      "total_observed_plant_photo_records": 52403,
+      "unannotated_is_not_nonflowering": true,
+      "with_any_phenology_annotation": 6568,
+      "without_phenology_annotation_filter_records": 45835
+    },
+    "northern_east_asia_summer_2025": {
+      "any_annotation_fraction_observed": 0.11547480994717176,
+      "any_plus_without_minus_total": -1,
+      "any_plus_without_partitions_exactly": false,
+      "explicit_flowers_fraction_observed": 0.08362324442726453,
+      "explicit_flowers_observations": 3245,
+      "explicit_no_flowers_fruits_observations": 427,
+      "filters": {
+        "d1": "2025-06-01",
+        "d2": "2025-08-31",
+        "nelat": 45,
+        "nelng": 145,
+        "swlat": 31,
+        "swlng": 129
+      },
+      "no_annotation_filter_fraction_observed": 0.8844994201778121,
+      "source_query_provenance": {
+        "all_plant_photo_observations": {
+          "n_observations": 38805,
+          "original_api_response_sha256": "70f2b704208ff4bb1da5d74052178b82554a407df5e9309d5ed713e413b8ccfb",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-06-01&d2=2025-08-31&swlat=31&swlng=129&nelat=45&nelng=145"
+        },
+        "any_flowers_fruits_annotation": {
+          "n_observations": 4481,
+          "original_api_response_sha256": "764e6b3213ae87380776b1029b4ab990f11e3a83d25f5900ffb067b3441b133c",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-06-01&d2=2025-08-31&swlat=31&swlng=129&nelat=45&nelng=145&term_id=12"
+        },
+        "explicit_flowers_annotation": {
+          "n_observations": 3245,
+          "original_api_response_sha256": "63c31f1770b4d288a493e04b1c77111a9135571ade93090a3e7f165f6c0ffd4b",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-06-01&d2=2025-08-31&swlat=31&swlng=129&nelat=45&nelng=145&term_id=12&term_value_id=13"
+        },
+        "explicit_no_flowers_fruits_annotation": {
+          "n_observations": 427,
+          "original_api_response_sha256": "bc420a3350947341a5113f4f87e861b76c4a1715d1a148e67a29dffd4f92adce",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-06-01&d2=2025-08-31&swlat=31&swlng=129&nelat=45&nelng=145&term_id=12&term_value_id=21"
+        },
+        "without_flowers_fruits_annotation": {
+          "n_observations": 34323,
+          "original_api_response_sha256": "62124e63be5806239c4de4f6edcd6a4c4c7ba25a52a157be51c330a6d76b4141",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-06-01&d2=2025-08-31&swlat=31&swlng=129&nelat=45&nelng=145&without_term_id=12"
+        }
+      },
+      "total_observed_plant_photo_records": 38805,
+      "unannotated_is_not_nonflowering": true,
+      "with_any_phenology_annotation": 4481,
+      "without_phenology_annotation_filter_records": 34323
+    },
+    "southern_australia_spring_2025": {
+      "any_annotation_fraction_observed": 0.21304524803365602,
+      "any_plus_without_minus_total": -14,
+      "any_plus_without_partitions_exactly": false,
+      "explicit_flowers_fraction_observed": 0.17102578558949869,
+      "explicit_flowers_observations": 67646,
+      "explicit_no_flowers_fruits_observations": 5237,
+      "filters": {
+        "d1": "2025-09-01",
+        "d2": "2025-11-30",
+        "nelat": -22,
+        "nelng": 153,
+        "swlat": -38,
+        "swlng": 113
+      },
+      "no_annotation_filter_fraction_observed": 0.7869193565106148,
+      "source_query_provenance": {
+        "all_plant_photo_observations": {
+          "n_observations": 395531,
+          "original_api_response_sha256": "98061dca4d6ecb2937fe46fb2d4c3794e9129fd4b1a6bde3f637048142233737",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-09-01&d2=2025-11-30&swlat=-38&swlng=113&nelat=-22&nelng=153"
+        },
+        "any_flowers_fruits_annotation": {
+          "n_observations": 84266,
+          "original_api_response_sha256": "6923658fddb7015c03178702c65eead9936d5070ad7e90681ea086241b9c9dd3",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-09-01&d2=2025-11-30&swlat=-38&swlng=113&nelat=-22&nelng=153&term_id=12"
+        },
+        "explicit_flowers_annotation": {
+          "n_observations": 67646,
+          "original_api_response_sha256": "3a119408e33a084d3c69a0f0af8706c091f5c22632c2f7f819a09e2aa0077115",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-09-01&d2=2025-11-30&swlat=-38&swlng=113&nelat=-22&nelng=153&term_id=12&term_value_id=13"
+        },
+        "explicit_no_flowers_fruits_annotation": {
+          "n_observations": 5237,
+          "original_api_response_sha256": "62696bae45f4b9b749c70c0131de9763b7c1f394983f737e806327548cec6c4a",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-09-01&d2=2025-11-30&swlat=-38&swlng=113&nelat=-22&nelng=153&term_id=12&term_value_id=21"
+        },
+        "without_flowers_fruits_annotation": {
+          "n_observations": 311251,
+          "original_api_response_sha256": "58cf564033d80cd7f6631884ab80a2869f820ed04c6e20965aa5663528141600",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-09-01&d2=2025-11-30&swlat=-38&swlng=113&nelat=-22&nelng=153&without_term_id=12"
+        }
+      },
+      "total_observed_plant_photo_records": 395531,
+      "unannotated_is_not_nonflowering": true,
+      "with_any_phenology_annotation": 84266,
+      "without_phenology_annotation_filter_records": 311251
+    },
+    "southern_australia_summer_2024_25": {
+      "any_annotation_fraction_observed": 0.17900109623857502,
+      "any_plus_without_minus_total": -6,
+      "any_plus_without_partitions_exactly": false,
+      "explicit_flowers_fraction_observed": 0.11522375137029822,
+      "explicit_flowers_observations": 16502,
+      "explicit_no_flowers_fruits_observations": 2824,
+      "filters": {
+        "d1": "2024-12-01",
+        "d2": "2025-02-28",
+        "nelat": -22,
+        "nelng": 153,
+        "swlat": -38,
+        "swlng": 113
+      },
+      "no_annotation_filter_fraction_observed": 0.8209570092935895,
+      "source_query_provenance": {
+        "all_plant_photo_observations": {
+          "n_observations": 143217,
+          "original_api_response_sha256": "acf5fe76a29a377010ea6a49ee1426071b8e86f818f0bb8ef07f5df431cd9058",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2024-12-01&d2=2025-02-28&swlat=-38&swlng=113&nelat=-22&nelng=153"
+        },
+        "any_flowers_fruits_annotation": {
+          "n_observations": 25636,
+          "original_api_response_sha256": "a789e97fd46cb5912397f8f95ec69689fe31afd9a37f204f94b42945483f5e59",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2024-12-01&d2=2025-02-28&swlat=-38&swlng=113&nelat=-22&nelng=153&term_id=12"
+        },
+        "explicit_flowers_annotation": {
+          "n_observations": 16502,
+          "original_api_response_sha256": "af914bea60ba3e2a82f853dd490e942f90c3879289cd3cb5150eff8dda3b5d3e",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2024-12-01&d2=2025-02-28&swlat=-38&swlng=113&nelat=-22&nelng=153&term_id=12&term_value_id=13"
+        },
+        "explicit_no_flowers_fruits_annotation": {
+          "n_observations": 2824,
+          "original_api_response_sha256": "74a7a60840d1d4651d3c34f387e44a93df96e2dab9bddba88d9cc1fcb55f7a35",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2024-12-01&d2=2025-02-28&swlat=-38&swlng=113&nelat=-22&nelng=153&term_id=12&term_value_id=21"
+        },
+        "without_flowers_fruits_annotation": {
+          "n_observations": 117575,
+          "original_api_response_sha256": "be67640f5614b2f1c64f61c7afb3752fab3f28ff947704b18f6a42f52c95c5b1",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2024-12-01&d2=2025-02-28&swlat=-38&swlng=113&nelat=-22&nelng=153&without_term_id=12"
+        }
+      },
+      "total_observed_plant_photo_records": 143217,
+      "unannotated_is_not_nonflowering": true,
+      "with_any_phenology_annotation": 25636,
+      "without_phenology_annotation_filter_records": 117575
+    },
+    "tropical_south_america_calendar_q1_2025": {
+      "any_annotation_fraction_observed": 0.0939569536423841,
+      "any_plus_without_minus_total": -1,
+      "any_plus_without_partitions_exactly": false,
+      "explicit_flowers_fraction_observed": 0.05715683323299217,
+      "explicit_flowers_observations": 1519,
+      "explicit_no_flowers_fruits_observations": 351,
+      "filters": {
+        "d1": "2025-01-01",
+        "d2": "2025-03-31",
+        "nelat": 10,
+        "nelng": -45,
+        "swlat": -10,
+        "swlng": -75
+      },
+      "no_annotation_filter_fraction_observed": 0.9060054184226369,
+      "source_query_provenance": {
+        "all_plant_photo_observations": {
+          "n_observations": 26576,
+          "original_api_response_sha256": "674a42c0f238640e8ccc3b8c242aa9646711920180229584ea54c92b5eb4fc64",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-01-01&d2=2025-03-31&swlat=-10&swlng=-75&nelat=10&nelng=-45"
+        },
+        "any_flowers_fruits_annotation": {
+          "n_observations": 2497,
+          "original_api_response_sha256": "da9e0dd084777400dd5c57081d56a7410f5e6288324488237ab9143d2660d9af",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-01-01&d2=2025-03-31&swlat=-10&swlng=-75&nelat=10&nelng=-45&term_id=12"
+        },
+        "explicit_flowers_annotation": {
+          "n_observations": 1519,
+          "original_api_response_sha256": "9931a142ca9963ed99c3ee6af644b29ebc9bba18f1af164152a7f0e868d2e530",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-01-01&d2=2025-03-31&swlat=-10&swlng=-75&nelat=10&nelng=-45&term_id=12&term_value_id=13"
+        },
+        "explicit_no_flowers_fruits_annotation": {
+          "n_observations": 351,
+          "original_api_response_sha256": "af039a4b22135121379c88d01de35d02cd1191e448472057bee2b17dd23d5866",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-01-01&d2=2025-03-31&swlat=-10&swlng=-75&nelat=10&nelng=-45&term_id=12&term_value_id=21"
+        },
+        "without_flowers_fruits_annotation": {
+          "n_observations": 24078,
+          "original_api_response_sha256": "4e4749d8d8a233262e36dd34a872a59c5efc177d911463e35ef8da689b9ac93f",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-01-01&d2=2025-03-31&swlat=-10&swlng=-75&nelat=10&nelng=-45&without_term_id=12"
+        }
+      },
+      "total_observed_plant_photo_records": 26576,
+      "unannotated_is_not_nonflowering": true,
+      "with_any_phenology_annotation": 2497,
+      "without_phenology_annotation_filter_records": 24078
+    },
+    "tropical_south_america_calendar_q3_2025": {
+      "any_annotation_fraction_observed": 0.05744762435946596,
+      "any_plus_without_minus_total": -2,
+      "any_plus_without_partitions_exactly": false,
+      "explicit_flowers_fraction_observed": 0.038519189876947746,
+      "explicit_flowers_observations": 1105,
+      "explicit_no_flowers_fruits_observations": 174,
+      "filters": {
+        "d1": "2025-07-01",
+        "d2": "2025-09-30",
+        "nelat": 10,
+        "nelng": -45,
+        "swlat": -10,
+        "swlng": -75
+      },
+      "no_annotation_filter_fraction_observed": 0.9424826576498065,
+      "source_query_provenance": {
+        "all_plant_photo_observations": {
+          "n_observations": 28687,
+          "original_api_response_sha256": "cddb4cdaac16f4b80677cdefc77fdece96ba434b651b7bfcf5fda79c8c3a6179",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-07-01&d2=2025-09-30&swlat=-10&swlng=-75&nelat=10&nelng=-45"
+        },
+        "any_flowers_fruits_annotation": {
+          "n_observations": 1648,
+          "original_api_response_sha256": "c9c868eadb1ce0a9a229c7985cb6514edc71fb247709bb634fd6435fd5eb9573",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-07-01&d2=2025-09-30&swlat=-10&swlng=-75&nelat=10&nelng=-45&term_id=12"
+        },
+        "explicit_flowers_annotation": {
+          "n_observations": 1105,
+          "original_api_response_sha256": "7429704928b4dcdac50137c38239b3873e733449651f63777226a7fbf30ec5de",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-07-01&d2=2025-09-30&swlat=-10&swlng=-75&nelat=10&nelng=-45&term_id=12&term_value_id=13"
+        },
+        "explicit_no_flowers_fruits_annotation": {
+          "n_observations": 174,
+          "original_api_response_sha256": "2e1b217a6eba595dbca5fb4f8e93f01e4c286ff05be3d84803b1abda2eb42c3d",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-07-01&d2=2025-09-30&swlat=-10&swlng=-75&nelat=10&nelng=-45&term_id=12&term_value_id=21"
+        },
+        "without_flowers_fruits_annotation": {
+          "n_observations": 27037,
+          "original_api_response_sha256": "29b4cd0585442335d033f6029ff72aba9e1cf5ac16dd208cd4c8572575fcc94a",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-07-01&d2=2025-09-30&swlat=-10&swlng=-75&nelat=10&nelng=-45&without_term_id=12"
+        }
+      },
+      "total_observed_plant_photo_records": 28687,
+      "unannotated_is_not_nonflowering": true,
+      "with_any_phenology_annotation": 1648,
+      "without_phenology_annotation_filter_records": 27037
+    },
+    "world_2025_observed": {
+      "any_annotation_fraction_observed": 0.08927533977243624,
+      "any_plus_without_minus_total": -617,
+      "any_plus_without_partitions_exactly": false,
+      "explicit_flowers_fraction_observed": 0.056546963503737536,
+      "explicit_flowers_observations": 1615314,
+      "explicit_no_flowers_fruits_observations": 424670,
+      "filters": {
+        "d1": "2025-01-01",
+        "d2": "2025-12-31"
+      },
+      "no_annotation_filter_fraction_observed": 0.9107030610360246,
+      "source_query_provenance": {
+        "all_plant_photo_observations": {
+          "n_observations": 28565884,
+          "original_api_response_sha256": "92804af6e411d07f884dcd589dbd85490e46b6f99480a2ee4c6ff43501fdb857",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-01-01&d2=2025-12-31"
+        },
+        "any_flowers_fruits_annotation": {
+          "n_observations": 2550229,
+          "original_api_response_sha256": "10fe69ef6e12d076625e80076724f24fcd95203230e9919ce7766a8fbe1a857a",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-01-01&d2=2025-12-31&term_id=12"
+        },
+        "explicit_flowers_annotation": {
+          "n_observations": 1615314,
+          "original_api_response_sha256": "3e41e22d60d456029bd9927ec23a2da57dca13b39de29e4184122d6150d77681",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-01-01&d2=2025-12-31&term_id=12&term_value_id=13"
+        },
+        "explicit_no_flowers_fruits_annotation": {
+          "n_observations": 424670,
+          "original_api_response_sha256": "3e6efd65450638e8f02d59ea5077a515fe87bbb5d72f65406a59e89df0b166f2",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-01-01&d2=2025-12-31&term_id=12&term_value_id=21"
+        },
+        "without_flowers_fruits_annotation": {
+          "n_observations": 26015038,
+          "original_api_response_sha256": "6f08bea6eab223149833aa0c81e7e951960191ae69a47b404a805711c56c44d4",
+          "request_url": "https://api.inaturalist.org/v1/observations?taxon_id=47126&photos=true&per_page=1&page=1&d1=2025-01-01&d2=2025-12-31&without_term_id=12"
+        }
+      },
+      "total_observed_plant_photo_records": 28565884,
+      "unannotated_is_not_nonflowering": true,
+      "with_any_phenology_annotation": 2550229,
+      "without_phenology_annotation_filter_records": 26015038
+    }
+  },
+  "data_volume": "One observation JSON response per filtered aggregate query; raw individual responses discarded immediately; only counts and source digests persisted.",
+  "flowers_observation_annotation_does_not_prove_selected_image_ROI": true,
+  "limitation": "Current public iNaturalist annotation data in selected 2024-2025 observation-date windows; this is NOT a representative source-photo-ID pilot of the FCP 2026-09-27 42,111-taxon original archive, and API observations need not have licensed source photos. Geographic boxes, plant composition and observer use differ.",
+  "minimum_inter_request_spacing_seconds": 1.35,
+  "no_iNaturalist_image_pixels_opened": true,
+  "observation_date_windows": true,
+  "original_93209351_photo_ID_manifest_used": false,
+  "provider": "iNaturalist current public API v1, observations total_results",
+  "queries_rate_limited_and_sequential": true,
+  "queries_total": 35,
+  "retrieved_on_utc": "2026-10-16T03:00:24.675922+00:00",
+  "schema": "mois_bounded_public_inat_photo_phenology_annotation_count_pilot_v1",
+  "source_photo_only": true,
+  "source_plant_taxon_id": 47126,
+  "status": "REAL_INAT_API_PUBLIC_PHOTO_OBSERVATION_PHENOLOGY_COUNTS_NOT_FCP_SOURCE",
+  "whole_plant_population_or_all_flowering_species_inferred": false,
+  "verified_source_execution_url": "https://github.com/zuizui0223/mois/actions/runs/38843210801",
+  "verified_saved_artifact_audit_execution_url": "https://github.com/zuizui0223/mois/actions/runs/38843566842"
+}
