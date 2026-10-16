@@ -119,6 +119,10 @@ jobs:
         run: python -m pytest -q tests/test_mois_real_inat_photo_phenology_count_receipt_20261016.py
       - name: Verify real Angiospermae-only 2025 photo-observation Flower/Fruit annotation availability and Plantae denominator sensitivity
         run: python -m pytest -q tests/test_mois_real_inat_angiosperm_annotation_receipt_20261016.py
+      - name: Test uncapped actual FCP source dated-photo bloom-unverified input from original 42111 full-photo shards
+        run: python -m pytest -q tests/test_mois_full_source_dated_flower_candidates_20261016.py
+      - name: Test original 93M all-photo complete ROI bloom and source observed_on positive gated monthly white
+        run: python -m pytest -q tests/test_mois_original_full_fcp_dated_flower_ROI_20261016.py
       - name: Test source-independent herbarium rainfall estimator on synthetic sites
         run: python scripts/analysis/mois_external_independent_bio12_transfer_20261016.py --self-test
       - name: Test reproducible public GBIF search and taxonomic alias pilot on mock API records
