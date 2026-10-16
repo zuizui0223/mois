@@ -44,3 +44,24 @@ For the worldwide 2025 query, explicitly **No Flowers or Fruits** was annotated 
 Keep the prospective region × precipitation stratum photo selection outcome-blind (or separately frozen local-season-balanced V2), retaining original inclusion probabilities and missing photographs. **Never exclude an unannotated observation from the primary photographic opportunity frame solely due to absent Flowers annotation.** After the complete original photo-ID freeze and colour ROI measurement, perform the linked observation-level **positive-Flowers versus unannotated/unverified diagnostic** in the independently pinned sample, and estimate photo-colour classifier response by observation source season/geography/genus and observer. Hold out entire genera/geographic cells in the 13-variable extension; do not explain a white–BIO12 coefficient using independently sourced annotation counts with no joined photograph hue.
 
 In the Results/Discussion, this actual API finding is a **secondary platform-data ascertainment pilot**, not an independent confirmation that wetter real sites have more white flowers. The main paper's already source-verified 16,801-taxon/1,665-genus same-13-environment soil36 source and positive conditional BIO12 photograph-white slope are untouched.
+
+
+## Taxonomically appropriate primary sensitivity: Angiospermae (flowering plants)
+
+Because the whole-Plantae API denominator also includes **nonflowering plant lineages** (e.g. ferns and mosses), the previous 5.65% worldwide Flowers-annotation number is a **broad-plant diagnostic**, not the best denominator for a flower-colour question. A predeclared follow-up queried the identical 35 count filters and seven original spatial/date bins for Angiospermae, iNaturalist taxon ID **47125**, without any original source plant media retrieval.
+
+[Real successful Angiospermae query run](https://github.com/zuizui0223/mois/actions/runs/38844098039) and [full 35-query immutable response-URL/SHA record](../results/mois_real_inat_angiosperm_phenology_annotation_count_pilot_20261016.json) use the same public provider limits, with original output artifact bytes SHA256 **67c22183e6919be4ed5f7d466f6047c178ca64d18a34479cee71c51b95ccc03e**.
+
+| Flowering-plant observation cohort | All photographed Angiospermae observations | Any Flowers/Fruits annotation | Explicit positive Flowers | Positive Flowers / all |
+|---|---:|---:|---:|---:|
+| World 2025 | 26,069,247 | 2,550,231 (9.78%) | 1,615,314 | **6.20%** |
+| Northern East Asia spring | 47,063 | 6,568 (13.96%) | 5,351 | **11.37%** |
+| Northern East Asia summer | 35,072 | 4,481 (12.78%) | 3,245 | **9.25%** |
+| Southern Australia spring | 379,937 | 84,266 (22.18%) | 67,646 | **17.80%** |
+| Southern Australia summer | 134,793 | 25,636 (19.02%) | 16,502 | **12.24%** |
+| Tropical South America calendar Q1 | 24,649 | 2,497 (10.13%) | 1,519 | **6.16%** |
+| Tropical South America calendar Q3 | 26,648 | 1,648 (6.18%) | 1,105 | **4.15%** |
+
+The global no-phenology-annotation filter returned **23,518,398 (90.21%)** of the observed photo-backed flowering-plant records, while **424,672 (1.63%)** were explicitly annotated **No Flowers or Fruits**. The former should **never** be interpreted as proof of no flowers. The sequential API queries were not one atomic snapshot; any-stage plus without-stage counts fell short of the separate whole-group total by **618 records**. The fixed regional/season cohorts also span different numbers and compositions of species and observers, so neither within-region differences nor between-region contrasts isolate an annotation-behaviour causal effect.
+
+**Single-paper decision:** The Angiospermae-only count is the taxonomically appropriate *platform-context* sensitivity for the main manuscript's discussion of photographed flowering-annotation ascertainment. The earlier Plantae count remains in this document as the broad-plant baseline. Neither platform cohort is a probability sample of the original 42,111 FCP named source taxa, original licensed photo IDs, images containing a classifiable bloom or wild flowering-plant individuals. The existing Mois historical white–BIO12 association cannot be reweighted from aggregate API counts. After actual source-ID admission and ROI measurement, use the *independently joined original observation UUID annotation overlay* and report Flowers-positive/ROI-classifiable versus unannotated/ROI-classifiable cohorts by genus, site, season and observer.
