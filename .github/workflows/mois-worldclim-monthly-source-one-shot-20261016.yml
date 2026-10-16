@@ -37,7 +37,7 @@ jobs:
             exit 1
           fi
           original_sha=$(sha256sum .trusted/source/wc2.1_10m_prec.zip | cut -d' ' -f1)
-          python scripts/acquisition/mois_pin_worldclim_monthly_precipitation_20261016.py \
+          python -m scripts.acquisition.mois_pin_worldclim_monthly_precipitation_20261016 \
             --original-worldclim-zip .trusted/source/wc2.1_10m_prec.zip \
             --original-zip-sha256 "$original_sha" \
             --output-private-raster-source .trusted/verified_monthly_precip
