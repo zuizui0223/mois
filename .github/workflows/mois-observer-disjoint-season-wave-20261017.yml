@@ -1,0 +1,133 @@
+name: MOIS exact 3.43M photo-ID source observer-disjoint 400-photo pre-colour wave
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_observer_disjoint_photo_wave_20261017.py"
+      - "tests/test_mois_original_observer_disjoint_source_wave.py"
+      - ".github/workflows/mois-observer-disjoint-season-wave-20261017.yml"
+      - "results/mois_original_268_observer_disjoint_400_photo_wave_20261017.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-20260927-source-only-observer-disjoint-wave-20261017
+  cancel-in-progress: false
+
+jobs:
+  exact-original-photo-source-wave:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test strict observer-disjoint photo opportunity logic
+        run: |
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q tests/test_mois_original_observer_disjoint_source_wave.py tests/test_mois_season_priority.py
+      - name: Restore originally signed FCP full 3.43M photo IDs and all 835k geocell-month source rows
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original/ids original/calendar original/pilot
+          gh run download 38884223530 --repo zuizui0223/fcp \
+            --name fcp-rgfca-1000-EXACT-20260927-original-photo-ID-128-worker-source-NO-PIXELS \
+            --dir original/ids
+          gh run download 38901290387 --repo zuizui0223/fcp \
+            --name fcp-1000-original-monthly-observation-calendar-all-photo-IDS-NO-COLOURS \
+            --dir original/calendar
+          gh run download 38914197937 --repo zuizui0223/mois \
+            --name mois-real-2025-asclepias-64-postblind-40-grids-months-unreviewed \
+            --dir original/pilot
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path("original/ids/rgfca_1000_exact_source_photo_IDs/rgfca_1000_targeted_monthly_photo_ID_receipt.json").read_text())
+          q=json.loads(Path("original/calendar/results/original_dated_source_opportunity_receipt.json").read_text())
+          assert p["selected_all_photo_IDs_csv_sha256"] == "58e037a210e23d3ff5d6f04d392665ada5ee9ac5149d0676672c239cf092df01"
+          assert p["n_selected_original_photo_IDs"] == 3430502
+          assert q["n_original_photo_ids"] == q["n_photo_ids_with_full_observed_on_date"] == 3430502
+          assert q["original_source_site_month_file_sha256"] == "7691c7cf975da4e73494ad3fa0f2cf8df52302e84206017dd525051cd672b432"
+          assert p["observational_plant_photo_opportunity_is_not_flower_morph"] is True
+          print("MOIS_EXACT_20260927_ORIGINAL_PHOTO_SOURCE_NO_BIOLOGICAL_OUTCOMES")
+          PY
+      - name: Retrieve separate frozen historical MOIS photo IDs by GitHub artifact, not morph
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 2 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/zuizui0223/fcp/actions/artifacts/11587115220/zip" \
+            --output original/historical_mois_unique_original_photos.zip
+          test -s original/historical_mois_unique_original_photos.zip
+      - name: Rebuild 268 real source-only two-season priorities without opening colour photos
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.fcp_source_month_season_priority \
+            --original-site-months original/calendar/results/all_original_1000_source_month_0p25degree_5km_accuracy.csv \
+            --source-calendar-receipt original/calendar/results/original_dated_source_opportunity_receipt.json \
+            --min-observations-per-season 24 \
+            --outdir regenerated_source_priority
+      - name: Audit observer capacity for all 268 site-years and freeze 400 disjoint source photo IDs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_observer_disjoint_photo_wave_20261017 \
+            --source original/ids/rgfca_1000_exact_source_photo_IDs/rgfca_1000_complete_original_source_photo_IDs.csv \
+            --site original/calendar/results/all_original_1000_source_month_0p25degree_5km_accuracy.csv \
+            --site-receipt original/calendar/results/original_dated_source_opportunity_receipt.json \
+            --priority regenerated_source_priority/season_depth_24_source_only_geocell_year_priority.csv \
+            --mois-zip original/historical_mois_unique_original_photos.zip \
+            --pilot original/pilot/mois_original_asclepias2025/original_photo_observed_date_and_automated_colour_UNREVIEWED.csv \
+            --pilot-receipt original/pilot/mois_original_asclepias2025/mois_original_asclepias_source_rois_seasons_receipt.json \
+            --outdir new_mois_photo_wave
+      - name: Fail closed if observer independence, source photo IDs or zero-flower claim changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path("results/mois_original_268_observer_disjoint_400_photo_wave_20261017.json").read_text())
+          r=json.loads(Path("new_mois_photo_wave/mois_observer_disjoint_source_photo_selection_receipt.json").read_text())
+          assert r["n_ranked_source_siteyear_pairs"] == p["baseline_at_least_24_observations_per_two_seasons_siteyears"] == 268
+          assert r["n_ranked_taxa"] == p["baseline_species"] == 39
+          assert r["selected_taxa"] == p["wave"]["selected_taxa"] == 5
+          assert r["selected_original_photo_ids"] == p["wave"]["reserved_photos"] == 400
+          assert r["selected_distinct_source_observers"] == p["wave"]["globally_distinct_observers"] == 400
+          assert r["selected_photo_manifest_sha256"] == p["wave"]["source_only_photo_manifest_sha256"]
+          assert r["observer_capacity_audit_sha256"] == p["observer_capacity_268_source_csv_sha256"]
+          assert r["selected_siteyear_eligibility_sha256"] == p["wave"]["source_only_site_eligibility_csv_sha256"]
+          for t, gate in p["siteyear_capacity_after_photo_id_exclusion"].items():
+              assert r["actual_capacity_by_minimum_observer_disjoint_per_season"][t] == gate
+          assert not p["biological_observation_states"]["white_fraction_computed"]
+          assert p["biological_observation_states"]["new_photo_pixels_opened"] == 0
+          print("MOIS_268_OBSERVER_AUDIT_400_SOURCE_ONLY_PHOTO_HASH_REPLAY_PASS")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-5taxa-400-original-photo-ID-disjoint-season-wave-UNREVIEWED
+          path: |
+            new_mois_photo_wave/
+            regenerated_source_priority/season_depth_24_source_only_receipt.json
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: mois-source-photo-wave-replay-incomplete-DO-NOT-USE
+          path: |
+            new_mois_photo_wave/mois_observer_disjoint_source_photo_selection_receipt.json
+            regenerated_source_priority/season_depth_24_source_only_receipt.json
+          retention-days: 15
+          if-no-files-found: warn

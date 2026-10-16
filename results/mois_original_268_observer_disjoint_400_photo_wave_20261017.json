@@ -1,0 +1,142 @@
+{
+  "schema": "mois_original_20260927_268_siteyear_observer_disjoint_colourblind_photo_wave_v1",
+  "status": "ORIGINAL_PHOTO_IDS_RESERVED_NO_OPEN_FLOWER_OR_WHITE_FREQUENCY_MEASURED",
+  "date_jst": "2026-10-17",
+  "study": "mois",
+  "source_archives": {
+    "full_1000_taxa_original_photo_ids_sha256": "58e037a210e23d3ff5d6f04d392665ada5ee9ac5149d0676672c239cf092df01",
+    "original_dated_0p25_degree_site_month_csv_sha256": "7691c7cf975da4e73494ad3fa0f2cf8df52302e84206017dd525051cd672b432",
+    "original_siteyear_268_priority_csv_sha256": "ef95638da60b010c8671877854163132be304f5b7245edf9c5e2f9536265102a",
+    "original_mois_historical_photo_archive_sha256": "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0",
+    "prior_2025_64_photo_source_csv_sha256": "d5c4bdcd632d0de8f2d20a663674e87f35e323a42b896291efefb93c46023053"
+  },
+  "full_source_original_photo_ids": 3430502,
+  "source_site_month_rows": 835833,
+  "baseline_at_least_24_observations_per_two_seasons_siteyears": 268,
+  "baseline_species": 39,
+  "previous_historical_mois_photo_ids_excluded": 100543,
+  "previous_asclepias_2025_test_photo_ids_excluded": 64,
+  "source_month_gate": "Only source calendar months with at least 2 distinct observations AND at least 2 independent observers, date/location accuracy <=5000 m; no source photos outside the original selected two local seasons",
+  "siteyear_capacity_after_photo_id_exclusion": {
+    "5": {
+      "siteyears": 244,
+      "taxa": 36
+    },
+    "10": {
+      "siteyears": 217,
+      "taxa": 33
+    },
+    "15": {
+      "siteyears": 179,
+      "taxa": 31
+    },
+    "20": {
+      "siteyears": 128,
+      "taxa": 23
+    },
+    "24": {
+      "siteyears": 72,
+      "taxa": 19
+    },
+    "30": {
+      "siteyears": 35,
+      "taxa": 11
+    },
+    "40": {
+      "siteyears": 13,
+      "taxa": 5
+    },
+    "50": {
+      "siteyears": 7,
+      "taxa": 2
+    },
+    "64": {
+      "siteyears": 1,
+      "taxa": 1
+    },
+    "80": {
+      "siteyears": 0,
+      "taxa": 0
+    }
+  },
+  "capacity_rule": "max balanced season-specific distinct observers with no observer allocated to both seasons = min(nA,nB,floor((nA+nB-shared)/2)); a necessary and sufficient two-category allocation capacity, not a confirmed flower count",
+  "observer_capacity_268_source_csv_sha256": "4dbba0d6d3b208182fcfa99471e97b2819f6602f4b05578dc7abeeb38aff74aa",
+  "wave": {
+    "selection_seed": "MOIS-5taxa-independent-observer-siteyear-source-20261017-v1",
+    "rule": "Top observer-balanced siteyear per distinct taxon among those with capacity >=40 per season, deterministic original photo-id hash; one photo per original observation and per observer globally; never use hue, image pixels, phenology or climate to select",
+    "selected_taxa": 5,
+    "selected_siteyears": 5,
+    "selected_seasons": 10,
+    "reserved_photos": 400,
+    "globally_distinct_observers": 400,
+    "reserved_per_taxon_per_season": 40,
+    "source_only_photo_manifest_sha256": "b961b50ee6efe9ec08a5575a8eb1e34b1edf7b7fcb426226fb11ee901cfd3329",
+    "source_only_site_eligibility_csv_sha256": "d537dd37be021418765dce6c550144fed5eb4424af1d0c35b4b98353bb22a54d",
+    "sites": [
+      {
+        "inat_taxon_id": "47911",
+        "species": "Asclepias syriaca",
+        "year": 2025,
+        "latcell": 542,
+        "loncell": 425,
+        "season_a": "summer",
+        "season_b": "autumn",
+        "photos_a": 40,
+        "photos_b": 40
+      },
+      {
+        "inat_taxon_id": "52848",
+        "species": "Aralia californica",
+        "year": 2025,
+        "latcell": 511,
+        "loncell": 229,
+        "season_a": "autumn",
+        "season_b": "summer",
+        "photos_a": 40,
+        "photos_b": 40
+      },
+      {
+        "inat_taxon_id": "76608",
+        "species": "Datura discolor",
+        "year": 2023,
+        "latcell": 493,
+        "loncell": 254,
+        "season_a": "spring",
+        "season_b": "winter",
+        "photos_a": 40,
+        "photos_b": 40
+      },
+      {
+        "inat_taxon_id": "52821",
+        "species": "Achillea millefolium",
+        "year": 2023,
+        "latcell": 553,
+        "loncell": 226,
+        "season_a": "spring",
+        "season_b": "autumn",
+        "photos_a": 40,
+        "photos_b": 40
+      },
+      {
+        "inat_taxon_id": "50790",
+        "species": "Linaria vulgaris",
+        "year": 2023,
+        "latcell": 529,
+        "loncell": 435,
+        "season_a": "summer",
+        "season_b": "autumn",
+        "photos_a": 40,
+        "photos_b": 40
+      }
+    ]
+  },
+  "biological_observation_states": {
+    "new_photo_pixels_opened": 0,
+    "botanically_verified_open_flowers": 0,
+    "actual_four_hue_colour_labels_measured": 0,
+    "white_fraction_computed": false,
+    "seasonal_climate_colour_effect_estimated": false,
+    "not_an_independent_provider_replication": true
+  },
+  "scientific_boundary": "This is an availability-and-observer-audited photographic opportunity wave. It is neither confirmed flowering nor a global probability sample, and it does not change historical MOIS between-species slopes or FCP within-species D/W inference."
+}
