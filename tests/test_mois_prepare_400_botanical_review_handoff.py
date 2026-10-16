@@ -21,6 +21,7 @@ def _csv(tmp_path:Path,duplicate:bool=False)->Path:
               "observer_id":"same" if duplicate else f"u{i}",
               "observed_on":"2025-06-01","photo_license":"cc-by",
               "photo_url_large":f"https://example.invalid/only-for-synthetic-test/{i}",
+              "attribution":"synthetic CC-BY test attribution",
               "source_rank":"abc","site_latcell":"510","site_loncell":"300",
               "season_year":"2025","selected_season":"summer",
             })
