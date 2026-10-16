@@ -1,0 +1,101 @@
+name: MOIS real signed 1000-taxon seasonal opportunity priority (one shot)
+
+on:
+  push:
+    branches:
+      - analysis/mois-seasonal-white-climate-20261016
+    paths:
+      - .github/workflows/mois-season-priority-real-one-shot-20261016.yml
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-seasonal-20260927-3430502-date-census-priority
+  cancel-in-progress: false
+
+jobs:
+  rank-original-observation-seasons-not-colours:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FCP_SOURCE_RUN: "38901290387"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate source is complete original FCP real dated-photo corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p external_fcp/source_calendar
+          gh api "repos/zuizui0223/fcp/actions/runs/$FCP_SOURCE_RUN" > external_fcp/original_run.json
+          python - <<'PY'
+          import json
+          q=json.load(open('external_fcp/original_run.json'))
+          assert q['id']==38901290387
+          assert q['head_sha']=='92aa45a277b5a40416801861d7e0d118eb6b0622'
+          assert q['status']=='completed' and q['conclusion']=='success'
+          assert q['head_repository']['full_name']=='zuizui0223/fcp'
+          print('MOIS_AUTHENTIC_ORIGINAL_FCP_DATE_CENSUS_ADMITTED_NO_FLOWER_COLOUR')
+          PY
+
+      - name: Retrieve signed FCP source month/cell counts, not raw 3.43M photo pixels
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download "$FCP_SOURCE_RUN" --repo zuizui0223/fcp \
+            --name fcp-1000-original-monthly-observation-calendar-all-photo-IDS-NO-COLOURS \
+            --dir external_fcp/source_calendar
+
+      - name: Reconstruct season/year ranking from frozen original source only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.fcp_source_month_season_priority \
+            --original-site-months \
+              external_fcp/source_calendar/results/all_original_1000_source_month_0p25degree_5km_accuracy.csv \
+            --source-calendar-receipt \
+              external_fcp/source_calendar/results/original_dated_source_opportunity_receipt.json \
+            --min-observations-per-season 24 \
+            --outdir season_priority
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          s=Path('season_priority')
+          q=json.loads((s/'season_depth_24_source_only_receipt.json').read_text())
+          assert q['status']=='REAL_FULL_ORIGINAL_SOURCE_TEMPORAL_OPPORTUNITY_NOT_FLOWER_COLOUR'
+          assert q['n_eligible_geocell_years']==268 and q['n_eligible_taxa']==39
+          assert q['input_site_source_sha256']=='7691c7cf975da4e73494ad3fa0f2cf8df52302e84206017dd525051cd672b432'
+          assert q['output_priority_sha256']=='ef95638da60b010c8671877854163132be304f5b7245edf9c5e2f9536265102a'
+          assert q['candidate_photos_NOT_proven_flowering_or_white'] is True
+          assert q['observer_disjoint_between_seasons_not_yet_audited'] is True
+          assert q['no_flower_or_colour_measurements_reused'] is True
+          print('MOIS_SEASONAL_39_TAXA_268_SIGNED_SOURCE_OPPORTUNITIES',q['output_priority_sha256'])
+          PY
+
+      - name: Publish only MOIS-generated source rankings (no photo ROI or climate effects)
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-real-39taxa-268-siteyear-original-observed-month-priority-not-colours
+          if-no-files-found: error
+          retention-days: 90
+          path: |
+            season_priority/
+            external_fcp/original_run.json
+
+      - name: Preserve source permission or receipt failures separately
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-real-temporal-source-import-failed-no-biological-result
+          if-no-files-found: warn
+          path: |
+            external_fcp/original_run.json
+            season_priority/season_depth_24_source_only_receipt.json
