@@ -1,0 +1,50 @@
+{
+  "schema": "mois_original_photo_roi_by_live_observation_phenology_2025_v1",
+  "status": "REAL_AUTOMATED_PHOTO_ROI_VS_LIVE_OBSERVATION_ANNOTATION_BIAS_NOT_BOTANICAL_BLOOM",
+  "original_photo_observations": 64,
+  "source_photo_observations_by_season": {
+    "summer": 32,
+    "autumn": 32
+  },
+  "live_original_photo_and_observation_day_both_match": 64,
+  "observations_with_current_no_evidence_annotation": 3,
+  "iNat_term_code_12_controlled_value_21": "no_evidence_of_flowering_observation_NOT_photo",
+  "autumn_fruiting_annotated_original_observation_with_white_automated_ROI_UNREVIEWED": 1,
+  "summer_flowering_annotated_original_observation_with_white_automated_ROI_UNREVIEWED": 2,
+  "flower_petal_tepal_BOTANICALLY_CONFIRMED_photo_count": 0,
+  "organ_and_live_observation_annotations_are_not_independent_photo_bloom_proof": true,
+  "live_annotations_not_frozen_in_original_2026_09_27_source": true,
+  "no_causal_weather_effect_or_adaptation_estimated": true,
+  "no_open_flower_colour_white_frequency_computed": true,
+  "contingency_csv_sha256": "a2e5e1c79b72e6b2029ecedea08fe6f52d1d1f44a44e40b3df1b1dc66c7fccd4",
+  "source_original_FCP_photo_terminal_sha256": "1b16cdabd2936567dee87b8344019f40f315600c6510dfc1f25a03835024b6a0",
+  "source_current_MOIS_annotation_csv_sha256": "ddf282281b6f9a7eea38ac80bfd9b4329f0e91a7048b629b4658936a81ce2422",
+  "phenology_by_season_current_observation_only": {
+    "autumn": {
+      "current_observation_annotation_fruiting_NOT_photo": 4,
+      "current_observation_annotation_no_evidence_of_flowering_NOT_photo": 2
+    },
+    "summer": {
+      "current_observation_annotation_flowering_NOT_photo": 2,
+      "current_observation_annotation_no_evidence_of_flowering_NOT_photo": 1
+    }
+  },
+  "automatic_roi_by_season_not_confirmed_open_flowers": {
+    "autumn": {
+      "ROI_failed_or_unclassifiable_UNKNOWN_flower_stage": 26,
+      "chromatic_automatic_ROI_UNREVIEWED": 4,
+      "white_automatic_ROI_UNREVIEWED": 2
+    },
+    "summer": {
+      "ROI_failed_or_unclassifiable_UNKNOWN_flower_stage": 20,
+      "chromatic_automatic_ROI_UNREVIEWED": 2,
+      "same_ROI_white_yellow_floral_organs_mixed_not_morph": 3,
+      "white_automatic_ROI_UNREVIEWED": 7
+    }
+  },
+  "source_origin_run": "https://github.com/zuizui0223/mois/actions/runs/38920242498",
+  "source_artifact_url": "https://github.com/zuizui0223/mois/actions/runs/38920242498/artifacts/12054501312",
+  "live_current_API_checked_date": "2026-10-16",
+  "original_iNaturalist_metadata_snapshot_date": "2026-09-27",
+  "tabulation_aggregated_no_private_site_or_photo_specific_IDs": true
+}
