@@ -166,7 +166,7 @@ def test_tamper_private_monthly_roi_effort_is_rejected_even_when_photo_colors_un
     dates,shards=prepare_full(tmp_path)
     p=shards/"shard_001_of_002/original_roi_month_effort_private.json"
     raw=json.loads(p.read_text())
-    raw["latitude_domain_month_photo_effort"][0]["n_original_roi_other_unclassifiable"]+=1
+    raw["latitude_domain_month_photo_effort"][0]["n_roi_other_unclassifiable"]+=1
     p.write_text(json.dumps(raw))
     with pytest.raises(ValueError,match="private source monthly ROI effort not sealed"):
         m.aggregate_all(dates,shards,tmp_path/"positive.ndjson",
