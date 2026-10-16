@@ -1,0 +1,81 @@
+{
+  "schema": "mois_real_2025_source_site_center_temporal_climate_v11_v1",
+  "status": "REAL_CFCORRECT_2025_SITE_CENTRE_SEASON_CLIMATE_NOT_64_PHOTO_LOCATIONS",
+  "derived_from_verified_action": "https://github.com/zuizui0223/mois/actions/runs/38915805730",
+  "artifact_url": "https://github.com/zuizui0223/mois/actions/runs/38915805730/artifacts/12052700930",
+  "original_FCP_seasonal_64_pixel_run": 38909164068,
+  "verified_mois_64_source_bridge_run": 38914197937,
+  "cf_source_version": "V1.1",
+  "provider": "University of Idaho Climatology Lab TerraClimate 2025 THREDDS",
+  "source_site_center_lat": 42.375,
+  "source_site_center_lon": -71.125,
+  "years": [
+    2025
+  ],
+  "observed_months": [
+    "2025-06",
+    "2025-07",
+    "2025-08",
+    "2025-09",
+    "2025-10",
+    "2025-11"
+  ],
+  "measured_original_photo_pixels_in_parent_FCP": 64,
+  "independently_confirmed_open_flower_organs": 0,
+  "all_flowering_review_stages": "UNREVIEWED",
+  "original_observation_terraclimate_1_24degree_cell_months_pending": 40,
+  "source_site_centre_is_not_exact_geolocation_of_all_photos": true,
+  "no_monthly_climate_assigned_to_each_original_photo_yet": true,
+  "no_white_flower_frequency_or_climate_effect_estimated": true,
+  "physical_climate_CSV_SHA256": "810ee3a00b62f255e3d40ed1f5fbff73a5acc94114cd22378726b2edc1921fc6",
+  "original_provider_receipt_SHA256": "78bca6c1c60f70e3ae551d4f6cd944c71caf44b4b7289f3006865be8bb4e35ba",
+  "provider_CF_scale_and_offset": {
+    "tmin": {
+      "scale_factor": 0.01,
+      "add_offset": -99
+    },
+    "tmax": {
+      "scale_factor": 0.01,
+      "add_offset": -99
+    },
+    "ppt": {
+      "scale_factor": 0.1,
+      "add_offset": 0
+    },
+    "srad": {
+      "scale_factor": 0.1,
+      "add_offset": 0
+    },
+    "def": {
+      "scale_factor": 0.1,
+      "add_offset": 0
+    },
+    "vpd": {
+      "scale_factor": 0.01,
+      "add_offset": 0
+    }
+  },
+  "units": {
+    "tmean": "degC",
+    "ppt": "mm/month",
+    "srad": "W/m2",
+    "def": "mm/month",
+    "vpd": "kPa"
+  },
+  "observed_actual_2025_monthly_season_means": {
+    "summer": {
+      "tmean_C": 22.41667,
+      "srad_W_m2": 233.76667,
+      "ppt_mm": 64.16667,
+      "def_mm": 58,
+      "vpd_kPa": 1.06667
+    },
+    "autumn": {
+      "tmean_C": 12.45,
+      "srad_W_m2": 124.13333,
+      "ppt_mm": 81.93333,
+      "def_mm": 8.3,
+      "vpd_kPa": 0.54667
+    }
+  }
+}
