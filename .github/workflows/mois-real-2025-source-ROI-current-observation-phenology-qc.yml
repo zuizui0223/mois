@@ -8,6 +8,7 @@ on:
       - .github/workflows/mois-real-2025-source-ROI-current-observation-phenology-qc.yml
       - scripts/analysis/mois_crosscheck_2025_photo_roi_current_phenology.py
       - tests/test_mois_photo_phenology_crosscheck_2025.py
+      - results/mois_2025_asclepias_observation_phenology_qc/**
 
 permissions:
   contents: read
@@ -113,6 +114,34 @@ jobs:
           assert sum(int(q['n_original_photo_observations']) for q in rows)==64
           assert set(q['all_photo_open_petal_tepal_unreviewed'] for q in rows)=={'True'}
           print('MOIS_REAL_SEASONAL_PHENOLOGY_2_FLOWERING_4_FRUIT_3_NO_EVIDENCE_1_FRUIT_ROI_WHITE_NOT_OPEN_FLOWER')
+          PY
+
+      - name: Confirm historical aggregate result files reproduce signed original photo and live observation cross-tab byte-for-byte
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv,hashlib,json
+          from pathlib import Path
+          produced=Path('mois_2025_original_observation_photo_phenology_crosscheck')
+          frozen=Path('results/mois_2025_asclepias_observation_phenology_qc')
+          generated=produced/'2025_original_photo_ROI_x_current_observation_phenology_contingency_NOT_OPEN_FLOWER.csv'
+          committed=frozen/'photo_roi_x_public_observation_phenology_64.csv'
+          stored=json.loads((frozen/'source_observation_phenology_QC_receipt.json').read_text())
+          signed=json.loads((produced/'signed_2025_original_roi_observation_phenology_QC_receipt.json').read_text())
+          digest=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+          assert digest(generated)==signed['contingency_csv_sha256']
+          assert digest(committed)==signed['contingency_csv_sha256']
+          assert signed['contingency_csv_sha256']==stored['contingency_csv_sha256']
+          assert signed['source_original_FCP_photo_terminal_sha256']==stored['source_original_FCP_photo_terminal_sha256']
+          assert signed['source_current_MOIS_annotation_csv_sha256']==stored['source_current_MOIS_annotation_csv_sha256']
+          assert stored['flower_petal_tepal_BOTANICALLY_CONFIRMED_photo_count']==0
+          assert stored['no_open_flower_colour_white_frequency_computed'] is True
+          with committed.open(newline='') as f:
+              rows=list(csv.DictReader(f))
+          assert sum(int(x['n_original_photo_observations']) for x in rows)==64
+          assert all(x['all_photo_open_petal_tepal_unreviewed']=='True' for x in rows)
+          print('MOIS_SAVED_2025_PHENOLOGY_ORGAN_ROI_CONTINGENCY_SHA_IDENTICAL_TO_REAL_RESULT')
           PY
 
       - name: Preserve only aggregate cross-classification and source SHA receipts, no new photos
