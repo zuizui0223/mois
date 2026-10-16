@@ -227,12 +227,12 @@ def build(fcp_zip:Path,climate_zip:Path,out:Path,*,_test_only=False)->dict:
         def mean_cl(col):
             return sum(float(c[col]) for _,c,_,_,_,_ in rs)/len(rs)
         yes,mi,usable,white,chrom=count_good(rs)
-        yc,mc,uc,wc,cc=count_good(common)
+        yc,mc,uc,wc,chrom_shared=count_good(common)
         by_season.append(dict(zip(SEASON_COLS,(
             season,len(rs),len({p["observation_id"] for p,_,_,_,_,_ in rs}),
             len({p["observer_id"] for p,_,_,_,_,_ in rs}),
             len(grids_by_season[season]),len(common),
-            yes,mi,usable,white,chrom,yc,mc,uc,wc,cc,
+            yes,mi,usable,white,chrom,yc,mc,uc,wc,chrom_shared,
             f"{yes/len(rs):.6f}",
             *(f"{mean_cl(col):.6f}" for col in (
                 "tmean_C","srad_W_m2","ppt_mm","def_mm","vpd_kPa",
