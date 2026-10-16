@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo '911ec9edd10a7126bee28cfa67738cef0ff4d275b1f0ca1c06e3f26e290039  .trusted/technical_pilot_source/real_original_roi_v4_new_photo_pilot_repaired.csv' | sha256sum -c -
+          echo '911ec9edd10a7126bee28cfa67738cef0ff4d275b1f0ca1c06e3f26e7e290039  .trusted/technical_pilot_source/real_original_roi_v4_new_photo_pilot_repaired.csv' | sha256sum -c -
           python - <<'PY'
           from pathlib import Path
           import json,hashlib,zipfile
@@ -49,7 +49,7 @@ jobs:
           assert d['status']=='REPAIRED_REAL_PHOTO_TECHNICAL_PILOT_NOT_42111_CENSUS'
           assert d['n_actual_original_image_measurements_total']==96
           assert d['n_classified_four_state_photo_rows']==20
-          assert d['terminal_csv_sha256']=='911ec9edd10a7126bee28cfa67738cef0ff4d275b1f0ca1c06e3f26e290039'
+          assert d['terminal_csv_sha256']=='911ec9edd10a7126bee28cfa67738cef0ff4d275b1f0ca1c06e3f26e7e290039'
           root.joinpath('..','original96_roi_pilot.zip').parent.mkdir(parents=True,exist_ok=True)
           with zipfile.ZipFile(root.parent/'original96_roi_pilot.zip','w') as z:
               for name in names:
