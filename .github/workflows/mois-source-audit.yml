@@ -123,6 +123,10 @@ jobs:
         run: python -m pytest -q tests/test_mois_full_source_dated_flower_candidates_20261016.py
       - name: Aggregate every FCP original dated photo source shard and refuse even one missing/unverified shard before global 93M claim
         run: python -m pytest -q tests/test_mois_aggregate_all_original_dated_shards_20261016.py
+      - name: Test complete 128 FCP source photo-shard date-month reconciliation without opening flower pixels
+        run: python -m pytest -q tests/test_mois_aggregate_all_original_dated_shards_20261016.py
+      - name: Test actual original photo blooming+observed-on versus 48-month T/S/P/VPD observation-first and species-equal FE analysis
+        run: python -m pytest -q tests/test_mois_full_bloom_monthly_TSPVPD_observation_species_FE_20261016.py
       - name: Test original 93M all-photo complete ROI bloom and source observed_on positive gated monthly white
         run: python -m pytest -q tests/test_mois_original_full_fcp_dated_flower_ROI_20261016.py
       - name: Test source-independent herbarium rainfall estimator on synthetic sites
