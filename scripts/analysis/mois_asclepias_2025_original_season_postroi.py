@@ -71,7 +71,7 @@ def run(artifact:Path,out:Path,*,_synthetic=False)->dict:
           source_doc.get("head_sha")!="55a43469450d86145d2a19e3f70c67e633f7fddf" or
           source_doc.get("status")!="completed" or source_doc.get("conclusion")!="success"):
         raise ValueError("Wrong original FCP 128-photo season selection job")
-    if (sel.get("source_photo_queue_sha256") is None or
+    if (sel.get("file_sha256",{}).get("original_source_season_frozen_128_photos.csv")!=receipt.get("source_photo_queue_sha256") or
         sel.get("status")!="REAL_ORIGINAL_SEASONAL_SOURCE_PHOTOS_FROZEN_NO_PIXELS" or
         sel.get("no_climate_or_colour_outcome_used_to_select_photos") is not True or
         sel.get("observer_ids_unique_across_seasons") is not True or
