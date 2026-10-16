@@ -10,6 +10,14 @@ The worldwide source contains **100,543 distinct original photo IDs** across **4
 
 **Nonconfirmation matters:** strict-quality precipitation +1.229 pp (95% [−2.046,+4.504]), within-genus×coarse-cell +0.808 (95% [−3.556,+5.172]); the same-taxonomic-support paired spatial contrast has a simultaneous interval spanning zero. Independent NHM-described floral hue also fails to independently establish a positive geographic rainfall direction. Positive global and negative geographic/source checks belong in the same article.
 
+## New research stream: seasonality of photographed white versus chromatic flowers
+
+**From 16 October 2026, all new observation-month, seasonal white-frequency and monthly temperature / solar-radiation / moisture-environment inference is developed here in `mois`, not in `fcp`.** This is a *separate, as-yet-unconfirmed* spatiotemporal extension to the existing global interspecific moisture manuscript, not a retrospective replacement for its climate coefficients. See [the MOIS seasonal research plan](docs/MOIS_SEASONAL_WHITE_MOISTURE_RESEARCH_20261016.md) and [the source transfer ledger](docs/MOIS_SEASONAL_FCP_SOURCE_TRANSFER_20261016.json).
+
+The relevant 2026-09-27 original FCP acquisition source contains **3,430,502 verified photo-ID opportunities in 1,000 outcome-blind selected taxa**, with all photo IDs carrying an original observation date. Those are **not 3.43 million flowering images**, and must not be pooled with the historical 100,543-photo global colour sample. The FCP original ROI-v4 method currently measured a **64-photo technical unit**; 27 were colour-classifiable, 4 contained suspect white/yellow floral-organ overlap, and flowering organ identity still needs independent validation. The standalone MOIS seasonal Python analysis scripts and synthetic tests are included here, but no observed monthly environmental/white-rate effect is established.
+
+**Division of work:** `fcp` remains authoritative for original photo-ID source acquisition, blind segmentation, fixed multicolour method, and within-species colour polymorphism; `mois` owns post-measurement date/season processing, paired geographic-site temporal white fractions, climate-grid matching, sensitivity analyses and manuscript interpretation. Signed FCP output artifacts are upstream inputs, never copied over as new MOIS measurements.
+
 ## Source files transferred byte-for-byte from fcp
 
 - [Global colour × 36-abiotic direction methods/report](docs/FCP_GLOBAL_COLOUR_ENVIRONMENT_DIRECTION_AND_CAUSAL_GATES_20261013.md); [source script](scripts/analysis/fcp_abiotic_hue_direction_macro_20261013.py); [1,280-colour×environment result ledger](results/fcp_macro_direction_20261013/direction_ledger.csv); [decision receipt](results/fcp_macro_direction_20261013/decision_receipt.json)

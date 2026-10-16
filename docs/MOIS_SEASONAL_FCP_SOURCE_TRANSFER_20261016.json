@@ -1,0 +1,129 @@
+{
+  "schema": "mois_seasonal_from_fcp_transfer_v1",
+  "created_date": "2026-10-16",
+  "canonical_research_home": "zuizui0223/mois",
+  "source_technical_home": "zuizui0223/fcp",
+  "source_repo_ref": "analysis/fcp-fresh-uncapped-zero-20261015",
+  "source_files_byte_copied": [
+    {
+      "path": "scripts/acquisition/audit_fcp_original_rgfca_monthly_photo_opportunities.py",
+      "original_fcp_git_blob_sha1": "e0feeed6b9062ebf36539290f783c7f911194bcb",
+      "source_repo": "zuizui0223/fcp",
+      "source_ref": "analysis/fcp-fresh-uncapped-zero-20261015"
+    },
+    {
+      "path": "scripts/analysis/fcp_original_dated_flowering_season_qc.py",
+      "original_fcp_git_blob_sha1": "67e9278b4a5dfdec0b2f381db889b5fc960027d5",
+      "source_repo": "zuizui0223/fcp",
+      "source_ref": "analysis/fcp-fresh-uncapped-zero-20261015"
+    },
+    {
+      "path": "scripts/analysis/fcp_match_original_season_site_year.py",
+      "original_fcp_git_blob_sha1": "a44641112b6e6e4cbf3253013efd399090e4dc0c",
+      "source_repo": "zuizui0223/fcp",
+      "source_ref": "analysis/fcp-fresh-uncapped-zero-20261015"
+    },
+    {
+      "path": "scripts/analysis/fcp_prepare_observed_month_terraclimate.py",
+      "original_fcp_git_blob_sha1": "e0893b32b91602ecc521ee0c635ca5848cd9c46b",
+      "source_repo": "zuizui0223/fcp",
+      "source_ref": "analysis/fcp-fresh-uncapped-zero-20261015"
+    },
+    {
+      "path": "tests/test_audit_fcp_original_rgfca_monthly_photo_opportunities.py",
+      "original_fcp_git_blob_sha1": "b8e95e8241d1c053575963f0df1200c2270b3ea1",
+      "source_repo": "zuizui0223/fcp",
+      "source_ref": "analysis/fcp-fresh-uncapped-zero-20261015"
+    },
+    {
+      "path": "tests/test_fcp_original_dated_flowering_season_qc.py",
+      "original_fcp_git_blob_sha1": "2df5e47fa49ab026cb0e50b4f2e17e6e2aa45292",
+      "source_repo": "zuizui0223/fcp",
+      "source_ref": "analysis/fcp-fresh-uncapped-zero-20261015"
+    },
+    {
+      "path": "tests/test_fcp_match_original_season_site_year.py",
+      "original_fcp_git_blob_sha1": "00a3e6caa356057e6ccabb50ed0b579b5fd07a82",
+      "source_repo": "zuizui0223/fcp",
+      "source_ref": "analysis/fcp-fresh-uncapped-zero-20261015"
+    },
+    {
+      "path": "tests/test_fcp_prepare_observed_month_terraclimate.py",
+      "original_fcp_git_blob_sha1": "618843851c83844eb6bf4308049444baae3441e9",
+      "source_repo": "zuizui0223/fcp",
+      "source_ref": "analysis/fcp-fresh-uncapped-zero-20261015"
+    },
+    {
+      "path": "docs/FCP_ORIGINAL_OBSERVATION_DATE_FLOWER_SEASON_PLAN_20261016.md",
+      "original_fcp_git_blob_sha1": "c41e8207b80039217e6289f4c31b280931497a74",
+      "source_repo": "zuizui0223/fcp",
+      "source_ref": "analysis/fcp-fresh-uncapped-zero-20261015"
+    },
+    {
+      "path": "docs/FCP_REAL_SOURCE_SEASON_HIGH_DEPTH_FOLLOWUP_20261016.md",
+      "original_fcp_git_blob_sha1": "20957d05756415f09b48348d75dc4d727d841ad0",
+      "source_repo": "zuizui0223/fcp",
+      "source_ref": "analysis/fcp-fresh-uncapped-zero-20261015"
+    }
+  ],
+  "original_monthly_source": {
+    "snapshot": "2026-09-27",
+    "source_run_id": 38884223530,
+    "source_run_url": "https://github.com/zuizui0223/fcp/actions/runs/38884223530",
+    "artifact_id": 12044928578,
+    "photo_ids": 3430502,
+    "taxa": 1000,
+    "original_all_ids_sha256": "58e037a210e23d3ff5d6f04d392665ada5ee9ac5149d0676672c239cf092df01"
+  },
+  "original_monthly_date_audit": {
+    "run_id": 38901290387,
+    "artifact_id": 12046920563,
+    "dated_photo_ids": 3430502,
+    "dated_with_recorded_accuracy_le5km": 2416225,
+    "n_source_taxa_with_multi_month_siteyear": 554,
+    "site_month_source_sha256": "7691c7cf975da4e73494ad3fa0f2cf8df52302e84206017dd525051cd672b432"
+  },
+  "first_real_roi": {
+    "run_id": 38901816890,
+    "artifact_id": 12047265683,
+    "n_original_photo_pixels": 64,
+    "n_auto_classifiable": 27,
+    "n_same_ROI_white_yellow_mixed": 4,
+    "white_label_without_mixed": 8,
+    "chromatic_label_without_mixed": 15,
+    "not_classifiable": 37,
+    "open_flower_organs_independently_verified": false
+  },
+  "local_season_priority": {
+    "n_taxa": 39,
+    "n_site_season_years": 268,
+    "minimum_source_observations_each_season": 24,
+    "source_only": true,
+    "needs_observer_overlap_and_flower_qc": true,
+    "origin_sha256": "ef95638da60b010c8671877854163132be304f5b7245edf9c5e2f9536265102a"
+  },
+  "supplemental_first_colourblind_reservation": {
+    "taxon": "Asclepias syriaca",
+    "inat_taxon_id": "47911",
+    "season_year": 2025,
+    "local_seasons": [
+      "autumn",
+      "summer"
+    ],
+    "source_site_cell_0p25": [
+      529,
+      435
+    ],
+    "photos_selected_each_season": 64,
+    "photos_opened": 0,
+    "season_wave_receipt_sha256": "unknown_without_full_file",
+    "n_original_global_source_photo_ids": 3430502
+  },
+  "boundaries": [
+    "source photo opportunity is not flower image",
+    "FCP algorithm trained frozen pixels only; Mois responsible seasonal ecology",
+    "do not pool 100543 historical hue observations with 3430502 metadata or 64 technical pixels",
+    "no measured effect of seasonal rainfall, solar radiation, VPD or temperature",
+    "no adaptation/fitness/pigment costs evidence"
+  ]
+}
