@@ -1,0 +1,57 @@
+name: MOIS TerraClimate v1.1 raw CF source scale metadata probe
+
+on:
+  push:
+    branches:
+      - analysis/mois-real-2025-seasonal-climate-20261016
+    paths:
+      - .github/workflows/mois-terraclimate-raw-source-attributes-20261016.yml
+
+permissions:
+  contents: read
+
+jobs:
+  official-2025-scale-from-source-not-ncss-point:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -q requests
+      - name: Retrieve base NetCDF scale factor and offset directly from provider OPeNDAP attributes
+        run: |
+          set -euo pipefail
+          mkdir -p scaling_probe
+          python - <<'PY'
+          import requests,json,re
+          from pathlib import Path
+          urls=[
+            "https://thredds.northwestknowledge.net/thredds/dodsC/agg_terraclimate_tmin_1950_CurrentYear_GLOBE.nc.das",
+            "http://thredds.northwestknowledge.net:8080/thredds/dodsC/agg_terraclimate_tmin_1950_CurrentYear_GLOBE.nc.das",
+            "https://thredds.northwestknowledge.net/thredds/dodsC/TERRACLIMATE_ALL/data/TerraClimate_tmin_2025.nc.das",
+            "https://thredds.northwestknowledge.net/thredds/dodsC/agg_terraclimate_srad_1950_CurrentYear_GLOBE.nc.das",
+          ]
+          results=[]
+          for url in urls:
+              try:
+                  r=requests.get(url,timeout=(6,20))
+                  snippet=r.text[:5000]
+                  print("MOIS_TRUE_DATA_SOURCE_CF_ATTRS",r.status_code,url,"scale snippets",re.findall(r'(?i).{0,90}(?:scale_factor|add_offset|_fillvalue|version).{0,120}',snippet)[:12],flush=True)
+                  results.append({"url":url,"http":r.status_code,"bytes":len(r.content),
+                      "scale_lines":re.findall(r'(?im)^.*(?:scale_factor|add_offset|_fillvalue|version).*$',
+                          snippet)[:25],"content_first":snippet[:200]})
+              except requests.RequestException as e:
+                  print("MOIS_SOURCE_ATTRIBUTE_ENDPOINT_ERROR",url,repr(e)[:250],flush=True)
+                  results.append({"url":url,"error":repr(e)[:250]})
+          Path("scaling_probe/provider_original_Cf_raw_attribute_report.json").write_text(
+             json.dumps({"status":"PROVIDER_METADATA_ONLY_NO_PHENOTYPE_OR_CLIMATE_EFFECT",
+                         "endpoints":results},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-terraclimate-2025-original-CF-raw-attribute-evidence
+          path: scaling_probe/
+          retention-days: 30
