@@ -1,0 +1,75 @@
+name: MOIS iNaturalist V2 original observation UUID phenology read-only probe
+
+on:
+  push:
+    branches:
+      - analysis/mois-real-2025-seasonal-climate-20261016
+    paths:
+      - .github/workflows/mois-inat-v2-original-uuid-plant-phenology-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe-current-public-phenology-not-historical-image-anthesis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -q requests
+      - name: Verify UUID-based public observation API and annotation semantics without selecting pixels by colour
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p inat_phenology_probe
+          python - <<'PY'
+          import requests,json,re
+          from pathlib import Path
+          uuid="b6f733fa-8457-4a7e-b0c8-21deac1786c1"
+          url="https://api.inaturalist.org/v2/observations/"+uuid
+          r=requests.get(url,params={"fields":"all"},
+            timeout=(8,25),headers={"User-Agent":"Mois-observation-original-photo-phenology-validation/1.0"})
+          print("MOIS_V2_ANNOTATION_UUID_PROBE_HTTP",r.status_code,"bytes",len(r.content),r.url,flush=True)
+          result={"source_uuid":uuid,"api_fetch_status":r.status_code,
+                  "read_only_api_url":r.url,
+                  "annotation_codes":{"term_id":12,"Flowering":13,"Fruiting":14,"Flower Budding":15},
+                  "data_is_current_API_not_frozen_2026_09_27_original_snapshot":True,
+                  "annotation_on_observation_not_original_photograph":True,
+                  "missing_annotation_is_unknown_not_fruit_or_no_bloom":True,
+                  "no_botanically_confirmed_photo_organ":True}
+          if r.ok:
+              body=r.json()
+              raw=body.get("results",[])
+              if isinstance(raw,dict):raw=[raw]
+              print("MOIS_V2_ANNOTATION_UUID_PROBE_TOP_KEYS",sorted(body.keys()),"results",len(raw),flush=True)
+              if len(raw)==1:
+                  obs=raw[0]
+                  annotation=obs.get("annotations")
+                  print("MOIS_V2_ANNOTATION_UUID_PROBE_RESULT_FIELDS",sorted(obs.keys())[:75],flush=True)
+                  print("MOIS_V2_ANNOTATION_UUID_PROBE_ANNOTATIONS",str(annotation)[:2200],flush=True)
+                  result.update({
+                    "api_uuid":obs.get("uuid"),
+                    "api_observation_id":obs.get("id"),
+                    "api_observed_on":obs.get("observed_on"),
+                    "annotations_field_exists":"annotations" in obs,
+                    "annotations":annotation,
+                    "api_observation_photos_count":len(obs.get("photos") or []),
+                    "original_source_photo_569580841_in_public_current_photo_list":any(
+                        str(p.get("id"))=="569580841" for p in obs.get("photos") or [])})
+          Path("inat_phenology_probe/2025_first_original_uuid_annotation_probe.json").write_text(
+            json.dumps(result,default=str,sort_keys=True,indent=2)+"\n")
+          print("MOIS_ANNOTATION_API_READONLY_PROBE_COMPLETED_NOT_OPEN_FLOWER_PHOTO",json.dumps({
+            k:v for k,v in result.items() if k not in ('annotations',)
+          },sort_keys=True),flush=True)
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-iNat-v2-original-uuid-current-phenology-readonly-probe-NOT-PHOTO
+          path: inat_phenology_probe/
+          if-no-files-found: error
+          retention-days: 30
