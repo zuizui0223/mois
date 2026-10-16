@@ -70,6 +70,16 @@ def test_all_source_original_dated_photos_must_be_measured_before_complete_shard
     assert all(r["original_ROI_v4_hue"]=="white" for r in blooms)
     assert all(r["actual_photo_contains_classifiable_flower"] is True for r in blooms)
     assert all(r["original_snapshot_20260927_date_proven"] is True for r in blooms)
+    month_path=tmp_path/"original_roi_month_effort_private.json"
+    assert month_path.is_file()
+    month_data=json.loads(month_path.read_text(encoding="utf8"))
+    assert month_data["schema"]=="mois_private_original_source_photo_month_roi_effort_v1"
+    assert month_data["n_original_dated_photo_roi_terminals"]==5
+    assert month_data["n_original_roi_four_hue_classifiable"]==5
+    assert month_data["n_original_roi_white"]==5
+    assert sum(x["n_original_date_known_photo_roi_terminals"]
+               for x in month_data["latitude_domain_month_photo_effort"])==5
+    assert r["private_all_month_roi_effort_sha256"]==m.sha(month_path)
     p=json.loads(report.read_text())
     assert "original_photo_id" not in p
     assert "original_observation_uuid" not in p
