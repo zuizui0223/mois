@@ -71,7 +71,7 @@ def audit(pilot_zip:Path, source:DynamicNormals, output:Path, *,
     taxa=set()
     grouped=defaultdict(lambda:{
         "n":0,"class":0,"white":0,"classifiable_by_taxon":defaultdict(lambda:[0,0]),
-        "sums":defaultdict(float),"valid_for_monthly_climate":0})
+        "sums":defaultdict(float),"valid_for_monthly_climate":0,"classifiable_with_climate":0})
     statuses=Counter()
     totals=Counter()
     for r in reader:
@@ -101,6 +101,7 @@ def audit(pilot_zip:Path, source:DynamicNormals, output:Path, *,
             totals["source_monthly_climate_join"]+=1
             row["valid_for_monthly_climate"]+=1
             if valid:
+                row["classifiable_with_climate"]+=1
                 for key in DYNAMIC_COLS:
                     row["sums"][key]+=float(climate[key])
         else:
@@ -118,6 +119,7 @@ def audit(pilot_zip:Path, source:DynamicNormals, output:Path, *,
         # assigned a monthly source value. Keep explicit two denominators.
         nclass=g["class"]
         n_valid_climate=g["valid_for_monthly_climate"]
+        n_valid_class=g["classifiable_with_climate"]
         q={
             "domain":domain,"local_season":season,
             "sampled_original_photo_opportunities":g["n"],
@@ -129,12 +131,10 @@ def audit(pilot_zip:Path, source:DynamicNormals, output:Path, *,
                     g["classifiable_by_taxon"]) if nclass else None,
             "n_taxa_with_at_least_one_classifiable_photo":len(g["classifiable_by_taxon"]),
             "n_original_monthly_climate_joined_of_all_source":n_valid_climate,
-            "n_classifiable_with_known_monthly_climate":(
-                nclass if n_valid_climate==g["n"] else None
-            ),
+            "n_classifiable_with_known_monthly_climate":n_valid_class,
             "source_classified_monthly_climate_means":(
-                {key:g["sums"][key]/nclass for key in DYNAMIC_COLS}
-                if nclass and n_valid_climate==g["n"] else None
+                {key:g["sums"][key]/n_valid_class for key in DYNAMIC_COLS}
+                if n_valid_class else None
             ),
         }
         result.append(q)
