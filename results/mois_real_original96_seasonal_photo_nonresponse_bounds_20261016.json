@@ -1,0 +1,172 @@
+{
+  "schema": "mois_original96_technical_photo_season_classifiability_mnar_bounds_v1",
+  "status": "REAL_ORIGINAL96_PHOTOGRAPHIC_CLASSIFIABILITY_MISSINGNESS_NOT_FLORA_PREVALENCE",
+  "real_original96_source_sha256": "911ec9edd10a7126bee28cfa67738cef0ff4d275b1f0ca1c06e3f26e7e290039",
+  "real_48_climate_source_manifest_sha256": "9d0cf37a64534542d7788debef28c13f106a15c3bf7bf91be0653f3ce106baae",
+  "real_source_photo_month_run": "https://github.com/zuizui0223/mois/actions/runs/38849479497",
+  "real_source_nonrepresentative_taxa": 4,
+  "all_original_photographs": 96,
+  "original_roi_classifiable": 20,
+  "original_roi_white": 3,
+  "photographs_without_classifiable_4hue": 76,
+  "source_season_counts_and_logical_missing_photo_bounds": [
+    {
+      "domain": "NORTH_EXTRATROPICAL",
+      "local_season": "AUTUMN",
+      "source_photo_opportunities": 3,
+      "four_hue_classifiable_photographs": 0,
+      "classified_white_photographs": 0,
+      "source_unclassifiable_photographs": 3,
+      "roi_four_colour_classifiability_fraction": 0,
+      "white_fraction_given_roi_classifiable": null,
+      "mathematical_all_photo_binary_assignment_lower_white_fraction": 0,
+      "mathematical_all_photo_binary_assignment_upper_white_fraction": 1,
+      "source_classified_climate_group_averages": null,
+      "sufficient_for_a_descriptive_season_classifiability_fraction": false,
+      "sufficient_for_season_white_climate_inference": false
+    },
+    {
+      "domain": "NORTH_EXTRATROPICAL",
+      "local_season": "SPRING",
+      "source_photo_opportunities": 45,
+      "four_hue_classifiable_photographs": 7,
+      "classified_white_photographs": 1,
+      "source_unclassifiable_photographs": 38,
+      "roi_four_colour_classifiability_fraction": 0.15555555555555556,
+      "white_fraction_given_roi_classifiable": 0.14285714285714285,
+      "mathematical_all_photo_binary_assignment_lower_white_fraction": 0.022222222222222223,
+      "mathematical_all_photo_binary_assignment_upper_white_fraction": 0.8666666666666667,
+      "source_classified_climate_group_averages": {
+        "monthly_prec_mm": 28.428571428571427,
+        "monthly_srad_kj_m2_day": 22395.14285714286,
+        "monthly_tavg_c": 13.538253852299281,
+        "monthly_vapr_kpa": 0.8594028098242623,
+        "monthly_vpd_kpa": 0.7313202705294432
+      },
+      "sufficient_for_a_descriptive_season_classifiability_fraction": true,
+      "sufficient_for_season_white_climate_inference": false
+    },
+    {
+      "domain": "NORTH_EXTRATROPICAL",
+      "local_season": "SUMMER",
+      "source_photo_opportunities": 25,
+      "four_hue_classifiable_photographs": 9,
+      "classified_white_photographs": 1,
+      "source_unclassifiable_photographs": 16,
+      "roi_four_colour_classifiability_fraction": 0.36,
+      "white_fraction_given_roi_classifiable": 0.1111111111111111,
+      "mathematical_all_photo_binary_assignment_lower_white_fraction": 0.04,
+      "mathematical_all_photo_binary_assignment_upper_white_fraction": 0.68,
+      "source_classified_climate_group_averages": {
+        "monthly_prec_mm": 9,
+        "monthly_srad_kj_m2_day": 26025.88888888889,
+        "monthly_tavg_c": 17.57780541314019,
+        "monthly_vapr_kpa": 0.904497226079305,
+        "monthly_vpd_kpa": 1.146363719791248
+      },
+      "sufficient_for_a_descriptive_season_classifiability_fraction": true,
+      "sufficient_for_season_white_climate_inference": false
+    },
+    {
+      "domain": "NORTH_EXTRATROPICAL",
+      "local_season": "WINTER",
+      "source_photo_opportunities": 18,
+      "four_hue_classifiable_photographs": 3,
+      "classified_white_photographs": 1,
+      "source_unclassifiable_photographs": 15,
+      "roi_four_colour_classifiability_fraction": 0.16666666666666666,
+      "white_fraction_given_roi_classifiable": 0.3333333333333333,
+      "mathematical_all_photo_binary_assignment_lower_white_fraction": 0.05555555555555555,
+      "mathematical_all_photo_binary_assignment_upper_white_fraction": 0.8888888888888888,
+      "source_classified_climate_group_averages": {
+        "monthly_prec_mm": 87,
+        "monthly_srad_kj_m2_day": 10831.333333333334,
+        "monthly_tavg_c": 10.171749750773111,
+        "monthly_vapr_kpa": 0.7220750053723654,
+        "monthly_vpd_kpa": 0.5222332167229969
+      },
+      "sufficient_for_a_descriptive_season_classifiability_fraction": true,
+      "sufficient_for_season_white_climate_inference": false
+    },
+    {
+      "domain": "SOUTH_EXTRATROPICAL",
+      "local_season": "AUTUMN",
+      "source_photo_opportunities": 1,
+      "four_hue_classifiable_photographs": 0,
+      "classified_white_photographs": 0,
+      "source_unclassifiable_photographs": 1,
+      "roi_four_colour_classifiability_fraction": 0,
+      "white_fraction_given_roi_classifiable": null,
+      "mathematical_all_photo_binary_assignment_lower_white_fraction": 0,
+      "mathematical_all_photo_binary_assignment_upper_white_fraction": 1,
+      "source_classified_climate_group_averages": null,
+      "sufficient_for_a_descriptive_season_classifiability_fraction": false,
+      "sufficient_for_season_white_climate_inference": false
+    },
+    {
+      "domain": "SOUTH_EXTRATROPICAL",
+      "local_season": "SPRING",
+      "source_photo_opportunities": 2,
+      "four_hue_classifiable_photographs": 0,
+      "classified_white_photographs": 0,
+      "source_unclassifiable_photographs": 2,
+      "roi_four_colour_classifiability_fraction": 0,
+      "white_fraction_given_roi_classifiable": null,
+      "mathematical_all_photo_binary_assignment_lower_white_fraction": 0,
+      "mathematical_all_photo_binary_assignment_upper_white_fraction": 1,
+      "source_classified_climate_group_averages": null,
+      "sufficient_for_a_descriptive_season_classifiability_fraction": false,
+      "sufficient_for_season_white_climate_inference": false
+    },
+    {
+      "domain": "SOUTH_EXTRATROPICAL",
+      "local_season": "WINTER",
+      "source_photo_opportunities": 1,
+      "four_hue_classifiable_photographs": 0,
+      "classified_white_photographs": 0,
+      "source_unclassifiable_photographs": 1,
+      "roi_four_colour_classifiability_fraction": 0,
+      "white_fraction_given_roi_classifiable": null,
+      "mathematical_all_photo_binary_assignment_lower_white_fraction": 0,
+      "mathematical_all_photo_binary_assignment_upper_white_fraction": 1,
+      "source_classified_climate_group_averages": null,
+      "sufficient_for_a_descriptive_season_classifiability_fraction": false,
+      "sufficient_for_season_white_climate_inference": false
+    },
+    {
+      "domain": "TROPICAL",
+      "local_season": "CALENDAR_Q4",
+      "source_photo_opportunities": 1,
+      "four_hue_classifiable_photographs": 1,
+      "classified_white_photographs": 0,
+      "source_unclassifiable_photographs": 0,
+      "roi_four_colour_classifiability_fraction": 1,
+      "white_fraction_given_roi_classifiable": 0,
+      "mathematical_all_photo_binary_assignment_lower_white_fraction": 0,
+      "mathematical_all_photo_binary_assignment_upper_white_fraction": 0,
+      "source_classified_climate_group_averages": {
+        "monthly_prec_mm": 101,
+        "monthly_srad_kj_m2_day": 16084,
+        "monthly_tavg_c": 14.741250038146973,
+        "monthly_vapr_kpa": 1.2773250341415405,
+        "monthly_vpd_kpa": 0.3998193198144502
+      },
+      "sufficient_for_a_descriptive_season_classifiability_fraction": false,
+      "sufficient_for_season_white_climate_inference": false
+    }
+  ],
+  "north_spring_minus_summer": {
+    "source_white_given_classifiable_difference_percentage_points": 3.1746031746031744,
+    "worst_case_all_photo_binary_assignment_difference_percentage_points": [
+      -65.77777777777779,
+      82.66666666666667
+    ],
+    "both_signs_of_raw_all_photo_binary_assignment_difference_possible": true,
+    "is_comparison_of_same_taxa_and_same_geographic_cell": false,
+    "no_temperature_solar_rainfall_VPD_causal_effect_estimated": true
+  },
+  "missing_photo_binary_colour_assignments_not_valid_plant_flowering_traits": true,
+  "overall_image_pilot_is_not_random_42111_taxon_photographic_census": true,
+  "all_model_selection_and_geo_month_climate_fit_missingness_unresolved": true,
+  "note": "A no-flower photo does not intrinsically have a white/coloured flower trait. Extreme-assignment bounds illustrate the inferential loss in photographic opportunities only; they must not be interpreted as estimated wild-plant floral colour frequencies or a statistical confidence interval."
+}
