@@ -57,7 +57,7 @@ def test_all_source_original_dated_photos_must_be_measured_before_complete_shard
     assert r["n_original_bloom_white_four_hue_classified_photo_pixels"]==5
     assert r["n_original_distinct_observation_uuids_with_classifiable_flower"]==5
     assert r["n_not_date_known_source_photo_opportunities_not_image_processed"]==4
-    assert r["n_finalized_original_photo_roi_packets"]==3
+    assert r["n_finalized_original_photo_roi_packets"]==2
     assert r["old_100543_photo_outcomes_ever_reused"] is False
     assert r["observation_level_iNaturalist_Flowers_annotations_used_as_photo_positives"] is False
     assert r["source_photo_per_species_sample_limit"] is None
@@ -93,13 +93,14 @@ def test_permanent_unavailable_photo_counts_as_unclassifiable_not_fake_nonwhite(
     packets,seals,_=prepared(tmp_path,permanent_failure=True)
     result=m.reassemble(packets,seals,tmp_path/"positive.ndjson",
                         tmp_path/"summary.json",synthetic=True)
-    # Every work packet triggers its own first URL permanent failure.
+    # The explicitly synthetic backend fails only its FIRST URL globally,
+    # even though the source contains two independent compute packets.
     assert result["n_original_date_known_photo_ROI_terminals"]==5
-    assert result["n_original_permanent_photo_acquisition_failures"]==3
-    assert result["n_original_bloom_four_hue_classified_photo_pixels"]==2
-    assert result["n_original_bloom_white_four_hue_classified_photo_pixels"]==2
+    assert result["n_original_permanent_photo_acquisition_failures"]==1
+    assert result["n_original_bloom_four_hue_classified_photo_pixels"]==4
+    assert result["n_original_bloom_white_four_hue_classified_photo_pixels"]==4
     assert result["n_original_image_roi_other_unclassifiable"]==0
-    assert len((tmp_path/"positive.ndjson").read_text().splitlines())==2
+    assert len((tmp_path/"positive.ndjson").read_text().splitlines())==4
 
 
 def test_altered_photo_terminal_result_cannot_seal_valid_original_blooms(tmp_path):
