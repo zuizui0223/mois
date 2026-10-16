@@ -156,3 +156,21 @@ After all 128 such ROI shards **and** the independently sealed all-128 original-
       --out-public-date-verified-global-photo-white "$MOIS_PRIVATE_ROOT/all_source_date_first_month_white.json"
 
 That final private positive photo file then feeds the climate model documented in section 6, using the **date-first completed global ROI receipt** instead of FCP's separate full-image ROI remeasurement receipt. The pipeline **cannot yet be executed worldwide** because the real 128 original source-ID manifests are not durably completed. Synthetic tests of complete source-date → blinded photo ROI → shard/global photo outcomes → month WorldClim, including multiple original photos per observation and a missing packet/shard, have passed; they are *engineering tests only*, not new world phenological/climatic results.
+
+
+## 8. Early original observed-on audit from genuine permanent FCP SQLite
+
+**New, shorter route to the first true 93-million PHOTO observation-date result.** Even before 128 source-shard photo-ID files have been emitted, FCP's byte-verified, globally deduplicated permanent original source SQLite already contains the full licensed FCP photographic table and original observation UUID/date/latitude rows. The new [full-original-source SQLite observed-on opportunity auditor](../scripts/acquisition/mois_real_fcp_staged_sqlite_original_observed_on_counts_20261016.py) directly joins those tables on the original observation UUID, counts every nonambiguous photo and classifies the immutable original 2026-09-27 observed-on using a strict Gregorian day parser. It independently demands the original source SQLite SHA256, full 42,111 original taxa, exact 93,209,351 unique photo opportunities and photo-count ledger SHA256. It gives date-known / invalid / absent original photo opportunity counts, original observed year and month×hemisphere/source-photographic taxon support, without retaining personal photo IDs in the aggregate and **without opening any original photo pixels**. It is NOT yet a blooming-flower count or white-flower estimate.
+
+Run only on an operator-provisioned persistent FCP stage that truly passed the original full 36-GB provider metadata ingest. For example, from the Mois repository root:
+
+    python -m scripts.acquisition.mois_real_fcp_staged_sqlite_original_observed_on_counts_20261016 \
+      --fcp-complete-original-staged-sqlite-root "$FCP_DURABLE_ROOT/source_20260927/complete_42111_metadata_source" \
+      --independent-42111-original-photo-count-csv "$FCP_DURABLE_ROOT/references/all_42111_species_photo_opportunity_counts.csv" \
+      --out-public-original-observed-on-photo-opportunities "$FCP_DURABLE_ROOT/analysis/mois_full_source_observed_on_months.json"
+
+FCP's manual source stage requires a persistent self-hosted runner, legitimate original S3 archive/permission, byte-pinned metadata and large durable storage. The archived FCP **photo-count-only** artifact does NOT contain the entire photo/date table or stage SQLite. As of this writing the 93M original SQLite has not been made available through GitHub, so the actual date-known count is **NOT YET COMPUTED**; the new code passed source-schema synthetic CI, not production global data. It is nonetheless an earlier result gate than all 128 photo-ID manifests or pixel processing.
+
+## 9. Actual original FCP ROI-v4 code compatibility (not just mock tests)
+
+[Actual independent original-FCP-backend integration Actions #38881206709](https://github.com/zuizui0223/mois/actions/runs/38881206709) succeeded. It checked out the immutable FCP PR200 source commit c00e3db156ec2f214b13e83f3e91dd8d863d83dc and byte-verified its true ROI worker Git blob 45de671444c0fac4fb4611375d19ed7e5a1608f3. The Mois adapter imported the *real* source and exercised its original nine-colour/photo-hue terminal validator, function ABI, permanent versus transient failure classes and original S3 URI rejection, not a fake injected backend. The original frozen scientific measurement code commit is 9fae6ccdf684a46026f72ba12e98de2c5c54bf2a. This proves production source **interface compatibility** only; original model weights, permissions and actual provider photograph pixels were not opened in this integration CI. Thus the real-world full image measurement remains uncompleted.
