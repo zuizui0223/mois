@@ -119,7 +119,7 @@ def aggregate_all(dates_receipt:Path,roi_shard_root:Path,
                     or proof.get("actual_all_128_original_photo_shards_complete") is not False):
                     raise ValueError("Original shard/date/photo bloom double-positive counts unsealed")
                 count=white_one=0
-                        with p.open(encoding="utf8") as f:
+                with p.open(encoding="utf8") as f:
                     for line in f:
                         r=json.loads(line)
                         if (r.get("actual_photo_contains_classifiable_flower") is not True
