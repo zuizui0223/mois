@@ -32,9 +32,9 @@ from scripts.analysis.mois_phenology_observer_bias_audit_20261016 import load_ov
 
 PRI={
     "FLOWERS":0,
-    "BUDS_ONLY":1,
-    "NO_ANNOTATION":2,
-    "NOT_VERIFIED":3,
+    "NO_ANNOTATION":1,
+    "NOT_VERIFIED":2,
+    "BUDS_ONLY":3,
     "FRUITS_ONLY":4,
     "NO_FLOWERS_FRUITS":5,
 }
