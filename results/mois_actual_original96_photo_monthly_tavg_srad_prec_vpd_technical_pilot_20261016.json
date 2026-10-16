@@ -1,4 +1,5 @@
 {
+  "cell_FE_primary_four_dynamic_months_estimable_in_this_pilot": false,
   "climatology_years": "1970-2000 NOT actual photographic weather",
   "n_monthly_source_site_climate_joined": 96,
   "n_monthly_source_site_climate_missing": 0,
@@ -75,7 +76,7 @@
         "monthly_srad_kj_m2_day": 10831.333333333334,
         "monthly_tavg_c": 10.171749750773111,
         "monthly_vapr_kpa": 0.7220750053723654,
-        "monthly_vpd_kpa": 0.5222332167229968
+        "monthly_vpd_kpa": 0.5222332167229969
       },
       "species_equal_white_fraction_in_same_season": 0.3333333333333333,
       "white_fraction_among_classifiable": 0.3333333333333333
@@ -142,6 +143,10 @@
   "original_photo_selection_is_nonrepresentative_four_taxon_technical_pilot": true,
   "original_source_population_42111_taxa_photo_IDs_joined": false,
   "prespecified_site_cell_season_FE_within_month_estimated": false,
+  "real_10m_source_climate_cells_with_any_original_photo": 60,
+  "real_10m_source_climate_cells_with_classifiable_photos": 16,
+  "real_10m_source_climate_cells_with_classifiable_photos_in_two_or_more_months": 3,
+  "real_10m_source_climate_cells_with_original_photos_in_two_or_more_months": 11,
   "roi_status_counts": {
     "classified_four_state_morph": 20,
     "not_evaluable_ambiguous_palette_composition": 9,
@@ -153,6 +158,6 @@
   "source_original_FCP_96_pilot_csv_sha256": "911ec9edd10a7126bee28cfa67738cef0ff4d275b1f0ca1c06e3f26e7e290039",
   "status": "ACTUAL_96_IMAGE_ROI_TECHNICAL_PILOT_CLIMATE_JOIN_NOT_GLOBAL_SEASON_EFFECT",
   "synthetic_test_only": false,
-  "verified_original_FCP_photo_climate_execution_url": "https://github.com/zuizui0223/mois/actions/runs/38848886635",
+  "verified_original_FCP_photo_climate_execution_url": "https://github.com/zuizui0223/mois/actions/runs/38849479497",
   "original_FCP_96_photo_ROI_source_run_url": "https://github.com/zuizui0223/fcp/actions/runs/38673995478"
 }
