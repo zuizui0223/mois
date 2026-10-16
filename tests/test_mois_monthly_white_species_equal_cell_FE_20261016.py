@@ -38,6 +38,7 @@ def test_same_place_climate_vs_white_fixed_effects_recover_known_synthetic_slope
             y=(.34+.01*(c-12)+.03*math.cos(t)+
                .020*x[0]+.000015*x[1]+.0005*x[2]-.10*x[3])
             result.append({"cell":f"C{c}","month":month,
+                "domain":"NORTH_EXTRATROPICAL",
                 "n_species":8,"white_species_equal":y,
                 **dict(zip(m.DYNAMIC,x))})
     result=clean_cell_month(result)
@@ -94,6 +95,7 @@ def test_source_bound_photo_classifiability_and_equal_species_cellmonth(tmp_path
                 "observation_id":f"obs-{month}-{photo}",
                 "inat_taxon_id":str(tax),"genus":"A" if tax==1 else "B",
                 "original_month":str(month),
+                "domain":"NORTH_EXTRATROPICAL",
                 "climate_grid_row":"300","climate_grid_col":"1200",
                 "source_climate_join_status":"VALID",
                 "sample_observation_weight":"1",
@@ -126,8 +128,9 @@ def test_source_bound_photo_classifiability_and_equal_species_cellmonth(tmp_path
     assert report["n_month_source_climate_cells"]==2
     assert report["n_species_cell_month_rows"]==4
     assert report["n_climate_cells_with_at_least_two_distinct_classified_flower_months"]==1
+    assert len(report["three_exploratory_fixed_effect_support_and_models"])==3
     assert all(x["status"].startswith("NOT_ESTIMABLE") for x in report[
-        "two_exploratory_fixed_effect_support_and_models"])
+        "three_exploratory_fixed_effect_support_and_models"])
     assert "measurement_id" not in (tmp_path/"public.json").read_text()
     assert report["target_is_photographed_blooming_species_turnover_not_individual_colour_plasticity"] is True
     with pytest.raises(ValueError,match="Refuse"):
@@ -145,3 +148,30 @@ def test_climate_field_variation_same_geographic_cell_month_rejected(tmp_path):
     assert fitted["status"]=="NOT_ESTIMABLE_TOO_FEW_REPEAT_MONTH_GEOGRAPHIC_CELLS"
     with pytest.raises(ValueError):
         m.fit_fe(items,include_month=True,min_cells=1)
+
+
+def test_latitude_zone_calendar_month_fixed_effects_recover_known_dynamic_axes():
+    points=[]
+    for c in range(18):
+        for month in range(1,13):
+            t=month*2*math.pi/12
+            x=[(1+c%6)*math.sin(t),
+               (1+c%4)*math.cos(t)*900,
+               (1+c%7)*math.sin(2*t)*16,
+               (1+c%3)*math.cos(3*t)*.08]
+            y=.35+.006*(c-9)+.02*math.cos(t)+.01*x[0]+.000012*x[1]               +.0003*x[2]-.06*x[3]
+            points.append({
+               "cell":f"source-cell-{c}","month":month,
+               "domain":"NORTH_EXTRATROPICAL",
+               "n_species":5,"white_species_equal":y,
+               **dict(zip(m.DYNAMIC,x))
+            })
+    fit=m.fit_fe(points,include_month=True,zone_month=True,min_cells=10)
+    assert fit["status"]=="ESTIMATED_EXPLORATORY_POINT_ONLY_NO_CLUSTER_UNCERTAINTY"
+    assert fit["fixed_effect_model"]=="cell_and_latitude_zone_month"
+    for name,coef in zip(m.DYNAMIC,(.01,.000012,.0003,-.06)):
+        assert fit["four_dynamic_partial_effect_coefficients"][name][
+            "slope_pp_per_original_monthly_climate_unit"]==pytest.approx(
+                coef*100,abs=1e-8)
+    with pytest.raises(ValueError,match="requires month FE"):
+        m.fit_fe(points,include_month=False,zone_month=True,min_cells=10)
