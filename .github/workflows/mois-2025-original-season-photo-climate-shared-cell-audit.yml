@@ -1,0 +1,138 @@
+name: MOIS genuine 2025 same-4km-site seasonal photo ROI × climate missingness
+
+on:
+  push:
+    branches:
+      - analysis/mois-real-2025-seasonal-climate-20261016
+    paths:
+      - .github/workflows/mois-2025-original-season-photo-climate-shared-cell-audit.yml
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-2025-asclepias-genuine-original-season-climate-shared-grid-QC
+  cancel-in-progress: false
+
+jobs:
+  original-photo-phenology-unknown-geographic-coverage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify both independent upstream run identities, source and live CF climate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/original_fcp upstream/decoded_climate
+          gh api repos/zuizui0223/fcp/actions/runs/38909164068 > upstream/fcp_original_photo_run.json
+          gh api repos/zuizui0223/mois/actions/runs/38914456992 > upstream/mois_original_climate_run.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path("upstream/fcp_original_photo_run.json").read_text())
+          b=json.loads(Path("upstream/mois_original_climate_run.json").read_text())
+          assert (a["id"]==38909164068 and a["status"]=="completed" and
+                  a["conclusion"]=="success" and a["head_sha"]=="ed80d67ca9e3ef456677a14bedefff47a443e7cb" and
+                  a["head_repository"]["full_name"]=="zuizui0223/fcp")
+          assert (b["id"]==38914456992 and b["status"]=="completed" and
+                  b["conclusion"]=="success" and b["head_sha"]=="73997e8283c7b1939465e39ccaa77414df51ffda" and
+                  b["head_repository"]["full_name"]=="zuizui0223/mois")
+          print("MOIS_BOTH_FROZEN_ORIGINAL_IMAGE_AND_VERIFIED_2025_CLIMATE_UPSTREAM_ACCEPTED")
+          PY
+
+      - name: Download archived source photo classification and 126 genuine CF-decoded climate histories
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download 38909164068 --repo zuizui0223/fcp \
+            --name fcp-actual-2025-original-first64-summer-autumn-colour-ROI-STAGE-UNVERIFIED \
+            --dir upstream/original_fcp
+          gh run download 38914456992 --repo zuizui0223/mois \
+            --name mois-actual-2025-terraclimate-v11-source-40-grid-months-64-original-observations-NOT-FLOWER-EFFECT \
+            --dir upstream/decoded_climate
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile,ZIP_DEFLATED
+          for origin,outname in (
+             ("upstream/original_fcp","fcp_original_roi64.zip"),
+             ("upstream/decoded_climate","mois_actual_climate40.zip")):
+              root=Path(origin)
+              with ZipFile(outname,"w",ZIP_DEFLATED) as z:
+                  for p in sorted(root.rglob("*")):
+                      if p.is_file():
+                          z.write(p,p.relative_to(root).as_posix())
+          PY
+
+      - name: Match all 64 original photos to real 2025 climate; contrast ALL versus same seven geographic grid cells
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_verify_real_2025_shared_site_colour_missingness \
+            --fcp-original-2025-64-ROI-zip fcp_original_roi64.zip \
+            --mois-original-2025-terraclimate-zip mois_actual_climate40.zip \
+            --outdir mois_2025_shared_grid_and_ROI_bias
+          python - <<'PY'
+          import json,csv,hashlib
+          from pathlib import Path
+          root=Path("mois_2025_shared_grid_and_ROI_bias")
+          rec=json.loads((root/"verified_2025_shared_sites_original_ROI_climate_QC_receipt.json").read_text())
+          assert rec["status"]=="REAL_ORIGINAL_PHOTOGRAPH_SEASON_CLIMATE_JOIN_NO_BOTANICALLY_CONFIRMED_COLOUR"
+          assert rec["photo_attempts"]==64
+          assert rec["same_4km_terraclimate_gridcells_both_summer_and_autumn"]==7
+          assert rec["summer_gridcells"]==16
+          assert rec["autumn_gridcells"]==12
+          assert rec["all_original_source_gridcells"]==21
+          assert rec["n_independently_reviewed_visible_open_flower_petals"]==0
+          assert rec["no_seasonal_white_colour_climate_regression"] is True
+          for season,counts in (("summer",(32,15,12,3,9,2,1,1)),
+                                 ("autumn",(32,24,6,0,6,4,1,3))):
+              q=rec["by_season"][season]
+              assert tuple(int(q[k]) for k in (
+                "original_source_photos",
+                "photo_attempts_in_7_shared_4km_sites",
+                "automatic_four_state_roi_all_sites",
+                "mixed_white_yellow_roi_all_sites",
+                "automatic_classifiable_minus_mixed_all_sites",
+                "automatic_classifiable_minus_mixed_shared_sites",
+                "automated_white_UNREVIEWED_shared_sites",
+                "automated_chromatic_UNREVIEWED_shared_sites"))==counts
+              assert q["phenology_stage_UNREVIEWED"] is True
+          with (root/"2025_Asclepias_original_64_automated_ROI_climate_photo_join_UNREVIEWED.csv").open(newline="") as f:
+              rows=list(csv.DictReader(f))
+          assert len(rows)==64
+          assert len({r["original_photo_id"] for r in rows})==64
+          assert all(r["open_flower_petal_tepal_verified"]=="False" for r in rows)
+          assert all(r["source_photo_season"] in ("summer","autumn") for r in rows)
+          print("MOIS_REAL_SOURCE_SHARED_7_OF_21_CLIMATE_GRIDS_SUMMER15_AUTUMN24_ROI_UNREVIEWED",flush=True)
+          PY
+
+      - name: Save only authentic post-blind diagnostic photo/season/climate tables and signed receipt
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-2025-Asclepias-7-shared-4km-grids-ROI-bias-64-original-photo-anthesis-UNKNOWN
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            mois_2025_shared_grid_and_ROI_bias/
+            upstream/fcp_original_photo_run.json
+            upstream/mois_original_climate_run.json
+
+      - name: Preserve provenance check on fail, no ecological results
+        if: ${{ failure() || cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-2025-Asclepias-original-climate-and-ROI-QC-FAILED-NOT-BIOLOGY
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            upstream/fcp_original_photo_run.json
+            upstream/mois_original_climate_run.json
