@@ -57,12 +57,41 @@ jobs:
           d=json.loads(Path('verified_mois_source_feasibility_20261017.json').read_text(),
                        parse_constant=lambda z: (_ for _ in ()).throw(ValueError(z)))
           q=json.loads(Path('results/mois_2025_exact_cell_source_feasibility_20261017.json').read_text())
-          assert d==q, 'Original 64/photo 40/physical-climate exact replay differs from committed receipt'
           assert d['status']=='SOURCE_CLIMATE_JOIN_VERIFIED_BIOLOGICAL_FLOWERING_OUTCOME_NOT_ESTIMABLE'
-          assert d['n_original_photo_attempts']==64 and d['n_distinct_climate_month_cells']==40
-          assert d['matched_1over24_degree_cells']['n_cells_with_both_seasons']==7
+          assert d['n_original_photo_attempts']==q['n_source_photos']==64
+          assert d['n_distinct_climate_month_cells']==q['n_actual_grid_month_keys']==40
+          assert d['n_distinct_climate_grid_cells']==q['n_source_climate_cells']==21
+          assert d['n_unique_observers']==q['n_source_observers']==64
+          src=q['source_sha256'];p=d['provenance']
+          for k,v in {'photo':'photo_observation_table_sha256',
+                      'photo_grid_month_keys':'observed_month_source_grid_sha256',
+                      'photo_source_receipt':'original_post_roi_source_receipt_sha256',
+                      'physical_grid_month_climate':'decoded_original_2025_climate_sha256',
+                      'climate_provider_receipt':'physical_climate_provider_release_receipt_sha256'}.items():
+              assert src[k]==p[v], f'Unreproducible original physical source: {k}'
+          assert p['original_provider_monthly_requests']==126
+          for month,n in q['calendar_month_observation_counts'].items():
+              assert d['monthly_original_photo_attempts'][month]['original_photo_attempts']==n
+          for season,frozen in q['seasonal'].items():
+              live=d['seasonal_photo_and_climate'][season]
+              assert live['n_unique_original_observations']==frozen['n_photos']
+              assert live['n_automatic_four_colour_roi']==frozen['automatic_roi_classifiable']
+              assert live['n_automatic_four_colour_roi_without_mixed_organs']==frozen['unreviewed_automatic_colour_unmixed']
+              assert live['n_mixed_organ_roi']==frozen['n_mixed_roi']
+              assert live['n_botanically_verified_open_flower_colour']==frozen['n_open_flower_botanically_confirmed']==0
+              for k,v in frozen['observation_weighted_climate'].items():
+                  assert math.isclose(live['observation_weighted_actual_2025_month_climate'][k],v,abs_tol=1e-6)
+          both=q['matched_same_climate_grid_across_seasons']
+          match=d['matched_1over24_degree_cells']
+          assert match['n_cells_with_both_seasons']==both['n_cells']==7
+          assert match['n_original_photos_summer_in_matched_cells']==both['n_summer']==15
+          assert match['n_original_photos_autumn_in_matched_cells']==both['n_autumn']==24
+          assert d['scientific_gates']['minimum_botanically_verified_primary_photos_per_season']==q['min_botanical_verified_per_season']==20
+          assert d['scientific_gates']['current_max_below_threshold_both_seasons'] is True
+          assert d['scientific_gates']['global_white_flower_seasonality_estimable'] is False
           assert not d['scientific_gates']['flower_colour_vs_monthly_climate_coefficient_estimable']
-          print('MOIS_2025_REAL_MONTH_CLIMATE_JOIN_FULL_REPLAY_AND_NO_FLORAL_EFFECT_PASS')
+          assert not q['analysis_gates']['seasonal_white_vs_environment_effect_estimable']
+          print('MOIS_2025_REAL_MONTH_CLIMATE_JOIN_FROZEN_QA_AND_NO_FLORAL_EFFECT_PASS')
           PY
       - uses: actions/upload-artifact@v4
         if: success()
