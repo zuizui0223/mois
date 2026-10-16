@@ -190,6 +190,7 @@ def audit(
         path.parent.mkdir(parents=True,exist_ok=True)
     temporary=private_rows.with_name(private_rows.name+".partial")
     season=defaultdict(newstat)
+    season_annotation=defaultdict(newstat)
     taxon_season=defaultdict(newstat)
     cell_season=defaultdict(newstat)
     month_counts=Counter()
@@ -254,6 +255,7 @@ def audit(
                        "morph":morph,"measurement_status":state}
                 writer.writerow(stage)
                 add(season[(domain,year_season)],row,obs_w,pweight)
+                add(season_annotation[(domain,year_season,ann)],row,obs_w,pweight)
                 add(taxon_season[(tid,row["genus"],domain,year_season)],row,obs_w,pweight)
                 add(cell_season[(tid,row["genus"],region,precip,domain,year_season)],
                     row,obs_w,pweight)
@@ -274,9 +276,18 @@ def audit(
                 if (dom,sea)==(domain,quarter) and item["classifiable"]>0
             ]
             observers=observer_season[(domain,quarter)]
+            flowering=season_annotation[(domain,quarter,"FLOWERS")]
+            no_annot=season_annotation[(domain,quarter,"NO_ANNOTATION")]
+            unverified=season_annotation[(domain,quarter,"NOT_VERIFIED")]
             season_records.append({
                 "domain":domain,"local_season":quarter,
                 **describe(s),
+                "confirmed_flowers_annotated_observations":flowering["selected"],
+                "confirmed_flowers_annotated_roi_classifiable":flowering["classifiable"],
+                "confirmed_flowers_annotated_white_given_classifiable_observation_weighted":
+                    wmean(flowering["obs_white"],flowering["obs_class"]),
+                "checked_but_unannotated_observations":no_annot["selected"],
+                "annotation_not_verified_observations":unverified["selected"],
                 "n_taxa_with_classifiable_colour":len(matching),
                 "n_taxa_with_at_least_3_classifiable_photos":
                     sum(k["classifiable"]>=3 for k in matching),
@@ -295,12 +306,20 @@ def audit(
                         min_classifiable=min_classifiable_per_season)
         # Drop taxon and coarse-location identifiers from public output.
         def public_cells(records):
-            return [
-                r if r["n_selected_observations"]>=min_public_cell
-                  else {"domain":r["domain"],"local_season":r["local_season"],
-                        "privacy_suppressed_count_below":min_public_cell}
-                for r in records
-            ]
+            result=[]
+            for r in records:
+                if r["n_selected_observations"]<min_public_cell:
+                    result.append({"domain":r["domain"],"local_season":r["local_season"],
+                                   "privacy_suppressed_count_below":min_public_cell})
+                else:
+                    item=r.copy()
+                    if r["confirmed_flowers_annotated_observations"]<min_public_cell:
+                        item["confirmed_flowers_annotated_observations"]=None
+                        item["confirmed_flowers_annotated_roi_classifiable"]=None
+                        item["confirmed_flowers_annotated_white_given_classifiable_observation_weighted"]=None
+                        item["confirmed_flowers_subcell_privacy_suppressed"]=True
+                    result.append(item)
+            return result
         def public_pairs(records):
             return [
                 r if r["n_matched_units"]>=min_public_cell
