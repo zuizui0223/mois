@@ -1,0 +1,64 @@
+name: MOIS TerraClimate v1.1 CF packing and one-point test
+
+on:
+  push:
+    branches:
+      - analysis/mois-real-2025-seasonal-climate-20261016
+    paths:
+      - .github/workflows/mois-terraclimate-cf-packing-probe-20261016.yml
+
+permissions:
+  contents: read
+
+jobs:
+  check-real-2025-cf-physical-units:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -q requests xarray netCDF4
+      - name: Verify packed/raw point, CF scale_factor metadata and decoded deg C
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p packing_probe
+          python - <<'PY'
+          import requests,io,json,hashlib,xarray as xr
+          from pathlib import Path
+          base='https://thredds.northwestknowledge.net/thredds/ncss/agg_terraclimate_tmin_1950_CurrentYear_GLOBE.nc'
+          q={'var':'tmin','latitude':'42.375','longitude':'-71.125',
+             'time_start':'2025-07-01T00:00:00Z','time_end':'2025-07-31T23:59:59Z','accept':'netcdf'}
+          try:
+              r=requests.get(base,params=q,timeout=(8,35))
+              print('MOIS_NCSS_NETCDF_RESPONSE',r.status_code,len(r.content),r.headers.get('Content-Type'),flush=True)
+              r.raise_for_status()
+              if len(r.content)>20_000_000:
+                  raise ValueError('Unexpectedly huge one-point month file')
+              content=r.content
+              filename=Path('packing_probe/tmin_2025_07_point_original_ncss.nc')
+              filename.write_bytes(content)
+              with xr.open_dataset(filename,decode_cf=False) as raw:
+                  print('MOIS_TERRACLIMATE_RAW_GLOBAL_ATTRS',json.dumps({k:str(v)[:180] for k,v in raw.attrs.items()}),flush=True)
+                  a=raw['tmin']
+                  print('MOIS_TERRACLIMATE_RAW_TMIN',a.values.tolist(),dict(a.attrs),flush=True)
+                  metadata={'global':{k:str(v) for k,v in raw.attrs.items()},'variable':{k:str(v) for k,v in a.attrs.items()},'raw':a.values.tolist()}
+              with xr.open_dataset(filename,decode_cf=True,mask_and_scale=True) as ds:
+                  vals=ds['tmin'].values.tolist()
+                  print('MOIS_TERRACLIMATE_CFCORRECTED_TMIN',vals,'units',ds['tmin'].attrs.get('units'),flush=True)
+                  metadata['decoded']=vals
+              Path('packing_probe/verified_point_metadata.json').write_text(json.dumps(metadata,indent=2,default=str))
+              assert all(-80<=float(v)<=65 for v in vals), 'CF-packed raw temperature was NOT converted to physical degrees C'
+              print('MOIS_CF_TERRACLIMATE_PACKED_TMIN_TO_DEGC_VERIFIED',flush=True)
+          except Exception as exc:
+              Path('packing_probe/metadata_failure.json').write_text(json.dumps({'error':repr(exc),'status':'FAIL_CLOSED_NOT_2025_CLIMATE'}))
+              raise
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-terraclimate-raw-cf-packing-test-2025-NOT-ECOLOGICAL-INFERENCE
+          path: packing_probe/verified_point_metadata.json
+          retention-days: 30
