@@ -97,3 +97,30 @@ def test_no_high_volume_or_unsafe_external_query_in_count_pilot():
         m.validate_cohorts(m.COHORTS+[dict(m.COHORTS[0],name="one_more")])
     with pytest.raises(ValueError,match="Partial geographic"):
         m.validate_cohorts([{"name":"bad","d1":"2025-01-01","d2":"2025-03-01","swlat":30}])
+
+
+
+def test_prospectively_limited_angiosperm_taxon_not_all_nonflowering_plantae(tmp_path):
+    seen=[]
+    def angio(url):
+        q=parse_qs(urlsplit(url).query)
+        assert q["taxon_id"]==["47125"]
+        seen.append(url)
+        if "without_term_id" in q:return {"n_observations":70,"raw_response_sha256":"e"*64}
+        if q.get("term_value_id")==["13"]:
+            return {"n_observations":12,"raw_response_sha256":"a"*64}
+        if q.get("term_value_id")==["21"]:
+            return {"n_observations":2,"raw_response_sha256":"b"*64}
+        if q.get("term_id")==["12"]:
+            return {"n_observations":30,"raw_response_sha256":"c"*64}
+        return {"n_observations":100,"raw_response_sha256":"d"*64}
+    results=m.run(tmp_path/"angio_counts.json",cohorts=m.COHORTS[:1],
+                  get_count=angio,sleep=lambda _:None,taxon_id=47125)
+    assert len(seen)==5
+    assert results["source_plant_taxon_id"]==47125
+    assert results["source_plant_group_name"]=="Angiospermae (flowering plants)"
+    assert results["actual_original_source_FCP_42111_taxon_frame_sampled"] is False
+    assert results["cohorts"]["world_2025_observed"]["explicit_flowers_fraction_observed"]==.12
+    with pytest.raises(ValueError,match="Unreviewed"):
+        m.run(tmp_path/"invalid.json",cohorts=m.COHORTS[:1],
+              get_count=angio,sleep=lambda _:None,taxon_id=123)
