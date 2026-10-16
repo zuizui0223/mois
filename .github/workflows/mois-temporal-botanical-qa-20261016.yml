@@ -1,0 +1,35 @@
+name: MOIS temporal candidate and botanical anthesis contracts
+
+on:
+  push:
+    branches:
+      - analysis/mois-seasonal-white-climate-20261016
+    paths:
+      - .github/workflows/mois-temporal-botanical-qa-20261016.yml
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-calendar-and-independent-botanical-stage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run source-only seasonal sampling and blinded flower-organ review regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q pytest
+          python -m py_compile \
+            scripts/analysis/fcp_source_month_season_priority.py \
+            scripts/analysis/mois_validate_open_flower_photo_review.py
+          python -m pytest -q \
+            tests/test_mois_season_priority.py \
+            tests/test_mois_open_flower_review.py
+          echo MOIS_SEASONAL_SOURCE_AND_BOTANICAL_CONTRACTS_TESTED_SYNTHETIC_NOT_FLOWER_RESULTS
