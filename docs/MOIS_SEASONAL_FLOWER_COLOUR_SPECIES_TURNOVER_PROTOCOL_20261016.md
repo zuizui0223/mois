@@ -1,5 +1,14 @@
 # Seasonal floral colours within the worldwide Mois source: species turnover versus repeated-species colour
 
+
+
+## Source population supersession: all original photos with valid date and real bloom ROI
+
+**Author instruction as of 16 October 2026 supersedes all earlier 40-observation V1/V2 main-sample plans in this file.** The PRIMARY future world seasonal dataset is every original FCP photo opportunity across the 42,111 taxa, initially 93,209,351 unique original licensed photo IDs. Both a valid originally archived observation date and a *photo-level* actually classifiable blooming flower ROI are necessary for seasonal floral-white analysis. No source taxa/photo/season quota cap, no old 100,543 cohort and no assumption that iNaturalist Flowers-unannotated images lack blooms. This permits community-level flowering species turnover. [Operational full source and current real-data blockers](MOIS_FULL_ORIGINAL_SNAPSHOT_DATED_AND_FLOWERING_PHOTOS_20261016.md).
+
+Earlier V1/V2 sections below describe now **non-primary methodological alternatives**, NOT the eligibility rules for the requested whole-source ecological seasonal paper. The 96-photo technical proof remains a smoke test only. Persistent 128-shard original source and all-date-positive ROI classification have NOT completed, and the full-source monthly white fraction/adjusted effects remain unestimated.
+
+
 **Prospective analysis specification, 16 October 2026.** Part of the ONE interspecific flower-colour × geography/climate/soil manuscript. This does not reopen the source-verified historical point estimates, does not add fruit traits and does not claim a genetic morph response to seasons.
 
 ## Primary estimand clarified: seasonal flowering-community white fractions
