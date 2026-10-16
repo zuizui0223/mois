@@ -1,0 +1,31 @@
+{
+  "schema": "mois_source_attested_worldclim21_original_dynamic_monthlies_v1",
+  "status": "VERIFIED_48_REAL_MONTHLY_GEOSPATIAL_CLIMATE_NORMALS_NO_PLANT_PHOTOS",
+  "original_execution_url": "https://github.com/zuizui0223/mois/actions/runs/38848205285",
+  "provider": "WorldClim 2.1 1970–2000 10-arc-minute monthly historical climatology",
+  "provider_base_url": "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/",
+  "source_original_zip_sha256": {
+    "prec": "1090f578f6402672a2b6438e252156f6cf867a25002a8ad6ffcbfa19e516ddc6",
+    "srad": "c72ee7f4f9a0eb4b5f6cd7a003eddc05bda22a2e5666d968ed4e817fd36b9026",
+    "tavg": "5e567dcfe94379b94229492849ce91078b1c6e5210aaf435fba449fae6b95405",
+    "vapr": "0501b5b5cbbc6e2fc2a3801efa9a126a5f9669f0f9a00642d2519c2324ce726d"
+  },
+  "original_48_raster_manifest_sha256": "9d0cf37a64534542d7788debef28c13f106a15c3bf7bf91be0653f3ce106baae",
+  "n_source_variables": 4,
+  "n_original_monthly_rasters": 48,
+  "original_grid_n_columns": 2160,
+  "original_grid_n_rows": 1080,
+  "units": {
+    "prec": "mm/month",
+    "srad": "kJ m-2 day-1",
+    "tavg": "degC",
+    "vapr": "kPa"
+  },
+  "original_provider_raster_bytes_committed_to_repo": false,
+  "original_42111_taxon_photo_ids_complete": false,
+  "photographed_flower_pixel_colours_joined": false,
+  "complete_13_source_environment_reconciliation": false,
+  "seasonal_white_climate_relation_estimated": false,
+  "climate_is_1970_2000_normal_not_observed_photo_year_weather": true,
+  "note": "Actual 48 monthly climate rasters recovered and source-verified in GitHub Actions. Source checksums are complete; no new flowering-community colour or environmental coefficient is inferred."
+}
