@@ -7,6 +7,7 @@ download files, open original plant photos or measure floral colour.
 from __future__ import annotations
 import argparse
 import json
+import hashlib
 import re
 import zipfile
 from pathlib import Path
@@ -27,7 +28,7 @@ except ModuleNotFoundError:
 
 ARCHIVE_BASENAME='wc2.1_10m_prec.zip'
 ARCHIVE_SOURCE='https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_prec.zip'
-PATH_PATTERN=re.compile(r'(?:wc2\.1_10m_prec/)?(wc2\.1_10m_prec_(\d{1,2})\.tif)
+PATH_PATTERN=re.compile(r'(?:wc2\.1_10m_prec/)?(wc2\.1_10m_prec_(\d{1,2})\.tif)$')
 STATUS='TWELVE_WORLDCLIM_MONTHLY_RAINFALL_NORMALS_BYTE_PINNED_NO_BIOLOGICAL_RESULTS'
 MAX_UNCOMPRESSED=2_000_000_000
 MAX_PER_FILE=256_000_000
@@ -44,8 +45,17 @@ def seal(archive:Path, archive_sha256:str, output:Path, *, _synthetic_small=Fals
     with zipfile.ZipFile(archive) as z:
         matching={}
         total=0
+        readme_sha256=None
         for item in z.infolist():
             if item.is_dir():
+                continue
+            # The real official WorldClim 2.1 precip ZIP includes readme.txt
+            # alongside its twelve monthly TIFFs. Whitelist this exact small
+            # known ancillary member, never an arbitrary path or file.
+            if item.filename == 'readme.txt':
+                if readme_sha256 is not None or item.file_size>65536 or item.flag_bits&1:
+                    raise ValueError("Unexpected or duplicated original WorldClim readme")
+                readme_sha256=hashlib.sha256(z.read(item)).hexdigest()
                 continue
             pos=PATH_PATTERN.fullmatch(item.filename)
             if (pos is None or item.file_size<=0 or item.file_size>MAX_PER_FILE
@@ -80,6 +90,7 @@ def seal(archive:Path, archive_sha256:str, output:Path, *, _synthetic_small=Fals
                 'provider_original_url':ARCHIVE_SOURCE,
                 'original_provider_zip_sha256':archive_sha256,
                 'units':'mm/month','resolution':'10m','months':months,
+                'original_source_readme_sha256':readme_sha256,
                 'source_photo_colour_outcomes_read':False
             }
             manifest_path=stage/'monthly_precipitation_manifest.json'
