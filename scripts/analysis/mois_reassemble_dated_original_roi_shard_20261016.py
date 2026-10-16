@@ -86,6 +86,10 @@ def reassemble(dispatch_root:Path,terminals_root:Path,
     out_public_receipt.parent.mkdir(parents=True,exist_ok=True)
     stage=out_private_positive.with_name(out_private_positive.name+".INCOMPLETE")
     public_stage=out_public_receipt.with_name(out_public_receipt.name+".INCOMPLETE")
+    private_month=out_private_positive.parent/"original_roi_month_effort_private.json"
+    private_month_stage=private_month.with_name(private_month.name+".INCOMPLETE")
+    if private_month.exists() or private_month_stage.exists():
+        raise ValueError("Existing private original month ROI effort evidence cannot be overwritten")
     sqlite=out_private_positive.with_name(out_private_positive.name+".ids.sqlite.INCOMPLETE")
     original_n=0
     classified_n=0
@@ -219,6 +223,8 @@ def reassemble(dispatch_root:Path,terminals_root:Path,
                             source_zone["all"]+=1
                             source_zone["class"]+=int(cl)
                             source_zone["white"]+=int(cl and hue=="white")
+                            source_zone["permanent_photo_acquisition_failed"]+=int(
+                                row["measurement_status"]=="image_acquisition_failed")
                             if cl:
                                 # Count one source observation once across
                                 # multiple original source photographs.
@@ -278,6 +284,40 @@ def reassemble(dispatch_root:Path,terminals_root:Path,
             or terminal_n!=original_n or classified_n>terminal_n
             or white_n>classified_n or n_observations>classified_n):
             raise ValueError("Original date-first photo dispatch and all measured ROI outcomes not conserved")
+        if (sum(v["all"] for v in month_zone.values())!=terminal_n
+            or sum(v["class"] for v in month_zone.values())!=classified_n
+            or sum(v["white"] for v in month_zone.values())!=white_n
+            or sum(v["permanent_photo_acquisition_failed"]
+                   for v in month_zone.values())!=failure_n):
+            raise ValueError("Original photographed month/photo-ROI status conservation failed")
+        private_month_doc={
+            "schema":"mois_private_original_source_photo_month_roi_effort_v1",
+            "status":"SOURCE_COMPLETE_SHARD_ALL_DATE_KNOWN_PHOTO_MONTH_ROI_COUNTS",
+            "source_original_roi_shard":dispatch["source_original_shard"],
+            "source_original_dated_photo_dispatch_sha256":sha(source_path),
+            "n_original_dated_photo_roi_terminals":terminal_n,
+            "n_original_roi_four_hue_classifiable":classified_n,
+            "n_original_roi_white":white_n,
+            "n_permanently_unavailable_photo_pixels":failure_n,
+            "latitude_domain_month_photo_effort":[
+                {"latitude_domain":zone,"original_month":month,
+                 "n_original_date_known_photo_roi_terminals":v["all"],
+                 "n_original_four_hue_classifiable":v["class"],
+                 "n_original_photo_roi_white":v["white"],
+                 "n_source_image_permanent_acquisition_failures":
+                     v["permanent_photo_acquisition_failed"],
+                 "n_roi_other_unclassifiable":
+                     v["all"]-v["class"]-
+                     v["permanent_photo_acquisition_failed"]}
+                for (zone,month),v in sorted(month_zone.items())
+            ],
+            "original_photo_identifiers_observers_and_precise_sites_not_in_this_file":True,
+            "small_source_month_bins_private_only":True,
+            "synthetic_test_only":bool(synthetic),
+        }
+        private_month_stage.write_text(
+            json.dumps(private_month_doc,indent=2,sort_keys=True)+"\n",
+            encoding="utf8")
         public_bins=[]
         for (zone,month),v in sorted(month_zone.items()):
             if v["all"]<min_public:
@@ -320,6 +360,9 @@ def reassemble(dispatch_root:Path,terminals_root:Path,
             "n_finalized_original_photo_roi_packets":len(packet_hashes),
             "per_packet_roi_receipt_sha256":packet_hashes,
             "original_photo_observed_month_roi_quality_counts":public_bins,
+            "private_all_month_roi_effort_schema":private_month_doc["schema"],
+            "private_all_month_roi_effort_file_name":private_month.name,
+            "private_all_month_roi_effort_sha256":sha(private_month_stage),
             "protected_positive_bloom_photo_month_ndjson_sha256":sha(stage),
             "this_shard_alone_is_NOT_complete_global_42111_source":True,
             "actual_all_128_original_photo_shards_complete":False,
@@ -327,6 +370,7 @@ def reassemble(dispatch_root:Path,terminals_root:Path,
         }
         public_stage.write_text(
             json.dumps(result,indent=2,sort_keys=True)+"\n",encoding="utf8")
+        private_month_stage.replace(private_month)
         stage.replace(out_private_positive)
         public_stage.replace(out_public_receipt)
         sqlite.unlink()
