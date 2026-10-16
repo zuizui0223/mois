@@ -119,8 +119,7 @@ def aggregate_all(dates_receipt:Path,roi_shard_root:Path,
                     or proof.get("actual_all_128_original_photo_shards_complete") is not False):
                     raise ValueError("Original shard/date/photo bloom double-positive counts unsealed")
                 count=white_one=0
-                seen_species=set()
-                with p.open(encoding="utf8") as f:
+                        with p.open(encoding="utf8") as f:
                     for line in f:
                         r=json.loads(line)
                         if (r.get("actual_photo_contains_classifiable_flower") is not True
@@ -170,7 +169,6 @@ def aggregate_all(dates_receipt:Path,roi_shard_root:Path,
                         white_one+=iswhite
                         calendar[(domain,dt.month)]["classified"]+=1
                         calendar[(domain,dt.month)]["white"]+=iswhite
-                        seen_species.add(tax)
                         species.add(tax)
                         genera.add(genus)
                         out.write(json.dumps(r,sort_keys=True)+"\n")
@@ -194,15 +192,6 @@ def aggregate_all(dates_receipt:Path,roi_shard_root:Path,
                 db.commit()
             independent=db.execute("SELECT COUNT(*) FROM source_observations").fetchone()[0]
             species_means={}
-            for dom,month,n,avg in db.execute(
-                """SELECT domain,CAST(SUBSTR(day,6,2) AS INTEGER),COUNT(*),AVG(obs_white)
-                   FROM (SELECT domain,day,taxon,
-                                AVG(1.0*n_white/n_photos) AS obs_white
-                         FROM source_observations GROUP BY domain,day,taxon)
-                   GROUP BY domain,CAST(SUBSTR(day,6,2) AS INTEGER)"""):
-                # Overall month mean below is recomputed across taxon first;
-                # this auxiliary result cannot replace photo-level month means.
-                pass
             for dom,month,n,white_mean in db.execute(
                 """SELECT domain,month,COUNT(*),AVG(species_white)
                    FROM (SELECT domain,CAST(SUBSTR(day,6,2) AS INTEGER) AS month,
