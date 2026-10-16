@@ -43,6 +43,10 @@ try:
     from scripts.analysis.mois_monthly_white_species_equal_cell_FE_20261016 import (
         fit_fe,DYNAMIC
     )
+    from scripts.analysis.mois_complete_original_date_first_blooming_photo_census_20261016 import (
+        SCHEMA as DATE_FIRST_COMPLETE_SCHEMA,
+        STATUS as DATE_FIRST_COMPLETE_STATUS
+    )
 except ModuleNotFoundError:
     import sys
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
@@ -58,6 +62,10 @@ except ModuleNotFoundError:
     )
     from scripts.analysis.mois_monthly_white_species_equal_cell_FE_20261016 import (
         fit_fe,DYNAMIC
+    )
+    from scripts.analysis.mois_complete_original_date_first_blooming_photo_census_20261016 import (
+        SCHEMA as DATE_FIRST_COMPLETE_SCHEMA,
+        STATUS as DATE_FIRST_COMPLETE_STATUS
     )
 
 SCHEMA="mois_original_full_photo_observation_species_equal_monthly_climate_FE_v1"
@@ -85,17 +93,31 @@ def evaluate(positive_ndjson:Path,source_receipt:Path,
     if min_public<10 or min_repeat_cells<2:
         raise ValueError("Cannot silently relax public privacy/source geography support")
     source=json.loads(source_receipt.read_text(encoding="utf8"))
-    if (source.get("schema")!=SOURCE_SCHEMA or source.get("status")!=SOURCE_STATUS
+    full_roi_complete=(source.get("schema")==SOURCE_SCHEMA and
+                       source.get("status")==SOURCE_STATUS)
+    original_date_first_complete=(
+        source.get("schema")==DATE_FIRST_COMPLETE_SCHEMA and
+        source.get("status")==DATE_FIRST_COMPLETE_STATUS)
+    full_source_opportunity_count=(
+        source.get("n_original_FCP_all_source_photo_ROI_results")
+        if full_roi_complete else
+        source.get("n_original_FCP_all_source_photo_opportunities"))
+    if (not (full_roi_complete or original_date_first_complete)
         or source.get("private_actual_bloom_photo_month_hue_manifest_sha256")!=sha(positive_ndjson)
         or source.get("WorldClim_monthly_T_S_P_VPD_source_site_link_not_yet_run") is not True
         or source.get("full_42111_original_source_not_selectively_date_sampled") is not True
         or source.get("per_species_source_photo_cap","INVALID") is not None
         or source.get("synthetic_test_only") is not synthetic
         or climate.synthetic is not synthetic
+        or original_date_first_complete and (
+            source.get("n_original_date_known_photo_ROI_image_terminals")!=
+            source.get("n_original_source_date_known_photo_candidates")
+            or source.get("all_original_date_eligible_photo_pixels_attempted") is not True
+            or source.get("all_missing_date_source_photos_were_excluded_before_roi") is not True)
         or not synthetic and (
-            source.get("n_original_FCP_all_source_photo_ROI_results")!=FULL_PHOTO_OPPORTUNITIES
+            full_source_opportunity_count!=FULL_PHOTO_OPPORTUNITIES
             or climate.manifest_sha!=REAL_MANIFEST_SHA)):
-        raise ValueError("Unsealed all-photo original real bloom photo/month or climate snapshot")
+        raise ValueError("Unsealed full FCP source photo ROI or complete DATE-FIRST original bloom/photo monthly source")
     private_aggregates.parent.mkdir(parents=True,exist_ok=True)
     public_result.parent.mkdir(parents=True,exist_ok=True)
     stage=private_aggregates.with_name(private_aggregates.name+".INCOMPLETE")
@@ -318,8 +340,19 @@ def evaluate(positive_ndjson:Path,source_receipt:Path,
             "source_positive_dated_bloom_private_photo_manifest_sha256":sha(positive_ndjson),
             "worldclim_original_48_source_manifest_sha256":climate.manifest_sha,
             "private_independent_observation_species_cell_month_climate_sha256":sha(stage),
-            "n_original_FCP_all_photo_opportunities_processed_with_ROI":source[
-                "n_original_FCP_all_source_photo_ROI_results"],
+            "n_original_FCP_all_photo_opportunities_processed_with_ROI":(
+                full_source_opportunity_count if full_roi_complete else None),
+            "n_original_FCP_all_photo_opportunities_reconciled":
+                full_source_opportunity_count,
+            "n_original_date_known_photo_ROI_terminals":(
+                source.get("n_original_date_known_photo_ROI_image_terminals")
+                if original_date_first_complete else None),
+            "source_full_93m_image_ROI_or_original_date_first_strategy":(
+                "FULL_ORIGINAL_IMAGE_ROI_ALL_SOURCE_PHOTOS" if full_roi_complete else
+                "FULL_ORIGINAL_METADATA_DATE_FIRST_IMAGE_ROI_ONLY_DATE_VALID"),
+            "source_date_unknown_photo_pixels_not_analyzed_by_design":(
+                source.get("n_original_date_unknown_photo_opportunities_not_analysed_for_bloom")
+                if original_date_first_complete else None),
             "n_original_bloom_and_source_date_qualified_photo_IDs":counted["n_positive_bloom_photos"],
             "n_original_white_bloom_date_known_photos":counted["n_white_bloom_photos"],
             "n_distinct_original_blooming_photo_observation_UUIDs":n_observations,
