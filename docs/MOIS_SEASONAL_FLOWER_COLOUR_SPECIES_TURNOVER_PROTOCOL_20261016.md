@@ -2,6 +2,10 @@
 
 **Prospective analysis specification, 16 October 2026.** Part of the ONE interspecific flower-colour × geography/climate/soil manuscript. This does not reopen the source-verified historical point estimates, does not add fruit traits and does not claim a genetic morph response to seasons.
 
+## Primary estimand clarified: seasonal flowering-community white fractions
+
+**Priority revision:** The main target is the **white fraction among species with visible, classifiable flower images observed in a given local month and geographic cell**, not colour plasticity in the same individual or a necessary same-species year-round panel. Monthly **solar radiation, temperature and moisture supply/demand** are the key time-varying explanatory series. Latitude/longitude, elevation, soil and terrain are comparatively stable spatial conditions that can be **absorbed by geographic-cell fixed effects in a within-place seasonal model**; their standalone between-cell coefficients require a **separate spatial model**, because exact cell indicators make static cell-level variables unidentifiable. The main species-equal seasonal analysis deliberately permits photographed flowering-taxon turnover; taxon/genus-matched tests are secondary sensitivities, and annotation missingness/ROI measurement remain explicit. See the [operational spatiotemporal models and original-data gates](MOIS_SEASONAL_SPATIAL_STATIC_VS_DYNAMIC_CLIMATE_MODEL_20261016.md).
+
 ## Main scientific question
 
 Does the worldwide association of photographed white flowers with moisture emerge primarily from **which lineages and species flower/are photographed in different seasons**, or does the same direction remain among **the same congeneric species** across local seasons after geographic, climatic and observer/annotation support is matched?
