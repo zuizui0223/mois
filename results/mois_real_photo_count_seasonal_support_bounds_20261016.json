@@ -1,0 +1,38 @@
+{
+  "schema": "mois_real_original_fcp_photo_count_seasonal_design_support_bound_v1",
+  "status": "REAL_ORIGINAL_SOURCE_COUNT_UPPER_BOUNDS_NO_SEASON_OR_COLOUR_MEASURED",
+  "original_real_FCP_source_receipt": "https://github.com/zuizui0223/fcp/blob/analysis/fcp-fresh-uncapped-zero-20261015/results/fcp_real_42111_source_opportunity_20261016/verified_source_counts_capacity_receipt.json",
+  "source_snapshot": "2026-09-27",
+  "original_count_ledger_sha256": "ef26c16252dd785f2d08bde3b18938c7624d73a54386fa3d3974dceb09ed97a9",
+  "original_archive_sha256": "bfc1a97c436bf5989fccd43f12392953128489b76b92cea24da335ad73da4d8e",
+  "original_taxon_frame_sha256": "5d871bd1f1190c68fd513bb527e6c93de1606dc35ff8cfff5f6187850dc382cc",
+  "source_named_taxa": 42111,
+  "source_photo_opportunities": 93209351,
+  "source_photo_count_gini_approx": 0.85852981,
+  "source_species_minimum_photo_opportunities": {
+    "1": 42095,
+    "10": 39018,
+    "20": 36379,
+    "40": 32794,
+    "100": 26510
+  },
+  "two_seasons_ten_distinct_observations_each": {
+    "necessary_original_photo_opportunities": 20,
+    "MAX_species_not_ruled_out_by_photo_counts": 36379,
+    "at_least_species_ruled_out_by_insufficient_photo_counts": 5732,
+    "upper_fraction_of_source_taxa": 0.8638835458668757
+  },
+  "four_seasons_ten_distinct_observations_each": {
+    "necessary_original_photo_opportunities": 40,
+    "MAX_species_not_ruled_out_by_photo_counts": 32794,
+    "at_least_species_ruled_out_by_insufficient_photo_counts": 9317,
+    "upper_fraction_of_source_taxa": 0.7787513951224145
+  },
+  "photographic_opportunities_are_not_unique_observations": true,
+  "same_species_seasons_actually_observed": false,
+  "ROI_four_colour_classified_photos_measured": 0,
+  "qualifying_different_observers_proven": false,
+  "photo_sampling_inclusion_probs_known_only_after_full_ID_freeze": true,
+  "not_evidence_of_seasonal_colour_or_weather_relation": true,
+  "note": "Real complete source PHOTO counts upper-bound feasibility for 10 unique original observations in each phase; actual season/date/climate/observer support and image classifiability can only reduce support. Not a world flowering-population prevalence estimator."
+}
