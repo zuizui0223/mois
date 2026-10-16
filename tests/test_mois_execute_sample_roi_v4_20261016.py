@@ -133,4 +133,4 @@ def test_provider_transient_aborts_and_preserves_incomplete(tmp_path):
             original_measure=Path("/none"),original_detector=Path("/none"),
             efficient_sam=Path("/none"),synthetic=True)
     assert list((tmp_path/"output").glob("*.INCOMPLETE"))
-    assert not list((tmp_path/"output").glob("terminal_p*_b*"))
+    assert not [p for p in (tmp_path/"output").glob("terminal_p*_b*") if not p.name.endswith(".INCOMPLETE")]
