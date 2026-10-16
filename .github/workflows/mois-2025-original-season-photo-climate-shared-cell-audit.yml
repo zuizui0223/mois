@@ -6,6 +6,7 @@ on:
       - analysis/mois-real-2025-seasonal-climate-20261016
     paths:
       - .github/workflows/mois-2025-original-season-photo-climate-shared-cell-audit.yml
+      - scripts/analysis/mois_verify_real_2025_shared_site_colour_missingness.py
 
 permissions:
   contents: read
