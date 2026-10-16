@@ -68,3 +68,17 @@ def test_synthetic_tiny_rasters_cannot_impersonate_production_global_raster(tmp_
     archive=zip_fixture(tmp_path)
     with pytest.raises(ValueError,match='10m precip'):
         m.seal(archive,m.sha256_file(archive),tmp_path/'prod')
+
+
+
+def test_single_digit_original_filenames_are_source_accepted_without_changing_pixel_bytes(tmp_path):
+    _,_,rasters=raster_test.raster_fixture(tmp_path)
+    archive=tmp_path/m.ARCHIVE_BASENAME
+    with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED) as z:
+        for month,p in enumerate(rasters,1):
+            z.write(p,f'wc2.1_10m_prec_{month}.tif')
+    report=m.seal(archive,m.sha256_file(archive),tmp_path/'admitted',
+                  _synthetic_small=True)
+    assert report['n_byte_verified_monthly_rasters']==12
+    manifest=json.loads((tmp_path/'admitted/monthly_precipitation_manifest.json').read_text())
+    assert manifest['months']['01']['path']=='wc2.1_10m_prec_1.tif'
