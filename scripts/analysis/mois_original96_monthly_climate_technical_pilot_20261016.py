@@ -74,6 +74,8 @@ def audit(pilot_zip:Path, source:DynamicNormals, output:Path, *,
         "sums":defaultdict(float),"valid_for_monthly_climate":0,"classifiable_with_climate":0})
     statuses=Counter()
     totals=Counter()
+    monthly_cells_all=defaultdict(set)
+    monthly_cells_classifiable=defaultdict(set)
     for r in reader:
         pid,obs=r["photo_id"],r["observation_id"]
         if not pid or not obs or pid in seen_photo or obs in seen_observation:
@@ -87,6 +89,11 @@ def audit(pilot_zip:Path, source:DynamicNormals, output:Path, *,
         if domain not in REGIONS or localseason=="UNKNOWN_SEASON":
             raise ValueError("This original 96 case pilot did not contain reliable geo/calendar season")
         climate=source.site_month(r["latitude"],r["longitude"],r["observed_on"])
+        if climate["source_climate_join_status"]=="VALID":
+            grid=(climate["climate_grid_row"],climate["climate_grid_col"])
+            monthly_cells_all[grid].add(climate["original_month"])
+            if valid:
+                monthly_cells_classifiable[grid].add(climate["original_month"])
         row=grouped[(domain,localseason)]
         row["n"]+=1
         row["class"]+=int(valid)
@@ -150,6 +157,13 @@ def audit(pilot_zip:Path, source:DynamicNormals, output:Path, *,
         "n_monthly_source_site_climate_joined":totals["source_monthly_climate_join"],
         "n_monthly_source_site_climate_missing":totals["source_monthly_climate_unavailable"],
         "roi_status_counts":dict(statuses),
+        "real_10m_source_climate_cells_with_any_original_photo":len(monthly_cells_all),
+        "real_10m_source_climate_cells_with_original_photos_in_two_or_more_months":
+            sum(len(m)>1 for m in monthly_cells_all.values()),
+        "real_10m_source_climate_cells_with_classifiable_photos":len(monthly_cells_classifiable),
+        "real_10m_source_climate_cells_with_classifiable_photos_in_two_or_more_months":
+            sum(len(m)>1 for m in monthly_cells_classifiable.values()),
+        "cell_FE_primary_four_dynamic_months_estimable_in_this_pilot":False,
         "observed_season_rows":result,
         "original_photo_selection_is_nonrepresentative_four_taxon_technical_pilot":True,
         "original_source_population_42111_taxa_photo_IDs_joined":False,
