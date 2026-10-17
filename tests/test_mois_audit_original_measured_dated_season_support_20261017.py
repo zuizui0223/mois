@@ -123,11 +123,11 @@ def test_fcp_2026_out_of_snapshot_original_day_fails_source_date(tmp_path):
 
 def test_original_source_400_id_overlap_must_not_fake_fourstate_labels(tmp_path):
     z=union(tmp_path)
-    source=tmp_path/"400_source.csv"
+    source=tmp_path/"source400.csv"
     with source.open("w",newline="") as f:
         w=csv.DictWriter(f,fieldnames=["photo_id"])
         w.writeheader();w.writerow({"photo_id":"600001"});w.writerow({"photo_id":"600002"})
-    r=audit(z,tmp_path/"out",400_source=source,test_only=True)
+    r=audit(z,tmp_path/"out",source400=source,test_only=True)
     assert r["source_400_original_photo_ID_intersection"]["new_fcp"]["photo_ids"]==2
     assert r["source_400_original_photo_ID_intersection"]["new_fcp"]["fourstate_labels"]==2
     assert r["source_400_original_photo_ID_intersection"]["new_fcp"]["white_labels"]==1
