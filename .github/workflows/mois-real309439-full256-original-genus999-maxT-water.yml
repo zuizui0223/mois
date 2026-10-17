@@ -1,0 +1,114 @@
+name: MOIS genuine full FCP256 309439 real photo original six-water genus 999 maxT
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_refit_original_water_309439_full_FCP256.py"
+      - "tests/test_mois_refit_309439_finished_original_FCP256_water.py"
+      - "tests/test_mois_real309439_original_water_maxT_result_integrity.py"
+      - "results/mois_real309439_fullFCP256_six_climate_maxT999_result_20261017.json"
+      - "docs/MOIS_GLOBAL_FLORAL_COLOUR_MOISTURE_AND_SEASONAL_SAMPLING_MANUSCRIPT_20261017.md"
+      - ".github/workflows/mois-real309439-full256-original-genus999-maxT-water.yml"
+      - "docs/MOIS_REAL309439_FULL256_ORIGINAL_GLOBAL_MOISTURE_MAXT_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-original309439-actual-photo-union-999genus-water-fixed-source
+  cancel-in-progress: false
+
+jobs:
+  original-six-abiotic-anchor-water-genus999-photo-source-refit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test original photograph ID, hue and source integrity; never treat planned photo IDs as measured pixels
+        run: |
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 statsmodels==0.14.4 rasterio==1.4.3 pytest==8.4.2
+          python -m pytest -q tests/test_mois_refit_309439_finished_original_FCP256_water.py tests/test_mois_refit_original_moisture_six_anchors.py tests/test_mois_real309439_original_water_maxT_result_integrity.py
+      - name: Download only real original 309439 photo pixels and prior authentic 295017-photo WorldClim site values
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_real309439 original_site295017
+          gh run download 39028400690 --repo zuizui0223/mois \
+            --name mois-all256-full-FCP-original309439-149653-dated-colour-real-photo-source-and-season \
+            --dir original_real309439
+          gh run download 39016728034 --repo zuizui0223/mois \
+            --name mois-original295017-actual-photo-hue-six-water-genus999-maxT \
+            --dir original_site295017
+          test -s original_real309439/mois_original309439_fullFCP256_actual_photo_hues_and_source_dates.csv.gz
+          test -s original_site295017/original_295017_maxT/mois_real_295017_source_photo_with_six_original_climate_anchors.csv.gz
+      - name: Obtain frozen original WorldClim BIO and SRAD raster sites, current official VAPR normal archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p climate/{bio,srad} vapor
+          curl --fail --location --silent --show-error --retry 3 --max-time 420 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_bio.zip \
+            -o climate/bio/wc2.1_10m_bio.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 420 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_srad.zip \
+            -o climate/srad/wc2.1_10m_srad.zip
+          echo '00513224583665ec0f2f955a4ec252730c4deb2004cce9e793492a3f26df4dcf  climate/bio/wc2.1_10m_bio.zip' | sha256sum -c -
+          echo 'c72ee7f4f9a0eb4b5f6cd7a003eddc05bda22a2e5666d968ed4e817fd36b9026  climate/srad/wc2.1_10m_srad.zip' | sha256sum -c -
+          unzip -q climate/bio/wc2.1_10m_bio.zip -d climate/bio
+          unzip -q climate/srad/wc2.1_10m_srad.zip -d climate/srad
+          curl --fail --location --silent --show-error --retry 3 --max-time 420 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_vapr.zip \
+            -o vapor/wc2.1_10m_vapr.zip
+          unzip -q vapor/wc2.1_10m_vapr.zip -d vapor
+          test "$(find vapor -name 'wc2.1_10m_vapr_??.tif' | wc -l)" -eq 12
+      - name: Refit original 6 climate anchors times 4 hues and 999 whole-genus resamples with maxT
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_refit_original_water_309439_full_FCP256 \
+            --real-309439-original-photo original_real309439/mois_original309439_fullFCP256_actual_photo_hues_and_source_dates.csv.gz \
+            --real-309439-photo-receipt original_real309439/mois_FCP_full256_309439_original_pixels_149653_dated_hues_source_receipt.json \
+            --original-295017-worldclim original_site295017/original_295017_maxT/mois_real_295017_source_photo_with_six_original_climate_anchors.csv.gz \
+            --original-295017-climate-receipt original_site295017/original_295017_maxT/mois_new_photo_plus_prior_site_source_receipt.json \
+            --worldclim-raster-root climate \
+            --official-vapr-root vapor \
+            --official-vapr-zip vapor/wc2.1_10m_vapr.zip \
+            --output real309439_genus_water
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('real309439_genus_water/mois_309439_actual_original_water_decision.json').read_text())
+          assert a['actual_measured_photo_ids']==309439
+          assert a['automatically_assigned_four_hue_ROI_labels']==149662
+          assert a['new_actual_original_photo_ids_after_FCP256']==14422
+          assert a['new_actual_classifiable_ROIs_after_FCP256']==7124
+          assert a['genus_bootstrap_draws']==999
+          assert a['simultaneous_maxT_family_hue_x_climate']==24
+          for n in ('global_BIO12_white_genus_equal','global_vapour_white_genus_equal',
+                    'coarse_cell_BIO12_white','coarse_cell_vapour_white'):
+              r=a[n]
+              assert r['anchor'] in ('wc_bio12','wc_vapr_annual_mean')
+              assert len(r['scope_anchor_hue_maxT_ci95_pp'])==2
+          assert not a['FCP_intraspecific_D_W_or_50km_polymorphism_imported']
+          assert not a['photo_specific_open_flower_petals_independently_verified']
+          assert not a['observed_year_month_weather_model']
+          print('MOIS_309439_REAL_PHOTOGRAPHIC_HUES_ORIGINAL_GENUS_WATER999_MAXT_COMPLETE')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-original309439-actual-photo-hue-six-water-genus999-maxT
+          path: real309439_genus_water/
+          retention-days: 90
+          if-no-files-found: warn
