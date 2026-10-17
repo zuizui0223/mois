@@ -1,0 +1,80 @@
+{
+  "schema": "mois_real286826_orig_photos_180_complete_FCP_ROI_partitions_original_water_maxT999_20261017_v1",
+  "provenance": {
+    "photo_source_workflow": "https://github.com/zuizui0223/mois/actions/runs/39014753277",
+    "original_FCP_pixel_workflow": "https://github.com/zuizui0223/fcp/actions/runs/38992543115",
+    "genuine_photo_source_artifact_id": 12093754954,
+    "genuine_water_model_artifact_id": 12094153815,
+    "original_source_photo_csv_sha256": "a6f4accd600ef793d803c7796b7a3d5345a8a4708af1ea6c52304310c1d4170d",
+    "source_worker_metadata_sha256": "3e270153134830496357f537f0dee0544647d492dcf751e856988d36ce1e502a",
+    "source_original_267425_photo_sha256": "fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9",
+    "new_water_receipt_sha256": "a9a5da9249494607d485c5d8b3c019e2f08c4c6cc9d29430f7bf46bbcf16a813"
+  },
+  "original_FCP_wave4_planned_photo_source": 49800,
+  "FCP_pixel_completed_partitions": 180,
+  "FCP_total_pixel_partitions": 256,
+  "FCP_pixel_unfinished_partitions": 76,
+  "prior_photo_ids_at_79_FCP_partitions": 267425,
+  "prior_four_hue_classified_at_79_FCP_partitions": 129795,
+  "now_original_distinct_photo_ids": 286826,
+  "now_original_four_hue_classified_photo_ids": 139405,
+  "new_original_photo_ids_since_79_parts": 19401,
+  "new_classified_four_hue_original_photos_since_79_parts": 9610,
+  "photo_pixel_terminal_rows_in_FCP_180_parts": 35101,
+  "source_photo_overlap_vs_base252408": 683,
+  "original_same_photo_taxon_conflicts_in_FCP_vs_prior": 0,
+  "original_same_photo_four_hue_conflicts_in_FCP_vs_prior": 0,
+  "original_six_env_anchors": [
+    "wc_bio5",
+    "wc_bio12",
+    "wc_bio14",
+    "wc_bio15",
+    "wc_srad_annual_mean",
+    "wc_vapr_annual_mean"
+  ],
+  "four_hue_states": [
+    "white",
+    "yellow_orange",
+    "red_pink",
+    "blue_purple"
+  ],
+  "genus_bootstrap_draws": 999,
+  "maxT_family_contrasts": 24,
+  "observational_white_photographic_moisture": {
+    "global_equal_genus_annual_rain_BIO12_pp_per_original_source_SD": {
+      "point": 1.908825,
+      "simultaneous95_maxT": [
+        0.465871,
+        3.351779
+      ]
+    },
+    "global_equal_genus_vapour_pp_per_source_SD": {
+      "point": 2.991782,
+      "simultaneous95_maxT": [
+        0.825352,
+        5.158212
+      ]
+    },
+    "coarse_geocell_conditional_BIO12_pp_per_SD": {
+      "point": 1.202541,
+      "simultaneous95_maxT": [
+        -2.257544,
+        4.662625
+      ]
+    },
+    "coarse_geocell_conditional_vapour_pp_per_SD": {
+      "point": 2.489187,
+      "simultaneous95_maxT": [
+        -2.568716,
+        7.547089
+      ]
+    }
+  },
+  "comparison_with_267425_photo_interim_rain": "1.932215 to 1.908825 percentage points per source SD",
+  "current_result_status": "genuine 180 finished source pixel terminals; remaining 76 FCP partitions NOT measured; FCP pixel worker completion order may bias source sample",
+  "original_100543_photo_moisture_source_untouched": true,
+  "current_dates_not_yet_joined_in_this_water_source": true,
+  "MOIS_three_original_4096_photo_waves_not_all_in_this_286826_source": true,
+  "FCP_within_species_D_W_50km_not_imported": true,
+  "photo_hue_not_botanically_verified_open_flower": true
+}
