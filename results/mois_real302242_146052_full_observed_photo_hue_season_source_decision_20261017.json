@@ -1,0 +1,110 @@
+{
+  "schema": "mois_real_302242_original_photo_146052_source_observed_day_four_hue_global_season_after_all_uuid_numeric_v1",
+  "original_full_source_execution": "https://github.com/zuizui0223/mois/actions/runs/39020466312",
+  "original_full_source_artifact_id": 12095659358,
+  "genuine_measured_original_photo_pixels": 302242,
+  "genuine_classified_original_four_hue_ROIs": 146061,
+  "original_photos_with_actual_source_or_verified_public_day": 302223,
+  "original_automatic_hue_ROIs_with_actual_source_or_verified_public_day": 146052,
+  "photo_observation_day_missing_after_exact_recovery": 19,
+  "classifiable_original_photo_hues_without_observation_day": 9,
+  "genuine_source_named_taxa_with_date_and_four_hue_ROI": 25638,
+  "newly_verified_current_public_numeric_original_photo_day": 1732,
+  "new_numeric_photo_days_with_existing_four_hue_label": 706,
+  "new_exact_original_3430502_source_UUID_photo_day": 4096,
+  "new_UUID_photo_days_with_existing_four_hue_label": 1576,
+  "full_original_source_3430502_photo_rows_SHA256": "58e037a210e23d3ff5d6f04d392665ada5ee9ac5149d0676672c239cf092df01",
+  "verified_source_UUID4096_date_table_SHA256": "3915ae26bf969fbeffd0e093ffac8dff5503f70776a1a9f6ec290c8648e50c3e",
+  "final302242_observation_day_original_photo_csv_SHA256": "9c9692238f58cc61561270f7c07b1d782ce711adeade9c58550866f668fb4690",
+  "full_season_original_photo_denominator_csv_SHA256": "f46c3d889d0285d1a0558cfc4829cf27eb82551b53392c0d1d1c6d3730ad52d3",
+  "local_meteorological_season_source_counts": {
+    "north_extratropical": {
+      "winter": {
+        "attempts": 10077,
+        "classifiable": 4662,
+        "white": 2164,
+        "white_fraction": 0.46417846
+      },
+      "spring": {
+        "attempts": 77376,
+        "classifiable": 39637,
+        "white": 18829,
+        "white_fraction": 0.47503595
+      },
+      "summer": {
+        "attempts": 84087,
+        "classifiable": 43717,
+        "white": 21448,
+        "white_fraction": 0.49061006
+      },
+      "autumn": {
+        "attempts": 20024,
+        "classifiable": 10138,
+        "white": 4784,
+        "white_fraction": 0.47188795
+      }
+    },
+    "south_extratropical": {
+      "winter": {
+        "attempts": 10965,
+        "classifiable": 4685,
+        "white": 1843,
+        "white_fraction": 0.39338314
+      },
+      "spring": {
+        "attempts": 23972,
+        "classifiable": 11149,
+        "white": 4914,
+        "white_fraction": 0.44075702
+      },
+      "summer": {
+        "attempts": 14708,
+        "classifiable": 6721,
+        "white": 3404,
+        "white_fraction": 0.50647225
+      },
+      "autumn": {
+        "attempts": 9151,
+        "classifiable": 3952,
+        "white": 1871,
+        "white_fraction": 0.47343117
+      }
+    }
+  },
+  "unpaired_summer_minus_winter_photo_white_pp": {
+    "north_extratropical": 2.64316,
+    "south_extratropical": 11.30891
+  },
+  "same_cell025_and_same_meteorological_seasonyear_min5_original_observation_ID_and_2_taxa_per_season": {
+    "north_extratropical": {
+      "matched_site_year_groups": 24,
+      "classifiable_original_photos": 347,
+      "unique_source_geocells": 22,
+      "equal_cell_year_summer_minus_winter_photo_white_pp": 5.390479,
+      "geocell_cluster_bootstrap999_exploratory_percentile95_pp": [
+        -5.167174,
+        15.053825
+      ]
+    },
+    "south_extratropical": {
+      "matched_site_year_groups": 27,
+      "classifiable_original_photos": 535,
+      "unique_source_geocells": 22,
+      "equal_cell_year_summer_minus_winter_photo_white_pp": 3.571339,
+      "geocell_cluster_bootstrap999_exploratory_percentile95_pp": [
+        -7.898998,
+        12.836929
+      ]
+    }
+  },
+  "methodological_limits": [
+    "The white numerator/denominator are automatically classified original photographic ROIs and not independently validated open flower petals",
+    "Provider iNaturalist observed-on is source metadata and not independently verified image EXIF",
+    "Actual taxonomic representation, region and original photographic effort vary across seasons",
+    "Photo/observation nonoccurrence is not biological nonflowering",
+    "Global raw and same-location/season-year results have separate source sampling/denominator and ecological estimands",
+    "0.25-degree sites are coarse grid cells, not flowering populations; bootstrap intervals are exploratory, not familywise or causal",
+    "No actual observation-year monthly weather temperature/rainfall/solar radiation/VPD effect fitted",
+    "Original long-term genus-weighted six climate/moisture axis estimates and FCP within-species W/D/50km results stay independent"
+  ]
+}
