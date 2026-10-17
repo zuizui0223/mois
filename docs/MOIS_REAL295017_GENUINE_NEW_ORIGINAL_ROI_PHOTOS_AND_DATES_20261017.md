@@ -43,6 +43,23 @@ Photo date-only hemispheric descriptive counts (automatic white ROI labels / all
 
 These are unpaired original photo/taxon/observer/geography-seasonal descriptions. Merely adding independent global photographs does **not** establish same-named-taxon, same-locality/year pigment change. In the present source, matching taxon × **0.25° cell × one meteorological season-year**, with ≥2 separate source observations each summer and winter, remains **two Northern groups and zero Southern groups**. The expanded source is useful for global *among-named-taxon and community photographic composition* inference; source photo-organ stage, observed-year monthly climate and observer effort remain necessary before testing causal sunlight or water effects.
 
+## Verified same-locality community comparison after adding actual photographs
+
+The complete [successful original photo union and community-scale run](https://github.com/zuizui0223/mois/actions/runs/39015918687) independently reproduced the exact 295,017 photographed source IDs and 140,247 date+automatic hue outcomes, and compared summer vs winter within the **same observed 0.25° cell and meteorological season-year**. The source-community design allows different original nominal taxa to be photographed in two seasons, but requires **≥5 distinct original observations and ≥2 named taxa in each season**:
+
+| Spatial scale and original source support | North cell-years | North mean summer−winter photo-white pp (geocell-cluster bootstrap 95%) | South cell-years | South mean (95%) |
+|---|---:|---:|---:|---:|
+| 0.25° | **20** | **+1.19 [−10.52,+12.82]** | **24** | **+0.58 [−10.95,+11.00]** |
+| 0.5° | 62 | +4.00 [−2.54,+10.33] | 60 | +1.58 [−5.48,+8.57] |
+| 1° | 115 | +4.91 [+0.47,+9.37] | 106 | +5.74 [+0.89,+10.23] |
+| 2° | 155 | +3.72 [+0.15,+7.05] | 129 | +7.32 [+2.24,+11.44] |
+
+The **0.25°** matched photographic-community study has grown compared with the earlier 127,504 dated-photographic-hue source (**16 Northern /18 Southern cell-years →20/24**), but its estimate still has a very wide interval that includes zero. At **1–2°**, nominal interval signs appear positive, yet these grid cells combine increasingly distant environments and the interval family does not adjust for having searched across different spatial scales and minimum photo counts. This is **geographical/photo-sampling scale dependence**, not identified common summertime whitening of flowering plants.
+
+The entire source raw regional summer-minus-winter photographed-white ratios remain positive: Northern summer **20,612/42,072 (48.99%)** versus winter **2,055/4,450 (46.18%)**; Southern summer **3,271/6,423 (50.93%)** versus winter **1,771/4,493 (39.42%)**. These denominators condition on automatic ROI colour classification and source photographic dates, not independently verified open floral petals.
+
+The [complete original photo community geograin receipt](../results/mois_real295017_photo_community_geograin_seasonyear_decision_20261017.json) preserves all eight source grid comparisons and exploratory 999-geocell-bootstrap results, with exact source SHA256 linking the original photo and date-enriched tables.
+
 ## Reproducibility and manuscript boundary
 
 The [new source-locked GitHub Actions workflow](../.github/workflows/mois-genuine295017-original-photo-pixels-and-dates.yml) downloads ONLY already successful original-pixel and date-recovery artifacts, verifies three independent source photo SHA256s, photo ID/taxon/hue overlap, one numeric-vs-UUID observation ID discrepancy and exact photographic/temporal counts. It publishes original **295,017-row photographic source union**, **275k+ date-augmented photo table** and a provenance/seasonal receipt as an Actions artifact rather than committing individual photo IDs to a public repository.
