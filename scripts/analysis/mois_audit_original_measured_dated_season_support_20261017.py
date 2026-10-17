@@ -78,7 +78,7 @@ def grid(lat:float,lon:float,step:float)->tuple[int,int]:
     return min(int(180/step)-1,int(math.floor((lat+90)/step))),int(math.floor(((lon+180)%360)/step))
 
 
-def check_inputs(archive:Path,400_source:Path|None=None,*,test_only=False)->tuple[dict,set[str]]:
+def check_inputs(archive:Path,source400:Path|None=None,*,test_only=False)->tuple[dict,set[str]]:
     with zipfile.ZipFile(archive) as z:
         receipt=json.loads(z.read("mois_fcp_measured_photo_union_receipt.json"))
     if (receipt.get("status")!=UNION_STATE or
@@ -90,10 +90,10 @@ def check_inputs(archive:Path,400_source:Path|None=None,*,test_only=False)->tupl
     if not test_only and receipt.get("photo_hue_union_csv_sha256")!=PHOTO_SHA:
         raise ValueError("Original 247032 combined photo hue source SHA changed")
     selected=set()
-    if 400_source is not None:
-        if not test_only and sha(400_source)!=SOURCE_SHA:
+    if source400 is not None:
+        if not test_only and sha(source400)!=SOURCE_SHA:
             raise ValueError("Source-only 400 original photo selection SHA invalid")
-        with 400_source.open(newline="",encoding="utf-8") as f:
+        with source400.open(newline="",encoding="utf-8") as f:
             q=csv.DictReader(f)
             for x in q:
                 p=x["photo_id"]
@@ -105,11 +105,11 @@ def check_inputs(archive:Path,400_source:Path|None=None,*,test_only=False)->tupl
     return receipt,selected
 
 
-def audit(archive:Path,out:Path,*,400_source:Path|None=None,
+def audit(archive:Path,out:Path,*,source400:Path|None=None,
           test_only=False)->dict:
     if out.exists() and any(out.iterdir()):
         raise ValueError("Do not overwrite a SHA-frozen MOIS original photo temporal support audit")
-    source_doc,selected=check_inputs(archive,400_source,test_only=test_only)
+    source_doc,selected=check_inputs(archive,source400,test_only=test_only)
     base=Counter()
     monthly=defaultdict(Counter)
     observation={}
@@ -278,7 +278,7 @@ def audit(archive:Path,out:Path,*,400_source:Path|None=None,
         "status":"REAL_MEASURED_PHOTO_SEASONAL_SUPPORT_NOT_BOTANICAL_OPEN_FLOWER_SEASONAL_EFFECT",
         "source_union_archive_read_sha256":sha(archive),
         "original_photo_union_uncompressed_gzip_sha256":PHOTO_SHA,
-        "original_20260927_400_photo_selection_SHA256":sha(400_source) if 400_source else None,
+        "original_20260927_400_photo_selection_SHA256":sha(source400) if source400 else None,
         "n_unique_original_photo_ids":len(original_ids),
         "source_photo_and_automatic_colour_funnel":dict(base),
         "n_source_taxa_new_fcp_with_any_original_photo":len(fcp_taxa),
