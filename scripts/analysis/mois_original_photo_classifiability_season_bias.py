@@ -56,7 +56,7 @@ def date_and_original_hues(photo_zip: Path, final_zip: Path) -> pd.DataFrame:
         raw = z.read(HISTORICAL_NAME)
         proof = json.loads(z.read(FINAL_SOURCE_PROOF))
     require(sha256(raw)==FINAL_HISTORIC_SHA and
-            proof["full_historical_join"]["historical_original_photo_ids"]==HISTORICAL_PHOTOS and
+            proof["full_historical_join"]["original_historical_photo_ids"]==HISTORICAL_PHOTOS and
             proof["full_historical_join"]["real_original_photo_hue_and_date_after_all_verified_rejoins"]==DATED_HUES and
             proof["historical_original_photo_classifications_frozen"]==45953,
             "Signed final historical date source or classifier source changed")
