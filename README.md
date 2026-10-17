@@ -2,6 +2,14 @@
 
 **Scientific scope:** the association between photographed floral colour composition **among plant species** and moisture-related environment across the world. This repository is the destination for the cross-species global climate/soil analyses originally developed in [zuizui0223/fcp](https://github.com/zuizui0223/fcp). The separate **fcp** repository focuses on *within-species* photographed flower-colour variation, recurrent white–chromatic colour axes and geographic partitioning.
 
+## Current measured source — 302,242 genuine photos /146,052 dated colour ROIs (17 October 2026)
+
+The [successfully completed original-image source expansion](https://github.com/zuizui0223/mois/actions/runs/39018960100) preserves **302,242 unique actual photographed pixel/ROI attempts**, of which **146,061** receive an automatic four-hue label. A separate [SHA-verified full 3,430,502-source photo-ID + original observation-UUID/date replay](https://github.com/zuizui0223/mois/actions/runs/39020466312) recovered **all 4,096** previously missing early-wave photo days and rejoined **1,732** independently numeric photo/observation-ID verified dates; **1,576+706** already classified photo ROIs gained a day without photo-colour reclassification. The final source contains **302,223 dated original photo attempts and 146,052 actually dated/classifiable colour ROIs, representing 25,638 named source taxa**. Only **19** photo IDs and **nine** measured four-hue ROI outcomes still have no valid observation date. [Complete frozen numeric receipt and season analysis](results/mois_real302242_146052_full_observed_photo_hue_season_source_decision_20261017.json), [source and methods](docs/MOIS_REAL302242_EXACT_ORIGINAL_PHOTO_UUID_NUMERIC_DAY_146052_20261017.md).
+
+At the full-date extra-tropical original-photo level, raw white-labelled photo fractions are higher in local summer than winter (**North +2.64 pp; South +11.31 pp**). The stricter same 0.25° geographic cell × meteorological season-year photographic-community comparison, with ≥5 distinct photo observation IDs and ≥2 named taxa in BOTH seasons, has **24 Northern/27 Southern source cell-years**. Exploratory summer−winter white-photo contrasts are **+5.39 pp [−5.17,+15.05] North** and **+3.57 [−7.90,+12.84] South**, both geographically clustered percentile intervals including zero. These are automated photo ROI hue labels with unverified open-flower anatomy, rather than proven common seasonal shifts in pigments, pollinator selection or flower fitness. The *separate* long-term WorldClim moisture/genus-maxT model has not been refitted on all current 302,242 image outcomes. The FCP within-species W/D and spatial diversity hypotheses remain its own study.
+
+**Historical snapshots below:** the 100,543-, 127,504-, 140,247- and 295,017-photo cohort statements remain linked as reproducible earlier source supports; they should not be presented as the newest MOIS seasonal-photo sample.
+
 ## The main ecological question
 
 **Do photographed white versus coloured floral states covary with precipitation and atmospheric moisture among congeneric species, and how well does this relationship persist under photographic, spatial and alternative biological-measurement controls?**
@@ -10,7 +18,7 @@ The worldwide source contains **100,543 distinct original photo IDs** across **4
 
 **Nonconfirmation matters:** strict-quality precipitation +1.229 pp (95% [−2.046,+4.504]), within-genus×coarse-cell +0.808 (95% [−3.556,+5.172]); the same-taxonomic-support paired spatial contrast has a simultaneous interval spanning zero. Independent NHM-described floral hue also fails to independently establish a positive geographic rainfall direction. Positive global and negative geographic/source checks belong in the same article.
 
-### Current measured seasonal source: 127,504 actual date-and-hue photo records (17 October 2026)
+### Earlier 127,504-date-hue source snapshot (17 October 2026)
 
 The authentic [267,425-original-photo source](https://github.com/zuizui0223/mois/actions/runs/39002957961) has **129,795** automatic visible four-hue labels. The SHA-verified [official September 2026 monthly iNaturalist photo-ID → observation-UUID → date scan](https://github.com/zuizui0223/mois/actions/runs/39009539731) recovered **99,732 of the 100,543 historical source photo dates**, and independently exact-photo/numeric-observation-ID verified public records added **85** nonoverlapping historic dates. There are **99,817** date-bearing historical photos (726 unresolved). Combined with the already dated newer photo sources this gives **127,504 original photos with both a true recorded observation date and a classified automated four-hue ROI**, representing **25,257 original nominal taxa**. No original photographs or colour outcomes were relabelled, and the historical genus-bootstrap annual moisture result remains a separate unchanged estimate. [Full source reconciliation and ecological result](docs/MOIS_FINAL_127504_DATED_HUE_PHOTOS_GEOGRAPHIC_TEMPORAL_COMPOSITION_20261017.md); [frozen result JSON](results/mois_complete_original127504_dated_photo_hue_season_locality_result_20261017.json).
 
@@ -22,7 +30,7 @@ A new [real source-photo colour-classifiability audit](docs/MOIS_REAL127504_PHOT
 
 Within exactly the same **16 Northern / 18 Southern 0.25° cell×season-year** paired photographic communities selected for the primary local hue contrast, classification success instead changes **−10.78 percentage points North** and **−4.05 South** in summer relative to winter. Global changes in photo classifiability thus need not describe the same local sampled source. These are exploratory observation-process diagnostics, not proof of independently verified open petals or of seasonal pigment adaptation. MOIS's annual genus-moisture and FCP's within-species hue polymorphism estimands remain separate.
 
-### Latest real photograph source growth — 295,017 actually measured (17 October 2026)
+### Earlier source growth — 295,017 actually measured (17 October 2026)
 
 The previous original **267,425 genuine photo IDs /129,795 ROI-v4 four-hue labels** have been enlarged using **180 actually completed FCP wave4 original image-worker partitions** (76 FCP worker partitions remain unmeasured) and MOIS's independently completed two further 4,096-original-image waves. Exact original photo-ID deduplication resolves **one** cross-pipeline reused photo with numeric iNaturalist observation ID versus a UUID; taxon, hue and source observation date agree. The [source-verified full photo union](docs/MOIS_REAL295017_GENUINE_NEW_ORIGINAL_ROI_PHOTOS_AND_DATES_20261017.md) now contains **295,017 unique actually processed photos /142,538 original automatic four-hue labels**, of which **289,170 photographs have a real original or independently matched public observed-on day**, yielding **140,247 genuine date + classified hue source photos** across **25,545 named original taxa**. These are **not** 295k independently confirmed blooming petals. The earlier 127,504-photo study is a frozen *smaller source*, not today's total.
 
@@ -38,7 +46,7 @@ The relevant 2026-09-27 original FCP acquisition source contains **3,430,502 ver
 
 **Division of work:** `fcp` remains authoritative for original photo-ID source acquisition, blind segmentation, fixed multicolour method, and within-species colour polymorphism; `mois` owns post-measurement date/season processing, paired geographic-site temporal white fractions, climate-grid matching, sensitivity analyses and manuscript interpretation. Signed FCP output artifacts are upstream inputs, never copied over as new MOIS measurements.
 
-### Latest measured seasonal evidence (17 October 2026)
+### Initial 267,425-photo seasonal cohort (17 October 2026)
 
 The current genuine MOIS photo union contains **267,425 actual original photos / 129,795 automated four-hue outcomes**, of which **81,867 photographs have both observed-on day and a classifiable ROI hue**. The unadjusted photographic-white fraction peaks in local summer in both extra-tropical hemispheres, but this is only a *source-photo composition* description, not evidence that individual flowers or populations seasonally change their pigment.
 
