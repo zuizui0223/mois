@@ -1,0 +1,133 @@
+name: MOIS third disjoint 4096 real original photo ROI-v4 from full 3430502 source
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_full3430502_source_third4096.py
+      - tests/test_mois_third4096_photo_source.py
+      - .github/workflows/mois-original-third4096-real-ROI.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-third4096-full-source-original-roi-20261017
+  cancel-in-progress: false
+
+jobs:
+  freeze-third-original-4096:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check authentic full source and the second wave identity-exclusion algorithm
+        run: |
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q tests/test_mois_third4096_photo_source.py
+      - name: Retrieve actual 3430502 photographed source IDs, 106376 first-screen, 248312 original measured and 4096 source-frozen second wave
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original/fcp original/old_mois original/second
+          gh run download 38884223530 --repo zuizui0223/fcp \
+            --name fcp-rgfca-1000-EXACT-20260927-original-photo-ID-128-worker-source-NO-PIXELS \
+            --dir original/fcp
+          gh run download 38990701473 --repo zuizui0223/mois \
+            --name mois-248312-original-photographs-120807-classified-FCP_ROI_reused \
+            --dir original/old_mois
+          gh run download 38995068942 --repo zuizui0223/mois \
+            --name mois-full3430502-original-3420814-unmeasured-second-4096-photo-source-WAVE2 \
+            --dir original/second
+      - name: Actually scan all 3430502 original-photo metadata to freeze third 4096, excluding all second-wave IDs and existing measured photos
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_full3430502_source_third4096 \
+            --original-full3430502 original/fcp/rgfca_1000_exact_source_photo_IDs/rgfca_1000_complete_original_source_photo_IDs.csv \
+            --original-first106376 original/fcp/rgfca_1000_photo_colour_blind_selection/photo_screen_original_metadata_selected.csv \
+            --already-measured-248312 original/old_mois/mois_original_photo_hues_248312_after_FCP_ROI_additions.csv.gz \
+            --already-measured-receipt original/old_mois/mois_248312_frozen_measured_photo_addition_receipt.json \
+            --previous-wave2-original-photo-selection original/second/mois_original_full_3430502_outside_first_screen_WAVE2_4096.csv \
+            --previous-wave2-source-receipt original/second/mois_first4096_original_source_only_freeze.json \
+            --output third_source_plan
+          python - <<'PY'
+          import json,csv
+          from pathlib import Path
+          s=json.loads(Path('third_source_plan/mois_first4096_original_source_only_freeze.json').read_text())
+          assert s['schema']=='mois_full3430502_original_source_outside_first106376_wave3_v1'
+          assert s['original_complete_source_photo_ids']==3430502
+          assert s['new_original_unmeasured_source_photo_ids']==3420814
+          assert s['new_unmeasured_source_photo_ids_outside_first_screen']==3315910
+          assert s['previous_wave2_photo_ids_excluded']==4096
+          assert s['unmeasured_outside_first_screen_after_wave2_exclusion']==3311814
+          assert s['first_wave_original_source_photo_ids']==4096
+          assert s['first_wave_distinct_source_observers']==4096
+          assert s['first_wave_taxa']==1000
+          assert s['no_photo_colour_or_fitness_or_bloom_label_used']
+          print('MOIS_THIRD_4096_ACTUAL_ORIGINAL_PHOTO_IDS_SOURCE_FROZEN_NO_HUES')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-full3430502-third4096-original-source-frozen-photoIDs-only
+          path: third_source_plan/
+          retention-days: 90
+          if-no-files-found: error
+
+  really-measure-third-original-photo-wave:
+    needs: freeze-third-original-4096
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-full3430502-third4096-original-source-frozen-photoIDs-only
+          path: true_third_source
+      - name: Restore exactly unchanged original photo hue method and EfficientSAM model weights
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp_source"
+          git -C "$RUNNER_TEMP/fcp_source" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp_source" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp_source" checkout -q --detach FETCH_HEAD
+          python -m pip install -q 'numpy<3' 'pandas<3' scipy Pillow ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp_source"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/mois_original_sam"
+      - name: Classify 256 real S3 photograph RGB pixels, retain every original ROI failure
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp_source"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-original-ROI-wave3-source-rate"
+          number=${{ matrix.shard }}
+          index=$(printf '%02d' "$number")
+          python -m scripts.analysis.mois_measure_original_new_photos_roi_v4 \
+            --photo-shard "true_third_source/mois_source_only_shard_${index}_256.csv" \
+            --precolour-receipt true_third_source/mois_first4096_original_source_only_freeze.json \
+            --shard-id "$number" \
+            --fcp-runtime-root "$RUNNER_TEMP/fcp_source" \
+            --original-sam "$RUNNER_TEMP/mois_original_sam" \
+            --outdir "third_real_photo_ROI_${index}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real-third-original4096-ROI256-shard-${{ matrix.shard }}
+          path: third_real_photo_ROI_*/
+          retention-days: 90
+          if-no-files-found: warn
