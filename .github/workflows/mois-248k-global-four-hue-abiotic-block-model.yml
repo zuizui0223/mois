@@ -7,6 +7,7 @@ on:
       - "tests/test_mois_248k_genus_abiotic_blocks.py"
       - ".github/workflows/mois-248k-global-four-hue-abiotic-block-model.yml"
       - "docs/MOIS_248K_GLOBAL_ABIOTIC_BLOCK_MODEL_20261017.md"
+      - "results/mois_248k_global_abiotic_block_decision_20261017.json"
   workflow_dispatch:
 
 permissions:
@@ -65,6 +66,26 @@ jobs:
               effects=list(csv.DictReader(h))
           assert len(effects)>120
           assert all(math.isfinite(float(x['nominal_two_sided_cluster_p'])) for x in effects)
+          frozen=json.loads(Path('results/mois_248k_global_abiotic_block_decision_20261017.json').read_text())
+          assert frozen['original_photo_ids']==q['original_photo_source_rows']==248312
+          assert frozen['original_four_hue_classified']==q['original_photo_source_four_hue_classified']==120807
+          assert frozen['source_join_sha256']==q['original_source_environment_join_sha256']
+          for k,v in q['files_sha256'].items():
+              label=('effects' if 'coefficients' in k else
+                     'matched_models' if 'block_comparisons' in k else 'monthly_descriptive')
+              assert frozen['source_outputs_sha256'][label]==v
+          def row(b,h,var):
+              return next(t for t in effects if t['analysis_block']==b and
+                          t['response_four_hue']==h and t['variable']==var)
+          rain=row('climate_over_geography','white','wc2_bio12_10m')
+          actual=frozen['models']['climate_all_hue_photos']
+          assert abs(float(rain['coefficient_white_or_other_hue_percentage_points_per_species_source_SD'])-
+                     actual['white_bio12_pp_per_species_sd'])<1e-8
+          assert abs(float(rain['BH_q_in_block_hue_family'])-
+                     actual['white_bio12_BH_q_within_20_hue_climate_tests'])<1e-10
+          assert actual['white_bio12_BH_q_within_20_hue_climate_tests']>=.05
+          assert not any(t['BH_q_in_block_hue_family'] and
+                         float(t['BH_q_in_block_hue_family'])<.05 for t in effects)
           print('MOIS_248K_REAL_GENUS_LEVEL_STATIC_TOPOGRAPHY_SOIL_CLIMATE_DIAGNOSTIC_NOT_CAUSAL')
           PY
       - uses: actions/upload-artifact@v4
