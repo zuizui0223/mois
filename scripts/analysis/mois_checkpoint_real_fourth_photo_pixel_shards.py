@@ -141,7 +141,7 @@ def complete_worker(source:dict,root:Path,k:int,freeze:dict):
     by_mid={k:v for k,v in rows}
     return [by_mid[mid] for mid in expected],receipt
 
-def gather_workers(plan:dict,root:Path):
+def gather_workers(plan:dict,root:Path,freeze:dict):
     allrec=list(root.rglob("mois_original_256_ROI_shard_*_receipt.json"))
     require(2<=len(allrec)<=16,"Need at least 2 actually finished photo RGB shards, not source IDs")
     indices=[]
@@ -165,9 +165,8 @@ def run(original_zip:Path,plan_zip:Path,workers:Path,output:Path):
     require(not output.exists() or not any(output.iterdir()),
             "Never overwrite an actually measured checkpoint source")
     old=read_original(original_zip)
-    global freeze
     freeze,source=read_selection(plan_zip)
-    new,proof=gather_workers(source,workers)
+    new,proof=gather_workers(source,workers,freeze)
     additions=pd.DataFrame(new,columns=old.columns).fillna("")
     require(len(new)==256*len(proof) and additions.photo_id.is_unique and
             not additions.photo_id.isin(old.photo_id).any(),
