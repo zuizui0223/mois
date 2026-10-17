@@ -1,0 +1,80 @@
+name: MOIS reconcile independently completed 512 plus targeted 256 image pixels without mixing global prevalence
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_reconcile_real_disjoint_fourth512_targeted256.py"
+      - "tests/test_mois_reconcile_real_disjoint_fourth512_targeted256.py"
+      - ".github/workflows/mois-reconcile-disjoint-fourth512-targeted256-real-pixels.yml"
+      - "docs/MOIS_DISJOINT_310207_REAL_IMAGE_PIXELS_TARGETED_SEASON_SUPPORT_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-independent-disjoint-768-photo-pixel-outcomes-after309439
+  cancel-in-progress: false
+
+jobs:
+  exact-original-image-provenance-and-season-siteyear-support:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Regression-test original photo pixels versus blind source ID and disjoint arms
+        run: |
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pytest==8.4.2
+          python -m pytest -q tests/test_mois_reconcile_real_disjoint_fourth512_targeted256.py
+      - name: Download previous exact finished image-pixel source and two source-disjoint completed arms
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p old309439 ordinary512 enriched256
+          gh run download 39028400690 --repo zuizui0223/mois \
+            --name mois-all256-full-FCP-original309439-149653-dated-colour-real-photo-source-and-season \
+            --dir old309439
+          gh run download 39034832999 --repo zuizui0223/mois \
+            --name mois-real309951-original-photo-149865-real-ROI-149856-dated-hues-fourth512-checkpoint \
+            --dir ordinary512
+          gh run download 39033985014 --repo zuizui0223/mois \
+            --name mois-targeted256-original-real-photo-pixels-season-siteyear-and-day-source \
+            --dir enriched256
+          test -s old309439/mois_original309439_fullFCP256_actual_photo_hues_and_source_dates.csv.gz
+          test -s ordinary512/mois_fourth_partial_finished_real_RGB_photo_hues_plus309439.csv.gz
+          test -s ordinary512/mois_fourth_partial_finished_pixel_source_checkpoint_receipt.json
+          test -s enriched256/mois_targeted256_actual_ROI_309695_original_photo_and_dates.csv.gz
+          test -s enriched256/mois_targeted256_original_photo_repeated_season_siteyear_QC_receipt.json
+      - name: Verify independent frozen source rows, merge only 768 completed new original photo pixels, audit seasonal coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_reconcile_real_disjoint_fourth512_targeted256 \
+            --prior309439 old309439 \
+            --fourth512 ordinary512 \
+            --targeted256 enriched256 \
+            --output reconciled310207
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('reconciled310207/mois_310207_source_disjoint_768_real_photo_pixel_reconciliation.json').read_text())
+          d=r['latest_disjoint_photo_pixel_source_counts_FOR_PROVENANCE_NOT_GLOBAL_PREVALENCE']
+          assert (d['measured_source_photo_IDs'],d['automatic_four_hue_ROIs'],
+                  d['dated_and_automatic_four_hue_ROIs'])==(310207,149936,149927)
+          assert r['added_matched_taxon_025degree_site_seasonyear_min1']==67
+          assert r['added_matched_taxon_025degree_site_seasonyear_min2']==1
+          assert r['prior_global_climate_and_unpaired_season_photo_denominator_stays_309439']
+          assert r['individual_original_photo_IDs_disjoint_across_all_arms']
+          print('MOIS_310207_ORIGINAL_ACTUAL_RGB_ROI_DISJOINT_SOURCE_AND_TARGETED_SAMPLING_QC_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-original310207-real-photo-pixels-149927-dated-hues-sampling-arm-safe
+          path: reconciled310207/
+          retention-days: 90
+          if-no-files-found: error
