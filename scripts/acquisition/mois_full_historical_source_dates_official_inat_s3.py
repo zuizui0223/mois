@@ -311,8 +311,11 @@ def assemble(historical:pd.DataFrame,all_photos:pd.DataFrame,
         paired[name]={}
         for zone in ("north_extratropical","south_extratropical"):
             sub=q[q.zone.eq(zone)]
-            paired[name][zone]=eligible_site_photo_support(
-                sub,0.25,True,2)
+            if not {"summer","winter"}.issubset(set(sub.season)):
+                paired[name][zone]={"matched_groups":0,"matched_taxa":0,
+                                    "matched_photos":0,"matched_original_observations":0}
+            else:
+                paired[name][zone]=eligible_site_photo_support(sub,0.25,True,2)
     return {
         "full_historical_attempted_source_photo_count":HISTORIC,
         "full_historical_classifiable_original_hues":int(historical_source_hue.sum()),
