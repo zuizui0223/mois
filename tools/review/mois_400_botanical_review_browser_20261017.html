@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOIS | 原写真・独立開花判定 400</title>
+<style>
+:root{color-scheme:light dark;--bg:#f5f5f1;--paper:#fff;--ink:#192a29;--muted:#596a67;--accent:#206858;--line:#dce5e0;--warn:#795e25}
+@media(prefers-color-scheme:dark){:root{--bg:#14211e;--paper:#1a2d28;--ink:#ecf3ef;--muted:#b5c7c1;--accent:#9fe1c6;--line:#35534a;--warn:#ebc67c}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',system-ui,sans-serif;line-height:1.5}
+main{max-width:1130px;margin:0 auto;padding:20px 18px 60px}header{display:flex;gap:18px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin:4px 0 22px}
+h1{font-size:clamp(23px,3vw,34px);line-height:1.2;margin:0 0 8px;letter-spacing:-.02em}p{margin:7px 0}small,.muted{font-size:13px;color:var(--muted)}
+.chip{border:1px solid var(--line);border-radius:99px;padding:5px 10px;white-space:nowrap;color:var(--muted);font-size:12px}
+.panel{border:1px solid var(--line);background:var(--paper);border-radius:14px;padding:18px;margin:14px 0}
+fieldset{border:0;margin:0;padding:0}label{display:block;font-weight:600;font-size:13px;margin:0 0 6px}
+input[type=file],input[type=text],select,textarea{width:100%;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:9px;font:inherit;padding:11px;outline-offset:3px}
+input[type=file]{padding:12px}select{min-height:45px}textarea{min-height:88px;resize:vertical}
+button{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:9px;min-height:43px;padding:8px 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}button.primary{background:#206858;border-color:#206858;color:#fff}button[disabled]{opacity:.45;cursor:not-allowed}button:focus-visible{outline:3px solid var(--accent)}
+.notice{background:transparent;border-left:3px solid var(--warn);padding-left:12px;color:var(--muted);font-size:13px}
+.two{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr);gap:17px;align-items:start}.gap{display:grid;gap:14px}.flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.nav{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.counter{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}.species{font-size:20px;font-weight:700;margin:4px 0}.photo{background:#edf0ec;border-radius:11px;min-height:220px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.photo img{max-width:100%;max-height:68vh;display:block;object-fit:contain}.photo .fallback{color:#414f4b;font-size:13px;padding:20px;text-align:center}
+.preview-meta{margin-top:10px;display:flex;gap:15px;align-items:center;justify-content:space-between;flex-wrap:wrap}.preview-meta a{color:var(--accent)}
+.statusbar{height:9px;background:var(--line);border-radius:50px;overflow:hidden;margin:12px 0 6px}.statusbar>div{background:#248b70;height:100%;width:0%;transition:width .2s}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.banner{font-size:14px;color:var(--muted)}.banner strong{color:var(--ink)}
+#message{color:var(--muted);font-size:13px;margin-top:10px;min-height:20px}#message.error{color:#b13027}#message.success{color:var(--accent)}
+.hide{display:none!important}.toolbar{margin:14px 0;display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;align-items:center}
+@media(max-width:800px){.two{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}.panel{padding:14px}.photo img{max-height:55vh}main{padding:15px 12px 40px}}
+</style>
+</head>
+<body><main>
+<header><div><h1>MOIS ｜ 原写真の独立開花判定</h1><p class="muted">5種・400枚｜レビュアーA/B用CSVを1つずつ別々に開いて作業してください。</p></div><span class="chip">ローカルで記録・CSV書出し</span></header>
+<section class="panel"><label for="file">担当するレビュアー用CSVを読み込む（AまたはB）</label><input id="file" type="file" accept=".csv,text/csv"><p class="notice">このページは判定内容をサーバーへ送信しません。ただし原写真を表示するとiNaturalistの画像配信先へアクセスします。定期的に「現在の回答をCSV保存」を押して保存してください。別のレビュアーの回答を見ずに判定してください。</p><div id="message" role="status" aria-live="polite">400件の元CSVを選択してください。</div></section>
+<section id="workspace" class="hide">
+<div class="panel"><div class="flex" style="justify-content:space-between"><div><strong id="fileName">—</strong><div id="speciesCount" class="muted"></div></div><div><strong id="progress">0 / 400</strong><div class="muted">開花段階・器官を両方入力済み</div></div></div><div class="statusbar"><div id="progressBar"></div></div><div class="toolbar"><div class="flex"><button id="previous">← 前へ</button><button id="next">次へ →</button><button id="pending">次の未入力へ</button></div><button id="exportTop" class="primary">現在の回答をCSV保存</button></div></div>
+<div class="two">
+<section class="panel" aria-label="原写真の表示"><div class="nav"><div><div class="counter" id="position">—</div><div class="species" id="species">—</div></div><span class="chip" id="token">—</span></div><div class="photo" id="photoHolder"><div class="fallback">画像を読み込みます</div></div><div class="preview-meta"><a id="openPhoto" target="_blank" rel="noopener noreferrer">原写真を別画面で開く</a><span class="muted" id="license"></span></div><p class="muted" id="attribution"></p></section>
+<section class="panel gap" aria-label="生物学的判定入力"><div><label for="reviewer">レビュアーID（個人ごとに固有）</label><input id="reviewer" type="text" autocomplete="off" placeholder="例: botanist_A"><button id="applyReviewer" style="margin-top:8px">このIDを全行に設定</button></div><div><label for="stage">この写真に写っている状態</label><select id="stage"><option value="">— 未判定 —</option><option value="open_flower">開いている花が確認できる</option><option value="buds_only">つぼみだけ</option><option value="fruit_only">果実だけ</option><option value="no_flower_visible">開花中の花は写っていない</option><option value="uncertain">判断できない</option></select></div><div><label for="tissue">写真の判定対象となる器官</label><select id="tissue"><option value="">— 未判定 —</option><option value="petal_tepal">花弁・花被片</option><option value="other_flower_organ">その他の開花器官</option><option value="spikelet_glume_bract">小穂・穎・苞</option><option value="fruit_seed">果実・種子</option><option value="leaf_stem">葉・茎</option><option value="background">背景など</option><option value="uncertain">判断できない</option></select></div><div><label for="notes">所見（任意）</label><textarea id="notes" placeholder="判断理由、重なり、花と果実の共存、画像で判断困難な点など"></textarea></div><p class="notice">開花している花と花弁・花被片が画像上で確認できない場合、白花・有色花とは判定しません。わからないときは uncertain。自動色分類・観察単位の開花注記を正解として使わないでください。</p><button id="saveAndNext" class="primary">入力を保持して次へ →</button></section>
+</div>
+<div class="panel"><div class="flex" style="justify-content:space-between"><div><strong>提出前の確認</strong><p class="muted">書き出したCSVは担当レビュアーの回答として管理者に返送します。もう一方の判定は見ないでください。</p></div><button id="exportBottom" class="primary">現在の回答をCSV保存</button></div><p id="completion" class="banner"></p></div>
+</section>
+</main>
+<script>
+(()=>{'use strict';
+const expected=['review_token','species','original_photo_url','photo_license','attribution','reviewer_id','open_flower_stage','roi_organ','notes'];
+const allowedStage=new Set(['','open_flower','buds_only','fruit_only','no_flower_visible','uncertain']);
+const allowedOrgan=new Set(['','petal_tepal','other_flower_organ','spikelet_glume_bract','fruit_seed','leaf_stem','background','uncertain']);
+const $=id=>document.getElementById(id);let headers=[],rows=[],current=0,loadedName='';
+function parseCSV(text){text=text.replace(/^\uFEFF/,'');const out=[];let field='',row=[],quotes=false;for(let i=0;i<text.length;i++){const c=text[i];if(quotes){if(c==='"'&&text[i+1]==='"'){field+='"';i++}else if(c==='"'){quotes=false}else field+=c}else if(c==='"'){quotes=true}else if(c===','){row.push(field);field=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(v=>v!==''))out.push(row);row=[];field=''}else field+=c}if(quotes)throw Error('CSVの引用符が閉じられていません');if(field!==''||row.length){row.push(field);out.push(row)}return out}
+function encodeCSV(values){return values.map(cols=>cols.map(v=>{const s=String(v??'');return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}).join(',')).join('\r\n')+'\r\n'}
+function notify(text,isError=false){$('message').textContent=text;$('message').className=isError?'error':'success'}
+function isComplete(r){return !!(r.reviewer_id.trim()&&r.open_flower_stage&&r.roi_organ)}
+function updateProgress(){let good=rows.filter(isComplete).length;$('progress').textContent=`${good} / ${rows.length}`;$('progressBar').style.width=(100*good/rows.length).toFixed(2)+'%';$('completion').textContent=good===rows.length?'全件に入力があります。未確定は uncertain として保存できます。':`${rows.length-good}件が未入力です。途中段階でもCSVを保存できます。`}
+function show(){if(!rows.length)return;let r=rows[current];$('position').textContent=`写真 ${current+1} / ${rows.length}`;$('species').textContent=r.species;$('token').textContent='Token '+r.review_token;$('reviewer').value=r.reviewer_id;$('stage').value=r.open_flower_stage;$('tissue').value=r.roi_organ;$('notes').value=r.notes;$('license').textContent=r.photo_license;$('attribution').textContent=r.attribution;
+ const container=$('photoHolder');container.replaceChildren();const link=$('openPhoto');link.removeAttribute('href');
+ try{const url=new URL(r.original_photo_url);if(url.protocol!=='https:'||!['inaturalist-open-data.s3.amazonaws.com','static.inaturalist.org'].includes(url.hostname)){throw Error('配信先が不明な写真URLです')}const img=document.createElement('img');img.alt=`${r.species} の元写真。開花状態と花弁位置を直接確認してください。`;img.loading='eager';img.onerror=()=>{container.replaceChildren();const t=document.createElement('div');t.className='fallback';t.textContent='画像を表示できません。原写真リンクを開いて確認し、判断できない場合は uncertain を選択してください。';container.append(t)};img.src=url.href;container.append(img);link.href=url.href}catch(e){const t=document.createElement('div');t.className='fallback';t.textContent=e.message;container.append(t)}
+ $('previous').disabled=current===0;$('next').disabled=current===rows.length-1;updateProgress()}
+function set(field,value){if(!rows.length)return;rows[current][field]=value;updateProgress()}
+function navigate(n){if(!rows.length)return;current=Math.max(0,Math.min(rows.length-1,n));show()}
+function exportCSV(){if(!rows.length)return;const data=encodeCSV([headers,...rows.map(r=>headers.map(k=>r[k]))]);const blob=new Blob(['\uFEFF',data],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=loadedName.replace(/\.csv$/i,'')+'_REVIEWED_DRAFT.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);notify('現在の回答をCSVに保存しました。入力はこの画面内に残ります。')}
+$('file').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const data=parseCSV(await file.text());if(data.length!==401)throw Error('ヘッダー＋400写真行が必要です');if(data.some(r=>r.length!==9))throw Error('9列のCSV形式を確認してください');if(expected.some((k,i)=>data[0][i]!==k))throw Error('レビュアーA/Bの元CSVではありません。列を確認してください');const items=data.slice(1).map(cols=>Object.fromEntries(expected.map((k,i)=>[k,cols[i]])));const tokens=new Set(items.map(r=>r.review_token));if(tokens.size!==400)throw Error('同じ写真トークンが重複しています');if(items.some(r=>!r.original_photo_url.startsWith('https://')||!r.species||!allowedStage.has(r.open_flower_stage)||!allowedOrgan.has(r.roi_organ)))throw Error('元のURL・種名・判定コードに問題があります');rows=items;headers=expected;current=0;loadedName=file.name;$('fileName').textContent=file.name;$('speciesCount').textContent=`${new Set(rows.map(r=>r.species)).size}種・固定400件`;$('workspace').classList.remove('hide');notify('元の400件を読み込みました。季節、撮影日、気候、自動花色は表示しません。');show()}catch(err){rows=[];$('workspace').classList.add('hide');notify('読み込み不可: '+err.message,true)}});
+$('reviewer').addEventListener('input',e=>set('reviewer_id',e.target.value));$('stage').addEventListener('change',e=>set('open_flower_stage',e.target.value));$('tissue').addEventListener('change',e=>set('roi_organ',e.target.value));$('notes').addEventListener('input',e=>set('notes',e.target.value));
+$('applyReviewer').addEventListener('click',()=>{const who=$('reviewer').value.trim();if(!who){notify('レビュアーIDを入力してください',true);return}if(!confirm('400行すべてに同じレビュアーIDを記入します。よろしいですか？'))return;rows.forEach(r=>r.reviewer_id=who);notify('レビュアーIDを400行へ設定しました（開花判定は未記入のままです）。');show()});
+$('previous').addEventListener('click',()=>navigate(current-1));$('next').addEventListener('click',()=>navigate(current+1));$('saveAndNext').addEventListener('click',()=>navigate(current+1));$('pending').addEventListener('click',()=>{if(!rows.length)return;for(let z=1;z<=rows.length;z++){let idx=(current+z)%rows.length;if(!isComplete(rows[idx])){navigate(idx);return}}notify('全件に開花段階・器官の入力があります。CSVとして保存できます。')});$('exportTop').addEventListener('click',exportCSV);$('exportBottom').addEventListener('click',exportCSV);
+document.addEventListener('keydown',event=>{if(!rows.length||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;if(event.key==='ArrowLeft')navigate(current-1);if(event.key==='ArrowRight')navigate(current+1)});
+})();
+</script>
+</body></html>
