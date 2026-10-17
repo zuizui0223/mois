@@ -1,0 +1,9 @@
+cell_degrees,hemisphere,same_cell_same_season_year_photo_community_groups,source_photo_ROIs_in_matched_communities,equal_local_cell_year_summer_minus_winter_white_pp,exploratory_999_geocell_bootstrap_percentile95_pp
+0.25,north_extratropical,27,394,6.695455,"[-1.528526, 14.919629]"
+0.25,south_extratropical,28,552,4.492673,"[-6.420033, 13.178022]"
+0.5,north_extratropical,75,1616,2.324063,"[-4.458414, 9.453645]"
+0.5,south_extratropical,66,1387,0.899869,"[-6.643529, 7.643574]"
+1.0,north_extratropical,127,3697,5.114357,"[0.829235, 9.715529]"
+1.0,south_extratropical,113,2865,6.598736,"[0.640642, 11.307856]"
+2.0,north_extratropical,167,6211,4.277723,"[0.627731, 8.197613]"
+2.0,south_extratropical,138,5021,7.744939,"[3.061458, 12.092722]"

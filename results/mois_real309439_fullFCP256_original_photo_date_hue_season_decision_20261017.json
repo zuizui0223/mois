@@ -1,0 +1,118 @@
+{
+  "schema": "mois_full_original_FCP256_309439_photo_pixels_149653_date_hue_source_decision_20261017_v1",
+  "source_real_run": "https://github.com/zuizui0223/mois/actions/runs/39028400690",
+  "source_actual_artifact_id": 12099212766,
+  "complete_FCP_full256_original_pixel_run": "https://github.com/zuizui0223/fcp/actions/runs/38992543115",
+  "FCP_original_finished_49800_measurements": 49800,
+  "FCP_original_256_worker_partitions_completed": 256,
+  "FCP_new_wave4_original_49800_classifiable_ROIs": 24585,
+  "FCP_full_original_49800_measured_csv_sha256": "fc642d42b861bc79305dbd7e7e57d6b14561028e5552bc39dece93e59442f766",
+  "FCP_original_photo_ID_metadata_source_sha256": "8d98b14856dd2539b54e1db287aa08adea9c191e112223ff380cb49ac0f8a554",
+  "base_MOIS_302242_all_measured_photo_source_sha256": "9c9692238f58cc61561270f7c07b1d782ce711adeade9c58550866f668fb4690",
+  "completed_MOIS_full309439_original_photo_date_hue_csv_sha256": "546266e2bbaa340a2523864c28c5a877842eb4b0904a7e0dff90870c6519a47e",
+  "completed_MOIS_309439_hemisphere_season_csv_sha256": "d5cb6f9a3295386ac29204555b6cd58d4a13d2e7f80fbb3e0a328c1d2e28316e",
+  "completed_MOIS_309439_locality_season_year_source_csv_sha256": "cd2ceee9dde064dd4a6f91447b0febecd9f0ecb5e35f90bcf005b1de870ef93d",
+  "new_original_FCP_full_photo_IDs_after_exact_dedup": 7197,
+  "FCP_full_original_photo_ID_overlaps_with_MOIS_existing_measured": 42603,
+  "new_automatic_hue_classifications_total": 3601,
+  "new_white_hue_labels": 1786,
+  "new_yellow_orange_labels": 921,
+  "new_red_pink_labels": 401,
+  "new_blue_purple_labels": 493,
+  "new_technical_unclassifiable_ROIs": 3596,
+  "new_original_photo_source_date_valid": 7197,
+  "source_duplicated_photos_matching_original_hue_taxon_observation_and_coordinates": 42603,
+  "previous_original_photo_raw_observed_on_blank_but_independently_qualified_public_day_matches_FCP_source": 960,
+  "previous_MOIS_original_photo_attempts": 302242,
+  "previous_MOIS_four_hue_photo_labels": 146061,
+  "previous_MOIS_classifiable_hues_with_valid_original_observation_day": 146052,
+  "full_MOIS_source_photo_attempts": 309439,
+  "full_MOIS_source_four_hue_photo_labels": 149662,
+  "full_MOIS_source_photo_attempts_with_observation_day": 309420,
+  "full_MOIS_source_photo_ROIs_with_observation_day_and_four_hue": 149653,
+  "full_MOIS_photo_missing_observation_day": 19,
+  "full_MOIS_classifiable_hue_missing_observation_day": 9,
+  "distinct_original_named_taxa_with_classifiable_photo_and_observation_day": 25638,
+  "previous_named_taxa_with_date_hue": 25638,
+  "same_photo_hue_taxon_identity_changes": 0,
+  "global_photo_seasonal_colour": {
+    "north_extratropical": {
+      "summer_classified_original_ROIs": 44979,
+      "summer_white_original_ROIs": 22116,
+      "summer_white_fraction": 0.49169612,
+      "winter_classified_original_ROIs": 4779,
+      "winter_white_original_ROIs": 2214,
+      "winter_white_fraction": 0.46327684,
+      "summer_minus_winter_white_percentage_points": 2.841928
+    },
+    "south_extratropical": {
+      "summer_classified_original_ROIs": 6832,
+      "summer_white_original_ROIs": 3461,
+      "summer_white_fraction": 0.50658665,
+      "winter_classified_original_ROIs": 4760,
+      "winter_white_original_ROIs": 1880,
+      "winter_white_fraction": 0.39495798,
+      "summer_minus_winter_white_percentage_points": 11.162867
+    }
+  },
+  "local_original_photo_community_same_geocell_and_meteorological_season_year": {
+    "method": "5 or more distinct original observation IDs AND 2 or more original nominal taxa in BOTH summer and winter; photographic white share among automatic 4-hue photo ROIs, 999 geographic-cell clustered percentile bootstrap",
+    "north_extratropical": {
+      "quarter_degree_site_year_groups": 27,
+      "classified_original_photo_ROIs_in_matches": 394,
+      "summer_minus_winter_white_pp": 6.695455,
+      "exploratory_geocell_bootstrap_percentile95_pp": [
+        -1.528526,
+        14.919629
+      ]
+    },
+    "south_extratropical": {
+      "quarter_degree_site_year_groups": 28,
+      "classified_original_photo_ROIs_in_matches": 552,
+      "summer_minus_winter_white_pp": 4.492673,
+      "exploratory_geocell_bootstrap_percentile95_pp": [
+        -6.420033,
+        13.178022
+      ]
+    },
+    "coarser_one_degree": {
+      "north_siteyear_groups": 127,
+      "north_summer_minus_winter_white_pp": 5.114357,
+      "north_exploratory_bootstrap95_pp": [
+        0.829235,
+        9.715529
+      ],
+      "south_siteyear_groups": 113,
+      "south_summer_minus_winter_white_pp": 6.598736,
+      "south_exploratory_bootstrap95_pp": [
+        0.640642,
+        11.307856
+      ]
+    },
+    "coarser_two_degrees": {
+      "north_siteyear_groups": 167,
+      "north_summer_minus_winter_white_pp": 4.277723,
+      "north_exploratory_bootstrap95_pp": [
+        0.627731,
+        8.197613
+      ],
+      "south_siteyear_groups": 138,
+      "south_summer_minus_winter_white_pp": 7.744939,
+      "south_exploratory_bootstrap95_pp": [
+        3.061458,
+        12.092722
+      ]
+    }
+  },
+  "inference_limit": [
+    "Original photo classifier ROI is automatic visible hue, NOT independently botanically confirmed open flowers.",
+    "All source photographs, including those technically hue-unknown, were actually processed; only 149662 have a four-hue label.",
+    "Global raw regional season photo white fractions are not weighted/local-year/site-balanced flowering abundances or evidence of absent flowering.",
+    "Five original observation IDs do not guarantee distinct photographers or plant individuals; 0.25-degree cells span tens of kilometres.",
+    "Geographically clustered 999-bootstrap 95 percentile intervals are exploratory, not multiplicity-adjusted across spatial cell scales.",
+    "One-degree/two-degree apparent positive conditional contrasts combine geographically distinct communities and cannot identify within-plant seasonal pigment response.",
+    "No observed-year/month meteorological temperature, rainfall, radiation, vapour-pressure deficit, drought or solar-pigment selection tested.",
+    "Prior 267425/286826/295017 worldwide six-axis whole-genus/maxT water coefficients are separate source cohorts; 309439 must be actually re-fitted before reporting 309439 regression.",
+    "FCP within-species W/D, genetic polymorphism, 50km local source inference and photo recruitment fitness not imported."
+  ]
+}
