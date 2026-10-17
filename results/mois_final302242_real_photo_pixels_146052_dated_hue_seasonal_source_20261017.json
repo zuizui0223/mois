@@ -1,0 +1,147 @@
+{
+  "schema": "mois_real302242_source_photo_146052_actual_date_plus_automatic_colour_20261017_v1",
+  "original_mois_source_run": "https://github.com/zuizui0223/mois/actions/runs/39020569161",
+  "original_source_artifact_id": 12096905077,
+  "source_photo_pixel_and_date_source_sha256": "3aa3b4e4d39a62fb4efd14b8ae138e2fcaa851a407b6932c04cbdd5bafa4c62a",
+  "prior295017_fcp218_source_sha256": "b83871c6cd69cb624693364742c2a1d61003253d084af0cb6d80ab9f898c3959",
+  "numeric1751_recovery_source_sha256": "65c072a97f7a59b1933dbc0541041a29069d468bf6fc889933d5a922c743a11a",
+  "uuid4096_recovery_source_sha256": "9ca764f7d3596fd3245a9ef079a74a2413ba0223622fd85227bcceed46ca9c81",
+  "season_table_sha256": "22a8f66bc24fa0b08f2f87785ad9d247a3db4631640583b6f3d21d4b85849cbd",
+  "community_scale_table_sha256": "fc205504f561501d00ca5d86df3827e6bd74e953e16d8950d8cad69937dc6760",
+  "genuine_measured_original_image_pixel_photo_count": 302242,
+  "original_four_hue_photo_labels": 146061,
+  "photo_ids_with_source_observation_date": 302223,
+  "dated_and_classified_original_photo_rois": 146052,
+  "missing_source_photo_observation_date": 19,
+  "classified_original_photo_rois_without_observation_date": 9,
+  "named_taxa_in_dated_classified_photo_source": 25638,
+  "new_exact_numeric_photo_id_observation_id_date_matches": 1732,
+  "new_dated_hue_original_photos_from_numeric_id_verification": 706,
+  "new_original_uuid_observation_photo_id_taxon_date_matches": 4096,
+  "new_dated_hue_original_photos_from_uuid_full_source": 1576,
+  "photo_source_automatic_colour_hemispheric_sumwin": {
+    "north_extratropical": {
+      "summer_original_source_photos_attempted": 84087,
+      "summer_classified": 43717,
+      "summer_white": 21448,
+      "winter_original_source_photos_attempted": 10077,
+      "winter_classified": 4662,
+      "winter_white": 2164,
+      "white_photo_summer_minus_winter_pp": 2.64316,
+      "common_taxa_both_seasons": 647,
+      "photographed_taxa_union": 7207,
+      "within_common_taxon_white_photo_rate_pp": 2.760936,
+      "relative_photo_frequency_change_pp": -0.964651,
+      "summer_exclusive_photo_taxa_correction_pp": 3.004414,
+      "winter_exclusive_photo_taxa_correction_pp": -2.157539
+    },
+    "south_extratropical": {
+      "summer_original_source_photos_attempted": 14708,
+      "summer_classified": 6721,
+      "summer_white": 3404,
+      "winter_original_source_photos_attempted": 10965,
+      "winter_classified": 4685,
+      "winter_white": 1843,
+      "white_photo_summer_minus_winter_pp": 11.308911,
+      "common_taxa_both_seasons": 391,
+      "photographed_taxa_union": 4364,
+      "within_common_taxon_white_photo_rate_pp": 3.515981,
+      "relative_photo_frequency_change_pp": 7.689004,
+      "summer_exclusive_photo_taxa_correction_pp": 3.831938,
+      "winter_exclusive_photo_taxa_correction_pp": -3.728011
+    }
+  },
+  "same_geocell_same_meteorological_seasonyear_min5_original_observation_ids_and_min2_taxa_each_season": {
+    "0.25": {
+      "north": {
+        "cell_years": 24,
+        "classified_original_photos": 347,
+        "summer_minus_winter_pp": 5.390479,
+        "exploratory_geocell_cluster_bootstrap999_percentile95_pp": [
+          -4.789096,
+          14.861597
+        ]
+      },
+      "south": {
+        "cell_years": 27,
+        "classified_original_photos": 535,
+        "summer_minus_winter_pp": 3.571339,
+        "exploratory_geocell_cluster_bootstrap999_percentile95_pp": [
+          -7.464489,
+          12.395784
+        ]
+      }
+    },
+    "0.5": {
+      "north": {
+        "cell_years": 73,
+        "classified_original_photos": 1558,
+        "summer_minus_winter_pp": 1.237195,
+        "exploratory_geocell_cluster_bootstrap999_percentile95_pp": [
+          -5.946565,
+          7.680774
+        ]
+      },
+      "south": {
+        "cell_years": 65,
+        "classified_original_photos": 1355,
+        "summer_minus_winter_pp": 1.864121,
+        "exploratory_geocell_cluster_bootstrap999_percentile95_pp": [
+          -5.332244,
+          9.267578
+        ]
+      }
+    },
+    "1.0": {
+      "north": {
+        "cell_years": 124,
+        "classified_original_photos": 3575,
+        "summer_minus_winter_pp": 4.649141,
+        "exploratory_geocell_cluster_bootstrap999_percentile95_pp": [
+          0.505929,
+          9.307231
+        ]
+      },
+      "south": {
+        "cell_years": 113,
+        "classified_original_photos": 2813,
+        "summer_minus_winter_pp": 6.735901,
+        "exploratory_geocell_cluster_bootstrap999_percentile95_pp": [
+          1.20757,
+          11.293054
+        ]
+      }
+    },
+    "2.0": {
+      "north": {
+        "cell_years": 163,
+        "classified_original_photos": 6004,
+        "summer_minus_winter_pp": 4.27629,
+        "exploratory_geocell_cluster_bootstrap999_percentile95_pp": [
+          0.448201,
+          8.518294
+        ]
+      },
+      "south": {
+        "cell_years": 136,
+        "classified_original_photos": 4901,
+        "summer_minus_winter_pp": 8.188593,
+        "exploratory_geocell_cluster_bootstrap999_percentile95_pp": [
+          3.705673,
+          12.383055
+        ]
+      }
+    }
+  },
+  "source_boundaries": [
+    "Original photo classification is a four-hue automatic ROI, not an independently verified open flower petal or tepal.",
+    "Missing photo means missing photographic sampling evidence, not a real plant or flower seasonal absence.",
+    "Identical photo source IDs are deduplicated, historic observed_on values preserved; current provider dates are editable observation metadata not camera EXIF.",
+    "Source-specific photo selection, classifiability, observer effort, taxonomic turnover and latitude/year all affect pooled photo-white ratios.",
+    "Fine 0.25-degree geocells encompass tens of km; matched photo-source cell-year samples do not constitute same breeding population or identical plants.",
+    "Exploratory 999-geocell bootstrap percentiles are not familywise adjusted for selection of spatial scales and comparisons.",
+    "Real observation-year monthly water, solar radiation, temperature and VPD have not been linked in this source extension.",
+    "MOIS annual six-anchor genus-equal moisture estimates are frozen at earlier actual photo source cohorts; do not claim re-estimation on 302242.",
+    "FCP within-species W/D/50km genetic polymorphism estimands are not imported."
+  ]
+}
