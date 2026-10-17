@@ -7,7 +7,7 @@ import pytest
 import rasterio
 from rasterio.transform import from_origin
 from scripts.analysis.mois_sample_248312_worldclim_static_and_monthnormals import (
-    sample_tiff, raster_terrain, SOURCE_PREVIOUS_SHA, BIO_IDS,
+    sample_tiff, raster_terrain, SOURCE_PREVIOUS_SHA, BIO_IDS, srad_kj_to_wm2,
 )
 
 def fake(path,grid,nodata=-9999.0):
@@ -51,3 +51,11 @@ def test_original_fcp_frozen_worldclim_inputs_not_redefined():
     assert set(SOURCE_PREVIOUS_SHA)=={"bio","srad"}
     assert len(BIO_IDS)==19
     assert all(len(x)==64 for x in SOURCE_PREVIOUS_SHA.values())
+
+
+def test_official_worldclim_srad_raw_energy_converts_to_physical_watts():
+    # Official srad is kJ m-2 day-1. v1 output incorrectly labeled raw values Wm2.
+    actual = srad_kj_to_wm2(np.array([8640.0, 17280.0, np.nan], dtype=np.float32))
+    assert actual[0] == pytest.approx(100.0)
+    assert actual[1] == pytest.approx(200.0)
+    assert np.isnan(actual[2])

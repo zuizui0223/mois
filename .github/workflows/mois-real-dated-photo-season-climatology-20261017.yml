@@ -1,0 +1,107 @@
+name: MOIS 267425 real dated photos by season and genuine WorldClim monthly normals
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_seasonal_267k_climate_normals.py"
+      - "tests/test_mois_seasonal_267k_climate_normals.py"
+      - "scripts/analysis/mois_taxon_season_composition_decomposition.py"
+      - "tests/test_mois_taxon_season_composition_decomposition.py"
+      - "scripts/analysis/mois_sample_248312_worldclim_static_and_monthnormals.py"
+      - "tests/test_mois_worldclim_static_month_terrain.py"
+      - ".github/workflows/mois-real-dated-photo-season-climatology-20261017.yml"
+      - "docs/MOIS_REAL_267425_SEASONAL_WHITE_CLIMATE_NORMAL_DIAGNOSTIC_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  test-source-and-actually-refit-seasonal-photo-climate-normals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test source SHA, original-month seasonal grouping, true solar energy units
+        run: |
+          python -m pip install -q 'numpy==2.1.3' 'pandas==2.2.3' 'rasterio==1.4.3' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_seasonal_267k_climate_normals.py tests/test_mois_taxon_season_composition_decomposition.py tests/test_mois_worldclim_static_month_terrain.py
+      - name: Recover two previously signed original photo and climatology archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p signed_photo signed_worldclim
+          gh run download 39002957961 --repo zuizui0223/mois \
+            --name mois-actually-measured-FCP-wave4-completed-photo-partitions-snapshot \
+            --dir signed_photo
+          gh run download 38992341847 --repo zuizui0223/mois \
+            --name mois-248312-REAL-site-worldclim19-bio-elev2p5m-terrain-monthnormal \
+            --dir signed_worldclim
+          test -s signed_photo/mois_fcp_wave4_PARTIAL_completed_pixel_original_photo_union.csv.gz
+          test -s signed_worldclim/mois_248312_original_photo_worldclim_static_monthly_normal_terrain.csv.gz
+          zip -j -q original_photo.zip signed_photo/*
+          zip -j -q signed_month_normal.zip signed_worldclim/*
+      - name: Compute actual 267425 season white-photo counts and matched source-month climate-normal effects
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_seasonal_267k_climate_normals \
+            --photo-zip original_photo.zip \
+            --worldclim-zip signed_month_normal.zip \
+            --output actual_267425_season
+          python -m scripts.analysis.mois_taxon_season_composition_decomposition \
+            --photo-zip original_photo.zip \
+            --output actual_taxon_composition
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result=json.loads(Path('actual_267425_season/mois_real_267425_season_climate_normal_decision.json').read_text())
+          frozen=json.loads(Path('results/mois_real_267425_season_climate_normal_decision_20261017.json').read_text())
+          assert result['total_real_measured_photo_ids']==267425
+          assert result['classified_real_measured_photo_ids']==129795
+          assert result['classified_and_dated_267425']==81867
+          assert result['classified_and_dated_248312_worldclim']==74455
+          assert result['photo_source_sha256']==frozen['photo_source_sha256']
+          assert result['worldclim_v1_source_sha256']==frozen['worldclim_v1_source_sha256']
+          assert result['season_table_sha256']==frozen['season_rates_csv_sha256']
+          matched=result['equal_site_year_photo_models']['2']
+          prior=frozen['matched_two_plus_observations']
+          assert matched['eligible_taxa']==prior['taxa']==47
+          assert matched['site_taxon_season_year_groups']==prior['coarse_site_taxon_season_year_groups']==61
+          assert matched['eligible_source_photos']==prior['photo_labels']==384
+          for key in ('temperature_5C','precipitation_50mm','solar_50Wm2'):
+              ci=matched['univariate_photo_white_vs_month_climate_normal'][key]['taxon_cluster_bootstrap_percentile95_pp']
+              assert ci[0] < 0 < ci[1]
+          taxon=json.loads(Path('actual_taxon_composition/mois_267425_real_photo_summer_winter_taxon_frequency_decomposition.json').read_text())
+          frozen_taxon=json.loads(Path('results/mois_real_267425_summer_winter_taxon_photo_composition_decision_20261017.json').read_text())
+          assert taxon['source_photo_csv_sha256']==frozen_taxon['source_photo_csv_sha256']
+          south=taxon['calculations']['south_extratropical']
+          north=taxon['calculations']['north_extratropical']
+          assert south['all_original_photo_summer_vs_winter_difference_pp']==17.233071
+          assert north['all_original_photo_summer_vs_winter_difference_pp']==3.297805
+          south2=south['common_taxa_thresholds']['2']
+          assert south2['n_common_taxa']==108
+          assert south2['taxon_photo_frequency_composition_component_pp']==11.907852
+          assert south2['within_taxon_hue_rate_component_pp']==2.560573
+          assert abs(south2['source_photo_weighted_common_taxa_difference_pp'] - (11.907852 + 2.560573)) < 1e-5
+          assert south2['taxon_photo_frequency_composition_component_taxon_bootstrap_percentile95_pp'][0] > 0
+          print('MOIS_267425_SIGNED_REAL_SEASON_AND_TAXON_MIX_QC_PASSED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real267425-season-source-QC-248312-worldclim-month-normal
+          path: actual_267425_season/
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real267425-summer-winter-same-taxon-Kitagawa-photo-frequency-vs-hue-rate
+          path: actual_taxon_composition/
+          if-no-files-found: error
+          retention-days: 90

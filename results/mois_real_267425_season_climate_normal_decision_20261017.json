@@ -1,0 +1,90 @@
+{
+  "schema": "mois_267425_actual_photographic_season_climatology_decision_v1",
+  "created_date": "2026-10-17",
+  "scope": "MOIS source-photograph interspecific photographic colour seasonality; NOT FCP within-species spatial W/D",
+  "photo_source_action": "https://github.com/zuizui0223/mois/actions/runs/39002957961",
+  "worldclim_source_action": "https://github.com/zuizui0223/mois/actions/runs/38992341847",
+  "photo_source_sha256": "fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9",
+  "worldclim_v1_source_sha256": "43dcd2608f5a25e0a5d45d35810604a62ab659fb2cb9fb1a4e4257ef756d56c3",
+  "season_rates_csv_sha256": "14a53e5ea401d7e51f843b5f612ead57a56ed00fa10a6c7817d7c3b20328df8f",
+  "real_photo_ids": 267425,
+  "automated_four_hue_classified": 129795,
+  "photo_observed_calendar_day_present": 161761,
+  "classified_hue_and_observed_calendar_day_present": 81867,
+  "classified_hue_and_observed_calendar_day_and_248k_worldclim_site": 74455,
+  "required_matched_unit": "same iNaturalist taxon x 0.25 degree cell x hemisphere-adjusted meteorological season-year; >=2 different observation IDs in >=2 seasons; real classified photo ROI colour",
+  "month_normals": "WorldClim v2.1 1970–2000 climatic monthly normals, not the original observation year's weather",
+  "legacy_srad_v1_problem": "WorldClim raw kJ m-2 day-1 mislabelled Wm2; all slope reports divide by 86.4",
+  "matched_two_plus_observations": {
+    "taxa": 47,
+    "coarse_site_taxon_season_year_groups": 61,
+    "photo_labels": 384,
+    "with_both_white_and_chromatic_hues": 29,
+    "univariate_equal_site_year_taxon_cluster_bootstrap_999_percentile95": {
+      "temperature_per_plus5C_pp": {
+        "point": -0.270662,
+        "ci95": [
+          -6.927373,
+          6.344077
+        ]
+      },
+      "precipitation_per_plus50mm_pp": {
+        "point": -0.931333,
+        "ci95": [
+          -10.23779,
+          7.776461
+        ]
+      },
+      "solar_per_plus50Wm2_pp": {
+        "point": -0.084334,
+        "ci95": [
+          -4.808654,
+          4.20858
+        ]
+      }
+    }
+  },
+  "matched_one_plus_observation_sensitivity": {
+    "taxa": 359,
+    "site_taxon_season_year_groups": 852,
+    "photo_labels": 2372,
+    "temperature_per_plus5C_pp": {
+      "point": 0.392511,
+      "ci95": [
+        -2.385311,
+        3.221649
+      ]
+    },
+    "precipitation_per_plus50mm_pp": {
+      "point": 0.675149,
+      "ci95": [
+        -2.264309,
+        3.359876
+      ]
+    },
+    "solar_per_plus50Wm2_pp": {
+      "point": -0.544246,
+      "ci95": [
+        -2.372344,
+        1.201889
+      ]
+    }
+  },
+  "strict_three_plus_support_weak": {
+    "taxa": 8,
+    "groups": 12,
+    "photos": 118,
+    "caution": "Insufficient for confirmatory seasonal climate response; multiple exploratory tests, low whole-taxon support"
+  },
+  "seasonal_naive_interpretation": "Summer highest automated white-photo share in both extra-tropical hemispheres, but potential composition, geography, photographer and classifiability confounding",
+  "scientific_conclusion": "No robust identified within-site-year white-photo response to climatological temperature, rain or solar from the pre-colour automatic ROI observations",
+  "caveats": [
+    "Automatic photographic hue is not a botanist-confirmed OPEN FLOWER organ or genotype",
+    "Distinct observation IDs do not guarantee photographer independence",
+    "0.25-degree sites are not biological populations",
+    "Historical measured atlas and 267425 extended ROI source are not independent provider studies",
+    "These are three separate univariate regressions with percentile bootstrap, NOT 24-family maxT",
+    "Soil, elevation and topography are stable site-level controls: within-site changes cannot identify static coefficients",
+    "Observed-month 2025 vs earlier weather, plant reproductive fitness and causality NOT measured"
+  ]
+}

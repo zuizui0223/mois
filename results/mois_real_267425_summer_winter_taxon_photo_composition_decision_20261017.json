@@ -1,0 +1,85 @@
+{
+  "schema": "mois_267425_original_photo_summer_winter_taxon_mix_decision_20261017_v1",
+  "authorial_owner": "zuizui0223/mois; between-taxon photographed hue seasonal-source composition not FCP within-species D/W genetic polymorphism",
+  "source_action": "https://github.com/zuizui0223/mois/actions/runs/39002957961",
+  "source_photo_csv_sha256": "fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9",
+  "actually_measured_photo_ids": 267425,
+  "actual_four_hue_assigned": 129795,
+  "dated_and_classified": 81867,
+  "methods": "Same original named taxon across local summer and local winter, symmetric Kitagawa photo-weight decomposition; 999 whole-taxon bootstrap percentile 95% intervals, source-photo census, seasonal hemisphere reversal",
+  "south_extratropical": {
+    "all_source_photo_weighted_summer_minus_winter_white_pp": 17.233071,
+    "common_taxon_min2_photos_in_both_seasons": {
+      "n_taxa": 108,
+      "summer_photos": 976,
+      "winter_photos": 845,
+      "matched_taxa_photo_weighted_difference_pp": 14.468426,
+      "within_taxon_hue_rate_component_pp": 2.560573,
+      "within_taxon_ci95_pp": [
+        -1.44484,
+        6.924686
+      ],
+      "taxon_photo_frequency_composition_component_pp": 11.907852,
+      "taxon_composition_ci95_pp": [
+        0.191586,
+        23.635936
+      ],
+      "taxon_equal_summer_winter_pp": 2.79964,
+      "taxon_equal_ci95_pp": [
+        -2.290318,
+        7.619875
+      ]
+    },
+    "common_taxon_min1_photos_in_both_seasons": {
+      "n_taxa": 212,
+      "summer_photos": 1471,
+      "winter_photos": 1200,
+      "within_taxon_hue_rate_component_pp": 3.266638,
+      "within_taxon_ci95_pp": [
+        -1.03712,
+        7.56887
+      ],
+      "taxon_photo_frequency_composition_component_pp": 11.760781,
+      "taxon_composition_ci95_pp": [
+        1.831416,
+        21.264159
+      ]
+    },
+    "min4_sensitivity": {
+      "n_taxa": 49,
+      "summer_photos": 535,
+      "winter_photos": 482,
+      "taxon_composition_pp": 0.969973,
+      "taxon_composition_ci95_pp": [
+        -11.458459,
+        13.997906
+      ]
+    }
+  },
+  "north_extratropical": {
+    "all_source_photo_weighted_summer_minus_winter_white_pp": 3.297805,
+    "common_taxon_min2_photos_in_both_seasons": {
+      "n_taxa": 238,
+      "summer_photos": 2455,
+      "winter_photos": 1318,
+      "matched_taxa_photo_weighted_difference_pp": 3.690928,
+      "within_taxon_hue_rate_component_pp": 2.35378,
+      "within_taxon_ci95_pp": [
+        -0.761526,
+        5.765388
+      ],
+      "taxon_photo_frequency_composition_component_pp": 1.337148,
+      "taxon_composition_ci95_pp": [
+        -6.073299,
+        8.456758
+      ],
+      "taxon_equal_summer_winter_pp": 3.694038,
+      "taxon_equal_ci95_pp": [
+        0.545962,
+        7.120445
+      ]
+    }
+  },
+  "scope_limit": "Decomposition is exact only for common taxon photos; all-atlas delta includes exclusive taxa. Same taxon can have different geography and years; no taxon×coarse-site×year matching, weather matching, botanist flowering review, genotype, observer-balanced population inference or FCP W/D effects.",
+  "decision": "South observed summer-photo-white peak is strongly susceptible to changing relative taxon photographic sampling frequencies; same-taxon response remains uncertain; cannot declare seasonal adaptive pigment change."
+}

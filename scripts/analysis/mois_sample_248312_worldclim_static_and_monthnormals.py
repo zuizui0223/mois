@@ -40,6 +40,14 @@ SOURCE_PREVIOUS_SHA = {
     "bio": "00513224583665ec0f2f955a4ec252730c4deb2004cce9e793492a3f26df4dcf",
     "srad": "c72ee7f4f9a0eb4b5f6cd7a003eddc05bda22a2e5666d968ed4e817fd36b9026",
 }
+SRAD_KJ_M2_DAY_PER_W_M2 = 86.4  # Official WorldClim srad raw units, not W m-2
+
+
+def srad_kj_to_wm2(values):
+    """Convert official WorldClim kJ m-2 day-1 to physical W m-2; preserve NaN."""
+    return np.asarray(values, dtype=np.float32) / np.float32(SRAD_KJ_M2_DAY_PER_W_M2)
+
+
 STATIC_SOURCE = (
     "latitude", "longitude", "wc_elevation_m", "soil_pH", "soil_SOC",
     "soil_N", "soil_clay", "soil_available_water_proxy",
@@ -224,11 +232,11 @@ def run(photo_gzip: Path, source_receipt: Path, raster_dir: Path, outdir: Path) 
             tif=find_zip_tiff(raster_dir,key,name)
             if len(take):
                 val=sample_tiff(tif,lon[take],lat[take])
-                out.loc[take,field]=val
+                out.loc[take,field]=(srad_kj_to_wm2(val) if key=="srad" else val)
             if key=="srad":
                 annual=sample_tiff(tif,lon,lat)
                 valid=np.isfinite(annual)
-                radiation_sum[valid]+=annual[valid]
+                radiation_sum[valid]+=srad_kj_to_wm2(annual[valid])
                 radiation_count[valid]+=1
     annual_irradiance=np.full(n,np.nan,dtype=np.float32)
     valid_annual=radiation_count==12
@@ -301,7 +309,10 @@ def run(photo_gzip: Path, source_receipt: Path, raster_dir: Path, outdir: Path) 
     for key,digest in SOURCE_PREVIOUS_SHA.items():
         require(source_checks.get(key)==digest,"Previously pinned WorldClim original source ZIP changed: "+key)
     result_receipt={
-        "schema":"mois_248312_real_original_photo_worldclim_static_and_monthly_climate_normals_v1",
+        "schema":"mois_248312_real_original_photo_worldclim_static_and_monthly_climate_normals_v2",
+        "solar_radiation_source_unit":"WorldClim srad kJ m-2 day-1",
+        "solar_radiation_output_unit":"W m-2, divide original srad by 86.4",
+        "legacy_v1_artifact_unit_error":"v1 fields named _Wm2 contain unconverted kJ m-2 day-1; kept frozen, not retrospectively re-signed",
         "status":"REAL_248312_PHOTO_GEOGRAPHY_WORLDCLIM_NORMALS_NOT_OBSERVED_YEAR_WEATHER",
         "n_original_photo_ids":n,
         "n_four_hue_classified":int(classified.sum()),
