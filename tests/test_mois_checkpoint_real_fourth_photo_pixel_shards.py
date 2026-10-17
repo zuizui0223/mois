@@ -22,7 +22,7 @@ def test_two_real_worker_shards_required_not_4096_unmeasured_source_ids(tmp_path
 
 
 def test_worker_shard_source_not_present_is_not_a_colour_classification(tmp_path):
-    with pytest.raises(ValueError,match="genuine"):
+    with pytest.raises(ValueError,match="authentic original photo terminal"):
         m.complete_worker({},tmp_path,0,{"per_shard_sha256":{"0":"unknown"}})
 
 
