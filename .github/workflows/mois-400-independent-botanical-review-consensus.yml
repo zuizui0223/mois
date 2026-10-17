@@ -85,7 +85,7 @@ jobs:
             --name mois-400-photo-botanical-review-UNREVIEWED-provenance-only \
             --dir inputs/receipt
 
-      - name: Audit all 400 original photos: 0 reviewed remains pending, NEVER zero blooming
+      - name: "Audit all 400 original photos: 0 reviewed remains pending, NEVER zero blooming"
         shell: bash
         run: |
           set -euo pipefail
