@@ -91,10 +91,14 @@ def decompose_photographic_taxa(sub:pd.DataFrame,*,draws:int=999,seed:int=202610
     # The common photographed taxa are renormalized separately within each
     # season before the symmetric Kitagawa mixture/within photo composition.
     within,mix,common,equal=(float(x) for x in point)
-    exclusive_S=100*(len(exclusiveS)/len(summer))*(
+    # When a season has no exclusive photographed taxa, its contribution is
+    # exactly zero. Never compute 0*NaN from the empty photo fraction.
+    exclusive_S=(100*(len(exclusiveS)/len(summer))*(
         float(exclusiveS.white.mean())-float(commonS.white.mean()))
-    exclusive_W=-100*(len(exclusiveW)/len(winter))*(
+        if len(exclusiveS) else 0.0)
+    exclusive_W=(-100*(len(exclusiveW)/len(winter))*(
         float(exclusiveW.white.mean())-float(commonW.white.mean()))
+        if len(exclusiveW) else 0.0)
     raw=100*(float(summer.white.mean())-float(winter.white.mean()))
     require(abs(raw-within-mix-exclusive_S-exclusive_W)<1e-8 and
             abs(within+mix-common)<1e-8,
