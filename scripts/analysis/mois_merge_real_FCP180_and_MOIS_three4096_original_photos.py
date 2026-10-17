@@ -262,12 +262,12 @@ def run(fcp_zip:Path,mois_zip:Path,historic_zip:Path,outdir:Path):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--fcp79-real-original-zip",required=True,type=Path)
+    parser.add_argument("--fcp180-real-original-zip",required=True,type=Path)
     parser.add_argument("--mois3-real-original-zip",required=True,type=Path)
     parser.add_argument("--historic-verified-public-dates-zip",required=True,type=Path)
     parser.add_argument("--output",required=True,type=Path)
     args=parser.parse_args()
-    run(args.fcp79_real_original_zip,args.mois3_real_original_zip,
+    run(args.fcp180_real_original_zip,args.mois3_real_original_zip,
         args.historic_verified_public_dates_zip,args.output)
 
 if __name__=="__main__":main()
