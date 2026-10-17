@@ -1,0 +1,145 @@
+name: MOIS import complete FCP wave4 49800 genuine original ROI photo outcomes
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_import_full_FCP_wave4_completed_original_photos.py"
+      - "tests/test_mois_import_real_fcp_wave4.py"
+      - ".github/workflows/mois-import-fcp-wave4-measured-49800.yml"
+      - "docs/MOIS_FCP_WAVE4_49800_PHOTO_REUSE_20261017.md"
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-once-only-FCP-complete-wave4-original49800-photo-import
+  cancel-in-progress: false
+
+jobs:
+  source-only-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+    outputs:
+      ready: ${{ steps.ready.outputs.ready }}
+      mois_run: ${{ steps.ready.outputs.mois_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test unchanged four-hue pixel input and known FCP source completeness
+        run: |
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q tests/test_mois_import_real_fcp_wave4.py
+      - name: Only admit the source when all 256 FCP original ROI workers and earlier MOIS 8192 new pixels really finished
+        id: ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'ready=false' >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            echo "CI validated original 49800 photo source contract; no unfinished photo outcomes imported"
+            exit 0
+          fi
+          # Time-limited real-source check, not an indefinite background
+          # recomputation or a claim all 49,800 images are already done.
+          now=$(date -u +%Y%m%d)
+          if [ "$now" -gt 20261104 ]; then
+            echo "Import guard interval closed after 2026-11-04"
+            exit 0
+          fi
+          status=$(gh api repos/zuizui0223/fcp/actions/runs/38992543115 --jq '.status + ":" + (.conclusion // "")')
+          if [ "$status" != 'completed:success' ]; then
+            echo "Exact FCP wave4 49,800 photo pixel source not completed: $status"
+            exit 0
+          fi
+          artifact=$(gh api 'repos/zuizui0223/mois/actions/artifacts?name=mois-original256504-photo-8192-genuine-new-ROI-pixels-sealed&per_page=30' \
+            --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id // empty')
+          if [ -z "$artifact" ] || [ "$artifact" = null ]; then
+            echo 'MOIS second 4096 original ROI pixel source not yet fully integrated'
+            exit 0
+          fi
+          previous=$(gh api 'repos/zuizui0223/mois/actions/artifacts?name=mois-FCP-wave4-all-real-photo-hue-reuse-once&per_page=30' \
+            --jq '[.artifacts[] | select(.expired == false)] | length')
+          if [ "$previous" != 0 ]; then
+            echo 'Previously released complete FCP wave4 photo pixel merge already exists, no duplicate run'
+            exit 0
+          fi
+          runid=$(gh api "repos/zuizui0223/mois/actions/artifacts/$artifact" --jq '.workflow_run.id')
+          if [ -z "$runid" ] || [ "$runid" = null ]; then
+            echo "Original MOIS 256504 artifact lacks source run identity"
+            exit 0
+          fi
+          echo "mois_run=$runid" >> "$GITHUB_OUTPUT"
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+          echo "ALL FCP wave4 real photo original ROI and MOIS 256504 sources ready"
+
+  actual-complete-49800-original-roi-photo-union:
+    needs: source-only-preflight
+    if: needs['source-only-preflight'].outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      MOIS_SOURCE_RUN: ${{ needs['source-only-preflight'].outputs.mois_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify original 256-compute-part photo ROI study completed and never borrow FCP D/W results
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/zuizui0223/fcp/actions/runs/38992543115 > verified_FCP_wave4_real_run.json
+          python - <<'PY'
+          import json
+          j=json.load(open('verified_FCP_wave4_real_run.json'))
+          assert j['id']==38992543115 and j['conclusion']=='success'
+          assert j['head_sha']=='ef448c9514e0c702e7887e00b288ee966728b0d5'
+          assert j['head_repository']['full_name']=='zuizui0223/fcp'
+          print('MOIS_FCP_ORIGINAL_49800_ROI_COMPLETE_HISTORICAL_ALGORITHM')
+          PY
+      - name: Restore actual new MOIS real-photo 256504-ID union and complete original FCP wave4 photo pixels
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_MOIS actual_FCP_wave4
+          gh run download "$MOIS_SOURCE_RUN" --repo zuizui0223/mois \
+            --name mois-original256504-photo-8192-genuine-new-ROI-pixels-sealed \
+            --dir original_MOIS
+          gh run download 38992543115 --repo zuizui0223/fcp \
+            --name fcp-wave4-149900-method-expansion-actual-measured-and-inferred \
+            --dir actual_FCP_wave4
+      - name: Admit source-photo images/measurements ONLY; photo-ID dedup and full original 49800-row ROI SHA check
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_import_full_FCP_wave4_completed_original_photos \
+            --source-MOIS256504-photo-gzip original_MOIS/mois_all_real_original_hue_measured_248312_plus_new_waves.csv.gz \
+            --source-MOIS256504-receipt original_MOIS/mois_real_additional_photo_waves_receipt.json \
+            --FCP-wave4-complete-original-ROI-artifact actual_FCP_wave4 \
+            --output originally_measured_FCP_wave4_MOIS_photo_union
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('originally_measured_FCP_wave4_MOIS_photo_union/mois_original_FCP_wave4_real_photo_reuse_receipt.json').read_text())
+          assert p['original_FCP_wave4_photo_ids']==49800
+          assert p['original_FCP_wave4_named_taxa']==498
+          assert p['all_photo_ids_after_photo_id_deduplication']==256504+p['new_original_photo_ids']
+          assert 0<p['new_original_photo_ids']<=49800
+          assert 0<p['new_four_hue_classified_original_photo_ids']<=p['new_original_photo_ids']
+          assert p['no_FCP_intraspecific_D_W_or_50km_polymorphism_result_imported']
+          assert p['all_256_original_FCP_wave4_pixel_partitions_required']
+          print('MOIS_COMPLETE_49800_FCP_NEW_ORIGINAL_ROI_PHOTOGRAPHS_ADMITTED_ONLY_AS_PHOTO_MEASUREMENTS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-FCP-wave4-all-real-photo-hue-reuse-once
+          path: originally_measured_FCP_wave4_MOIS_photo_union/
+          if-no-files-found: error
+          retention-days: 90
