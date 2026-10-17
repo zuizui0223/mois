@@ -1,0 +1,86 @@
+name: MOIS entire historic100543 exact original photo dates from official monthly iNat open metadata
+
+on:
+  pull_request:
+    paths:
+      - "scripts/acquisition/mois_full_historical_source_dates_official_inat_s3.py"
+      - "tests/test_mois_full_historical_source_dates_official_s3.py"
+      - ".github/workflows/mois-full-historical-original100543-official-s3-source-date-recovery.yml"
+      - "docs/MOIS_OFFICIAL_MONTHLY_OPEN_DATA_FULL_HISTORICAL_PHOTO_DATE_SOURCE_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-full-100543-photo-historical-20260927-monthly-s3-public-data-pinned-etag
+  cancel-in-progress: true
+
+jobs:
+  exact-full-original-photo-id-uuid-observed-on-join:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test original photo–UUID/date joins and source metadata SHA/ETag before full-provider scan
+        run: |
+          python -m pip install -q 'numpy==2.1.3' 'pandas==2.2.3' 'requests==2.32.3' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_full_historical_source_dates_official_s3.py tests/test_mois_historical_original_observed_on_inat_pilot_20261017.py
+      - name: Download ONLY already verified original MOIS photo, source probe and 200 iNat source-date receipts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_photo source_probe prior200
+          gh run download 39002957961 --repo zuizui0223/mois \
+            --name mois-actually-measured-FCP-wave4-completed-photo-partitions-snapshot --dir original_photo
+          gh run download 39008716324 --repo zuizui0223/mois \
+            --name mois-provider-official-monthly-s3-photo-observation-size-etag-source-probe --dir source_probe
+          gh run download 39007591041 --repo zuizui0223/mois \
+            --name mois-original100543-blind200-photo-exact-observed-on-public-iNat-source-QC --dir prior200
+          test -s original_photo/mois_fcp_wave4_PARTIAL_completed_pixel_original_photo_union.csv.gz
+          test -s source_probe/mois_official_inaturalist_monthly_open_s3_metadata_source_probe.json
+          test -s prior200/mois_historical_original_photo_observation_date_blind200_current_iNat.csv
+          zip -j -q signed_original_photo.zip original_photo/*
+          zip -j -q signed_200_public_dates.zip prior200/*
+      - name: Fully stream two pinned 2026-09-27 official public observation/photo metadata tables
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_full_historical_source_dates_official_inat_s3 \
+            --source-original-photo-zip signed_original_photo.zip \
+            --provider-probe-receipt source_probe/mois_official_inaturalist_monthly_open_s3_metadata_source_probe.json \
+            --prior200-original-photo-date-zip signed_200_public_dates.zip \
+            --output historic_full_source_public_date_join
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          receipt=json.loads(Path('historic_full_source_public_date_join/mois_full_historical_photo_dates_official_monthly_s3_source_receipt.json').read_text())
+          assert receipt['source_photo_sha256']=='fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9'
+          assert receipt['source_photo_rows']==267425
+          assert receipt['full_historical_attempted_source_photo_count']==100543
+          assert receipt['full_historical_classifiable_original_hues']==45953
+          assert receipt['original_before_classifiable_dated']==81867
+          assert receipt['original_before_classifiable_dated']<=receipt['new_after_classifiable_dated']<=129795
+          assert receipt['classifiable_original_hues_with_verified_snapshot_date']<=45953
+          assert 0<=receipt['photo_ids_with_verified_snapshot_observation_date']<=100543
+          assert len(receipt['provider_GZIP_files_original_SHA256_and_full_row_counts']['photos']['compressed_original_SHA256'])==64
+          assert len(receipt['provider_GZIP_files_original_SHA256_and_full_row_counts']['observations']['compressed_original_SHA256'])==64
+          assert receipt['retrospective_original_numeric_observation_id_verified_for_entire_100543'] is False
+          assert receipt['original_source_photos_and_four_hues_not_modified']
+          assert receipt['no_inferred_month_for_unmatched_or_technical_missing_photo']
+          print('MOIS_FULL_HISTORIC100543_PUBLIC_S3_PHOTO_UUID_DATE_SOURCE_VALIDATED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-full-historic100543-real-photo-public20260927-S3-uuid-date-source-rejoin
+          path: historic_full_source_public_date_join/
+          if-no-files-found: warn
+          retention-days: 90
