@@ -58,7 +58,7 @@ def date_and_original_hues(photo_zip: Path, final_zip: Path) -> pd.DataFrame:
     require(sha256(raw)==FINAL_HISTORIC_SHA and
             proof["full_historical_join"]["historical_original_photo_ids"]==HISTORICAL_PHOTOS and
             proof["full_historical_join"]["real_original_photo_hue_and_date_after_all_verified_rejoins"]==DATED_HUES and
-            proof["historical_original_photo_classifications_frozen"]==ORIGINAL_HUES-83842,
+            proof["historical_original_photo_classifications_frozen"]==45953,
             "Signed final historical date source or classifier source changed")
     h = pd.read_csv(io.BytesIO(raw), compression="gzip", low_memory=False,
                     dtype={"photo_id": str, "original_numeric_observation_id": str,
