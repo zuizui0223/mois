@@ -1,0 +1,84 @@
+{
+  "schema": "mois_original100543_historic_photo_official_s3_exact_observed_date_completed_20261017_v1",
+  "original_source_run": "https://github.com/zuizui0223/mois/actions/runs/39002957961",
+  "actual_provider_full_source_run": "https://github.com/zuizui0223/mois/actions/runs/39009539731",
+  "original_photo_source_SHA256": "fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9",
+  "official_snapshot_date": "2026-09-27",
+  "official_photos_gzip_bytes": 20668099997,
+  "official_photos_rows_scanned": 501256126,
+  "official_photos_gzip_SHA256": "033b41cb9e0f28fa2015a66f9bc7e4e95d2ebb1bd96b174e310195eb241888be",
+  "official_photos_ETag": "\"c8ded8376313d0a25357209f8cafd0db-40\"",
+  "official_observations_gzip_bytes": 13420521411,
+  "official_observations_rows_scanned": 282933221,
+  "official_observations_gzip_SHA256": "e6c1706f2d585280b417d527465c2cbe41d85a7135b8bea3dfac7c4093e3dbf0",
+  "official_observations_ETag": "\"441dd5c5c2ad2fd74b6dd0bdc0c6150e-26\"",
+  "source_original_historical_photo_count": 100543,
+  "source_original_historical_classifiable_four_hues": 45953,
+  "photo_IDs_found_in_open_snapshot": 99936,
+  "ambiguous_current_photo_or_uuid_links_excluded": 204,
+  "original_photo_IDs_absent_from_open_snapshot": 607,
+  "photo_ids_with_exact_source_photo_UUID_and_valid_public_observed_on": 99732,
+  "photo_date_unresolved_with_official_s3_snapshot": 811,
+  "photo_date_recovery_fraction": 0.991933,
+  "original_historical_four_hues_with_verified_snapshot_date": 45591,
+  "original_historical_four_hue_labels_without_verified_snapshot_date": 362,
+  "historic_verified_white_hue_photo_labels": 21408,
+  "total_original_photo_ids_not_modified": 267425,
+  "total_original_four_hue_ROI_photo_labels_not_modified": 129795,
+  "previous_combined_dated_and_four_hue_original_photos": 81867,
+  "source_only_s3_after_dated_and_four_hue_original_photos": 127458,
+  "original_200_public_API_crosschecks_with_S3_both_dates": 197,
+  "original_200_date_disagreements_20260927_S3_vs_current_API": 0,
+  "different_snapshot_taxon_ID_vs_original": 77,
+  "original_photo_ID_and_current_provider_taxon_agreement": 99655,
+  "observed_historic_photo_white_summer_minus_winter_pp": {
+    "north_extratropical": 3.199101,
+    "south_extratropical": 7.430546
+  },
+  "historic_photo_hue_counts": {
+    "north_extratropical": {
+      "summer": {
+        "all_hue": 10902,
+        "white": 5303
+      },
+      "winter": {
+        "all_hue": 812,
+        "white": 369
+      }
+    },
+    "south_extratropical": {
+      "summer": {
+        "all_hue": 2796,
+        "white": 1369
+      },
+      "winter": {
+        "all_hue": 1984,
+        "white": 824
+      }
+    }
+  },
+  "matched_original_taxon_same_0p25_geocell_same_season_year_at_least_2_distinct_original_observations_summer_and_winter": {
+    "north_extratropical": {
+      "pre_s3": 1,
+      "after_s3": 2,
+      "after_photos": 8
+    },
+    "south_extratropical": {
+      "pre_s3": 0,
+      "after_s3": 0,
+      "after_photos": 0
+    }
+  },
+  "original_full_S3_result_artifact_id": 12092882545,
+  "historical_photo_level_source_snapshot_CSV_SHA256": "d9f599d4ff6d479d8714344b014e604ade1af90a3e8dd8640a19d1be48407566",
+  "source_season_photo_count_CSV_SHA256": "c956932cbe295e81f8cf9b1d627c226a0cb867722f2867c57285ec6d4e458111",
+  "decisions": [
+    "Full official Sep 27 photographic metadata and observed_on recovery was actually executed, CRC/SHA/ETag-verified, not projected from a pilot.",
+    "Original numeric observation_id not included in Open S3 source; exact source photo_id→UUID→date was checked; independent numeric observation_ID API agreement validated only on the prior subset.",
+    "Original colour ROI labels are not photo-specific independently confirmed open petals, nor morph genetic frequencies.",
+    "Open-licensing and moved/deleted photographic IDs cause 811 missing historical dates, never imputed.",
+    "A different future API snapshot may disagree on editable observed_on or taxon; date provenance must be versioned.",
+    "The 267425 original global genus-bootstrap annual moisture coefficients and independent FCP W/D/local color polymorphism are unchanged.",
+    "No actual observed-year-month weather or pigment selection causality inferred from date-only enrichment."
+  ]
+}

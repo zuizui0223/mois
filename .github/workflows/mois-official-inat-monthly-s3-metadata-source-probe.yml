@@ -1,0 +1,43 @@
+name: MOIS official iNaturalist monthly open-data photo/observation snapshot source probe
+
+on:
+  pull_request:
+    paths:
+      - "scripts/acquisition/mois_probe_inat_s3_monthly_metadata_20261017.py"
+      - ".github/workflows/mois-official-inat-monthly-s3-metadata-source-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  official-monthly-observation-photo-metadata-source-lock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Probe official open metadata with HEAD and exact 64-byte gzipped file prefixes ONLY
+        run: |
+          python -m pip install -q 'requests==2.32.3'
+          python -m scripts.acquisition.mois_probe_inat_s3_monthly_metadata_20261017 --output current_source_snapshot_probe
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path('current_source_snapshot_probe/mois_official_inaturalist_monthly_open_s3_metadata_source_probe.json').read_text())
+          assert j['no_photo_pixels_downloaded'] and j['no_full_metadata_files_downloaded']
+          assert j['source']['photo_table']['gzip_magic_verified']
+          assert j['source']['observation_table']['gzip_magic_verified']
+          assert j['estimated_input_transfer_GiB']>0
+          assert j['photo_id_source_join']=='photos.csv.gz/photo_id -> observation_uuid'
+          assert not j['original_numeric_observation_id_in_open_csv']
+          print('MOIS_ORIGINAL_PHOTO_ID_OFFICIAL_S3_METADATA_SOURCE_COST_VALIDATED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-provider-official-monthly-s3-photo-observation-size-etag-source-probe
+          path: current_source_snapshot_probe/
+          retention-days: 90
+          if-no-files-found: error
