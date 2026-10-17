@@ -5,6 +5,10 @@ on:
     paths:
       - "scripts/analysis/mois_full256_fcp_original_photo_and_date_merge.py"
       - "tests/test_mois_full256_fcp_original_photo_and_date_merge.py"
+      - "tests/test_mois_full256_original_309439_real_result_coherence.py"
+      - "results/mois_real309439_fullFCP256_original_photo_date_hue_season_decision_20261017.json"
+      - "results/mois_309439_fcp_full256_original_photo_season_figure_data_20261017.csv"
+      - "results/mois_309439_fcp_full256_locality_year_season_figure_data_20261017.csv"
       - ".github/workflows/mois-full256-FCP-original309439-dated-hues-source.yml"
       - "docs/MOIS_FULL256_FINISHED_FCP_309439_ACTUAL_SOURCE_20261017.md"
       - "docs/MOIS_GLOBAL_FLORAL_COLOUR_MOISTURE_AND_SEASONAL_SAMPLING_MANUSCRIPT_20261017.md"
@@ -34,7 +38,7 @@ jobs:
       - name: Test only genuine original FCP finished pixels and never alter existing source dates
         run: |
           python -m pip install -q 'numpy==2.1.3' 'pandas==2.2.3' 'requests==2.32.3' 'pytest==8.4.2'
-          python -m pytest -q tests/test_mois_full256_fcp_original_photo_and_date_merge.py tests/test_mois_import_real_fcp_wave4.py
+          python -m pytest -q tests/test_mois_full256_fcp_original_photo_and_date_merge.py tests/test_mois_import_real_fcp_wave4.py tests/test_mois_full256_original_309439_real_result_coherence.py
       - name: Download only already successful full original 49800 real pixel ROIs and prior 302242 original dated photo union
         shell: bash
         run: |
