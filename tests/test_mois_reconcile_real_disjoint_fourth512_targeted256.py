@@ -43,7 +43,7 @@ def test_source_overlap_and_modified_historical_colour_fail_fast():
     good = table(["3", "4"], ["white", "blue_purple"])
     with pytest.raises(ValueError, match="overlap"):
         m.join_disjoint(old, good, table(["3"], ["white"]))
-    with pytest.raises(ValueError, match="baseline"):
+    with pytest.raises(ValueError, match="source photo identity"):
         m.join_disjoint(old, table(["1"], ["white"]), table(["8"], ["white"]))
     tampered = pd.concat((old.copy(), good), ignore_index=True)
     tampered.loc[0, "morph"] = "yellow_orange"
