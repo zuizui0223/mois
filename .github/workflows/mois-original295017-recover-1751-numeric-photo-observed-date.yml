@@ -1,0 +1,76 @@
+name: MOIS verify observed_on for 1751 originally undated photos with numeric iNaturalist observation IDs
+
+on:
+  pull_request:
+    paths:
+      - "scripts/acquisition/mois_original295017_remaining1751_numeric_photo_dates.py"
+      - "tests/test_mois_original295017_remaining1751_numeric_photo_dates.py"
+      - ".github/workflows/mois-original295017-recover-1751-numeric-photo-observed-date.yml"
+      - "docs/MOIS_TARGET_REMAINING_1751_REAL_NUMERIC_PHOTO_DATES_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-exact-original-295017-1751-missing-numeric-observation-photo-date-once
+  cancel-in-progress: false
+
+jobs:
+  provider-source-confirmed-date-missing-originals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test literal original photo+numeric observation identity and never overwrite public dates
+        run: |
+          python -m pip install -q 'pandas==2.2.3' 'numpy==2.1.3' 'requests==2.32.3' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_original295017_remaining1751_numeric_photo_dates.py
+      - name: Restore signed actually classified original 295017 photo/date source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p old295017
+          gh run download 39015660689 --repo zuizui0223/mois \
+            --name mois-295017-original-photo-142538-genuine-hues-140247-verified-observation-dates \
+            --dir old295017
+          test -s old295017/mois_real295017_original_photo_hues_plus_verified_observed_dates.csv.gz
+          zip -j -q real295017_original_pixels_dates.zip old295017/*
+      - name: Request ONLY 1751 original source photos with numerical observation IDs / 36 rate-limited batches
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_original295017_remaining1751_numeric_photo_dates \
+            --signed-original295017-archive real295017_original_pixels_dates.zip \
+            --output actual_missing_numeric_dates
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          f=Path('actual_missing_numeric_dates/mois_original295017_remaining1751_numeric_photo_date_recovery_QC_receipt.json')
+          r=json.loads(f.read_text())
+          assert r['actual_original_photo_numeric_observation_IDs_without_dated_photo']==1751
+          assert r['genuine_missing_original_photo_hues_among_numeric_date_targets']==715
+          assert r['original_missing_photo_IDs_without_numeric_observation_not_queried']==4096
+          assert r['actual_public_API_requests']==36
+          assert r['newly_verified_source_photo_numeric_original_obs_dates']<=1751
+          assert r['newly_dated_classifiable_four_hue_original_source_photos']<=715
+          assert r['after_date_and_actual_classifiable_four_hue_original_source_photos']==140247+r['newly_dated_classifiable_four_hue_original_source_photos']
+          assert r['after_verified_source_photo_dates']==289170+r['newly_verified_source_photo_numeric_original_obs_dates']
+          assert r['no_current_existing_verified_observed_on_day_changed']
+          assert r['no_original_photo_pixel_reclassification_or_pigment_plasticity_inference']
+          print('MOIS_EXACT_REMAINING_ORIGINAL_NUMERIC_PHOTO_DATE_SOURCE_QC_SUCCESS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-actual-original295017-missing1751-numeric-photo-IDs-observed-dates-source
+          path: actual_missing_numeric_dates/
+          retention-days: 90
+          if-no-files-found: warn
