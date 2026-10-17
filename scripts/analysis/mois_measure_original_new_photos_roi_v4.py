@@ -45,7 +45,7 @@ def validate(shard:Path,source_receipt:Path,index:int):
         raise ValueError("Source 256 photo shard incomplete")
     if any(int(r["shard"])!=index or r["source_snapshot_date"]!="2026-09-27"
            or not r["photo_url_large"].startswith("https://inaturalist-open-data.s3.amazonaws.com/photos/")
-           or r["morph"] if "morph" in r else False for r in rows):
+           or "morph" in r or "hue" in r for r in rows):
         raise ValueError("Original scientific source photo blinded fields drift")
     return rows,receipt
 
