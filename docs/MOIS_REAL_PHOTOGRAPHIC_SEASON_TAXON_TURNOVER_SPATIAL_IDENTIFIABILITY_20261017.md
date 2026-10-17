@@ -22,7 +22,7 @@ Using the symmetric Kitagawa identity on named taxa actually photographed in *bo
 | Taxa observed in winter only: support correction | −0.44 | −1.80 |
 | **Reconstructed actual all-photo season contrast** | **+3.30** | **+17.23** |
 
-This is *exact accounting in the photo census*, **not** unique causal attribution. The component for a taxon observed only in a season is a missing-support correction, not an estimate of its hue in the season when no photo exists. The [separate >=2 photo/taxon whole-taxon bootstrap decomposition](MOIS_REAL_267425_SEASONAL_WHITE_CLIMATE_NORMAL_DIAGNOSTIC_20261017.md) found the Southern common-taxon photo-frequency term +11.91 pp (99.9%? **No**: exploratory 95% percentile [+0.19,+23.64]); it is modestly positive but sensitive to photo-count threshold.
+This is *exact accounting in the photo census*, **not** unique causal attribution. The component for a taxon observed only in a season is a missing-support correction, not an estimate of its hue in the season when no photo exists. The [separate >=2 photo/taxon whole-taxon bootstrap decomposition](MOIS_REAL_267425_SEASONAL_WHITE_CLIMATE_NORMAL_DIAGNOSTIC_20261017.md) found the Southern common-taxon photo-frequency term +11.91 pp (exploratory **95% bootstrap percentile interval [+0.19,+23.64]**); it is modestly positive but sensitive to photo-count threshold.
 
 ## 2. Geographic and chronological positivity collapses
 
