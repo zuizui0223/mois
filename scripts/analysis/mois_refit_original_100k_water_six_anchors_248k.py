@@ -54,7 +54,6 @@ def annual_vapor(folder:Path,lon:np.ndarray,lat:np.ndarray):
         files=list(folder.rglob(name))
         require(len(files)==1,f"Missing or duplicated original WorldClim vapr raster: {name}")
         with rasterio.open(files[0]) as dataset:
-            raw=dataset.read(1)
             samples=sample_tiff(files[0],lon,lat)
             ok=np.isfinite(samples)
             totals[ok]+=samples[ok]
