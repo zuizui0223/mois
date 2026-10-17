@@ -38,7 +38,7 @@ jobs:
           gh run download 39028400690 --repo zuizui0223/mois \
             --name mois-all256-full-FCP-original309439-149653-dated-colour-real-photo-source-and-season \
             --dir finished_source
-          test -s finished_source/mois_original309439_exact_observed_on_full_uuid_numeric_verified.csv.gz
+          test -s finished_source/mois_original309439_fullFCP256_actual_photo_hues_and_source_dates.csv.gz
           zip -j -q source_149653_authentic_original_photo_days.zip finished_source/*
       - name: Compute all full-photo summer-winter taxon mixture terms and 999 genus-independent taxon resamples
         shell: bash
