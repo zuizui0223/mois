@@ -1,0 +1,133 @@
+name: MOIS real licensed 400-photo independent botanical reviewer browser
+
+on:
+  push:
+    branches:
+      - analysis/mois-independent-400-botanical-consensus-20261017
+    paths:
+      - ".github/workflows/mois-400-botanical-reviewer-browser.yml"
+      - "scripts/analysis/mois_render_400_botanist_photo_webforms.py"
+      - "tests/test_mois_render_400_botanist_photo_webforms.py"
+  pull_request:
+    paths:
+      - ".github/workflows/mois-400-botanical-reviewer-browser.yml"
+      - "scripts/analysis/mois_render_400_botanist_photo_webforms.py"
+      - "tests/test_mois_render_400_botanist_photo_webforms.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-real-400-independent-botanical-browser-source-only
+  cancel-in-progress: false
+
+jobs:
+  create-two-human-accessible-zero-answer-reviewers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REVIEW_RUN: "38930414968"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test safe photo/attribution blinding and local reviewer CSV roundtrip schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q \
+            tests/test_mois_prepare_400_botanical_review_handoff.py \
+            tests/test_mois_render_400_botanist_photo_webforms.py
+
+      - name: Reuse source-verified original unfilled A and B photoreviewer CSVs, not colour pixels
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_handovers/review_A original_handovers/review_B original_handovers/receipt
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$REVIEW_RUN" > original_handovers/original_handoff_run.json
+          python - <<'PY'
+          import json
+          r=json.load(open('original_handovers/original_handoff_run.json'))
+          assert r['id']==38930414968
+          assert r['status']=='completed' and r['conclusion']=='success'
+          assert r['head_sha']=='738c49f6532214dea64b7e811bf9d736db9708fd'
+          assert r['head_repository']['full_name']=='zuizui0223/mois'
+          assert r['run_attempt']==1
+          PY
+          gh run download "$REVIEW_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name mois-400-original-photos-INDEPENDENT-botanist-reviewer-A-unfilled \
+            --dir original_handovers/review_A
+          gh run download "$REVIEW_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name mois-400-original-photos-INDEPENDENT-botanist-reviewer-B-unfilled \
+            --dir original_handovers/review_B
+          gh run download "$REVIEW_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name mois-400-photo-botanical-review-UNREVIEWED-provenance-only \
+            --dir original_handovers/receipt
+
+      - name: Build two independent licensed-photo click-to-review browser pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_render_400_botanist_photo_webforms \
+            --reviewer-A-unfilled original_handovers/review_A/mois_400_botanical_open_flower_reviewer_A_UNFILLED.csv \
+            --reviewer-B-unfilled original_handovers/review_B/mois_400_botanical_open_flower_reviewer_B_UNFILLED.csv \
+            --original-handoff-receipt original_handovers/receipt/MOIS_400_INDEPENDENT_REVIEW_HANDoFF_RECEIPT.json \
+            --outdir reviewer_web_forms
+          python - <<'PY'
+          import json,re,hashlib
+          from pathlib import Path
+          p=Path('reviewer_web_forms')
+          r=json.loads((p/'MOIS_400_BOTANIST_IMAGE_REVIEW_PORTAL_RECEIPT.json').read_text())
+          assert r['status']=='TWO_STANDALONE_BROWSER_REVIEW_PORTALS_CREATED_WITH_ZERO_BOTANICAL_DECISIONS'
+          assert r['original_botanical_review_response_count']==0
+          assert r['no_seasonal_white_fraction_or_climate_effect_inferred'] is True
+          assert r['no_original_image_bytes_downloaded_into_artifact'] is True
+          for who in ('A','B'):
+              f=p/r['portals'][who]['filename']
+              txt=f.read_text()
+              m=re.search('<script type="application/json" id="mois-original-blind-source">(.*?)</script>',txt,re.S)
+              assert m
+              data=json.loads(m.group(1))
+              assert data['role']==who and len(data['records'])==400
+              assert len({x['review_token'] for x in data['records']})==400
+              assert all(x['original_photo_url'].startswith('https://inaturalist-open-data.s3.amazonaws.com/photos/') for x in data['records'])
+              assert all(not x['reviewer_id'] and not x['open_flower_stage'] and not x['roi_organ'] for x in data['records'])
+              assert all(not any(k in x for k in ('selected_season','observed_on','latitude','longitude','morph')) for x in data['records'])
+              assert hashlib.sha256(f.read_bytes()).hexdigest()==r['portals'][who]['html_sha256']
+          print('MOIS_400_REAL_LICENSED_ORIGINAL_IMAGES_REVIEWER_A_B_WEB_PAGE_0_BOTANICAL_LABELS')
+          PY
+
+      - name: Publish only reviewer A's public-source licensed single-photo review browser
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-400-botanist-A-source-photo-browser-UNREVIEWED
+          retention-days: 90
+          if-no-files-found: error
+          path: reviewer_web_forms/mois_400_review_A_original_photo_browser_UNREVIEWED.html
+
+      - name: Publish only reviewer B's independent browser
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-400-botanist-B-source-photo-browser-UNREVIEWED
+          retention-days: 90
+          if-no-files-found: error
+          path: reviewer_web_forms/mois_400_review_B_original_photo_browser_UNREVIEWED.html
+
+      - name: Preserve only source and empty reviewer browser receipts, never invented observations
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-400-botanist-review-browser-provenance-receipt-only
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            reviewer_web_forms/MOIS_400_BOTANIST_IMAGE_REVIEW_PORTAL_RECEIPT.json
+            original_handovers/original_handoff_run.json
