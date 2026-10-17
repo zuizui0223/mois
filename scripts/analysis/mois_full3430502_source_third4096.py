@@ -258,7 +258,11 @@ if __name__=="__main__":
     p.add_argument("--original-first106376",required=True,type=Path)
     p.add_argument("--already-measured-248312",required=True,type=Path)
     p.add_argument("--already-measured-receipt",required=True,type=Path)
+    p.add_argument("--previous-wave2-original-photo-selection",required=True,type=Path)
+    p.add_argument("--previous-wave2-source-receipt",required=True,type=Path)
     p.add_argument("--output",required=True,type=Path)
     a=p.parse_args()
     plan(a.original_full3430502,a.original_first106376,
-         a.already_measured_248312,a.already_measured_receipt,a.output)
+         a.already_measured_248312,a.already_measured_receipt,
+         a.previous_wave2_original_photo_selection,
+         a.previous_wave2_source_receipt,a.output)
