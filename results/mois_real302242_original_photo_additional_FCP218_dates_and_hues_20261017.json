@@ -13,7 +13,7 @@
   "fcp_authentic_completed_ROI_pixel_partitions": 218,
   "fcp_planned_total_photo_worker_partitions": 256,
   "fcp_unmeasured_source_worker_partitions": 38,
-  "fcp_real_finished_original_photo_pixel_rows": 42839,
+  "fcp_real_finished_original_photo_pixel_rows": 42462,
   "previous_source_photo_pixels_measured": 295017,
   "previous_source_four_hue_photos": 142538,
   "previous_source_date_and_four_hue_photos": 140247,
