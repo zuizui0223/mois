@@ -127,7 +127,7 @@ def genus_cv_r2(s:pd.DataFrame,features:tuple[str,...],hue:str)->float:
     for k in range(FOLDS):
         train=folds!=k
         test=~train
-        if train.sum()<100 or test.sum()<100:continue
+        if train.sum()<50 or test.sum()<20:continue
         coeff=np.linalg.lstsq(X[train]*np.sqrt(w[train])[:,None],
                               y[train]*np.sqrt(w[train]),rcond=1e-9)[0]
         error=y[test]-X[test]@coeff
