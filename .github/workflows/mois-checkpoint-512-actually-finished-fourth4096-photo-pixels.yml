@@ -1,0 +1,92 @@
+name: MOIS replay first 512 actual finished fourth4096 original RGB ROIs into 309439 source
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_checkpoint_real_fourth_photo_pixel_shards.py"
+      - "tests/test_mois_checkpoint_real_fourth_photo_pixel_shards.py"
+      - ".github/workflows/mois-checkpoint-512-actually-finished-fourth4096-photo-pixels.yml"
+      - "docs/MOIS_ACTUAL512_FOURTH4096_FINISHED_PIXEL_CHECKPOINT_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-fourth4096-FIRST-TWO-finished-real-original-photo-ROI-256-source-checkpoint
+  cancel-in-progress: false
+
+jobs:
+  real-two-worker-512-photo-pixels-not-candidate-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test completed RGB photo worker model contract before data admission
+        run: |
+          python -m pip install -q 'numpy==2.1.3' 'pandas==2.2.3' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_checkpoint_real_fourth_photo_pixel_shards.py
+      - name: Restore exact 309439 original source, original 4096 source selection and TWO truly finished RGB model workers
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p prior309439 plan4096 completed_shard0 completed_shard1
+          gh run download 39028400690 --repo zuizui0223/mois \
+            --name mois-all256-full-FCP-original309439-149653-dated-colour-real-photo-source-and-season \
+            --dir prior309439
+          gh run download 39032258023 --repo zuizui0223/mois \
+            --name mois-fourth4096-frozen-new-unmeasured-photo-ID-source-plan \
+            --dir plan4096
+          gh run download 39032258023 --repo zuizui0223/mois \
+            --name mois-fourth4096-real-original-ROI256-shard-0 \
+            --dir completed_shard0
+          gh run download 39032258023 --repo zuizui0223/mois \
+            --name mois-fourth4096-real-original-ROI256-shard-1 \
+            --dir completed_shard1
+          test -s prior309439/mois_original309439_fullFCP256_actual_photo_hues_and_source_dates.csv.gz
+          test -s plan4096/mois_first4096_original_source_only_freeze.json
+          test "$(find completed_shard0 -name '*_receipt.json' | grep -c 'mois_original_256_ROI_shard_' || true)" -eq 1
+          test "$(find completed_shard1 -name '*_receipt.json' | grep -c 'mois_original_256_ROI_shard_' || true)" -eq 1
+          zip -j -q old_actual309439_source.zip prior309439/*
+          zip -j -q frozen_fourth4096_source_only.zip plan4096/*
+          mkdir -p finished_worker_artifacts
+          mv completed_shard0 completed_shard1 finished_worker_artifacts/
+      - name: Actually merge only 512 completed original RGB photo/shard results and source observation dates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_checkpoint_real_fourth_photo_pixel_shards \
+            --original309439-photo-archive old_actual309439_source.zip \
+            --blind-original4096-source-archive frozen_fourth4096_source_only.zip \
+            --complete-photo-RGB-shard-artifacts finished_worker_artifacts \
+            --output actual_photo512_checkpoint
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('actual_photo512_checkpoint/mois_fourth_partial_finished_pixel_source_checkpoint_receipt.json').read_text())
+          assert r['completed_authentic_ROI_shards']==2
+          assert r['original_actual_photo_IDs_with_real_pixel_measurement_added']==512
+          assert r['original_four_hue_ROI_source_photo_labels_added']==203
+          assert r['original_photo_hue_plus_observation_day_added']==203
+          assert r['measured_original_photo_IDs_before']==309439
+          assert r['measured_original_photo_IDs_after_checkpoint']==309951
+          assert r['original_classifiable_four_hue_ROIs_after_checkpoint']==149865
+          assert r['original_date_plus_four_hue_ROIs_after_checkpoint']==149856
+          assert r['unmeasured_fourth_cohort_original_photo_IDs_remaining']==3584
+          assert len(r['new_original_photo_source_full_GZIP_SHA256'])==64
+          assert r['previous_photo_ID_hue_taxon_and_source_day_UNCHANGED']
+          assert r['NOT_AN_INDEPENDENT_REPLICATION_AND_WILL_BE_SUPERSEDED_BY_FULL_FOURTH4096']
+          print('MOIS_FOURTH4096_ALREADY_FINISHED_SOURCE_512_TRUE_PIXEL_203_CLASSIFIED_SUCCESS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real309951-original-photo-149865-real-ROI-149856-dated-hues-fourth512-checkpoint
+          path: actual_photo512_checkpoint/
+          retention-days: 90
+          if-no-files-found: error
