@@ -1,18 +1,9 @@
 name: MOIS 400 original seasonal photos vs live iNaturalist flowering/fruiting annotations
 
+# The genuine live public API can change and must not be fetched on every
+# manuscript push or PR evaluation. The successful frozen 2026-10-17 result
+# is preserved in an archived source artifact and audited by offline CI.
 on:
-  push:
-    branches:
-      - analysis/mois-400-current-inat-plant-phenology-20261017
-    paths:
-      - ".github/workflows/mois-original400-observation-phenology-audit.yml"
-      - "scripts/analysis/mois_audit_400_live_observation_phenology.py"
-      - "tests/test_mois_audit_400_live_observation_phenology.py"
-  pull_request:
-    paths:
-      - ".github/workflows/mois-original400-observation-phenology-audit.yml"
-      - "scripts/analysis/mois_audit_400_live_observation_phenology.py"
-      - "tests/test_mois_audit_400_live_observation_phenology.py"
   workflow_dispatch:
 
 permissions:
