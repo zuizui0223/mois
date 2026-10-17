@@ -46,6 +46,8 @@ Use original matched-photo/genus bootstrap maxT24 water inference as **already f
 
 ## Source-authenticated main descriptive results
 
+### Earlier 309,439-photo weighting sensitivity (not the latest 313,535-photo denominator)
+
 | Photographic weighting/selection rule | White fraction | Interpretation |
 |---|---:|---|
 | All 149,662 classifiable photo ROI outcomes | 47.21% | Photo-weighted original hue source |
