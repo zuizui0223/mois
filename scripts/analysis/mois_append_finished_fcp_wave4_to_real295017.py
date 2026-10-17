@@ -124,10 +124,17 @@ def expand(base:pd.DataFrame,enriched:pd.DataFrame,fcp:pd.DataFrame,
     require(new.old_mois_or_new_fcp.eq("fcp_additional_ROI").all() and
             new.source_original_measured.eq("fcp_wave4_partial_original_ROI_v4").all(),
             "New source photographs were not independently completed FCP ROI-v4 pixels")
+    unknown_reason_codes=(
+        "not_evaluable_roi_or_flip_gate",
+        "not_evaluable_ambiguous_palette_composition",
+        "not_evaluable_no_biological_palette_mass",
+    )
     require(new.morph.isin((*HUES,"mixed_uncertain")).all() and
-            new.measurement_status.isin(("classified_four_state_morph","mixed_uncertain")).all() and
+            new.measurement_status.isin(("classified_four_state_morph",*unknown_reason_codes)).all() and
             new.morph.isin(HUES).eq(
-                new.measurement_status.eq("classified_four_state_morph")).all(),
+                new.measurement_status.eq("classified_four_state_morph")).all() and
+            new.morph.eq("mixed_uncertain").eq(
+                new.measurement_status.isin(unknown_reason_codes)).all(),
             "New FCP photo pixel ROI outcome states are not source-coherent")
 
     compare=overlap.merge(base,on="photo_id",how="inner",validate="one_to_one",
