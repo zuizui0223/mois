@@ -1,0 +1,76 @@
+name: MOIS real 248k four-hue genus-equal geo climate terrain soil block inference
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_248k_global_genus_abiotic_blocks.py"
+      - "tests/test_mois_248k_genus_abiotic_blocks.py"
+      - ".github/workflows/mois-248k-global-four-hue-abiotic-block-model.yml"
+      - "docs/MOIS_248K_GLOBAL_ABIOTIC_BLOCK_MODEL_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  original-248k-four-colour-genus-climate-soil:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test species/genus support, colour balance and holdout construction
+        run: |
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 statsmodels==0.14.4 pytest==8.4.2
+          python -m pytest -q tests/test_mois_248k_genus_abiotic_blocks.py
+      - name: Restore authentic real 248312 original photo site/raster/terrain output
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source_actual_worldclim
+          gh run download 38992341847 --repo zuizui0223/mois \
+            --name mois-248312-REAL-site-worldclim19-bio-elev2p5m-terrain-monthnormal \
+            --dir source_actual_worldclim
+      - name: Fit real genus-equal four hue source- and geography-controlled climate/soil/terrain models
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_248k_global_genus_abiotic_blocks \
+            --original-photo-site-worldclim source_actual_worldclim/mois_248312_original_photo_worldclim_static_monthly_normal_terrain.csv.gz \
+            --original-site-source-receipt source_actual_worldclim/mois_248312_worldclim_static_month_normal_receipt.json \
+            --output real_248k_macro_abiotic_models
+          python - <<'PY'
+          import json,csv,math
+          from pathlib import Path
+          root=Path('real_248k_macro_abiotic_models')
+          q=json.loads((root/'mois_248k_global_abiotic_block_model_receipt.json').read_text())
+          assert q['original_photo_source_rows']==248312
+          assert q['original_photo_source_four_hue_classified']==120807
+          assert q['static_longterm_and_seasonal_predictors_separated'] is True
+          assert not q['FCP_within_species_D_W_or_local_50km_statistic_calculated']
+          assert not q['actual_observed_year_month_weather_fitted']
+          assert len(q['support_by_block'])==5
+          for a in q['support_by_block']:
+              assert a['source_photo_filter_same_for_nested_geography_climate_extra_models']
+              assert a['qualified_nominal_genera']>=50
+          with (root/'mois_global_248k_four_hue_genus_cluster_coefficients.csv').open() as h:
+              effects=list(csv.DictReader(h))
+          assert len(effects)>120
+          assert all(math.isfinite(float(x['nominal_two_sided_cluster_p'])) for x in effects)
+          print('MOIS_248K_REAL_GENUS_LEVEL_STATIC_TOPOGRAPHY_SOIL_CLIMATE_DIAGNOSTIC_NOT_CAUSAL')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-248k-global-4hue-genus-cluster-climate-soil-terrain-CI
+          path: real_248k_macro_abiotic_models/
+          retention-days: 90
+          if-no-files-found: error
