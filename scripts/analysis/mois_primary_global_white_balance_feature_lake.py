@@ -151,6 +151,58 @@ def balances(d,*,draws=999):
     }
 
 
+
+def balance_sampling_sensitivity(d):
+    """Separate photo-depth and genus-richness effects on apparent near-half."""
+    classified=d[d.classified & d.inat_taxon_id.ne("")].copy()
+    classified["genus"]=classified.species.map(genus)
+    taxa=classified.groupby("inat_taxon_id").agg(
+        white_fraction=("white","mean"),photos=("photo_id","size"),
+        genus=("genus","first"))
+    summary=[]
+    for min_photo in (1,2,5):
+        eligible=taxa[(taxa.photos>=min_photo)&taxa.genus.notna()]
+        genera=eligible.groupby("genus").white_fraction.agg(["mean","size"])
+        for min_taxa in (1,2,5):
+            g=genera[genera["size"]>=min_taxa]
+            selected=eligible[eligible.genus.isin(g.index)]
+            summary.append({
+                "min_classified_original_photos_per_taxon":min_photo,
+                "min_named_taxa_per_genus":min_taxa,
+                "classifiable_named_taxa":int(len(selected)),
+                "eligible_genera":int(len(g)),
+                "taxon_equal_white_fraction":float(
+                    selected.white_fraction.mean()) if len(selected) else None,
+                "genus_equal_white_fraction":
+                    float(g["mean"].mean()) if len(g) else None,
+                "genus_equal_distance_from_half_pp":
+                    100*(float(g["mean"].mean())-.5) if len(g) else None,
+            })
+    return summary
+
+
+def geographic_cell_sensitivity(d, *, degrees=10, min_classified=30):
+    """Spatially equal cells are a bias diagnostic, not area/plant weighting."""
+    x=d[d.classified & d.latitude.between(-90,90) &
+        d.longitude.between(-180,180)].copy()
+    x["latcell"]=np.floor((x.latitude+90)/degrees).astype(int)
+    x["loncell"]=np.floor((x.longitude+180)/degrees).astype(int)
+    cells=x.groupby(["latcell","loncell"]).white.agg(["size","mean"])
+    cells=cells.loc[cells["size"]>=min_classified]
+    return {
+        "degrees_per_geographic_cell":degrees,
+        "minimum_classified_photos_per_cell":min_classified,
+        "eligible_cells":int(len(cells)),
+        "photos_in_eligible_cells":int(cells["size"].sum()),
+        "equal_cell_mean_white_fraction":
+            float(cells["mean"].mean()) if len(cells) else None,
+        "cell_white_rate_5th_50th_95th_percentile":
+            [float(x) for x in np.percentile(cells["mean"],[5,50,95])]
+            if len(cells) else None,
+        "not_area_weighted_or_representative_biological_population":True,
+    }
+
+
 def deciles(d):
     variables=(*ENV[:-1],"annual_solar_Wm2")
     results=[]
@@ -189,6 +241,8 @@ def run(photo,climate,static,out):
             "Existing immutable feature lake must never be overwritten")
     d=source(photo,climate,static)
     summary=balances(d)
+    summary["taxon_and_genus_depth_sensitivity"]=balance_sampling_sensitivity(d)
+    summary["geographic_equal_10degree_cell_sensitivity"]=geographic_cell_sensitivity(d)
     summary.update({
         "schema":"mois_309439_world_photographic_white_chromatic_nearhalf_v1",
         "known_hue_counts":{h:int(d.morph.eq(h).sum()) for h in HUES},
@@ -238,7 +292,12 @@ def run(photo,climate,static,out):
           json.dumps({"photo_count":N,"label_count":CLASS,
                       "hues":summary["known_hue_counts"],
                       "fractions":summary[
-                          "near_half_rather_than_exact_50_50_fraction"]},
+                          "near_half_rather_than_exact_50_50_fraction"],
+                      "taxa":summary["named_taxa_with_classified_photos"],
+                      "genera":summary["nominal_genera_with_classified_taxa"],
+                      "genus_bootstrap95":summary["genus_bootstrap_percentile95_fraction"],
+                      "depth_gate_sensitivity":summary["taxon_and_genus_depth_sensitivity"],
+                      "equal_10degree_cells":summary["geographic_equal_10degree_cell_sensitivity"]},
                      sort_keys=True),flush=True)
     return receipt
 
