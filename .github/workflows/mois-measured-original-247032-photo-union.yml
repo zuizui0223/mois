@@ -1,0 +1,96 @@
+name: MOIS historical 100543 plus FCP 149900 exact original photo union
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_expand_original_100543_with_fcp_149900.py"
+      - "tests/test_mois_expand_original_photo_union.py"
+      - ".github/workflows/mois-measured-original-247032-photo-union.yml"
+      - "docs/MOIS_MEASURED_PHOTO_UNION_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  full-original-measured-hue-union:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Protect existing source data and blank colour semantics
+        run: |
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q tests/test_mois_expand_original_photo_union.py
+      - name: Recover historical original FCP 3 measured cohorts from immutable commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original
+          git fetch --no-tags --depth=1 https://github.com/zuizui0223/fcp.git 5142f7951af0dde5364bb047a566d67e8c479e51
+          git show 5142f7951af0dde5364bb047a566d67e8c479e51:data/derived/global_monte_carlo_measured_photos_v1.csv > original/discovery.csv
+          git show 5142f7951af0dde5364bb047a566d67e8c479e51:data/derived/rgfca_reserve_replication_measured_photos_v1.csv > original/validation.csv
+          git fetch --no-tags --depth=1 https://github.com/zuizui0223/fcp.git 7e538e5c51c05a7cc47b2fcf53eea92634c8a863
+          git show 7e538e5c51c05a7cc47b2fcf53eea92634c8a863:data/derived/polymorphism_h2_third_cohort_measured_photos_v1.csv > original/prospective.csv
+          printf '%s  %s\n' \
+            ee854126eed2cfe23e333abe2c28d14df24895a5c52cbc389c060a5a4d6f91f4 original/discovery.csv \
+            0e2ed349122739eecfc725fb2d5e313d284cf30752da91f9a0429cff0eeaa5e6 original/validation.csv \
+            57630fc9f281bce94a0c40a70aaf7bce879dde93d6154175adcd021e8f5c1186 original/prospective.csv | sha256sum -c -
+      - name: Recover old 100543 photo source from signed FCP public artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/zuizui0223/fcp/actions/artifacts/11587115220/zip" \
+            --output original/mois_source.zip
+          echo "2d6097ba1b0434632e13bbe79dd78180608a287ff5dabebc770b5c0a2cfb52a0  original/mois_source.zip" | sha256sum -c -
+      - name: Materially combine and deduplicate original measured photos (not a source-only estimate)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_expand_original_100543_with_fcp_149900 \
+            --mois-original-photo-archive original/mois_source.zip \
+            --fcp-discovery original/discovery.csv \
+            --fcp-validation original/validation.csv \
+            --fcp-prospective original/prospective.csv \
+            --output derived_mois_247k
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('derived_mois_247k/mois_fcp_measured_photo_union_receipt.json').read_text())
+          assert p['historical_unique_original_photo_ids']==100543
+          assert p['historical_four_hue_classified']==45953
+          assert p['fcp_original_highdepth_photo_ids']==149900
+          assert p['cross_repository_shared_photo_ids']==3411
+          assert p['combined_unique_photo_ids']==247032
+          assert p['new_unique_photo_ids_added']==146489
+          assert p['shared_four_hue_labels_agree']==1693
+          assert p['historical_global_genus_moisture_slopes_reestimated'] is False
+          assert p['cross_source_measurement_independence'] is False
+          print('MOIS_AUTHENTIC_MEASURED_PHOTOS_EXPLICIT_FCP_SOURCE_REUSE_SEPARATE_BIOLOGICAL_ESTIMAND_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-original100543-plus-fcp149900-deduped-247032-ACTUAL-colour-photos
+          path: derived_mois_247k/
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: mois-original-measured-photo-union-DIAGNOSTIC-NOT_ADMITTED
+          path: derived_mois_247k/mois_fcp_measured_photo_union_receipt.json
+          retention-days: 14
+          if-no-files-found: warn
