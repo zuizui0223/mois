@@ -130,7 +130,12 @@ jobs:
           import json
           from pathlib import Path
           s=json.loads(Path('actual_partial_completed_FCP_49800/mois_fcp_wave4_PARTIAL_real_completed_original_ROI_receipt.json').read_text())
-          assert 16<=s['FCP_completed_ROI_partitions']<=256
+          # 2026-10-17 new data: previously signed MOIS 267425 photos used 79 partitions.
+          # This PR must admit genuine additional original photo PIXELS, not replay old rows.
+          assert 80<=s['FCP_completed_ROI_partitions']<=256
+          assert s['FCP_completed_ROI_partitions'] > 79
+          assert s['combined_unique_photo_IDs']>267425
+          assert s['combined_four_hue_classified_photo_IDs']>129795
           assert s['FCP_real_completed_original_image_pixel_rows']>=1000
           assert s['combined_unique_photo_IDs'] == 252408+s['additional_new_original_photo_IDs']
           assert s['combined_four_hue_classified_photo_IDs'] == 122383+s['additional_new_real_four_hue_classified_photo_IDs']
