@@ -1,0 +1,117 @@
+{
+  "schema": "mois_real295017_observation_date_original_photo_commmunity_summer_winter_geograin_20261017_v1",
+  "genuine_actual_source_and_analysis_run": "https://github.com/zuizui0223/mois/actions/runs/39015918687",
+  "signed_artifact_id": 12094118876,
+  "original_source_three_way_SHA": "44e3cb6b4c6174dfb1035de208343c7c6a2e6c321e2557a509224c4d9f2ac7b3",
+  "date_enriched_actual_photo_source_SHA": "b797d85464d2e3e39d38326196dd5ab3462d4e8e19b227dc62604b3bdf047a93",
+  "source_community_full_result_CSV_SHA": "d67901b4e9a34c71008e75c816afaf1b2cbf3d09bad3ceb34c8d38fbe02d2aaa",
+  "actually_measured_original_photo_attempts": 295017,
+  "actual_four_hue_photo_ROIs": 142538,
+  "date_and_four_hue_source_photos": 140247,
+  "eligibility": "same 0.25/0.5/1/2 degree original source cell x meteorological season-year; at least 5 distinct original observation IDs and 2 named photographed taxa in summer AND winter, different taxa are allowed",
+  "source_results": [
+    {
+      "cell_degrees": 0.25,
+      "hemisphere": "north",
+      "source_cell_season_years": 20,
+      "distinct_cells": 19,
+      "classifiable_source_photos": 286,
+      "mean_summer_minus_winter_white_pp": 1.188896,
+      "geocell_bootstrap999_percentile95_pp": [
+        -10.523286,
+        12.816282
+      ]
+    },
+    {
+      "cell_degrees": 0.25,
+      "hemisphere": "south",
+      "source_cell_season_years": 24,
+      "distinct_cells": 22,
+      "classifiable_source_photos": 477,
+      "mean_summer_minus_winter_white_pp": 0.579354,
+      "geocell_bootstrap999_percentile95_pp": [
+        -10.95279,
+        10.998
+      ]
+    },
+    {
+      "cell_degrees": 0.5,
+      "hemisphere": "north",
+      "source_cell_season_years": 62,
+      "distinct_cells": 34,
+      "classifiable_source_photos": 1358,
+      "mean_summer_minus_winter_white_pp": 4.002203,
+      "geocell_bootstrap999_percentile95_pp": [
+        -2.539069,
+        10.329917
+      ]
+    },
+    {
+      "cell_degrees": 0.5,
+      "hemisphere": "south",
+      "source_cell_season_years": 60,
+      "distinct_cells": 40,
+      "classifiable_source_photos": 1252,
+      "mean_summer_minus_winter_white_pp": 1.580202,
+      "geocell_bootstrap999_percentile95_pp": [
+        -5.480696,
+        8.57161
+      ]
+    },
+    {
+      "cell_degrees": 1,
+      "hemisphere": "north",
+      "source_cell_season_years": 115,
+      "distinct_cells": 49,
+      "classifiable_source_photos": 3302,
+      "mean_summer_minus_winter_white_pp": 4.914159,
+      "geocell_bootstrap999_percentile95_pp": [
+        0.470744,
+        9.372631
+      ]
+    },
+    {
+      "cell_degrees": 1,
+      "hemisphere": "south",
+      "source_cell_season_years": 106,
+      "distinct_cells": 49,
+      "classifiable_source_photos": 2618,
+      "mean_summer_minus_winter_white_pp": 5.742241,
+      "geocell_bootstrap999_percentile95_pp": [
+        0.885515,
+        10.23294
+      ]
+    },
+    {
+      "cell_degrees": 2,
+      "hemisphere": "north",
+      "source_cell_season_years": 155,
+      "distinct_cells": 57,
+      "classifiable_source_photos": 5653,
+      "mean_summer_minus_winter_white_pp": 3.720402,
+      "geocell_bootstrap999_percentile95_pp": [
+        0.153935,
+        7.049231
+      ]
+    },
+    {
+      "cell_degrees": 2,
+      "hemisphere": "south",
+      "source_cell_season_years": 129,
+      "distinct_cells": 45,
+      "classifiable_source_photos": 4600,
+      "mean_summer_minus_winter_white_pp": 7.317367,
+      "geocell_bootstrap999_percentile95_pp": [
+        2.244252,
+        11.438462
+      ]
+    }
+  ],
+  "inference": "The finest available same-cell/year photographic community summer white contrasts have uncertain signs despite large globally aggregated summertime white enrichment; apparent positive intervals on 1-2° cells are exploratory, selected after seeing changing geographic support, and combine ecologically distinct localities.",
+  "original_photo_hue_label_not_botanical_anthesis_qualification": true,
+  "source_geo_cell_not_field_level_population": true,
+  "cluster_bootstrap999_no_familywise_maxT": true,
+  "source_community_not_within_species_pigment_response": true,
+  "independent_photographer_effort_unverified": true,
+  "current_year_month_weather_solar_water_not_measured": true
+}
