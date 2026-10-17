@@ -1,0 +1,95 @@
+{
+  "schema": "mois_expanded248312_four_hue_global_abiotic_exploratory_decision_v1",
+  "date_jst": "2026-10-17",
+  "source_run": "https://github.com/zuizui0223/mois/actions/runs/38992961375",
+  "source_artifact_id": 12086155833,
+  "source_join_sha256": "43dcd2608f5a25e0a5d45d35810604a62ab659fb2cb9fb1a4e4257ef756d56c3",
+  "source_outputs_sha256": {
+    "effects": "0942368e6c13f40767c77f85c0bead0848aa4d1111ba2a3091bf859a5b41957d",
+    "matched_models": "0c612f52632626c87481e1aa3230897c54a9508a739571e41a69cd59cfba8d2d",
+    "monthly_descriptive": "634e5ddab626f611756236c53793683fdeedc6de425f8797ac48a2d475e45721"
+  },
+  "original_photo_ids": 248312,
+  "original_four_hue_classified": 120807,
+  "scientific_scope": "MOIS global between-named-species photographed hue environmental associations; not FCP within-species D/W/50km polymorphism",
+  "analysis_kind": "exploratory clustered nominal genus-comparison linear photographed-hue proportions; source stratification, whole-genus holdout, BH family; NOT independent-source or simultaneous maxT confirmation",
+  "models": {
+    "climate_all_hue_photos": {
+      "eligible_classified_photo_rows": 120381,
+      "n_species": 22705,
+      "n_genera": 2858,
+      "white_bio12_pp_per_species_sd": 2.1381118,
+      "white_bio12_nominal_cluster_95CI_pp": [
+        0.7497042,
+        3.5265195
+      ],
+      "white_bio12_nominal_p": 0.0025420234100406,
+      "white_bio12_BH_q_within_20_hue_climate_tests": 0.0508404682008128,
+      "geography_white_R2": 0.003111,
+      "geography_plus_climate_white_R2": 0.004498,
+      "delta_in_sample_white_R2": 0.0013870366406792,
+      "heldout_genera_geo_white_R2": 0.0018438963256722,
+      "heldout_genera_geo_climate_white_R2": 0.0013788233367492
+    },
+    "terrain_photo_matched": {
+      "classified_photo_rows": 104809,
+      "n_species": 20639,
+      "n_genera": 2691,
+      "white_terrain_addition_delta_in_sample_R2": 0.0003211716888725,
+      "white_terrain_addition_delta_genus_holdout_R2": -0.0003020730669461,
+      "white_slope_pp_per_species_sd": 1.4871076,
+      "white_slope_cluster_95CI_pp": [
+        -0.3543448,
+        3.3285601
+      ],
+      "white_slope_BH_q": 0.3971232355649044,
+      "white_TRI_pp_per_species_sd": -1.4051378,
+      "white_TRI_95CI_pp": [
+        -3.5810273,
+        0.7707518
+      ],
+      "white_TRI_BH_q": 0.62091394612958
+    },
+    "soil_photo_matched": {
+      "classified_photo_rows": 31943,
+      "n_species": 18411,
+      "n_genera": 2464,
+      "white_soil_addition_delta_in_sample_R2": 0.0014514045181659,
+      "white_soil_addition_delta_genus_holdout_R2": 0.0004901953631168,
+      "white_available_water_proxy_pp_per_species_sd": 1.8010908,
+      "white_AWC_nominal_cluster_CI_pp": [
+        0.5550284,
+        3.0471532
+      ],
+      "white_AWC_nominal_p": 0.0046115884077605,
+      "white_AWC_BH_q": 0.1844635363104209
+    },
+    "classifiable_photos_at_least_two_per_taxon": {
+      "n_species": 7604,
+      "n_genera": 1333,
+      "white_bio12_pp_per_species_sd": 2.8589252,
+      "white_bio12_cluster_95CI_pp": [
+        0.8328621,
+        4.8849884
+      ],
+      "white_bio12_BH_q": 0.0568086926829255
+    },
+    "historic_MOIS_source_only": {
+      "n_species": 22480,
+      "n_genera": 2834,
+      "white_bio12_pp_per_species_sd": 2.0833297,
+      "white_bio12_cluster_95CI_pp": [
+        0.6833062,
+        3.4833532
+      ],
+      "white_bio12_BH_q": 0.0707831596490946
+    }
+  },
+  "family_level_BH_fdr_q_under_0_05_any_hue_covariate": false,
+  "novel_evidence_status": "Directionally consistent rainfall-white association, but practically weak environmental predictive strength and no predeclared exploratory 4hue-family FDR discoveries in expanded dataset",
+  "no_field_level_terrain_resolution_claim": true,
+  "actual_observed_year_month_weather_not_modelled": true,
+  "timestamp_daypart_not_available": true,
+  "genetic_polymorphism_or_pigment_fitness_not_claimed": true,
+  "original_frozen_MOIS_100543_global_moisture_results_unchanged": true
+}
