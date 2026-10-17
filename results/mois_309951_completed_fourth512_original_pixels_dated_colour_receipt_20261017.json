@@ -1,0 +1,49 @@
+{
+  "schema": "mois_authentic_photo_RGBA_original_fourth4096_first512_completed_shards_v1",
+  "independent_live_RGB_roi_run": "https://github.com/zuizui0223/mois/actions/runs/39032258023",
+  "signed_existing_309439_photo_source_artifact": 12099212766,
+  "signed_fourth4096_original_photo_ID_selection_artifact": 12101310058,
+  "original_prior309439_photo_source_sha256": "546266e2bbaa340a2523864c28c5a877842eb4b0904a7e0dff90870c6519a47e",
+  "original_fourth4096_pre_image_source_sha256": "65fc139909f94448e042b6539c6749e70d1ab21bb8b13f50383bb7417180337a",
+  "source_prior_measured_photo_id_count": 309439,
+  "source_prior_classified_four_hue_ROIs": 149662,
+  "source_prior_observed_date_and_four_hue_ROIs": 149653,
+  "genuinely_completed_real_RGB_shards": [
+    {
+      "shard": 0,
+      "real_RGB_photo_attempts": 256,
+      "automatic_four_hues": 108,
+      "automatic_unclassified": 148,
+      "sha256": "9d467c3f136e5bbd16b78e956cb61915ee4386e57c2537fb7d874621faa90406"
+    },
+    {
+      "shard": 1,
+      "real_RGB_photo_attempts": 256,
+      "automatic_four_hues": 95,
+      "automatic_unclassified": 161,
+      "sha256": "f541837e0ce670f3c0835a00dc6a99de912871b24364c3e3696ac13f48095101"
+    }
+  ],
+  "new_original_pixel_processed_photo_IDs": 512,
+  "new_independent_source_four_hue_labels": 203,
+  "new_dated_and_four_hue_ROIs": 203,
+  "new_technical_hue_unknown_pixels": 309,
+  "checkpoint_unique_measured_original_photo_IDs": 309951,
+  "checkpoint_original_four_hue_classified_ROIs": 149865,
+  "checkpoint_date_and_four_hue_original_ROIs": 149856,
+  "reserved_other_original_photo_IDs_unmeasured": 3584,
+  "source_photo_ID_overlap_with_original309439": 0,
+  "original_photo_taxon_and_observation_ID_disagreement": 0,
+  "original_model_method_frozen": {
+    "source_commit": "9fae6ccdf684a46026f72ba12e98de2c5c54bf2a",
+    "detector_sha256": "f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5",
+    "efficient_sam_encoder_sha256": "84ed466ffcc5c1f8d08409bc34a23bb364ab2c15e402cb12d4335a42be0e0951",
+    "efficient_sam_decoder_sha256": "a62f8fa5ea080447c0689418d69e58f1e83e0b7adf9c142e2bd9bcc8045c0b11"
+  },
+  "actual_source_terminal_identity_verified": true,
+  "prior_photo_ROI_original_hues_and_dates_unchanged": true,
+  "no_photo_specific_open_flower_petal_botanical_QC": true,
+  "partial_worker_completion_source_is_not_photo_sampling_representative": true,
+  "NOT_independent_source_replication_and_DO_NOT_sum_with_final_fourth4096": true,
+  "no_full_309951_genus_moisture_bootstrap_model_fitted": true
+}
