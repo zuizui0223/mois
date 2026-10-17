@@ -1,0 +1,58 @@
+{
+  "schema": "mois_400_original_photo_phenology_current_API_source_observation_quality_summary_v1",
+  "status": "VERIFIED_400_CURRENT_OBSERVATION_ANNOTATION_AVAILABILITY_NOT_FLOWER_PHOTO_STAGE",
+  "recorded_at_utc": "2026-10-17T01:05:48.113760+00:00",
+  "original_source_snapshot_date": "2026-09-27",
+  "verified_github_run": "https://github.com/zuizui0223/mois/actions/runs/38989216871",
+  "original_photo_manifest_sha256": "b961b50ee6efe9ec08a5575a8eb1e34b1edf7b7fcb426226fb11ee901cfd3329",
+  "original_selection_receipt_sha256": "eb8a6f1aa627010fa37bf615d2684303d3904a20793a3096ca413aebe9d3cc95",
+  "live_source_original_full_receipt_sha256": "a30a1fda85be9adebbdaa1c5224f80ae9c94bdb540bd673727911dbcbed35d87",
+  "group_csv_sha256": "34f6997b85d7d98c355991ea79e9d7efe7194322da53857062ed30e7fe3f52d0",
+  "full_400_live_annotation_data_sha256": "d9fa383e488dc7dab94f39ef6d4283b31ae634f7280ef1fbc7c5cd41beb29a2f",
+  "n_photo_opportunities": 400,
+  "n_observation_UUIDs_and_photo_ids_current_API_exact_match": 400,
+  "n_distinct_original_observers": 400,
+  "n_species": 5,
+  "n_taxon_siteyear_season_groups": 10,
+  "n_source_observations_with_any_current_plant_phenology_annotation": 120,
+  "n_source_observations_without_interpretable_plant_phenology_annotation": 280,
+  "n_current_single_annotation_flowering_observation_NOT_photo": 32,
+  "n_current_single_annotation_fruiting_observation_NOT_photo": 54,
+  "n_current_single_annotation_flower_budding_observation_NOT_photo": 6,
+  "n_current_single_annotation_no_evidence_of_flowering_observation_NOT_photo": 2,
+  "n_current_multiple_potentially_coexisting_phenology_values_NOT_photo": 26,
+  "n_botanically_reviewed_open_photo_petals": 0,
+  "current_annotation_coverage_by_species": [
+    {
+      "species": "Achillea millefolium",
+      "annotated": 1,
+      "source_photos": 80
+    },
+    {
+      "species": "Aralia californica",
+      "annotated": 26,
+      "source_photos": 80
+    },
+    {
+      "species": "Asclepias syriaca",
+      "annotated": 6,
+      "source_photos": 80
+    },
+    {
+      "species": "Datura discolor",
+      "annotated": 78,
+      "source_photos": 80
+    },
+    {
+      "species": "Linaria vulgaris",
+      "annotated": 9,
+      "source_photos": 80
+    }
+  ],
+  "original_source_photo_candidates_are_not_known_flowering_photos": true,
+  "public_current_observation_annotations_are_not_frozen_20260927": true,
+  "annotation_absence_does_not_imply_nonflowering": true,
+  "several_phenology_values_on_one_observation_do_not_establish_photo_stage": true,
+  "no_original_photo_colour_ROI_opened_from_new_400": true,
+  "no_global_or_within_taxon_white_flowers_or_monthly_weather_effect_estimated": true
+}
