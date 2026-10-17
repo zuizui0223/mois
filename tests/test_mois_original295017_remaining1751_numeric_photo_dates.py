@@ -64,7 +64,7 @@ def test_source_photo_identity_change_must_fail(monkeypatch):
 def test_existing_public_day_never_overwritten(monkeypatch):
     a,s,found=fake_frames(monkeypatch)
     s=s.copy()
-    s.loc[1,"photo_id"]="103"
+    s.loc[1,["photo_id","observation_id","inat_taxon_id"]]=["103","1103","45"]
     found=found.copy()
     found.loc[1,"original_photo_id"]="103"
     found.loc[1,"original_observation_id"]="1103"
