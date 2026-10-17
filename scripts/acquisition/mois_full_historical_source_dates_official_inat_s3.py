@@ -32,6 +32,7 @@ from scripts.analysis.mois_seasonal_267k_climate_normals import (
 from scripts.analysis.mois_seasonal_spatial_identifiability_20261017 import eligible_site_photo_support
 
 HISTORIC=100543
+ORIGINAL_DATED_HUES=81867
 ORIGINAL_SHA="fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9"
 PROBE="mois_official_inaturalist_monthly_open_s3_metadata_source_probe.json"
 OLD_CSV="mois_historical_original_photo_observation_date_blind200_current_iNat.csv"
@@ -249,7 +250,7 @@ def assemble(historical:pd.DataFrame,all_photos:pd.DataFrame,
     new_hue_count=int(enriched.loc[
         enriched.snapshot_observed_on.notna(),"original_frozen_ROI_morph"].isin(HUES).sum())
     after=int((dated.date.notna() & dated.classified).sum())
-    require(before==81867 and after==before+new_hue_count,
+    require(before==ORIGINAL_DATED_HUES and after==before+new_hue_count,
             "Full original source photo dated hue count does not reconcile")
     group=[]
     a=photo_season_table(dated)
