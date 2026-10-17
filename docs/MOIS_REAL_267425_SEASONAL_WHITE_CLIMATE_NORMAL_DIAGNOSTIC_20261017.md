@@ -27,6 +27,23 @@ Photographic **summer** white proportions are high in both extra-tropical hemisp
 
 [Complete source-photo attempt, classified, taxon counts and white numerators](../results/mois_real_267425_dated_photo_season_white_rates_20261017.csv).
 
+## New nontrivial result: photographed taxon composition explains much of the Southern summer peak
+
+The full dated/classifiable Southern extra-tropical photo dataset shows **+17.23 percentage points** summer minus winter, but many taxa were photographed in only one season. To distinguish a *change in which taxa get photographed/how many times* from a *within-named-taxon change in its labelled white fraction*, use only exact common original taxon IDs photographed in **both** summer and winter and decompose the pooled photographic contrast by the **symmetric Kitagawa identity**. A whole-taxon nonparametric 999-bootstrap provides *exploratory* percentile intervals, not familywise uncertainty.
+
+| Among common photographed taxa (≥2 independent observation IDs in each season) | Southern hemisphere, **108 taxa**, 976 summer / 845 winter photos | Northern hemisphere, **238 taxa**, 2,455 summer / 1,318 winter photos |
+|---|---:|---:|
+| Total original-photo weighted white summer−winter difference on identical taxon support | **+14.47 pp** | **+3.69 pp** |
+| **Photographic taxon-frequency mixture component** | **+11.91 pp** (taxon bootstrap 95% **[+0.19,+23.64]**) | +1.34 pp (95% [−6.07,+8.46]) |
+| **Within-taxon labelled-white-rate component** | **+2.56 pp** (95% **[−1.44,+6.92]**) | +2.35 pp (95% [−0.76,+5.77]) |
+| Taxon-equal mean summer−winter white share | +2.80 pp (95% [−2.29,+7.62]) | +3.69 pp (95% [+0.55,+7.12]) |
+
+Thus **about 82% (11.91/14.47) of the Southern photographed white summer−winter difference *within the 108 common taxa*** can be algebraically assigned to changing their *relative photographed frequencies*, not to a changed individual-taxon white-photo rate. This **does not** mean 82% of the whole-atlas original +17.23-point difference has been causally explained: season-exclusive taxa lie outside the common support. With a lower one-observation threshold (212 common Southern taxa), the taxon-frequency composition term remains +11.76 pp [1.83,21.26]; with a more stringent four-observation threshold (49 taxa), its interval includes zero. This threshold sensitivity and unrestricted movement of identical taxa among sites and years forbid a universal/causal inference.
+
+**Ecological reading:** A coarse summer photographed-white peak can be generated largely by seasonal *sampling or community/taxon-frequency composition* even if no individual taxon's flower pigment changes. It is a concrete reason to control taxon and geography before interpreting seasonal sun/water correlations. This is a photograph-sampling decomposition, not the FCP paper's within-species colour polymorphism W/D, reproductive success or proof of a taxon-season biological shift.
+
+[Signed same-original-photo taxon-frequency result](../results/mois_real_267425_summer_winter_taxon_photo_composition_decision_20261017.json); reproducible original-source script `scripts/analysis/mois_taxon_season_composition_decomposition.py`. The CI recreates the full result from the same 267,425-photo run and preserves the complete 999-bootstrap numeric output as a run artifact.
+
 ## Geographic and species controls change the interpretation
 
 For an observational *within-site seasonal* contrast, preserve only photographs from the **same taxon × 0.25° coarse cell × original meteorological season-year**, and require **≥2 independent observation IDs in each of at least two seasons** and all three measured authentic monthly climatology variables. This retains just **61 eligible site/taxon/season-year groups, 47 taxa, 384 actually classified photographs**, including 29 groups with *both* automated white and chromatic hues. Distinct observation IDs do not guarantee distinct observers.
