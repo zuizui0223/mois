@@ -73,7 +73,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m scripts.analysis.mois_refit_original_water_309439_actual_3wave_FCP256 \
+          python -m scripts.analysis.mois_refit_original_water_309439_full_FCP256 \
             --real-309439-original-photo original_real309439/mois_original309439_fullFCP256_actual_photo_hues_and_source_dates.csv.gz \
             --real-309439-photo-receipt original_real309439/mois_FCP_full256_309439_original_pixels_149653_dated_hues_source_receipt.json \
             --original-295017-worldclim original_site295017/original_295017_maxT/mois_real_295017_source_photo_with_six_original_climate_anchors.csv.gz \
@@ -87,7 +87,7 @@ jobs:
           from pathlib import Path
           a=json.loads(Path('real309439_genus_water/mois_309439_actual_original_water_decision.json').read_text())
           assert a['actual_measured_photo_ids']==309439
-          assert a['automatically_assigned_four_hue_ROI_labels']==142538
+          assert a['automatically_assigned_four_hue_ROI_labels']==149662
           assert a['new_actual_original_photo_ids_after_FCP256']==14422
           assert a['new_actual_classifiable_ROIs_after_FCP256']==7124
           assert a['genus_bootstrap_draws']==999
