@@ -1,0 +1,74 @@
+{
+  "schema": "mois_actually_recovered_9600_photo_dates_taxonomic_versus_local_summer_winter_support_20261017_v1",
+  "actual_photo_source_run": "https://github.com/zuizui0223/mois/actions/runs/39002957961",
+  "actual_date_verified_run": "https://github.com/zuizui0223/mois/actions/runs/39008584811",
+  "original_photo_csv_sha256": "fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9",
+  "recovered_date_photo_CSV_sha256": "dac4f2d9776a665c431d8ec251adffcf42e8c118c67626abd24d2e169db0064a",
+  "original_full_photo_attempts": 267425,
+  "original_four_hue_classified": 129795,
+  "existing_dated_classified_hues": 81867,
+  "after_9600_sample_dated_classified_hues": 86172,
+  "added_date_verified_automatic_hues": 4305,
+  "total_original_date_known_photo_attempts_before": 161761,
+  "total_original_date_known_photo_attempts_after": 171358,
+  "original_dated_hue_species_before": 2007,
+  "original_dated_hue_species_after": 5315,
+  "added_distinct_original_source_named_taxa_with_date_and_classified_hue": 3308,
+  "recovered_historical_9600_sample_dated_classified_hue_taxa": 3801,
+  "recovered_historical_sample_taxa_already_present_before": 493,
+  "recovered_historical_sample_single_classified_photo_taxa": 3435,
+  "recovered_historical_sample_taxa_singleton_fraction": 0.90371,
+  "original_summer_winter_matched_0p25_latlon_cell": {
+    "north_extratropical": {
+      "pooled_years_min1": {
+        "before_groups": 131,
+        "after_groups": 133
+      },
+      "pooled_years_min2": {
+        "before_groups": 9,
+        "after_groups": 9
+      },
+      "same_season_year_min1": {
+        "before_groups": 27,
+        "after_groups": 27
+      },
+      "same_season_year_min2": {
+        "before_groups": 1,
+        "after_groups": 1,
+        "after_photos": 4
+      }
+    },
+    "south_extratropical": {
+      "pooled_years_min1": {
+        "before_groups": 70,
+        "after_groups": 70
+      },
+      "pooled_years_min2": {
+        "before_groups": 7,
+        "after_groups": 7
+      },
+      "same_season_year_min1": {
+        "before_groups": 17,
+        "after_groups": 17
+      },
+      "same_season_year_min2": {
+        "before_groups": 0,
+        "after_groups": 0,
+        "after_photos": 0
+      }
+    }
+  },
+  "recovered_historical_sample_alone_summer_winter_matched_same_taxon_0p25_cell": {
+    "north_extratropical": 0,
+    "south_extratropical": 0
+  },
+  "inferential_decision": "Adding 4305 genuinely classified dated original historical photos increases date-resolved taxonomic breadth from 2007 to 5315 named taxa (3308 more), but adds zero independent same taxon/coarse-site/local-season-year summer-winter repeated photo groups under either one or two original observations per season.",
+  "limitations": [
+    "Photo/date and four hue outcome are source records; open flower organs not independently botanically confirmed.",
+    "Substantially greater taxonomic breadth can support global source-composition work but cannot infer local seasonal pigment plasticity from cross-site species turnover.",
+    "A nominal 0.25-degree cell covers tens of kilometres and is not a breeding population; same observation ID vs independent photographer issues remain.",
+    "Provider current observed-on date is editable metadata, not verified EXIF/camera timestamp.",
+    "Full 100543-photo restoration and calendar-year-specific climate conditions are separate not-yet-confirmed analyses.",
+    "FCP within-species W/D local polymorphism and annual genus maxT original moisture effect have not been changed."
+  ]
+}
