@@ -1,0 +1,11 @@
+inat_taxon_id,species,source_site_lat0p25,source_site_lon0p25,original_source_season_year,original_local_season,original_photo_observation_opportunities,current_UUID_resolved,current_photo_and_original_observed_on_both_match,current_observation_flowering_NOT_photo,current_observation_fruiting_NOT_photo,current_observation_flower_budding_NOT_photo,current_observation_no_evidence_of_flowering_NOT_photo,current_observation_phenology_missing_or_unknown,current_observation_other_or_conflicting_annotation,original_picture_OPEN_petal_tepal_independently_reviewed
+47911,Asclepias syriaca,542,425,2025,autumn,40,40,40,0,0,0,0,40,0,0
+47911,Asclepias syriaca,542,425,2025,summer,40,40,40,0,2,2,1,34,1,0
+50790,Linaria vulgaris,529,435,2023,autumn,40,40,40,5,0,0,0,35,0,0
+50790,Linaria vulgaris,529,435,2023,summer,40,40,40,4,0,0,0,36,0,0
+52821,Achillea millefolium,553,226,2023,autumn,40,40,40,0,0,0,1,39,0,0
+52821,Achillea millefolium,553,226,2023,spring,40,40,40,0,0,0,0,40,0,0
+52848,Aralia californica,511,229,2025,autumn,40,40,40,0,5,0,0,35,0,0
+52848,Aralia californica,511,229,2025,summer,40,40,40,5,4,4,0,19,8,0
+76608,Datura discolor,493,254,2023,spring,40,40,40,13,17,0,0,2,8,0
+76608,Datura discolor,493,254,2023,winter,40,40,40,5,26,0,0,0,9,0
