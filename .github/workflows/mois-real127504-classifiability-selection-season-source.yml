@@ -1,0 +1,83 @@
+name: MOIS real 127504 dated hue photos seasonal classifiability sampling bias
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_original_photo_classifiability_season_bias.py"
+      - "tests/test_mois_original_photo_classifiability_season_bias.py"
+      - ".github/workflows/mois-real127504-classifiability-selection-season-source.yml"
+      - "docs/MOIS_REAL127504_PHOTO_WHITE_CLASSIFIABILITY_SEASON_SELECTION_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  actual-original-photo-colour-classifiability-vs-season-bias:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run fake-source tests for conditional white labels, unknown photo hue, geographical source controls
+        run: |
+          python -m pip install -q 'numpy==2.1.3' 'pandas==2.2.3' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_original_photo_classifiability_season_bias.py
+      - name: Reuse two previously SHA-frozen original photo and public date output artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_photo final_date
+          gh run download 39002957961 --repo zuizui0223/mois \
+            --name mois-actually-measured-FCP-wave4-completed-photo-partitions-snapshot --dir original_photo
+          gh run download 39012110980 --repo zuizui0223/mois \
+            --name mois-final-authentic-original127504-dated-hue-photos-fullhistorical-S3-API-source-season --dir final_date
+          test -s original_photo/mois_fcp_wave4_PARTIAL_completed_pixel_original_photo_union.csv.gz
+          test -s final_date/mois_original100543_s3_or_verified_API_dates_photo_source.csv.gz
+          zip -j -q genuine_measured_original_photo.zip original_photo/*
+          zip -j -q genuine_final_observation_dates.zip final_date/*
+      - name: Actual 267425 source photo attempt/127504 dated hue selection decomposition
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_original_photo_classifiability_season_bias \
+            --original-photo-zip genuine_measured_original_photo.zip \
+            --final-historical-date-zip genuine_final_observation_dates.zip \
+            --output actual_photo_selection
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('actual_photo_selection/mois_127504_source_photo_classifiability_season_QC_receipt.json').read_text())
+          assert d['total_actual_original_photo_attempts']==267425
+          assert d['total_actual_original_classifiable_hues']==129795
+          assert d['dated_source_photo_attempts']==261578
+          assert d['dated_and_classifiable_original_photo_ROIs']==127504
+          assert d['source_original_photo_attempts_without_colour_but_with_date']==134074
+          g={r['hemisphere']:r for r in d['global_photo_attempt_selection_identity']}
+          n,s=g['north_extratropical'],g['south_extratropical']
+          assert n['summer_actual_original_photo_attempts']==72857
+          assert n['winter_actual_original_photo_attempts']==8566
+          assert s['summer_actual_original_photo_attempts']==12657
+          assert s['winter_actual_original_photo_attempts']==9421
+          assert abs(n['summer_minus_winter_classifiability_pp']-4.938033)<1e-4
+          assert abs(s['summer_minus_winter_classifiability_pp']-2.709032)<1e-4
+          x={r['hemisphere']:r for r in d['matched_geocell_season_year_source_classifiability']
+             if r['site_width_degrees']==0.25}
+          assert x['north_extratropical']['n_selected_geocell_season_years']==16
+          assert x['south_extratropical']['n_selected_geocell_season_years']==18
+          assert abs(x['north_extratropical']['classifiability_season_source_diagnostic']['estimate_pp']+10.778843)<0.0001
+          assert abs(x['south_extratropical']['classifiability_season_source_diagnostic']['estimate_pp']+4.049915)<0.0001
+          assert x['north_extratropical']['classifiability_season_source_diagnostic']['cluster_bootstrap95_pp'][1]<0
+          print('MOIS_REAL127504_SEASONAL_CLASSIFIABILITY_SELECTION_AND_LOCALITY_REVERSAL_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-original127504-real-hue-classifiability-season-selection-photo-source-QC
+          path: actual_photo_selection/
+          if-no-files-found: error
+          retention-days: 90
