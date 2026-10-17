@@ -28,6 +28,12 @@ A [new actual signed photo-season and climate-normal analysis](docs/MOIS_REAL_26
 
 **Not established:** photograph-specific independently confirmed open floral organs, observer-disjoint season colour comparisons at global scale, and actual month-of-observation temperature/radiation/moisture effects. The earlier historical interspecific annual water manuscript remains a separate estimand.
 
+### New 267,425-photo source-season ecological identification limit (17 October 2026)
+
+A further [full-source original-photo summer–winter analysis](docs/MOIS_REAL_PHOTOGRAPHIC_SEASON_TAXON_TURNOVER_SPATIAL_IDENTIFIABILITY_20261017.md) reports how the **+17.23 percentage-point** Southern photo-white summer excess is partitioned into photographed-taxon-relative-frequency shifts, within-common-taxon photo-white labels and taxa seen in only one sampled season. For original source photo labels, **only 212 of 543 Southern summer-or-winter taxa occur in both season photo sets**. On exact taxon × **0.25° local grid × same season-year**, merely **17 Southern / 27 Northern source comparisons** have even one independently recorded photo in each summer and winter; requiring **two observation IDs per season leaves 0 Southern and 1 Northern group**. Enlarging grid cells does not create biological within-population repeated sampling. [Frozen counts, model-limit and source-cohort receipt](results/mois_267425_seasonal_taxon_spatial_support_decision_20261017.json).
+
+This establishes a genuinely informative photo-sampling/taxon-turnover pattern **without claiming** that absent photographed taxa do not flower, or that individual plant pigments plastically change with the weather. Original real-year monthly solar, VPD and precipitation effects on independently validated open flowers remain unmeasured.
+
 ### Reproducible seasonal source and botanical quality gates
 
 The original 2026-09-27 calendar metadata are now independently re-analysed in **MOIS**: [real seasonal candidate workflow](https://github.com/zuizui0223/mois/actions/runs/38909941099) confirmed **39 taxa and 268 same-cell/year two-season photographic-opportunity comparisons** under the preregistered in-project 24-observation-per-season cutoff. This is not a floral-colour or genetic polymorphism result. The input is a SHA-verified [FCP source-only artifact](https://github.com/zuizui0223/fcp/actions/runs/38901290387), not an extra copy of millions of photo pixels.
