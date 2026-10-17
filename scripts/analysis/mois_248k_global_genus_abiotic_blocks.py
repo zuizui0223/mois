@@ -254,7 +254,12 @@ def main(source:Path,receipt_path:Path,outdir:Path):
     require(len(raw)==SOURCE_EXPECTED_PHOTOS and raw.photo_id.nunique()==len(raw),
             "Original photo overlap/dedup violated")
     frame=make_photo_features(raw)
-    require(len(frame)==SOURCE_EXPECTED_CLASSIFIED, "No extra unreviewed/unknown photos admitted")
+    original_classified=int(raw.morph.isin(HUES).sum())
+    require(original_classified==SOURCE_EXPECTED_CLASSIFIED,
+            "Original four-state photographed hue source labels changed")
+    require(0<len(frame)<=original_classified and
+            set(frame.morph.unique()).issubset(HUES),
+            "Classifier failures or invalid nominal genus were wrongly admitted")
     tables=[]
     diagnostics=[]
     supports=[]
@@ -286,7 +291,9 @@ def main(source:Path,receipt_path:Path,outdir:Path):
         "schema":"mois_frozen_248312_original_photo_colour_global_species_genus_static_abiotic_blocks_v1",
         "status":"EXECUTED_OBSERVATIONAL_GENUS_EQUAL_ABIOTIC_BLOCKS_NOT_FCP_POLYMORPHISM",
         "original_photo_source_rows":len(raw),
-        "original_photo_source_four_hue_classified":len(frame),
+        "original_photo_source_four_hue_classified":original_classified,
+        "classified_rows_with_valid_nominal_genus_in_models":len(frame),
+        "source_four_hue_classified_excluded_nonstandard_genus":original_classified-len(frame),
         "unique_photo_identifiers_verified":True,
         "source_WorldClim_SHAs_verbatim_from_previous_site_assembly":rec["worldclim_source_zip_sha256"],
         "original_site_bio_colours_from_photo_source_different_from_genetic_morphs":True,
