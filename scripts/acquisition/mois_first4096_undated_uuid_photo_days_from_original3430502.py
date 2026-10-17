@@ -84,15 +84,18 @@ def scan_full_source(source_csv:Path,target:pd.DataFrame):
     shaobj=hashlib.sha256()
     n=0
     with source_csv.open("rb") as raw:
-        class Hashing:
-            def read(self,size=-1):
-                b=raw.read(size)
-                shaobj.update(b)
-                return b
+        class Hashing(io.RawIOBase):
+            # Byte-transparent rolling SHA256 of the ORIGINAL data provider
+            # metadata source; buffered I/O may read ahead, never modify bytes.
             def readable(self):return True
+            def readinto(self, b):
+                n_read=raw.readinto(b)
+                if n_read:
+                    shaobj.update(memoryview(b)[:n_read])
+                return n_read
         # The native FCP exact complete source is an uncompressed CSV, not
         # photographic pixels. Digest the entire original downloaded file.
-        with io.TextIOWrapper(Hashing(),encoding="utf-8",newline="") as stream:
+        with io.TextIOWrapper(io.BufferedReader(Hashing()),encoding="utf-8",newline="") as stream:
             reader=csv.DictReader(stream)
             required={"photo_id","inat_taxon_id","observation_id","observed_on",
                       "source_snapshot_date","latitude","longitude"}
