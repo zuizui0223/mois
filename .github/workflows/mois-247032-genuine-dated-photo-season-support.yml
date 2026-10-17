@@ -1,0 +1,160 @@
+name: MOIS verified real 247032 measured original photo observation-date seasonal support
+
+on:
+  push:
+    branches:
+      - analysis/mois-dated-247k-season-support-20261017
+    paths:
+      - ".github/workflows/mois-247032-genuine-dated-photo-season-support.yml"
+      - "scripts/analysis/mois_audit_original_measured_dated_season_support_20261017.py"
+      - "tests/test_mois_audit_original_measured_dated_season_support_20261017.py"
+  pull_request:
+    paths:
+      - ".github/workflows/mois-247032-genuine-dated-photo-season-support.yml"
+      - "scripts/analysis/mois_audit_original_measured_dated_season_support_20261017.py"
+      - "tests/test_mois_audit_original_measured_dated_season_support_20261017.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-247032-original-measured-hue-date-temporal-siteyear-support-20261017
+  cancel-in-progress: false
+
+jobs:
+  inspect-genuine-original-observed-on-season-coverage-without-imputing-flower-stage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    env:
+      GH_TOKEN: ${{ github.token }}
+      MOIS_UNION_RUN: "38989622443"
+      ORIGINAL_400_RUN: "38929402279"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Synthetic source identity, original date and independent observation seasonal sampling tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q tests/test_mois_audit_original_measured_dated_season_support_20261017.py
+
+      - name: Verify real original measured 247032 union and source only 400 IDs without refitting historical GEB
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p incoming_mois247k incoming_original400
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$MOIS_UNION_RUN" > incoming_mois247k/source_union_run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ORIGINAL_400_RUN" > incoming_original400/source_400_run.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('incoming_mois247k/source_union_run.json').read_text())
+          b=json.loads(Path('incoming_original400/source_400_run.json').read_text())
+          assert (a['id']==38989622443 and a['status']=='completed'
+                  and a['conclusion']=='success' and a['run_attempt']==1
+                  and a['head_sha']=='50c24277f2680e1ac07c7f658a8b83e6d9b56198')
+          assert (b['id']==38929402279 and b['status']=='completed'
+                  and b['conclusion']=='success' and b['run_attempt']==1
+                  and b['head_sha']=='adfd0a6edfc3438080ade2a3d9e76587d7322898')
+          assert a['head_repository']['full_name']==b['head_repository']['full_name']=='zuizui0223/mois'
+          print('MOIS_AUTHENTIC_247K_MEASURED_SOURCE_AND_400_BLIND_SAMPLE_SHAS_VERIFIED')
+          PY
+
+      - name: Download exact archived measured 247032 photo data and 400 pre-colour photo source IDs
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download "$MOIS_UNION_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name mois-original100543-plus-fcp149900-deduped-247032-ACTUAL-colour-photos \
+            --dir incoming_mois247k
+          gh run download "$ORIGINAL_400_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name mois-5taxa-400-original-photo-ID-disjoint-season-wave-UNREVIEWED \
+            --dir incoming_original400
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile,ZIP_DEFLATED
+          src=Path('incoming_mois247k')
+          with ZipFile('original_247032_measured_frozen.zip','w',ZIP_DEFLATED) as z:
+              for p in sorted(src.glob('mois_fcp_*')):
+                  if p.is_file():
+                      z.write(p,p.name)
+          PY
+
+      - name: Scan every original measured photo for genuine observed day and matched season support
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_audit_original_measured_dated_season_support_20261017 \
+            --original-247032-measured-union-archive original_247032_measured_frozen.zip \
+            --original-400-blind-photo-sample incoming_original400/new_mois_photo_wave/first_five_taxa_temporal_colour_blind_original_photo_manifest.csv \
+            --outdir actual_dated_roi_season_support
+
+      - name: Preserve no flowering, observer-disjoint or weather effects without corresponding evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv,json,hashlib
+          from pathlib import Path
+          root=Path('actual_dated_roi_season_support')
+          r=json.loads((root/'mois_measured_original_247k_date_and_season_support_receipt.json').read_text())
+          assert r['status']=='REAL_MEASURED_PHOTO_SEASONAL_SUPPORT_NOT_BOTANICAL_OPEN_FLOWER_SEASONAL_EFFECT'
+          assert r['n_unique_original_photo_ids']==247032
+          assert r['source_photo_and_automatic_colour_funnel']['historical_photos']==100543
+          assert r['source_photo_and_automatic_colour_funnel']['new_fcp_photos']==146489
+          assert r['source_photo_and_automatic_colour_funnel']['historical_fourstate_ROIs']==45953
+          assert r['n_classifiable_original_photos_with_source_observed_on']==74357
+          assert r['source_photo_and_automatic_colour_funnel']['new_fcp_fourstate_ROIs']==74357
+          assert r['n_source_taxa_new_fcp_with_any_original_photo']==1499
+          assert r['source_400_original_photo_ID_intersection']['new_fcp']['photo_ids']==4
+          assert r['source_400_original_photo_ID_intersection']['new_fcp']['fourstate_labels']==0
+          assert r['historical_mois_100543_observed_on_missing_in_frozen_union'] is True
+          assert r['source_photographer_observer_disjointness_not_proven_in_union'] is True
+          assert r['source_photo_position_accuracy_not_provided_in_247k_union'] is True
+          assert r['source_photo_vs_true_flower_organ_anthesis_known'] is False
+          assert r['no_genetic_polymorphism_or_true_blooming_white_flower_rate_estimated'] is True
+          assert r['no_monthly_weather_link_or_causal_eco_effect_performed'] is True
+          for name,key in (
+              ('mois_new_fcp_measured_photo_original_observed_month_ROI_opportunities.csv','dated_photo_month_ROI_opportunity_sha256'),
+              ('mois_measured_source_season_matched_observation_support_by_spatial_resolution.csv','temporal_matching_sample_support_sha256'),
+              ('mois_matched_0p25_original_observation_siteyear_two_season_ROI_support.csv','fine_year_climate_matched_ROI_samples_sha256'),
+          ):
+              assert hashlib.sha256((root/name).read_bytes()).hexdigest()==r[key]
+          with (root/'mois_measured_source_season_matched_observation_support_by_spatial_resolution.csv').open(newline='') as f:
+              vals=list(csv.DictReader(f))
+          assert len(vals)==40
+          print('MOIS_REAL_74357_DATE_KNOWN_TECHNICAL_FOUR_HUE_ROIS_SITE_SEASON_MATCHED_SUPPORT',json.dumps({
+            'within_fine_grid_same_year_min2':r['fine_grid_within_species_siteyear_climate_scope_min2_pair_count'],
+            'climate_year_coverage':r['source_monthly_climate_coverage_by_year'],
+            'source_400_prior_FCP_photo_overlap':r['source_400_original_photo_ID_intersection'],
+          },sort_keys=True))
+          PY
+
+      - name: Archive only genuine current source support CSVs and SHA receipt, not a new weather-effect paper
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-real-247032-measured-photo-dated-ROI-74357-temporal-support-NOT-OPEN-FLOWER
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            actual_dated_roi_season_support/
+            incoming_mois247k/source_union_run.json
+            incoming_original400/source_400_run.json
+
+      - name: Retain source provenance if original measured photo coverage incomplete
+        if: ${{ failure() || cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-original-247k-source-photo-date-temporal-coverage-INCOMPLETE
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            incoming_mois247k/source_union_run.json
+            incoming_original400/source_400_run.json
