@@ -47,7 +47,7 @@ def tiny():
 
 def patch_counts(monkeypatch):
     for key,value in {
-      "HISTORICAL_N":3,"API_N":2,"EXPECTED_S3_DATED":1,
+      "HISTORICAL_N":3,"MOIS_ROWS":5,"MOIS_HUES":4,"API_N":2,"EXPECTED_S3_DATED":1,
       "EXPECTED_API_FALLBACK":1,"EXPECTED_DATE_BOTH":1,
       "EXPECTED_DATE_CONFLICT":1,"EXPECTED_DATED_HUES":4,
       "EXPECTED_DATED_PHOTOS":4}.items():
