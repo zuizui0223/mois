@@ -72,6 +72,7 @@ def test_unexpected_obs_identity_namespace_difference_rejected(monkeypatch):
 
 def test_historical_public_dates_are_sidecar_and_missing_hues_remain_unknown(monkeypatch):
     monkeypatch.setattr(m,"DATE_SOURCE_N",1)
+    monkeypatch.setattr(m,"HISTORICAL_VERIFIED_DATE_N",1)
     monkeypatch.setattr(m,"NEW_DATE_ATTEMPTS",3)
     monkeypatch.setattr(m,"NEW_DATE_HUES",2)
     source=pd.DataFrame([
@@ -96,6 +97,7 @@ def test_historical_public_dates_are_sidecar_and_missing_hues_remain_unknown(mon
 
 def test_historic_source_photo_taxonomy_mismatch_fails(monkeypatch):
     monkeypatch.setattr(m,"DATE_SOURCE_N",1)
+    monkeypatch.setattr(m,"HISTORICAL_VERIFIED_DATE_N",1)
     source=pd.DataFrame([fake_row("1","100","historical",date=None)])[list(m.OUTCOLS)]
     hist=pd.DataFrame({
         "photo_id":["1"],"original_numeric_observation_id":["100"],
