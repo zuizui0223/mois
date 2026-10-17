@@ -2,6 +2,14 @@
 
 **MOIS original photograph source, 17 October 2026.** The independent earlier iNaturalist September 2026 monthly S3 photo→observation-UUID join and exact-photo/numeric-observation public API fallbacks restored the historic dates for 99,817/100,543 original photos. After the 295,017 genuine image-pixel /142,538 automatic-hue combined source was assembled, **289,170** photos had a real observation date and **140,247** had both a date and a four-hue ROI.
 
+## Measured exact public provider date result — completed successfully
+
+The [real GitHub Actions original-source date-recovery run #39019305535](https://github.com/zuizui0223/mois/actions/runs/39019305535) completed all **36** bounded original numerical-observation API requests. It verified the *original literal photo ID in the original observation ID's current photo array*, the current public \u0060observed_on\u0060 day, and the source taxon identity for **1,732 of 1,751** previously undated source photos. Exactly **15** old observations were absent from the current public API and **4** original photos were no longer in their recorded public observations; no dates were imputed for these 19 IDs.
+
+Of the **715** source four-hue-classified but formerly undated numeric-observation-ID photos, **706** acquired genuinely verified public dates. The same original **295,017** photo-pixel/ROI cohort therefore rises from **289,170** to **290,902** date-bearing photos and from **140,247** to **140,953** photo IDs with both an original four-hue label and a verified calendar date. Source photographs themselves and all original 99,817 historical S3/current API date records remain unchanged.
+
+The signed [public result JSON](../results/mois_real295017_remaining1751_numeric_photo_dates_recovered_20261017.json) identifies the artifact ID **12095777799**, its exact old and new GZIP file SHA256 and all request response hashes. The unqueried **4,096** photo rows have UUID-based original observation IDs, not numeric iNaturalist IDs. They are *not* claimed to be date recovered by this numeric API study, despite already possessing **1,576** classifiable measured ROI photo outcomes.
+
 ## Two distinct unresolved-data mechanisms
 
 A direct inspection of the actual SHA-locked source `mois_real295017_original_photo_hues_plus_verified_observed_dates.csv.gz` (byte SHA256 `b797d85464d2e3e39d38326196dd5ab3462d4e8e19b227dc62604b3bdf047a93`, [run #39015660689](https://github.com/zuizui0223/mois/actions/runs/39015660689)) finds **5,847** previously undated photos. The reasons and targetable source denominators differ:
