@@ -348,6 +348,19 @@ def run(source,output):
         "annual_interaction_model":models["all_annual_climate_source"],
         "matched_terrain":models["landscape_terrain"],
         "matched_soil":models["partially_covered_soil"],
+        "annual_climate_and_interaction_effects": [
+            {k:row[k] for k in (
+                "variable",
+                "coefficient_photo_white_pp_per_standardised_environment_unit",
+                "nominal_genus_cluster_95CI_low_pp",
+                "nominal_genus_cluster_95CI_high_pp",
+                "nominal_genus_cluster_p",
+            )}
+            for row in fit.loc[
+                fit.model_block.eq("annual_all_plus_rain_solar_heat") &
+                fit.variable.isin((RAIN, SOLAR, HEAT, "rain_x_solar", "rain_x_heat"))
+            ].to_dict("records")
+        ],
         "twod_rain_solar":composition[composition.conditioning_axis=="solar_band"][
             ["rain_tertile","conditioning_tertile",
              "classified_original_photo_ROIs","photo_white_fraction",
