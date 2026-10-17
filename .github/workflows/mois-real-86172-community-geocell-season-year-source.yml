@@ -1,0 +1,86 @@
+name: MOIS real 86172 photographed-hue community seasonal site-year scale
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_original_photo_community_season_geoscale.py"
+      - "tests/test_mois_original_photo_community_season_geoscale.py"
+      - ".github/workflows/mois-real-86172-community-geocell-season-year-source.yml"
+      - "docs/MOIS_PHOTO_COMMUNITY_SEASON_SCALE_IDENTIFIABILITY_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  signed-photos-local-community-seasons:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test community source photo sampling support and spatial coarsening
+        run: |
+          python -m pip install -q 'numpy==2.1.3' 'pandas==2.2.3' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_original_photo_community_season_geoscale.py
+      - name: Stage already verified original 267425 photo labels and 9597 recovered authentic historical dates
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_photo original_date
+          gh run download 39002957961 --repo zuizui0223/mois \
+            --name mois-actually-measured-FCP-wave4-completed-photo-partitions-snapshot \
+            --dir original_photo
+          gh run download 39008584811 --repo zuizui0223/mois \
+            --name mois-original9600-real-public-iNat-photo-date-recovery-and-season-aggregation \
+            --dir original_date
+          zip -j -q photo_union_source.zip original_photo/*
+          zip -j -q photo_observation_date_verified.zip original_date/*
+      - name: Compute source-photo community photo-white summer winter locality-year support
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_original_photo_community_season_geoscale \
+            --original-photo-zip photo_union_source.zip \
+            --original-date-9600-zip photo_observation_date_verified.zip \
+            --output real_community_season_geo
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('real_community_season_geo/mois_real86172_photo_community_seasonal_geocell_scale_decision.json').read_text())
+          assert r['source_photo_ids']==267425
+          assert r['classified_original_photo_ids']==129795
+          assert r['initial_dated_classified_original_photos']==81867
+          assert r['after_historical_dates_dated_classified_original_photos']==86172
+          n3=r['same_0p25_degree_site_year_min3_observations']
+          n5=r['same_0p25_degree_site_year_min5_observations']
+          assert n3['north_extratropical']['before']['coarse_cell_season_years']==39
+          assert n3['north_extratropical']['after']['coarse_cell_season_years']==42
+          assert n3['south_extratropical']['before']['coarse_cell_season_years']==16
+          assert n3['south_extratropical']['after']['coarse_cell_season_years']==21
+          assert n5['north_extratropical']['before']['coarse_cell_season_years']==2
+          assert n5['north_extratropical']['after']['coarse_cell_season_years']==2
+          assert n5['south_extratropical']['before']['coarse_cell_season_years']==1
+          assert n5['south_extratropical']['after']['coarse_cell_season_years']==1
+          expected={'0.5':(28,12),'1.0':(70,31),'2.0':(108,58),'5.0':(120,74)}
+          for scale,(n,s) in expected.items():
+              record=r['after_min5_multiscale'][scale]
+              assert record['north_extratropical']['coarse_cell_season_years']==n
+              assert record['south_extratropical']['coarse_cell_season_years']==s
+          for zone in ('north_extratropical','south_extratropical'):
+              assert n3[zone]['after']['site_cluster_percentile95_low']<0
+              assert n3[zone]['after']['site_cluster_percentile95_high']>0
+              assert n5[zone]['after']['uncertainty_status']=='INSUFFICIENT_INDEPENDENT_CELLS'
+          print('MOIS_REAL_86172_LOCALITY_YEAR_COMMUNITY_PHOTO_SCALING_AND_NO_STRICT_IDENTIFICATION_CONFIRMED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real86172-authenticated-original-photo-community-local-season-year-geograin
+          path: real_community_season_geo/
+          retention-days: 90
+          if-no-files-found: error
