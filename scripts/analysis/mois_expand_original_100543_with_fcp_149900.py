@@ -29,7 +29,9 @@ MEMBERS=(
 COLORS=("white","yellow_orange","red_pink","blue_purple")
 FIELDS=("photo_id","inat_taxon_id","species","morph","source_original_measured",
         "old_mois_or_new_fcp","measurement_status","latitude","longitude",
-        "photo_license","observation_id")
+        "photo_license","observation_id","observed_on","time_observed_at",
+        "wc_elevation_m","soil_pH","soil_SOC","soil_N","soil_clay",
+        "soil_available_water_proxy","wc_bio1","wc_bio5","wc_bio12","wc_bio15")
 FCP_N={"discovery":50000,"validation":50000,"prospective":49900}
 
 
@@ -235,6 +237,9 @@ def run(photo_zip:Path,fcp_paths:dict[str,Path],outdir:Path)->dict:
         "photo_hue_species_counts_sha256":sha(species_csv),
         "historical_global_genus_moisture_slopes_reestimated":False,
         "new_fcp_photo_site_month_climate_join_complete":False,
+        "environment_metadata_retained_original_only": ["wc_elevation_m","soil_pH","soil_SOC","soil_N","soil_clay","soil_available_water_proxy","wc_bio1","wc_bio5","wc_bio12","wc_bio15"],
+        "calendar_date_source_not_universally_available":True,
+        "original_photo_time_of_day_reliably_resolved":False,
         "cross_source_measurement_independence":False,
         "photo_classifier_algorithm_source":"Identical original ROI-v4 family; 1693 of 1693 double-classifiable overlap photo labels agree",
         "sampling_note":"Original MOIS is broad and shallow, FCP adds high-depth photos in 1499 source-selected taxa. These are NOT 147489 uniformly randomized new taxa. Species/genus weighting and source-stratified inference must accompany new macroclimate fits.",
