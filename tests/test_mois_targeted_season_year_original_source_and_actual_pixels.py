@@ -55,7 +55,7 @@ def test_candidate_priority_preexisting_other_season_with_no_cue_colour(monkeypa
         photo("1002",observer="u2",obs="o2",day="2025-07-12"),
         photo("1003",observer="u3",obs="o3",day="2025-02-12",tax="101"),
         photo("1004",observer="u4",obs="o4",day="2025-01-12",lat=-1),
-        photo("1005",observer="u5",obs="o5",day="2025-08-12")]
+        photo("1005",observer="u5",obs="o5",day="2025-08-12"),
     ]
     src=tmp_path/"test.csv"
     with src.open("w",newline="") as f:
