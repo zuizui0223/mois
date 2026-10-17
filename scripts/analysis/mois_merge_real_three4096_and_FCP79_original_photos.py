@@ -27,6 +27,8 @@ MOIS_THREE_N=260600
 MOIS_THREE_HUES=125517
 MOIS_THREE_NEW_N=8191
 MOIS_THREE_NEW_HUES=3133
+EXPECTED_SHARED=252409
+EXPECTED_ONE_OBSERVATION_NAMESPACE_DIFFERENCE_PHOTO_ID="232092182"
 UNION_N=295017
 UNION_HUES=142538
 DATE_SOURCE_N=100543
@@ -82,7 +84,7 @@ def photo_union(fcp:pd.DataFrame,mois:pd.DataFrame)->tuple[pd.DataFrame,dict]:
             "Signed actual pixels and photograph hue outcomes changed")
     overlap=fcp.merge(mois,on="photo_id",how="inner",suffixes=("_fcp","_mois"),
                       validate="one_to_one")
-    require(len(overlap)==252409,
+    require(len(overlap)==EXPECTED_SHARED,
             "The 252408 core plus one shared real pixel must have identical photo IDs")
     checks={}
     # FCP current original observation_id is numeric iNaturalist, while the
@@ -98,7 +100,7 @@ def photo_union(fcp:pd.DataFrame,mois:pd.DataFrame)->tuple[pd.DataFrame,dict]:
         overlap.observation_id_mois.fillna("").astype(str))
     conflicts=overlap.loc[~obs_match]
     checks["observation_ID_source_namespace_mismatches"]=len(conflicts)
-    require(len(conflicts)==1 and conflicts.photo_id.iloc[0]=="232092182"
+    require(len(conflicts)==1 and conflicts.photo_id.iloc[0]==EXPECTED_ONE_OBSERVATION_NAMESPACE_DIFFERENCE_PHOTO_ID
             and conflicts.observation_id_fcp.iloc[0].isdigit()
             and "-" in conflicts.observation_id_mois.iloc[0],
             "More than one original observation-ID namespace discrepancy")
