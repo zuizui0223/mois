@@ -56,7 +56,7 @@ jobs:
             gh run download 39032258023 --repo zuizui0223/mois \
               --name "mois-fourth4096-real-original-ROI256-shard-$shard" \
               --dir "real_workers/shard_$shard"
-            test -s "real_workers/shard_$shard/mois_original_256_fresh_ROI_shard_$(printf '%02d' "$shard").csv"
+            test "$(find "real_workers/shard_$shard" -type f -name "mois_original_256_fresh_ROI_shard_$(printf '%02d' "$shard").csv" | wc -l)" -eq 1
           done
       - name: Reconcile only actual original RGB pixels, supersede old512 and compute source season-year support
         shell: bash
