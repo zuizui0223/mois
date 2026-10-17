@@ -37,6 +37,7 @@ RESULT_SOURCE="mois_full313535_original_pixel_ROIs_and_observation_dates.csv.gz"
 RESULT_RECEIPT="mois_fourth_4096_actual_original_ROI_pixels_and_source_dates_decision.json"
 RESULT_SEASONS="mois_fourth4096_new_real_photo_pixel_hemisphere_seasons.csv"
 RESULT_COMMUNITY="mois_fourth4096_new_real_photo_pixel_siteyear_community.csv"
+NEW_PIXEL_N=4096
 
 
 def digest(binary:bytes)->str:
@@ -63,8 +64,8 @@ def signed_original(archive:Path):
 def append(old:pd.DataFrame,photos:list[dict]) -> tuple[pd.DataFrame,dict]:
     require(len(old)==MEASURED_N and old.photo_id.is_unique,
             "Previous source photo population changed")
-    require(len(photos)==4096 and
-            len({str(x["photo_id"]) for x in photos})==4096,
+    require(len(photos)==NEW_PIXEL_N and
+            len({str(x["photo_id"]) for x in photos})==NEW_PIXEL_N,
             "Fourth original photo image pixel classifier not fully completed")
     genuine=pd.DataFrame(photos).fillna("").astype(str)
     require(set(BASE_COLS).issubset(genuine.columns) and
@@ -79,7 +80,7 @@ def append(old:pd.DataFrame,photos:list[dict]) -> tuple[pd.DataFrame,dict]:
     to_add["original_source_date_provenance"] = (
         "fcp_full3430502_original_photo_observed_on_with_MOIS_wave4_unchanged_ROI_v4")
     output=pd.concat([old,to_add[list(old.columns)]],ignore_index=True)
-    require(output.photo_id.is_unique and len(output)==MEASURED_N+4096 and
+    require(output.photo_id.is_unique and len(output)==MEASURED_N+NEW_PIXEL_N and
             output.iloc[:len(old)].reset_index(drop=True).equals(old.reset_index(drop=True)),
             "Original 309439 genuinely measured pixels, colour, source date were changed")
     nclass=int(to_add.morph.isin(HUES).sum())
@@ -97,7 +98,7 @@ def append(old:pd.DataFrame,photos:list[dict]) -> tuple[pd.DataFrame,dict]:
        "new_photo_ids_actually_processed":len(to_add),
        "new_photo_four_hue_original_ROI_classified":nclass,
        "new_photo_unknown_pixel_OR_ROI_color":int(len(to_add)-nclass),
-       "new_photo_with_original_source_observed_on":4096,
+       "new_photo_with_original_source_observed_on":NEW_PIXEL_N,
        "new_photo_both_source_observation_day_and_four_hue":ndates,
        "expanded_genuine_original_photo_ids":len(output),
        "expanded_original_four_hue_ROI_photo_ids":int(output.morph.isin(HUES).sum()),
