@@ -72,7 +72,7 @@ def test_refuse_same_photo_different_original_identity(col,replacement):
 def test_provider_date_may_be_missing_in_old_raw_but_must_match_verified_day():
     old,whole=originals()
     old.loc[0,"qualified_date"]="2026-09-01"
-    with pytest.raises(ValueError,match="independently"):
+    with pytest.raises(ValueError,match="earlier verified original photo observation date"):
         append_finished_pixels(old,whole,strict=False)
 
 
