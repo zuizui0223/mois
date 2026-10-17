@@ -1,0 +1,198 @@
+name: MOIS actually measure 256 NEW source pixels targeting same taxon/cell/season-year repetition
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_target_season_cell_original_photo_source_only_20261017.py"
+      - "scripts/analysis/mois_admit_targeted_256_real_pixels_and_siteyear_support_20261017.py"
+      - "tests/test_mois_targeted_season_year_original_source_and_actual_pixels.py"
+      - ".github/workflows/mois-targeted-real256-original-photo-season-replication.yml"
+      - "docs/MOIS_TARGETED_ORIGINAL_PHOTO_SEASON_SITEYEAR_256_MEASUREMENT_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-real256-target-opposite-observed-season-source-original-photo-pixels
+  cancel-in-progress: false
+
+jobs:
+  photo-id-priority-provenance-before-any-pixels:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify frozen photo-source old season, observer and taxon grouping before image downloads
+        run: |
+          python -m pip install -q 'numpy==2.1.3' 'pandas==2.2.3' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_targeted_season_year_original_source_and_actual_pixels.py
+      - name: Recover complete authentic FCP 3.43m original source, 309439 measured photo, 4096 reserved fourth photo IDs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original3430k prior309439 running_fourth_plan
+          gh run download 38884223530 --repo zuizui0223/fcp \
+            --name fcp-rgfca-1000-EXACT-20260927-original-photo-ID-128-worker-source-NO-PIXELS \
+            --dir original3430k
+          gh run download 39028400690 --repo zuizui0223/mois \
+            --name mois-all256-full-FCP-original309439-149653-dated-colour-real-photo-source-and-season \
+            --dir prior309439
+          gh run download 39032258023 --repo zuizui0223/mois \
+            --name mois-fourth4096-frozen-new-unmeasured-photo-ID-source-plan \
+            --dir running_fourth_plan
+          test -s original3430k/rgfca_1000_exact_source_photo_IDs/rgfca_1000_complete_original_source_photo_IDs.csv
+          test -s prior309439/mois_original309439_fullFCP256_actual_photo_hues_and_source_dates.csv.gz
+          test -s running_fourth_plan/mois_first4096_original_source_only_freeze.json
+          zip -j -q existing_fourth4096_photo_ID_reservation.zip running_fourth_plan/*
+      - name: Select 4096 never-measured and never-fourth-reserved source photos with prior local/year taxon season complement
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_target_season_cell_original_photo_source_only_20261017 \
+            --full3430502-source original3430k/rgfca_1000_exact_source_photo_IDs/rgfca_1000_complete_original_source_photo_IDs.csv \
+            --signed309439-original prior309439/mois_original309439_fullFCP256_actual_photo_hues_and_source_dates.csv.gz \
+            --fourth4096-reserved-source-zip existing_fourth4096_photo_ID_reservation.zip \
+            --output targeted_frozen_source
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('targeted_frozen_source/mois_first4096_original_source_only_freeze.json').read_text())
+          assert r['status']=='SOURCE_ONLY_4096_RESERVED_NO_NEW_PIXEL_HUES'
+          assert r['first_wave_original_source_photo_ids']==4096
+          assert r['first_wave_distinct_source_observers']==4096
+          assert r['first_wave_distinct_original_observation_IDs']==4096
+          assert r['source_selection_existing_classifiable_photograph_site_year_support']['source_taxon_cell_season_year_with_at_least_1_photo_both_summer_winter']==74
+          assert r['source_selection_existing_classifiable_photograph_site_year_support']['source_taxon_cell_season_year_with_2_observation_IDs_both_seasons']==2
+          assert r['candidate_site_season_categories'].get('0',0)+r['candidate_site_season_categories'].get('1',0)>0
+          assert not r['new_photo_pixels_actually_measured']
+          print('MOIS_TARGETED_ORIGINAL_PHOTO_SOURCE_ONLY_BLIND_PREPIXEL_SHA_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-targeted4096-photo-ID-original-pixel-source-plan-only
+          path: targeted_frozen_source/
+          retention-days: 90
+          if-no-files-found: error
+
+  actually-download-and-classify-targeted256-original-RGB-photo-pixels:
+    needs: photo-id-priority-provenance-before-any-pixels
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-targeted4096-photo-ID-original-pixel-source-plan-only
+          path: targeted_original_source
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore identical original FCP ROI-v4 YOLO/EfficientSAM detector/palette and model SHA, not prior results
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp_source"
+          git -C "$RUNNER_TEMP/fcp_source" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp_source" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp_source" checkout -q --detach FETCH_HEAD
+          python -m pip install -q 'numpy<3' 'pandas<3' scipy Pillow ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp_source"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/mois_original_sam"
+      - name: Actually download and classify 256 original photographic RGB pixels with four unchanged 64-photo terminals
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp_source"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-targeted-season-real256-source-rate"
+          python -m scripts.analysis.mois_measure_original_new_photos_roi_v4 \
+            --photo-shard targeted_original_source/mois_source_only_shard_00_256.csv \
+            --precolour-receipt targeted_original_source/mois_first4096_original_source_only_freeze.json \
+            --shard-id 0 \
+            --fcp-runtime-root "$RUNNER_TEMP/fcp_source" \
+            --original-sam "$RUNNER_TEMP/mois_original_sam" \
+            --outdir new_actual_targeted256_photo_ROI
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-targeted256-actual-original-RGB-ROI-four-terminal-photo-results
+          path: new_actual_targeted256_photo_ROI/
+          retention-days: 90
+          if-no-files-found: warn
+
+  exact-source-pixel-verified-new256-photo-replay:
+    needs: [photo-id-priority-provenance-before-any-pixels, actually-download-and-classify-targeted256-original-RGB-photo-pixels]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify real original photo/data/model source parser and botanical stage interpretation
+        run: |
+          python -m pip install -q 'numpy==2.1.3' 'pandas==2.2.3' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_targeted_season_year_original_source_and_actual_pixels.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-targeted4096-photo-ID-original-pixel-source-plan-only
+          path: targeted_plan
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-targeted256-actual-original-RGB-ROI-four-terminal-photo-results
+          path: targeted_pixels
+      - name: Verify the original signed 309439/source-compatible photograph metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p signed_prior309439
+          gh run download 39028400690 --repo zuizui0223/mois \
+            --name mois-all256-full-FCP-original309439-149653-dated-colour-real-photo-source-and-season \
+            --dir signed_prior309439
+          zip -j -q source_309439_original_photo.zip signed_prior309439/*
+          zip -j -q source_targeted4096_plan.zip targeted_plan/*
+      - name: Admit only 256 real original photo ROIs and compare summer/winter same-taxon site-year observation support
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_admit_targeted_256_real_pixels_and_siteyear_support_20261017 \
+            --prior309439-original-source source_309439_original_photo.zip \
+            --targeted4096-source-frozen-zip source_targeted4096_plan.zip \
+            --targeted256-real-pixel-workers targeted_pixels \
+            --output measured_targeted256_original_photo_source
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('measured_targeted256_original_photo_source/mois_targeted256_original_photo_repeated_season_siteyear_QC_receipt.json').read_text())
+          assert r['number_original_targeted_photo_pixels_actually_measured']==256
+          assert r['number_unmeasured_source_only_targeted_photo_IDs']==3840
+          assert 0 < r['additional_four_hue_photo_ROIs'] <=256
+          assert r['expanded_real_original_photo_IDs']==309695
+          assert r['expanded_original_date_and_classified_four_hue_photo_ROIs']==149653+r['additional_four_hue_photo_ROIs']
+          for hemi in ('north_extratropical','south_extratropical'):
+              before=r['before_named_taxon_cell_seasonyear_support'][hemi]
+              after=r['after_named_taxon_cell_seasonyear_support'][hemi]
+              for key in before:
+                  assert after[key]>=before[key]
+          assert r['NO_original_global_moisture_genus_water_maxT_refit_or_causal_claim']
+          assert r['strict_targeted_sampling_not_a_globally_representative_colour_census']
+          print('MOIS_TARGETED_REAL_256_PIXEL_SOURCE_SEASON_REPLICATION_VALID')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-targeted256-original-real-photo-pixels-season-siteyear-and-day-source
+          path: measured_targeted256_original_photo_source/
+          retention-days: 90
+          if-no-files-found: error
