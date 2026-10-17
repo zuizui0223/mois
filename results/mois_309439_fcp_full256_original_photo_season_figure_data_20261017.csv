@@ -1,0 +1,9 @@
+source_hemisphere,meteorological_season,original_photo_attempts,classified_original_photo_ROIs,original_white_label_ROIs,white_fraction_among_actual_classifiable_ROIs
+north_extratropical,winter,10365,4779,2214,0.46327684
+north_extratropical,spring,79731,40829,19400,0.47515247
+north_extratropical,summer,86447,44979,22116,0.49169612
+north_extratropical,autumn,20647,10456,4952,0.47360367
+south_extratropical,winter,11130,4760,1880,0.39495798
+south_extratropical,spring,24473,11397,5034,0.44169518
+south_extratropical,summer,14963,6832,3461,0.50658665
+south_extratropical,autumn,9314,4026,1903,0.4726776
