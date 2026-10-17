@@ -1,0 +1,78 @@
+{
+  "schema": "mois_real_original_roi_267425_photo_macro_water_20261017_v1",
+  "data": "genuinely measured original image ROI-v4 hue outcomes and previously frozen MOIS source",
+  "source_run": "https://github.com/zuizui0223/mois/actions/runs/39002957961",
+  "fcp_original_photo_run": "https://github.com/zuizui0223/fcp/actions/runs/38992543115",
+  "historical_mois_n_unique_photo_ids": 100543,
+  "prior_completed_mois_n_unique_photo_ids": 252408,
+  "prior_completed_mois_n_classified_four_hue_ids": 122383,
+  "FCP_wave4_planned_photo_ids": 49800,
+  "FCP_wave4_planned_original_terminal_partitions": 256,
+  "FCP_wave4_completed_original_ROI_partitions_in_snapshot": 79,
+  "FCP_wave4_actual_original_photo_pixels_attempted": 15310,
+  "FCP_wave4_actual_photo_four_hues_classified": 7538,
+  "FCP_photo_IDs_overlapping_prior_MOIS": 293,
+  "FCP_new_distinct_photo_IDs_admitted": 15017,
+  "FCP_new_classified_four_hues_admitted": 7412,
+  "FCP_original_taxon_ID_overlap_disagreements": 0,
+  "FCP_original_double_classified_four_hue_disagreements": 0,
+  "combined_distinct_original_photo_ids": 267425,
+  "combined_original_four_hue_classified_photo_ids": 129795,
+  "total_remaining_missing_hue_photo_ids": 137630,
+  "source_photo_union_SHA256": "fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9",
+  "FCP_partial_ROI_receipt_SHA256": "1d3c5a384b41a4b2a53616fe1381a62e49240089ac03443298e5b541d2aa6763",
+  "original_water_receipt_SHA256": "81dcd7a2f40155b33f513e3018948d6b090b20766e9da95ccd7f3199b942d5c1",
+  "original_water_model": {
+    "anchor_set": [
+      "wc_bio5",
+      "wc_bio12",
+      "wc_bio14",
+      "wc_bio15",
+      "wc_srad_annual_mean",
+      "wc_vapr_annual_mean"
+    ],
+    "photographs_four_hues": [
+      "white",
+      "yellow_orange",
+      "red_pink",
+      "blue_purple"
+    ],
+    "genus_bootstrap_draws": 999,
+    "source_hue_anchor_maxT_family": 24,
+    "equal_genus_geo_global_white_annual_precipitation_pp_per_SD": 1.9322149570175042,
+    "equal_genus_geo_global_white_annual_precipitation_simultaneous_95CI_pp": [
+      0.46531273100318127,
+      3.3991171830318274
+    ],
+    "equal_genus_geo_global_white_vapour_pp_per_SD": 3.030761780988282,
+    "equal_genus_geo_global_white_vapour_simultaneous_95CI_pp": [
+      0.8323481438608498,
+      5.229175418115714
+    ],
+    "genus_and_coarse_geocell_white_annual_precipitation_pp_per_SD": 1.1897885591806614,
+    "genus_and_coarse_geocell_white_precipitation_maxT95_pp": [
+      -2.402419129732816,
+      4.781996248094139
+    ],
+    "genus_and_coarse_geocell_white_vapour_pp_per_SD": 2.5612652557255235,
+    "genus_and_coarse_geocell_white_vapour_maxT95_pp": [
+      -2.2683998464634163,
+      7.390930357914463
+    ],
+    "same_original_100543_photo_analysis_code_reused": true,
+    "moisture_source": "WorldClim v2.1 1970–2000 climate normals, not observed-year weather"
+  },
+  "scientific_caveats": [
+    "FCP wave4 only 79 of 256 predetermined image ROI partitions have completed. Execution-order partial cohort may introduce source geography/taxon sampling bias.",
+    "Source photos may overlap between MOIS and FCP; this is not independent ecological replication.",
+    "Photographic hue ROI states are not all botanically confirmed open flower petals or genotypes.",
+    "Global white–water positive association does not pass the same-congeneric-coarse-cell familywise test.",
+    "FCP within-species polymorphism/spatial W/D/50km estimands are not imported."
+  ],
+  "upstream_followups": {
+    "second_real_MOIS_4096_photo_pixel_workflow": "https://github.com/zuizui0223/mois/actions/runs/38995240689",
+    "third_real_MOIS_4096_photo_pixel_workflow": "https://github.com/zuizui0223/mois/actions/runs/39002092027",
+    "FCP_remaining_49800_original_photo_ROI_workflow": "https://github.com/zuizui0223/fcp/actions/runs/38992543115",
+    "completed_real_FCP_49800_photo_import_only_when_all_signed": "https://github.com/zuizui0223/mois/pull/29"
+  }
+}
