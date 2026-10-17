@@ -1,0 +1,136 @@
+name: MOIS 400 real original photos - independent botanical review reconciliation
+
+on:
+  push:
+    branches:
+      - analysis/mois-independent-400-botanical-consensus-20261017
+    paths:
+      - ".github/workflows/mois-400-independent-botanical-review-consensus.yml"
+      - "scripts/analysis/mois_reconcile_400_independent_botanical_reviews.py"
+      - "tests/test_mois_reconcile_400_independent_botanical_reviews.py"
+  pull_request:
+    paths:
+      - ".github/workflows/mois-400-independent-botanical-review-consensus.yml"
+      - "scripts/analysis/mois_reconcile_400_independent_botanical_reviews.py"
+      - "tests/test_mois_reconcile_400_independent_botanical_reviews.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-real-400-unchanged-source-two-botanical-review-form-consensus
+  cancel-in-progress: false
+
+jobs:
+  verify-source-frozen-400-human-review-gate-not-flower-hues:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: "38929402279"
+      REVIEW_RUN: "38930414968"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test botanical response and independent reviewer identity before real artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q \
+            tests/test_mois_prepare_400_botanical_review_handoff.py \
+            tests/test_mois_reconcile_400_independent_botanical_reviews.py
+
+      - name: Verify exact source original IDs and previously locked separate botanical handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p inputs/photo_source inputs/review_A inputs/review_B inputs/receipt
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" > inputs/original_400_wave_run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$REVIEW_RUN" > inputs/original_400_reviewer_handoff_run.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('inputs/original_400_wave_run.json').read_text())
+          b=json.loads(Path('inputs/original_400_reviewer_handoff_run.json').read_text())
+          assert a['id']==38929402279 and a['status']=='completed' and a['conclusion']=='success'
+          assert a['head_sha']=='adfd0a6edfc3438080ade2a3d9e76587d7322898'
+          assert b['id']==38930414968 and b['status']=='completed' and b['conclusion']=='success'
+          assert b['head_sha']=='738c49f6532214dea64b7e811bf9d736db9708fd'
+          assert a['head_repository']['full_name']==b['head_repository']['full_name']=='zuizui0223/mois'
+          assert a['run_attempt']==b['run_attempt']==1
+          print('MOIS_ORIGINAL_400_SOURCE_BEFORE_BOTANICAL_REVIEW_SHA_CONFIRMED')
+          PY
+
+      - name: Reuse EXACT 400 source IDs and two original independently shuffled unfilled reviewer forms
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name mois-5taxa-400-original-photo-ID-disjoint-season-wave-UNREVIEWED \
+            --dir inputs/photo_source
+          gh run download "$REVIEW_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name mois-400-original-photos-INDEPENDENT-botanist-reviewer-A-unfilled \
+            --dir inputs/review_A
+          gh run download "$REVIEW_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name mois-400-original-photos-INDEPENDENT-botanist-reviewer-B-unfilled \
+            --dir inputs/review_B
+          gh run download "$REVIEW_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name mois-400-photo-botanical-review-UNREVIEWED-provenance-only \
+            --dir inputs/receipt
+
+      - name: Audit all 400 original photos: 0 reviewed remains pending, NEVER zero blooming
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_reconcile_400_independent_botanical_reviews \
+            --source400 inputs/photo_source/new_mois_photo_wave/first_five_taxa_temporal_colour_blind_original_photo_manifest.csv \
+            --source400-receipt inputs/photo_source/new_mois_photo_wave/mois_observer_disjoint_source_photo_selection_receipt.json \
+            --reviewer-A inputs/review_A/mois_400_botanical_open_flower_reviewer_A_UNFILLED.csv \
+            --reviewer-B inputs/review_B/mois_400_botanical_open_flower_reviewer_B_UNFILLED.csv \
+            --review-handoff-receipt inputs/receipt/MOIS_400_INDEPENDENT_REVIEW_HANDoFF_RECEIPT.json \
+            --outdir audit_results
+          python - <<'PY'
+          import json,csv,hashlib
+          from pathlib import Path
+          root=Path('audit_results')
+          report=json.loads((root/'mois_400_two_botanist_photo_review_reconciliation_receipt.json').read_text())
+          assert report['status']=='INCOMPLETE_OR_NOT_STARTED_BOTANICAL_REVIEW_NOT_WHITE_RATE'
+          assert report['source_original_photo_manifest_sha256']=='b961b50ee6efe9ec08a5575a8eb1e34b1edf7b7fcb426226fb11ee901cfd3329'
+          assert report['selected_original_photo_opportunities']==400
+          assert report['independent_source_observations']==400
+          assert report['independent_source_photographers']==400
+          assert report['source_siteyear_season_groups']==10
+          assert report['n_botanist_A_reviewed_photos']==0
+          assert report['n_botanist_B_reviewed_photos']==0
+          assert report['n_reviewed_by_both_independently']==0
+          assert report['botanical_dispositions']=={'awaiting_two_independent_reviews':400}
+          assert report['n_confirmed_open_petaloid_photos_FOR_LATER_ROI']==0
+          assert report['new_colour_ROI_measurements_from_these_400']==0
+          assert report['photo_colour_white_frequency_estimated'] is False
+          assert report['climate_seasonal_flower_colour_effect_estimated'] is False
+          with (root/'mois_400_taxon_siteyear_season_reviewer_sample_flow.csv').open(newline='') as f:
+              rows=list(csv.DictReader(f))
+          assert len(rows)==10
+          assert all(int(r['source_original_photo_opportunities'])==40 for r in rows)
+          assert all(int(r['unreviewed_or_one_reviewer_only'])==40 for r in rows)
+          print('MOIS_REAL_ORIGINAL_400_TEN_SOURCE_SEASON_GROUPS_BOTANICAL_DENOMINATOR_UNKNOWN_NOT_ZERO_FLOWERS')
+          PY
+
+      - name: Archive source-identified 400 QC metadata only, separate from blind reviewer inputs
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-400-signed-two-botanist-reviewer-reconciliation-UNREVIEWED-NOT-WHITE
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            audit_results/
+            inputs/original_400_wave_run.json
+            inputs/original_400_reviewer_handoff_run.json
