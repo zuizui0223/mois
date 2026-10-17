@@ -1,0 +1,75 @@
+name: MOIS seal first 4096 REAL ROI photos and append to 248312 source
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_reassemble_original_new4096_measurements.py"
+      - ".github/workflows/mois-original-real4096-reassembly.yml"
+      - "docs/MOIS_FIRST4096_REAL_ORIGINAL_PHOTO_HUES_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build-real-original-hue-union:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve original measured photo-ID union, exact first 4096 source plan and all sixteen completed original ROI-v4 artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p previous first_plan first_real_results
+          gh api repos/zuizui0223/mois/actions/runs/38994341776 > first_original_run.json
+          python - <<'PY'
+          import json
+          p=json.load(open("first_original_run.json"))
+          assert p["conclusion"]=="success" and p["status"]=="completed"
+          assert p["head_sha"]=="8f9ff6a6f74434e08167cf2ad6c4d5d6a6dad597"
+          PY
+          gh run download 38990701473 --repo zuizui0223/mois \
+            --name mois-248312-original-photographs-120807-classified-FCP_ROI_reused \
+            --dir previous
+          gh run download 38994341776 --repo zuizui0223/mois \
+            --name mois-original-1000taxa-104904-pending-FIRST4096-photo-ID-plan \
+            --dir first_plan
+          gh run download 38994341776 --repo zuizui0223/mois \
+            --pattern 'mois-genuine-ROI-v4-original-shard-*' \
+            --dir first_real_results
+      - name: SHA-lock and merge ALL 4096 genuinely photo-pixel-classified originals, preserving old classified 120807
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_reassemble_original_new4096_measurements \
+            --prior-248312 previous/mois_original_photo_hues_248312_after_FCP_ROI_additions.csv.gz \
+            --prior-receipt previous/mois_248312_frozen_measured_photo_addition_receipt.json \
+            --first-plan first_plan \
+            --first-real-results first_real_results \
+            --output newly_measured_mois
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('newly_measured_mois/mois_real_additional_photo_waves_receipt.json').read_text())
+          assert p['new_original_source_photos']==4096
+          assert p['new_four_hue_measured_photo_ids']==1576
+          assert p['all_original_unique_photos']==252408
+          assert p['all_four_hue_classified_photos']==122383
+          assert p['original_model_SHA_verified_for_every_photo'] is True
+          assert p['genetic_polymorphism_spatial_D_W_or_50km_measured'] is False
+          print('MOIS_GENUINE_FIRST_4096_PIXELS_MATERIALIZED_252408_PHOTOS_122383_HUE_LABELS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-252408-original-photos-122383-measured-four-hue-pixels
+          path: newly_measured_mois/
+          if-no-files-found: error
+          retention-days: 90
