@@ -1,0 +1,96 @@
+{
+  "schema": "mois_real309439_original_six_anchor_four_hue_999genus_maxT24_actual_20261017_v1",
+  "actual_real_run": "https://github.com/zuizui0223/mois/actions/runs/39029308911",
+  "source_run_artifact_id": 12099359079,
+  "full_actual_309439_model_decision_JSON_SHA256": "c925fd8d318e21169989f7667e9f87993714adefbabfde293b61c68758555da9",
+  "source_original_309439_measured_photo_hues_GZ_SHA256": "546266e2bbaa340a2523864c28c5a877842eb4b0904a7e0dff90870c6519a47e",
+  "source_old_295017_photo_original_climate_GZ_SHA256": "84c651aeaacf0e317445593c249a85940d230a19ec8b7f7223ec0e46553013f7",
+  "actual_full_original_309439_photo_climate_GZ_SHA256": "e8cf9ab1c935b906731b6c783a45193c9c13cca8cb226fe46c4335d0e1c75cee",
+  "genuinely_measured_original_photo_ids": 309439,
+  "four_hue_original_ROI_photo_outcomes": 149662,
+  "new_real_photo_ids_point_sampled_on_old_295017_worldclim": 14422,
+  "new_classifiable_four_hue_original_photo_ids": 7124,
+  "actual_original_dated_four_hue_photo_id_count": 149653,
+  "prespecified_environment_anchors": [
+    "wc_bio5",
+    "wc_bio12",
+    "wc_bio14",
+    "wc_bio15",
+    "wc_srad_annual_mean",
+    "wc_vapr_annual_mean"
+  ],
+  "photographic_hue_outcomes": [
+    "white",
+    "yellow_orange",
+    "red_pink",
+    "blue_purple"
+  ],
+  "genus_resample_draws": 999,
+  "simultaneous_hue_environment_comparisons": 24,
+  "estimated_quantity": "percentage points of photographed automatic white-hue ROI share per empirical original environmental standard deviation",
+  "white_annual_precipitation_global_genus_equal": {
+    "point_pp_per_original_env_SD": 1.988424448731033,
+    "simultaneous_maxT_95CI_pp": [
+      0.5524542251463824,
+      3.4243946723156835
+    ],
+    "maxT_excludes_zero": true,
+    "nominal_95CI_pp": [
+      1.0434347178429288,
+      2.921976149991173
+    ]
+  },
+  "white_atmospheric_vapour_annual_global_genus_equal": {
+    "point_pp_per_original_env_SD": 3.160569207875591,
+    "simultaneous_maxT_95CI_pp": [
+      1.041961733160571,
+      5.279176682590611
+    ],
+    "maxT_excludes_zero": true,
+    "nominal_95CI_pp": [
+      1.798198069889561,
+      4.601516534763345
+    ]
+  },
+  "white_annual_precipitation_coarse_geography_conditioned": {
+    "point_pp_per_original_env_SD": 0.9033512430257508,
+    "simultaneous_maxT_95CI_pp": [
+      -2.634989062244256,
+      4.441691548295758
+    ],
+    "maxT_excludes_zero": false,
+    "nominal_95CI_pp": [
+      -1.201380838390662,
+      3.290994522178333
+    ]
+  },
+  "white_annual_vapour_coarse_geography_conditioned": {
+    "point_pp_per_original_env_SD": 2.154522877317286,
+    "simultaneous_maxT_95CI_pp": [
+      -2.640394551303597,
+      6.949440305938169
+    ],
+    "maxT_excludes_zero": false,
+    "nominal_95CI_pp": [
+      -0.8653085463550206,
+      5.300326282941061
+    ]
+  },
+  "comparison_to_independently_fitted_295017_photo_source": {
+    "global_white_annual_precipitation_pp_per_SD": 2.004783521753397,
+    "global_white_atmospheric_vapour_pp_per_SD": 3.1849471183414786,
+    "original_295017_photo_source_is_NOT_current_full_309439_model": true
+  },
+  "source_inference_limits": [
+    "Original photographic white/other four-hue ROIs are automatic visible flower-like object classifications and have not been independently botanically authenticated as open petals or tepals.",
+    "Globally positive annual water/photo-white association is conditional on sampled taxa/photographer/source geography and genus weighting, not a demonstrated causal water-pigment mechanism.",
+    "Under genus×coarse-geocell source conditioning, both rainfall and vapour simultaneous maxT intervals include zero.",
+    "Annual environment source uses historical WorldClim v2.1 1970–2000 normals, not original observed-year/month weather.",
+    "WorldClim raw srad is kJ per square metre per day despite historical misleading Watts label; the standardized source estimator is scale invariant but absolute raw units require dividing by 86.4.",
+    "No genotype colour-polymorphism, experimentally quantified pigment cost, selective fitness or reproductive success measured.",
+    "Global interspecific MOIS photo/moisture models do not reuse separate FCP intraspecific W/D and 50km estimators.",
+    "Some newer photographic source cohorts were admitted in actual computation terminal completion order, not unbiased sample recruitment.",
+    "MaxT adjusts the 24 hue x climate comparisons within each original model specification only, not the total history of exploratory source/model choices.",
+    "Photo hue classification, original photo IDs and 149653 actual date + hue observation count are unchanged by the statistical environmental refit."
+  ]
+}
