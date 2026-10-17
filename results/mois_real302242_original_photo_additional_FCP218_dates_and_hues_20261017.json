@@ -1,0 +1,71 @@
+{
+  "schema": "mois_real302242_source_authenticated_new_completed_FCP218_original_photo_pixels_date_and_hues_20261017_v1",
+  "source_original_FCP_Actions_run": "https://github.com/zuizui0223/fcp/actions/runs/38992543115",
+  "source_original_MOIS_295017_Actions_run": "https://github.com/zuizui0223/mois/actions/runs/39015660689",
+  "actual_expanded_MOIS_original_photo_302242_run": "https://github.com/zuizui0223/mois/actions/runs/39018960100",
+  "actual_complete_source_artifact_id": 12096016949,
+  "original_photo_295017_base_SHA256": "44e3cb6b4c6174dfb1035de208343c7c6a2e6c321e2557a509224c4d9f2ac7b3",
+  "original_date_enriched_295017_base_SHA256": "b797d85464d2e3e39d38326196dd5ab3462d4e8e19b227dc62604b3bdf047a93",
+  "final_fcp_completed_original_photo_source_SHA256": "ea97117e85be94086c9d2b2de584f492cd3a1c5d8d7ba2ec46d0b01e1820b14b",
+  "final_expanded_original_photo_pixels_SHA256": "1b0aff1d1f411aa0e214c826d084abe2cc924d4f38ff688a1472a79590504a55",
+  "final_expanded_date_and_hue_photo_source_SHA256": "b83871c6cd69cb624693364742c2a1d61003253d084af0cb6d80ab9f898c3959",
+  "original_photo_season_table_SHA256": "772d6535fd3a84c004805acd2499b4d685d6e8cf882a41fa6794b3ef862d777a",
+  "fcp_authentic_completed_ROI_pixel_partitions": 218,
+  "fcp_planned_total_photo_worker_partitions": 256,
+  "fcp_unmeasured_source_worker_partitions": 38,
+  "fcp_real_finished_original_photo_pixel_rows": 42839,
+  "previous_source_photo_pixels_measured": 295017,
+  "previous_source_four_hue_photos": 142538,
+  "previous_source_date_and_four_hue_photos": 140247,
+  "new_original_photo_pixels_measured_and_nonoverlapping": 7225,
+  "new_four_hue_ROI_photo_labels": 3523,
+  "new_photo_IDs_with_source_observed_on": 7225,
+  "new_four_hue_photo_labels_with_source_observed_on": 3523,
+  "expanded_real_original_photo_pixel_attempts": 302242,
+  "expanded_real_four_hue_original_photo_ROIs": 146061,
+  "expanded_real_original_photo_IDs_with_date": 296395,
+  "expanded_real_photo_IDs_with_both_date_and_four_hue": 143770,
+  "photo_IDs_overlapping_prior295017_and_new_FCP218_source": 286826,
+  "original_hue_or_taxon_or_day_changed_on_overlap": 0,
+  "hemispheric_photo_classifiable_source_white": {
+    "north_extratropical": {
+      "summer": {
+        "original_photo_date_attempts": 83071,
+        "four_hue": 43277,
+        "white": 21231,
+        "white_fraction": 0.49058391
+      },
+      "winter": {
+        "original_photo_date_attempts": 9891,
+        "four_hue": 4594,
+        "white": 2120,
+        "white_fraction": 0.46147148
+      },
+      "summer_minus_winter_photo_white_pp": 2.911243
+    },
+    "south_extratropical": {
+      "summer": {
+        "original_photo_date_attempts": 14239,
+        "four_hue": 6530,
+        "white": 3317,
+        "white_fraction": 0.50796325
+      },
+      "winter": {
+        "original_photo_date_attempts": 10635,
+        "four_hue": 4575,
+        "white": 1809,
+        "white_fraction": 0.39540984
+      },
+      "summer_minus_winter_photo_white_pp": 11.255341
+    }
+  },
+  "photo_color_source_population_note": "Original photo IDs and completed ROIs are reused from iNaturalist and FCP source pixels, not independent ecological replications or flower-specific anthesis validation.",
+  "uncertainties": [
+    "No photographic ROI flower petal/tepal organ independently botanically verified for each photo.",
+    "No observation-year monthly air temperature, radiation, VPD or water deficit exposure rejoined in this source expansion.",
+    "Known source geographic, observation effort and taxonomic selection biases remain; naive seasonal differences are not causal pigment plasticity.",
+    "No originally unmeasured FCP photo-ID opportunities counted as completed pixels, and 38 original source partitions remain unmeasured.",
+    "FCP within-species W/D/50km estimands not imported or refitted.",
+    "Original annual MOIS six-anchor genus maxT coefficients have not yet been refit on this exact new 302242 photo source."
+  ]
+}
