@@ -1,0 +1,45 @@
+name: MOIS original 400 blinded botanical review browser source integrity
+
+on:
+  pull_request:
+    paths:
+      - "tools/review/mois_400_botanical_review_browser_20261017.html"
+      - "tests/test_mois_400_browser_review_ui.js"
+      - ".github/workflows/mois-400-browser-review-safeguard.yml"
+      - "docs/MOIS_400_REVIEW_BROWSER_HOWTO_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  reviewer-browser-no-colour-leak:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Recover original two independently shuffled 400-photo reviewer CSVs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p review_input/A review_input/B
+          gh run download 38930414968 --repo zuizui0223/mois \
+            --name mois-400-original-photos-INDEPENDENT-botanist-reviewer-A-unfilled \
+            --dir review_input/A
+          gh run download 38930414968 --repo zuizui0223/mois \
+            --name mois-400-original-photos-INDEPENDENT-botanist-reviewer-B-unfilled \
+            --dir review_input/B
+      - name: Verify original license, photo URLs, independent review CSV and browser JS
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/test_mois_400_browser_review_ui.js \
+            tools/review/mois_400_botanical_review_browser_20261017.html \
+            review_input/A/mois_400_botanical_open_flower_reviewer_A_UNFILLED.csv \
+            review_input/B/mois_400_botanical_open_flower_reviewer_B_UNFILLED.csv
