@@ -6,6 +6,7 @@ on:
       - "scripts/analysis/mois_merge_real_FCP180_and_MOIS_three4096_original_photos.py"
       - "tests/test_mois_merge_FCP180_three_original_photo_waves.py"
       - ".github/workflows/mois-genuine295017-original-photo-pixels-and-dates.yml"
+      - "scripts/analysis/mois_real295017_original_photo_community_season_support.py"
       - "docs/MOIS_REAL295017_GENUINE_NEW_ORIGINAL_ROI_PHOTOS_AND_DATES_20261017.md"
   workflow_dispatch:
 
@@ -78,9 +79,40 @@ jobs:
           assert r['FCP_within_species_D_W_50km_inference_not_imported']
           print('MOIS_GENUINE_295017_ORIGINAL_PHOTOGRAPHS_142538_REAL_HUES_140247_DATED_HUES_VERIFIED')
           PY
+      - name: Recompute same-coarse-locality/season-year original photographic community white contrast
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real295017_original_photo_community_season_support \
+            --source real295017_source/mois_real295017_original_photo_hues_plus_verified_observed_dates.csv.gz \
+            --source-receipt real295017_source/mois_real295017_signed_photo_union_date_and_colour_receipt.json \
+            --output real295017_community
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('real295017_community/mois_real295017_photo_community_season_grain_decision.json')
+          j=json.loads(p.read_text())
+          assert j['real_original_photo_attempts']==295017
+          assert j['real_classified_photo_ROIs']==142538
+          assert j['real_classifiable_original_photo_ROIs_with_observed_dates']==140247
+          r={(d['hemisphere'],d['grid_width_degrees']):d
+             for d in j['source_cell_and_observation_year_5observation_2taxon_results']}
+          n,s=r[('north_extratropical',.25)],r[('south_extratropical',.25)]
+          assert n['matched_cell_season_year_groups']==20
+          assert s['matched_cell_season_year_groups']==24
+          assert n['classifiable_photographs_in_matched_communities']==286
+          assert s['classifiable_photographs_in_matched_communities']==477
+          assert abs(n['summer_minus_winter_white_photo_pp']-1.188896)<1e-5
+          assert abs(s['summer_minus_winter_white_photo_pp']-0.579354)<1e-5
+          assert n['bootstrap_geocell95_percentile'][0]<0<n['bootstrap_geocell95_percentile'][1]
+          assert s['bootstrap_geocell95_percentile'][0]<0<s['bootstrap_geocell95_percentile'][1]
+          print('MOIS_GENUINE295017_PHOTO_COMMUNITY_N20_S24_LOCAL_YEAR_UNCERTAINTY_PASS')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: mois-295017-original-photo-142538-genuine-hues-140247-verified-observation-dates
-          path: real295017_source/
+          path: |
+            real295017_source/
+            real295017_community/
           retention-days: 90
           if-no-files-found: error
