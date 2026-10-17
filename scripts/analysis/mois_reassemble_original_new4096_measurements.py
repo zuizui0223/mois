@@ -62,9 +62,13 @@ def load_plan(root:Path,source_name:str)->tuple[list[dict],dict]:
             and freeze["first_wave_distinct_source_observers"]==PER_WAVE
             and freeze["no_photo_colour_or_fitness_or_bloom_label_used"] is True,
             "Not an authenticated original outcome-blind 4096-photo sample")
-    allfiles=list(root.rglob(
-        "mois_source_only_4096_original_photo_selection.csv" if source_name=="wave1"
-        else "mois_original_full_3430502_outside_first_screen_WAVE2_4096.csv"))
+    source_file={
+        "wave1":"mois_source_only_4096_original_photo_selection.csv",
+        "wave2":"mois_original_full_3430502_outside_first_screen_WAVE2_4096.csv",
+        "wave3":"mois_original_full_3430502_outside_first_screen_WAVE3_4096.csv",
+    }
+    require(source_name in source_file,"Unknown original-wave ID selection")
+    allfiles=list(root.rglob(source_file[source_name]))
     require(len(allfiles)==1 and sha(allfiles[0])==freeze["first_wave_original_4096_csv_sha256"],
             "Original photo-first source ID frozen CSV changed")
     with allfiles[0].open(newline="",encoding="utf-8") as f:
