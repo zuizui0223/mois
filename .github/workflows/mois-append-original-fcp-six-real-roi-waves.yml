@@ -1,0 +1,91 @@
+name: MOIS reuse six already measured FCP original ROI waves beyond 247k
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_append_fcp_six_real_roi_waves_20261017.py"
+      - "tests/test_mois_append_original_measured_roi.py"
+      - ".github/workflows/mois-append-original-fcp-six-real-roi-waves.yml"
+      - "docs/MOIS_FCP_ORIGINAL_ROI_WAVE_REUSE_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  real-mois-photo-hue-extension:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify additive already measured source statistics
+        run: |
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q tests/test_mois_append_original_measured_roi.py
+      - name: Recover actual original 247032 measured photograph union
+        run: |
+          set -euo pipefail
+          mkdir -p prior
+          gh run download 38989622443 --repo zuizui0223/mois \
+            --name mois-original100543-plus-fcp149900-deduped-247032-ACTUAL-colour-photos \
+            --dir prior
+      - name: Fetch and authenticate six real photo-pixel ROI source artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p additional_fcp
+          fetch() {
+            local id="$1" name="$2"
+            curl --fail --location --silent --show-error --retry 3 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/zuizui0223/fcp/actions/artifacts/$id/zip" \
+              --output "additional_fcp/$name.zip"
+            test -s "additional_fcp/$name.zip"
+          }
+          fetch 12018829689 rgfca_live_wave1
+          fetch 12022221110 rgfca_live_wave2
+          fetch 12047265683 rgfca_monthly_first64
+          fetch 12049743180 rgfca_monthly_second64
+          fetch 12049672398 rgfca_original_season63
+          fetch 12049158935 asclepias_original_2025_64
+      - name: Merge actually measured ROI outcomes, do not re-fit FCP polymorphism
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_append_fcp_six_real_roi_waves_20261017 \
+            --prior-247032-original-photo-union prior/mois_fcp_combined_original_247032_photo_hues.csv.gz \
+            --rgfca_live_wave1 additional_fcp/rgfca_live_wave1.zip \
+            --rgfca_live_wave2 additional_fcp/rgfca_live_wave2.zip \
+            --rgfca_monthly_first64 additional_fcp/rgfca_monthly_first64.zip \
+            --rgfca_monthly_second64 additional_fcp/rgfca_monthly_second64.zip \
+            --rgfca_original_season63 additional_fcp/rgfca_original_season63.zip \
+            --asclepias_original_2025_64 additional_fcp/asclepias_original_2025_64.zip \
+            --outdir actual_248312_source_union
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('actual_248312_source_union/mois_248312_frozen_measured_photo_addition_receipt.json').read_text())
+          assert p['status']=='REAL_248312_ORIGINAL_PHOTOS_WITH_120807_CLASSIFIED_FOUR_HUES'
+          assert p['final_photo_ids']==248312 and p['final_classified_hue_ids']==120807
+          assert p['FCP_already_measured_original_additional_photo_ids']==1280
+          assert p['FCP_already_measured_additional_classified_hue_ids']==497
+          assert p['all_six_FCP_original_ROI_receipts_verified']
+          assert not p['FCP_within_species_D_W_or_local_diversity_estimand_reused']
+          assert not p['original_historic_mois_macro_coefficients_overwritten']
+          print("MOIS_248312_REAL_PHOTO_HUE_EXTENSION_SEPARATE_INTERSPECIFIC_MODEL_GATE_PASS")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-248312-original-photographs-120807-classified-FCP_ROI_reused
+          path: actual_248312_source_union/
+          if-no-files-found: error
+          retention-days: 90
