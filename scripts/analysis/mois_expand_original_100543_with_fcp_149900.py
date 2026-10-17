@@ -47,9 +47,9 @@ def require(cond:bool,msg:str):
 def normalized(row:dict,source:str,kind:str)->dict:
     r={k:str(row.get(k,"") or "").strip() for k in FIELDS}
     require(r["photo_id"].isdigit() and r["inat_taxon_id"].isdigit()
-            and r["species"] and r["morph"],
+            and r["species"],
             "Source original photograph/taxon/phenotype identity invalid")
-    require(r["morph"] in (*COLORS,"mixed_uncertain"),
+    require(r["morph"] in (*COLORS,"mixed_uncertain",""),
             "Unrecognized original fixed four-hue classification state")
     r["source_original_measured"]=source
     r["old_mois_or_new_fcp"]=kind
@@ -109,12 +109,12 @@ def run(photo_zip:Path,fcp_paths:dict[str,Path],outdir:Path)->dict:
                     old_stats["classified"]+=r["morph"] in COLORS
                     all_stats["photos"]+=1
                     all_stats["classified"]+=r["morph"] in COLORS
-                    all_stats["hue_"+r["morph"]]+=1
+                    all_stats["hue_"+(r["morph"] or "unclassified_blank")]+=1
                     species_source[r["inat_taxon_id"]].add("historical")
                     taxonomy[r["inat_taxon_id"]].add(r["species"])
                     by_taxon[r["inat_taxon_id"]]["historical_photos"]+=1
                     by_taxon[r["inat_taxon_id"]]["historical_classified"]+=r["morph"] in COLORS
-                    by_taxon[r["inat_taxon_id"]]["historical_"+r["morph"]]+=1
+                    by_taxon[r["inat_taxon_id"]]["historical_"+(r["morph"] or "unclassified_blank")]+=1
                 for name,path in fcp_paths.items():
                     require(sha(path)==FCP_SHA[name],f"Original FCP {name} SHA mismatch")
                     count=overlap=classified_new=classified_fcp=0
@@ -149,10 +149,10 @@ def run(photo_zip:Path,fcp_paths:dict[str,Path],outdir:Path)->dict:
                             writer.writerow(r)
                             all_stats["photos"]+=1
                             all_stats["classified"]+=yes
-                            all_stats["hue_"+r["morph"]]+=1
+                            all_stats["hue_"+(r["morph"] or "unclassified_blank")]+=1
                             by_taxon[r["inat_taxon_id"]]["new_fcp_photos"]+=1
                             by_taxon[r["inat_taxon_id"]]["new_fcp_classified"]+=yes
-                            by_taxon[r["inat_taxon_id"]]["new_fcp_"+r["morph"]]+=1
+                            by_taxon[r["inat_taxon_id"]]["new_fcp_"+(r["morph"] or "unclassified_blank")]+=1
                             species_source[r["inat_taxon_id"]].add("new_fcp")
                             taxonomy[r["inat_taxon_id"]].add(r["species"])
                     require(count==FCP_N[name],f"FCP original {name} source length changed")
@@ -178,14 +178,14 @@ def run(photo_zip:Path,fcp_paths:dict[str,Path],outdir:Path)->dict:
               "new_fcp_photos","new_fcp_classified",
               "combined_photos","combined_classified",
               "white","yellow_orange","red_pink","blue_purple",
-              "mixed_uncertain","photographic_white_fraction_if_classified")
+              "mixed_uncertain","unclassified_blank","photographic_white_fraction_if_classified")
         w=csv.DictWriter(f,fieldnames=cols,lineterminator="\n")
         w.writeheader()
         for tax,counts in sorted(by_taxon.items(),key=lambda p:int(p[0])):
             n=counts["historical_photos"]+counts["new_fcp_photos"]
             k=counts["historical_classified"]+counts["new_fcp_classified"]
             shades={c:counts["historical_"+c]+counts["new_fcp_"+c]
-                    for c in (*COLORS,"mixed_uncertain")}
+                    for c in (*COLORS,"mixed_uncertain","unclassified_blank")}
             require(n==sum(shades.values()) and k==sum(shades[c] for c in COLORS),
                     "Taxon original complete hue measurements not additive")
             w.writerow({
@@ -226,7 +226,7 @@ def run(photo_zip:Path,fcp_paths:dict[str,Path],outdir:Path)->dict:
         "combined_unique_photo_ids":all_stats["photos"],
         "combined_classified_hue_photo_ids":all_stats["classified"],
         "combined_technical_unclassified_photo_ids":all_stats["photos"]-all_stats["classified"],
-        "combined_hue_counts":{c:all_stats["hue_"+c] for c in (*COLORS,"mixed_uncertain")},
+        "combined_hue_counts":{c:all_stats["hue_"+c] for c in (*COLORS,"mixed_uncertain","unclassified_blank")},
         "historical_and_union_taxon_depth":dict(candidate_counts),
         "taxa_with_any_photo":len(by_taxon),
         "taxa_with_both_photo_sources":sum(len(x)==2 for x in species_source.values()),
