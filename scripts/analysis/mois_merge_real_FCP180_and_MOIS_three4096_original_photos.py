@@ -70,7 +70,8 @@ def load_zip(zpath:Path,data_name:str,receipt_name:str,expected_sha:str):
         receipt=json.loads(z.read(receipt_name))
     require(sha(raw)==expected_sha,"Original measured photo/date data SHA drift: "+data_name)
     d=pd.read_csv(io.BytesIO(raw),compression="gzip",dtype={
-        "photo_id":"string","observation_id":"string","inat_taxon_id":"string"},
+        "photo_id":"string","observation_id":"string","inat_taxon_id":"string",
+        "original_numeric_observation_id":"string","original_taxon_id":"string"},
         low_memory=False)
     require(d.photo_id.is_unique,"Duplicate original photo-ID within source: "+data_name)
     return d,receipt
