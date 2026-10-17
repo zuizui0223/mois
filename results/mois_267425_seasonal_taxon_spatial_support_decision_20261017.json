@@ -1,0 +1,120 @@
+{
+  "schema": "mois_real_267425_taxon_composition_and_spatial_positivity_decision_20261017_v1",
+  "date": "2026-10-17",
+  "source_action": "https://github.com/zuizui0223/mois/actions/runs/39002957961",
+  "original_photo_union_sha256": "fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9",
+  "n_measured_original_photos": 267425,
+  "n_four_hue_classified": 129795,
+  "n_dated_and_classified": 81867,
+  "spatial_support": "same original photo taxon ID x coarse latitude/longitude cell x local season-year (Dec assigned following year); separately same-cell across all years",
+  "question": "Do source-photo seasonal white fraction contrasts survive taxonomic and spatial overlap, and how much is photo source taxon composition?",
+  "regions": {
+    "north_extratropical": {
+      "summer_photo_hue_count": 27210,
+      "winter_photo_hue_count": 3246,
+      "summer_taxa": 1437,
+      "winter_taxa": 635,
+      "taxa_common_both_seasons": 450,
+      "taxa_observed_only_summer": 987,
+      "taxa_observed_only_winter": 185,
+      "jaccard_taxa": 0.277435,
+      "summer_photo_fraction_taxa_not_in_winter": 0.82885,
+      "winter_photo_fraction_taxa_not_in_summer": 0.437461,
+      "original_photo_summer_minus_winter_white_pp": 3.297805,
+      "common_taxa_photo_weighted_total_pp": 0.041523,
+      "common_taxa_within_taxon_photo_white_pp": 1.98875,
+      "common_taxa_photo_frequency_mixing_pp": -1.947227,
+      "nonoverlap_summer_taxa_component_pp": 3.700944,
+      "nonoverlap_winter_taxa_component_pp": -0.444662,
+      "source_cohort_summer_minus_winter": {
+        "new_fcp": 3.127315,
+        "fcp_additional_ROI": 4.638555
+      },
+      "photo_hue_summer_winter_matched_site_support": {
+        "cell_0p25_all_years_min1": {
+          "groups": 131,
+          "taxa": 78,
+          "photos": 408
+        },
+        "cell_0p25_same_year_min1": {
+          "groups": 27,
+          "taxa": 24,
+          "photos": 59
+        },
+        "cell_0p25_same_year_min2": {
+          "groups": 1,
+          "taxa": 1,
+          "photos": 4
+        },
+        "cell_1p0_same_year_min2": {
+          "groups": 1,
+          "taxa": 1,
+          "photos": 5
+        },
+        "cell_5p0_same_year_min2": {
+          "groups": 26,
+          "taxa": 23,
+          "photos": 171
+        }
+      }
+    },
+    "south_extratropical": {
+      "summer_photo_hue_count": 3030,
+      "winter_photo_hue_count": 2098,
+      "summer_taxa": 433,
+      "winter_taxa": 322,
+      "taxa_common_both_seasons": 212,
+      "taxa_observed_only_summer": 221,
+      "taxa_observed_only_winter": 110,
+      "jaccard_taxa": 0.390424,
+      "summer_photo_fraction_taxa_not_in_winter": 0.514521,
+      "winter_photo_fraction_taxa_not_in_summer": 0.428027,
+      "original_photo_summer_minus_winter_white_pp": 17.233071,
+      "common_taxa_photo_weighted_total_pp": 15.027419,
+      "common_taxa_within_taxon_photo_white_pp": 3.266638,
+      "common_taxa_photo_frequency_mixing_pp": 11.760781,
+      "nonoverlap_summer_taxa_component_pp": 4.002284,
+      "nonoverlap_winter_taxa_component_pp": -1.796632,
+      "source_cohort_summer_minus_winter": {
+        "new_fcp": 18.801129,
+        "fcp_additional_ROI": 0.518018
+      },
+      "photo_hue_summer_winter_matched_site_support": {
+        "cell_0p25_all_years_min1": {
+          "groups": 70,
+          "taxa": 45,
+          "photos": 204
+        },
+        "cell_0p25_same_year_min1": {
+          "groups": 17,
+          "taxa": 15,
+          "photos": 43
+        },
+        "cell_0p25_same_year_min2": {
+          "groups": 0,
+          "taxa": 0,
+          "photos": 0
+        },
+        "cell_1p0_same_year_min2": {
+          "groups": 1,
+          "taxa": 1,
+          "photos": 5
+        },
+        "cell_5p0_same_year_min2": {
+          "groups": 13,
+          "taxa": 11,
+          "photos": 95
+        }
+      }
+    }
+  },
+  "notes": [
+    "Full source-photo summer-winter delta decomposes exactly into common-taxon hue-rate component, common-taxon relative photograph frequency, and season-nonoverlap taxon support corrections.",
+    "These are original source-photo ROIs, not independently botanically confirmed open flower petal colours or phenological observations.",
+    "Rare shared taxon/site/year summer-winter photographic support is not proof of absent true phenology; sampling and ecology both affect photographic opportunity.",
+    "Site/year positivity almost vanishes at 0.25-degree grid with two original observations per season. Increasing grid width falsely treats farther populations as local.",
+    "FCP high-depth cohorts and unfinished wave4 ROI partitions are not independent ecological replication; prospective within-species W/D and 50km FCP effects are excluded.",
+    "Historical original MOIS 100543 photographs and original newly measured 4096 lack observed-on day in this combined union; cannot infer their source season."
+  ],
+  "ecological_decision": "Worldwide photographic season white gradients may reflect taxon composition and photo effort; no identified within-locality within-year response to observed weather or plant pigmentation plasticity."
+}
