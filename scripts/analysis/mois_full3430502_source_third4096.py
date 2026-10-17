@@ -3,7 +3,7 @@
 
 Outcome-blind source accounting only. Identifies all genuinely unmeasured,
 photo-ID-disjoint original photos while allowing the FCP *photographs* to
-be reused between studies. Assigns a reproducible second 4,096-photo
+be reused between studies. Assigns a reproducible third 4,096-photo
 cross-species work wave OUTSIDE the original first 106,376 selected photo IDs.
 No hue outcome, iNaturalist flowering annotation, or rainfall value is used.
 """
@@ -30,7 +30,7 @@ WAVE_N=4096
 N_SHARDS=16
 PHOTOS_PER_SHARD=256
 TOPK_PER_SPECIES=32
-SALT="MOIS_SOURCE_3430502_FULL_1000_TAXA_WAVE2_HASH_PHOTOS_20261017"
+SALT="MOIS_SOURCE_3430502_FULL_1000_TAXA_WAVE3_HASH_PHOTOS_20261017"
 LINK_RE=re.compile(r"^https://inaturalist-open-data\.s3\.amazonaws\.com/photos/([0-9]+)/large\.(?:jpg|jpeg|png)$",re.I)
 FIELDS=(
     "measurement_id","image_filename","photo_license","photo_url_large",
@@ -59,7 +59,7 @@ def measure_id(pid):
     return "MOIS-"+hashlib.sha256((SALT+"|"+pid).encode()).hexdigest()[:24].upper()
 
 
-def plan(full:Path,selected:Path,prior:Path,prior_receipt:Path,outdir:Path)->dict:
+def plan(full:Path,selected:Path,prior:Path,prior_receipt:Path,wave2:Path,wave2_receipt:Path,outdir:Path)->dict:
     if outdir.exists() and any(outdir.iterdir()):
         raise ValueError("No overwriting a colour-blind true original source wave")
     if digest(full)!=FULL_SHA or digest(selected)!=FIRST_SELECTED_SHA:
@@ -86,6 +86,21 @@ def plan(full:Path,selected:Path,prior:Path,prior_receipt:Path,outdir:Path)->dic
     if len(screened)!=SCREEN_SELECTED_N:
         raise ValueError("Previously selected 106376 source photo frame changed")
 
+    source2=json.loads(wave2_receipt.read_text(encoding="utf-8"))
+    if (source2.get("schema")!="mois_full3430502_original_source_outside_first106376_wave2_v1"
+        or source2.get("first_wave_original_source_photo_ids")!=4096
+        or source2.get("first_wave_original_4096_csv_sha256")!=digest(wave2)
+        or source2.get("no_photo_colour_or_fitness_or_bloom_label_used") is not True):
+        raise ValueError("Previous original second wave not SHA authenticated")
+    wave2_ids=set()
+    with wave2.open(newline="",encoding="utf-8") as inp:
+        for row in csv.DictReader(inp):
+            pid=row["photo_id"]
+            if pid in wave2_ids or pid in seen_old or pid in screened:
+                raise ValueError("Second wave duplicates old or photo-screen ID")
+            wave2_ids.add(pid)
+    if len(wave2_ids)!=4096:
+        raise ValueError("Previous second 4096-photo source is incomplete")
     heaps=defaultdict(list)
     taxa=Counter()
     counts=Counter()
