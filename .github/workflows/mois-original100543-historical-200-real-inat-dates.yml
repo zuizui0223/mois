@@ -1,0 +1,72 @@
+name: MOIS original100543 historical photo-ID observed-on recovery pilot
+
+on:
+  pull_request:
+    paths:
+      - "scripts/acquisition/mois_historical_original_observed_on_inat_pilot_20261017.py"
+      - "tests/test_mois_historical_original_observed_on_inat_pilot_20261017.py"
+      - ".github/workflows/mois-original100543-historical-200-real-inat-dates.yml"
+      - "docs/MOIS_HISTORICAL_ORIGINAL100543_PUBLIC_DATE_RECOVERY_PILOT_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-historical-original100543-photo-blind200-current-observation-date-source
+  cancel-in-progress: false
+
+jobs:
+  actually-verify-original-historical-photo-IDs-and-public-observed-date:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test blinded original-photo selection, photo identity, current phenology annotation limits
+        run: |
+          python -m pip install -q 'pandas==2.2.3' 'numpy==2.1.3' 'requests==2.32.3' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_historical_original_observed_on_inat_pilot_20261017.py
+      - name: Read signed existing 267425 photo union without opening any photo pixel
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p signed_photo
+          gh run download 39002957961 --repo zuizui0223/mois \
+            --name mois-actually-measured-FCP-wave4-completed-photo-partitions-snapshot \
+            --dir signed_photo
+          test -s signed_photo/mois_fcp_wave4_PARTIAL_completed_pixel_original_photo_union.csv.gz
+          zip -j -q signed_source.zip signed_photo/*
+      - name: Recover 200 blind historical photo original observation dates using no more than four official iNat requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_historical_original_observed_on_inat_pilot_20261017 \
+            --source-archive signed_source.zip \
+            --sample-n 200 \
+            --output historical_date_pilot
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('historical_date_pilot/mois_historical_blind200_observation_date_QC_receipt.json').read_text())
+          assert r['original_full_source_photo_SHA256']=='fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9'
+          assert r['historical_photo_count_without_source_calendar_date']==100543
+          assert r['blind_sample_photo_count']==200
+          assert r['n_actual_public_API_calls']==4
+          assert 0 <= r['n_original_photo_ID_matched_and_current_observation_date_present'] <= 200
+          assert r['no_missing_calendar_date_imputation']
+          assert r['no_retrieved_observation_plant_phenology_assumed_to_be_photo_specific_open_flowers']
+          assert r['no_original_source_photo_classification_modified']
+          print('MOIS_ORIGINAL100543_PHOTO_BLIND200_DATE_SOURCE_QC_PASSED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-original100543-blind200-photo-exact-observed-on-public-iNat-source-QC
+          path: historical_date_pilot/
+          if-no-files-found: error
+          retention-days: 90
