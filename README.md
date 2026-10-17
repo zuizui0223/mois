@@ -10,6 +10,10 @@ At the full-date extra-tropical original-photo level, raw white-labelled photo f
 
 **Historical snapshots below:** the 100,543-, 127,504-, 140,247- and 295,017-photo cohort statements remain linked as reproducible earlier source supports; they should not be presented as the newest MOIS seasonal-photo sample.
 
+### Source-exact full photo taxon turnover and geography (146,052 date+hue ROIs)
+
+In the [source-verified full-date summer/winter original photo taxon decomposition](docs/MOIS_REAL146052_ORIGINAL_PHOTO_TAXON_TURNOVER_AND_SEASON_WHITE_20261017.md), Southern summer exceeds winter by **+11.309 pp** in photographed-white labels, but the **entire source difference** partitions exactly into **+7.689 pp shifts in relative original photo frequencies of taxa photographed in both seasons**, **+3.516 pp within-common-taxon white photo-rate differences**, plus summer-only **+3.832** and winter-only **−3.728** points. Only **391 of 4,364** Southern taxa with colour-classified summer or winter photographs have photos in both seasons. The global seasonal photograph mixture is not an independent demonstration of real individual-plant pigment plasticity. The stricter within-cell/year Southern +3.57 pp [−7.90,+12.84] exploratory 0.25° comparison remains uncertain. [Machine-readable source-locked result](results/mois_real146052_photo_source_summer_winter_taxon_turnover_decomposition_20261017.json), [figure data](results/mois_real146052_photo_source_summer_winter_taxon_decomposition_figure_data_20261017.csv).
+
 ## The main ecological question
 
 **Do photographed white versus coloured floral states covary with precipitation and atmospheric moisture among congeneric species, and how well does this relationship persist under photographic, spatial and alternative biological-measurement controls?**

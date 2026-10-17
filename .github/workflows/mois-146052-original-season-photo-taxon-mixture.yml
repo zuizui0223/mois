@@ -1,0 +1,81 @@
+name: MOIS original 146052 authenticated photo hue summer winter taxon turnover
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_full146052_original_photo_season_taxon_composition.py"
+      - "tests/test_mois_full146052_original_photo_season_taxon_composition.py"
+      - ".github/workflows/mois-146052-original-season-photo-taxon-mixture.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  actual-original-source-taxon-photo-frequency-versus-white-label-change:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test all four actual source photographic taxon composition terms
+        run: |
+          python -m pip install -q 'numpy==2.1.3' 'pandas==2.2.3' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_full146052_original_photo_season_taxon_composition.py
+      - name: Recover genuine 302242 measured original photo pixels and separately verified 146052 observed days
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p finished_source
+          gh run download 39020466312 --repo zuizui0223/mois \
+            --name mois-302242-original-pixels-146052-dated-four-hue-uuid-numeric-full3430502-source-provenance \
+            --dir finished_source
+          test -s finished_source/mois_original302242_exact_observed_on_full_uuid_numeric_verified.csv.gz
+          zip -j -q source_146052_authentic_original_photo_days.zip finished_source/*
+      - name: Compute all full-photo summer-winter taxon mixture terms and 999 genus-independent taxon resamples
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_full146052_original_photo_season_taxon_composition \
+            --source-verified302242-day-photo-artifact source_146052_authentic_original_photo_days.zip \
+            --output final_actual_full146052_taxon_mixture
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('final_actual_full146052_taxon_mixture/mois_original146052_full_source_summer_winter_taxon_photo_mixture_decision.json').read_text())
+          assert r['original_real_photo_measured_pixels']==302242
+          assert r['original_actual_four_hue_photo_ROIs']==146061
+          assert r['original_real_date_and_hue_photo_ROIs']==146052
+          north=r['hemispheres']['north_extratropical']
+          south=r['hemispheres']['south_extratropical']
+          assert north['summer_classified_original_photos']==43717
+          assert north['winter_classified_original_photos']==4662
+          assert south['summer_classified_original_photos']==6721
+          assert south['winter_classified_original_photos']==4685
+          assert north['source_named_taxa_common_both_summer_winter']==647
+          assert south['source_named_taxa_common_both_summer_winter']==391
+          assert north['original_named_taxa_union_both_seasons']==7207
+          assert south['original_named_taxa_union_both_seasons']==4364
+          assert abs(north['raw_photo_white_summer_minus_winter_pp']-2.643160)<0.00001
+          assert abs(south['raw_photo_white_summer_minus_winter_pp']-11.308911)<0.00001
+          assert abs(south['changed_common_taxon_relative_photo_frequency_component_pp']-7.689004)<0.00001
+          assert abs(south['within_common_taxon_photographic_white_rate_component_pp']-3.515981)<0.00001
+          assert abs(south['summer_photo_exclusive_taxon_support_component_pp']-3.831938)<0.00001
+          assert abs(south['winter_photo_exclusive_taxon_support_component_pp']+3.728011)<0.00001
+          assert south['common_taxon_changed_photo_frequency_999_bootstrap95_pp'][0]<0
+          assert south['common_taxon_changed_photo_frequency_999_bootstrap95_pp'][1]>0
+          assert r['exact_full_census_source_composition_not_causal_selection']
+          print('MOIS_REAL_146052_FULL_SOURCE_EXACT_TAXON_MIXTURE_AND_WITHIN_PHOTO_COLOUR_IDENTITIES_CONFIRMED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-original146052-full-photo-season-symmetric-taxon-decomposition
+          path: final_actual_full146052_taxon_mixture/
+          retention-days: 90
+          if-no-files-found: error
