@@ -26,7 +26,7 @@ def test_real_provider_stream_schema_and_compressed_content_sha(monkeypatch):
         b"photo_uuid\tphoto_id\tobservation_uuid\tobserver_id\n"
         b"uuidA\t101\tobsA\tu1\n"
         b"uuidB\t102\tobsB\tu2\n")
-    entry={"url":"https://test.fake/photos.csv.gz","content_length_bytes":len(binary),"etag":'"x"'}
+    entry={"url":"https://test.fake/photos.csv.gz","content_length_bytes":len(binary),"etag":'"x"',"last_modified":"snapshot"}
     reader=m.DigestReader(io.BytesIO(binary))
     monkeypatch.setattr(m,"provider_snapshot_stream",
                         lambda client,e:(FakeResp(binary,'"x"'),reader))
@@ -59,7 +59,7 @@ def test_correct_uuid_photo_id_association_and_not_numeric_observation_id(monkey
         return FakeResp(compressed,'"x"'),m.DigestReader(io.BytesIO(compressed))
     monkeypatch.setattr(m,"provider_snapshot_stream",load)
     probe={"source":{k:{"url":"https://example.com/"+k+".csv.gz",
-                        "content_length_bytes":len(documents[k+".csv.gz"]),"etag":'"x"'}
+                        "content_length_bytes":len(documents[k+".csv.gz"]),"etag":'"x"',"last_modified":"snapshot"}
                      for k in ("photos","observations")}}
     probe["source"]={"photo_table":probe["source"]["photos"],
                      "observation_table":probe["source"]["observations"]}
