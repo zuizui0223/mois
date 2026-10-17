@@ -1,0 +1,100 @@
+name: MOIS original water 999 shared-genus bootstrap on 252408 REAL photos
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_refit_original_water_with_actual_new_original_photos.py"
+      - ".github/workflows/mois-real-new4096-water-original-method.yml"
+      - "docs/MOIS_ORIGINAL_WATER_REAL_NEW_4096_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  real-252408-original-water-method-999:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run the original 100543-photo genus-level six-water-anchor method, no FCP spatial tests
+        run: |
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 statsmodels==0.14.4 rasterio==1.4.3
+          python -m py_compile scripts/analysis/mois_refit_original_water_with_actual_new_original_photos.py
+      - name: Retrieve completed REAL 4096 original pixels and previously verified 248312 real photo-site WorldClim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p real_first new_sites_original
+          gh run download 39000213324 --repo zuizui0223/mois \
+            --name mois-252408-original-photos-122383-measured-four-hue-pixels \
+            --dir real_first
+          gh run download 38992341847 --repo zuizui0223/mois \
+            --name mois-248312-REAL-site-worldclim19-bio-elev2p5m-terrain-monthnormal \
+            --dir new_sites_original
+      - name: Retrieve official original WorldClim climate source rasters, incl annual water vapour
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p worldclim/{bio,srad} vapr
+          curl --fail --location --silent --show-error --retry 3 --max-time 500 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_bio.zip \
+            -o worldclim/bio/wc2.1_10m_bio.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 500 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_srad.zip \
+            -o worldclim/srad/wc2.1_10m_srad.zip
+          echo "00513224583665ec0f2f955a4ec252730c4deb2004cce9e793492a3f26df4dcf  worldclim/bio/wc2.1_10m_bio.zip" | sha256sum -c -
+          echo "c72ee7f4f9a0eb4b5f6cd7a003eddc05bda22a2e5666d968ed4e817fd36b9026  worldclim/srad/wc2.1_10m_srad.zip" | sha256sum -c -
+          unzip -q worldclim/bio/wc2.1_10m_bio.zip -d worldclim/bio
+          unzip -q worldclim/srad/wc2.1_10m_srad.zip -d worldclim/srad
+          curl --fail --location --silent --show-error --retry 3 --max-time 500 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_vapr.zip \
+            -o vapr/wc2.1_10m_vapr.zip
+          unzip -q vapr/wc2.1_10m_vapr.zip -d vapr
+          test "$(find vapr -name 'wc2.1_10m_vapr_??.tif' | wc -l)" -eq 12
+      - name: Refit same original white/4-hue annual rainfall and vapour six-anchor 999 genus/bootstrap maxT method with REAL newly classified photo pixels
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_refit_original_water_with_actual_new_original_photos \
+            --expanded-photo-union real_first/mois_all_real_original_hue_measured_248312_plus_new_waves.csv.gz \
+            --expanded-photo-receipt real_first/mois_real_additional_photo_waves_receipt.json \
+            --original-248312-photo-worldclim new_sites_original/mois_248312_original_photo_worldclim_static_monthly_normal_terrain.csv.gz \
+            --original-248312-worldclim-receipt new_sites_original/mois_248312_worldclim_static_month_normal_receipt.json \
+            --worldclim-raster-dir worldclim \
+            --worldclim-vapr-dir vapr \
+            --worldclim-vapr-zip vapr/wc2.1_10m_vapr.zip \
+            --number-of-new-4096-waves 1 \
+            --output original_mois_new4096_water
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('original_mois_new4096_water/mois_252408_real_original_photo_six_water_maxT999_receipt.json').read_text())
+          assert p['status']=='REAL_NEW_ORIGINAL_PHOTO_PIXEL_COLOURS_ORIGINAL_SIX_ANCHOR_WATER_MODEL_FITTED'
+          assert p['all_original_photo_ids']==252408
+          assert p['all_four_hue_classified_photos']==122383
+          assert p['new_classified_photo_hues']==1576
+          assert p['original_genus_bootstrap_draws']==999
+          assert p['original_conservative_fourhue_times_six_anchors_maxT_family']==24
+          assert not p['FCP_within_species_colour_polymorphism_estimands_reanalysed']
+          r=p['water_results']['newly_expanded_MOIS_global_photos']
+          assert r['genus_equal__wc_bio12']['anchor']=='wc_bio12'
+          assert r['genus_equal__wc_vapr_annual_mean']['anchor']=='wc_vapr_annual_mean'
+          print('MOIS_FIRST_GENUINE_NEW_PHOTO_PIXELS_ORIGINAL_WATER_999_MAXT_METHOD_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-real252408-original100k-water-moisture-999genus-maxT
+          path: original_mois_new4096_water/
+          retention-days: 90
+          if-no-files-found: error

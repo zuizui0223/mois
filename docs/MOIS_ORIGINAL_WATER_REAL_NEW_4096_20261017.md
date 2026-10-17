@@ -1,0 +1,17 @@
+# MOIS: Original white–moisture study, refitted after NEW genuine image pixels
+
+The main priority remains the original **100,543 original photos / 45,953 classified coarse photographic hues** global research question: photographed white and three chromatic categories versus water availability, with matched genus/geography and conservative bootstrap uncertainty. This is not FCP's within-named-species photographic D/W/50 km polymorphism problem.
+
+## Actual new measured photographs
+
+The first original 4,096-photo/new-model wave completed all sixteen 256-photo jobs at [MOIS Actions 38994341776](https://github.com/zuizui0223/mois/actions/runs/38994341776); **1,576** new originals passed the fixed original four-hue ROI-v4 classifier and **2,520** remained explicitly unclassifiable (not silently white/nonwhite). The complete data union was materialised and SHA-verified in [MOIS Actions 39000213324](https://github.com/zuizui0223/mois/actions/runs/39000213324), giving **252,408 distinct original photo IDs, 122,383 actual classifier-assigned four-hue photographic outcomes**. FCP source-photo overlap is allowed; exact photo IDs are never counted twice *within MOIS*.
+
+## Original moisture inference, exactly same question and bootstrap method
+
+`scripts/analysis/mois_refit_original_water_with_actual_new_original_photos.py` reuses the unchanged `mois_refit_original_100k_water_six_anchors_248k.py` **estimator and the original transferred `fcp_abiotic_hue_direction_macro_20261013.py` original study methods** (original genus source means, genus-equal weighting, three latitude/longitude controls, four hues × six prespecified original abiotic axes, 999 shared genus bootstraps and familywise maxT simultaneously adjusted 95% intervals). The only adjustment in the estimator object is the **new known original-photo and classifier-admitted denominators**. It does not use a new successful nominal p-value criterion or borrow FCP spatial-diversity results.
+
+The original 248,312-photo WorldClim 19-BIO/annual solar site extracts and their original SHA256 receipts remain unchanged. Only the **4,096 genuinely new photo sites** receive newly sampled WorldClim v2.1 BIO5, BIO12, BIO14, BIO15, 12-month annual solar and official 12-month vapour-pressure climatology. The same global photographic exposure standard deviation is used for the enlarged source and historical-only comparator. Each photo is a single original photo ID, and all original label/missingness values remain untouched.
+
+The main answer should report familywise maxT uncertainty for **white versus annual rainfall (BIO12)** and **white versus annual vapour pressure**, and the additional same-genus×coarse-cell spatial limitations. The WorldClim raster normals are **not weather in the photographed actual year/month**. Their older srad column is misleadingly called Wm2; the original unit is kJ m^-2 day^-1, which does not affect standardized effect signs/SD coefficients.
+
+The second genuine image cohort of 4,096 photos from outside the original 106,376-photo selected source is being measured separately from the complete 3.43-million photo ID universe; do not add its unmeasured photos or claim their hue frequencies until every SHA-verified original ROI terminal exists. After actual source completion the same wrapper also supports both waves under `--number-of-new-4096-waves 2` without touching old ROI data. No pigmentation fitness, local adaptation, genetic polymorphism, image-only stage confirmation or independent provider replication is claimed.
