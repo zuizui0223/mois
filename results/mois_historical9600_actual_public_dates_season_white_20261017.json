@@ -1,0 +1,93 @@
+{
+  "schema": "mois_actual_historic9600_exact_photo_public_date_recovery_result_20261017_v1",
+  "original_provider_photo_source_run": "https://github.com/zuizui0223/mois/actions/runs/39002957961",
+  "actual_9600_date_and_photo_season_run": "https://github.com/zuizui0223/mois/actions/runs/39008584811",
+  "actual_result_artifact_id": 12091544693,
+  "source_267425_original_photo_csv_SHA256": "fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9",
+  "blind_source_photo_ids_9600_SHA256": "5617a0d2c53d9bad9d531b3d2c67a2526670620630611450144cfda44582831a",
+  "exact_public_date_photo_level_csv_SHA256": "dac4f2d9776a665c431d8ec251adffcf42e8c118c67626abd24d2e169db0064a",
+  "source_hemispheric_season_white_fraction_csv_SHA256": "097f270b1ef287d60430959d318dbdf444169eac7e89a049d3e0d0a385f88a0d",
+  "original_historical_source_photo_ids": 100543,
+  "original_historical_source_classifiable_hue_labels": 45953,
+  "total_authentic_photo_pixel_attempts": 267425,
+  "total_authentic_photo_four_hue_labels": 129795,
+  "old_authentic_photo_labels_with_dated_original_observation": 81867,
+  "n_immutable_original_photo_blind_sampled": 9600,
+  "n_original_photo_and_observation_current_public_dates_exact_match": 9597,
+  "n_not_found_in_current_public_API": 3,
+  "n_taxonomic_source_to_current_public_ID_concordant": 9584,
+  "n_current_public_taxon_ID_different_from_original_among_found": 13,
+  "original_sample_classified_hues": 4306,
+  "n_new_original_historical_classifiable_hues_with_verified_current_date": 4305,
+  "n_full_original_photo_date_hue_records_after_exact_date_only_recovery": 86172,
+  "n_historical_photo_dates_still_unknown_in_100543": 90946,
+  "provider_batch_requests_for_new_records": 188,
+  "queried_additional_original_observations": 9400,
+  "previously_source_verified_original_pilot_dates_reused": 200,
+  "provider_original_public_date_range": [
+    "1972-01-01",
+    "2026-09-04"
+  ],
+  "current_public_observation_level_Flowers_annotations_in_9600": 0,
+  "original_9600_original_photo_hue_result": {
+    "north_extratropical": {
+      "winter": {
+        "classified": 87,
+        "white": 38,
+        "white_fraction": 0.436782
+      },
+      "spring": {
+        "classified": 631,
+        "white": 293,
+        "white_fraction": 0.464342
+      },
+      "summer": {
+        "classified": 1015,
+        "white": 496,
+        "white_fraction": 0.48867
+      },
+      "autumn": {
+        "classified": 152,
+        "white": 73,
+        "white_fraction": 0.480263
+      },
+      "raw_summer_minus_winter_pp": 5.1888
+    },
+    "south_extratropical": {
+      "winter": {
+        "classified": 171,
+        "white": 60,
+        "white_fraction": 0.350877
+      },
+      "spring": {
+        "classified": 410,
+        "white": 180,
+        "white_fraction": 0.439024
+      },
+      "summer": {
+        "classified": 289,
+        "white": 139,
+        "white_fraction": 0.480969
+      },
+      "autumn": {
+        "classified": 157,
+        "white": 76,
+        "white_fraction": 0.484076
+      },
+      "raw_summer_minus_winter_pp": 13.0092
+    },
+    "tropical_month_only": {
+      "classified": 1387,
+      "white": 668,
+      "white_fraction": 0.481615
+    }
+  },
+  "ecological_limitations": [
+    "Photo date is current editable iNaturalist observed_on verified via exact original photo and numeric observation IDs, not image EXIF/capture time.",
+    "None of the 9600 source observations has a current public observation-level Flowers annotation; absence is not a nonflowering measurement.",
+    "Photo specific open petals or chromatic organs are NOT independently validated, four hues are automatic ROI labels.",
+    "Original photo historical species sampling is globally broad and sparse; photo white rates can reflect source taxon mix, observer effort, and year/geography rather than seasonal pigment response.",
+    "Only a fixed 9600/100543 photo hash cohort has been verified using the current public API; full-source dates require the separate official monthly S3 snapshot join.",
+    "No original photo ID, original photo hue, annual moisture global result, or FCP within-species D/W local polymorphism has been changed."
+  ]
+}
