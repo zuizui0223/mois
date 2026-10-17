@@ -1,0 +1,213 @@
+name: MOIS complete second 4096 real photos then original 999 genus moisture
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/mois-final-two-real4096-waves-water.yml"
+      - "docs/MOIS_TWO_REAL_4096_WAVES_WATER_FOLLOWTHROUGH_20261017.md"
+  workflow_run:
+    workflows:
+      - "MOIS full 3.43M original source - second disjoint 4096 REAL photo ROI-v4 pixels"
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-complete-original-two-4096-new-real-photo-waves-water
+  cancel-in-progress: false
+
+jobs:
+  source-only-independent-wave-crosscheck:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check both original 4096 photo-ID sources without reusing floral hue as selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_first_plan original_second_plan
+          gh run download 38994341776 --repo zuizui0223/mois \
+            --name mois-original-1000taxa-104904-pending-FIRST4096-photo-ID-plan \
+            --dir original_first_plan
+          gh run download 38995068942 --repo zuizui0223/mois \
+            --name mois-full3430502-original-3420814-unmeasured-second-4096-photo-source-WAVE2 \
+            --dir original_second_plan
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.analysis.mois_reassemble_original_new4096_measurements import load_plan
+          a,f=load_plan(Path('original_first_plan'),'wave1')
+          b,g=load_plan(Path('original_second_plan'),'wave2')
+          ids_a={x['photo_id'] for x in a}; ids_b={x['photo_id'] for x in b}
+          assert len(ids_a)==len(ids_b)==4096
+          assert not (ids_a&ids_b)
+          assert set(x['inat_taxon_id'] for x in a)==set(x['inat_taxon_id'] for x in b)
+          assert len(set(x['inat_taxon_id'] for x in b))==1000
+          assert f['no_photo_colour_or_fitness_or_bloom_label_used'] is True
+          assert g['no_photo_colour_or_fitness_or_bloom_label_used'] is True
+          print('MOIS_TWO_DISJOINT_ORIGINAL_SOURCE_WAVES_8192_IDs_1000_TAXA_QUEUED')
+          PY
+
+  actual-8192-original-photo-pixel-reassembly:
+    needs: source-only-independent-wave-crosscheck
+    if: github.event_name != 'pull_request' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require BOTH independent real original ROI-v4 workflow runs finished successfully before counting pixels
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/zuizui0223/mois/actions/runs/38994341776 > first_run.json
+          gh api repos/zuizui0223/mois/actions/runs/38995240689 > second_run.json
+          python - <<'PY'
+          import json
+          a=json.load(open('first_run.json'));b=json.load(open('second_run.json'))
+          assert a['status']=='completed' and a['conclusion']=='success'
+          assert b['status']=='completed' and b['conclusion']=='success'
+          assert a['head_repository']['full_name']==b['head_repository']['full_name']=='zuizui0223/mois'
+          print('MOIS_BOTH_NEW_ORIGINAL_REAL_ROI_RUNS_COMPLETE_AND_AUTHENTIC')
+          PY
+      - name: Restore immutable 248312 prior photos, first and second source photo-ID manifests, plus 32 completed ROI-v4 artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p old248k first_plan second_plan first_actual second_actual
+          gh run download 38990701473 --repo zuizui0223/mois \
+            --name mois-248312-original-photographs-120807-classified-FCP_ROI_reused \
+            --dir old248k
+          gh run download 38994341776 --repo zuizui0223/mois \
+            --name mois-original-1000taxa-104904-pending-FIRST4096-photo-ID-plan \
+            --dir first_plan
+          gh run download 38995068942 --repo zuizui0223/mois \
+            --name mois-full3430502-original-3420814-unmeasured-second-4096-photo-source-WAVE2 \
+            --dir second_plan
+          gh run download 38994341776 --repo zuizui0223/mois \
+            --pattern 'mois-genuine-ROI-v4-original-shard-*' \
+            --dir first_actual
+          gh run download 38995240689 --repo zuizui0223/mois \
+            --pattern 'mois-full3430502-second4096-original-realROI-shard-*' \
+            --dir second_actual
+      - name: Merge ALL 8192 genuinely evaluated photographed original-source pixels into previously measured 248312 photos
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_reassemble_original_new4096_measurements \
+            --prior-248312 old248k/mois_original_photo_hues_248312_after_FCP_ROI_additions.csv.gz \
+            --prior-receipt old248k/mois_248312_frozen_measured_photo_addition_receipt.json \
+            --first-plan first_plan \
+            --first-real-results first_actual \
+            --second-plan second_plan \
+            --second-real-results second_actual \
+            --output real_source_two_waves
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('real_source_two_waves/mois_real_additional_photo_waves_receipt.json').read_text())
+          assert p['previous_source_original_photos']==248312
+          assert p['new_original_source_photos']==8192
+          assert p['all_original_unique_photos']==256504
+          assert p['new_four_hue_measured_photo_ids']>1576
+          assert p['all_four_hue_classified_photos']==120807+p['new_four_hue_measured_photo_ids']
+          assert len(p['source_waves'])==2
+          assert p['original_model_SHA_verified_for_every_photo'] is True
+          assert not p['genetic_polymorphism_spatial_D_W_or_50km_measured']
+          print('MOIS_256504_REAL_DEDUPED_SOURCE_PHOTOS_WITH_GENUINE_ROI_TERMINAL_HUES_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-original256504-photo-8192-genuine-new-ROI-pixels-sealed
+          path: real_source_two_waves/
+          retention-days: 90
+          if-no-files-found: error
+
+  original-six-anchor-999-genus-maxT-refit:
+    needs: actual-8192-original-photo-pixel-reassembly
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install original genus/WorldClim water source reader
+        run: |
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 statsmodels==0.14.4 rasterio==1.4.3
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-original256504-photo-8192-genuine-new-ROI-pixels-sealed
+          path: combined_photo_source
+      - name: Restore original 248k location-indexed WorldClim sites
+        run: |
+          mkdir -p old_worldclim
+          gh run download 38992341847 --repo zuizui0223/mois \
+            --name mois-248312-REAL-site-worldclim19-bio-elev2p5m-terrain-monthnormal \
+            --dir old_worldclim
+      - name: Restore SHA-pinned actual original BIO/solar normals and WorldClim water vapour
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p wc/{bio,srad} vapr
+          curl --fail --location --silent --show-error --retry 3 --max-time 480 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_bio.zip \
+            -o wc/bio/wc2.1_10m_bio.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 480 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_srad.zip \
+            -o wc/srad/wc2.1_10m_srad.zip
+          echo '00513224583665ec0f2f955a4ec252730c4deb2004cce9e793492a3f26df4dcf  wc/bio/wc2.1_10m_bio.zip' | sha256sum -c -
+          echo 'c72ee7f4f9a0eb4b5f6cd7a003eddc05bda22a2e5666d968ed4e817fd36b9026  wc/srad/wc2.1_10m_srad.zip' | sha256sum -c -
+          unzip -q wc/bio/wc2.1_10m_bio.zip -d wc/bio
+          unzip -q wc/srad/wc2.1_10m_srad.zip -d wc/srad
+          curl --fail --location --silent --show-error --retry 3 --max-time 480 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_vapr.zip \
+            -o vapr/wc2.1_10m_vapr.zip
+          unzip -q vapr/wc2.1_10m_vapr.zip -d vapr
+      - name: Refit identical original four hue x six moisture+climate anchors with 999 shared genus bootstrap and maxT on completed 256504 originals
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_refit_original_water_with_actual_new_original_photos \
+            --expanded-photo-union combined_photo_source/mois_all_real_original_hue_measured_248312_plus_new_waves.csv.gz \
+            --expanded-photo-receipt combined_photo_source/mois_real_additional_photo_waves_receipt.json \
+            --original-248312-photo-worldclim old_worldclim/mois_248312_original_photo_worldclim_static_monthly_normal_terrain.csv.gz \
+            --original-248312-worldclim-receipt old_worldclim/mois_248312_worldclim_static_month_normal_receipt.json \
+            --worldclim-raster-dir wc \
+            --worldclim-vapr-dir vapr \
+            --worldclim-vapr-zip vapr/wc2.1_10m_vapr.zip \
+            --number-of-new-4096-waves 2 \
+            --output true_mois_water_refit
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('true_mois_water_refit/mois_256504_real_original_photo_six_water_maxT999_receipt.json').read_text())
+          assert p['all_original_photo_ids']==256504
+          assert p['new_photo_ids']==8192
+          assert p['original_genus_bootstrap_draws']==999
+          assert p['original_conservative_fourhue_times_six_anchors_maxT_family']==24
+          assert not p['FCP_within_species_colour_polymorphism_estimands_reanalysed']
+          print('MOIS_REAL_256504_FOUR_HUES_ORIGINAL_100543_METHOD_WATER_999_MAXT_COMPLETE')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-original256504-real-photo-water-original-999genus-maxT24
+          path: true_mois_water_refit/
+          retention-days: 90
+          if-no-files-found: error
