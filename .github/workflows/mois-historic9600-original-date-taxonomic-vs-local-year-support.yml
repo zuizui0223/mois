@@ -1,0 +1,82 @@
+name: MOIS 9600 real historic date photo taxonomic gain versus locality-year support
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_historical9600_taxonomic_breadth_vs_local_season_support.py"
+      - "tests/test_mois_historical9600_taxonomic_breadth_vs_local_support.py"
+      - "results/mois_original9600_date_taxonomic_gain_vs_spatial_temporal_support_20261017.json"
+      - ".github/workflows/mois-historic9600-original-date-taxonomic-vs-local-year-support.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  actual-source-photo-taxon-vs-site-year-repetition:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify source date and photo label math, local season-year and missing-ROI gates
+        run: |
+          python -m pip install -q 'numpy==2.1.3' 'pandas==2.2.3' 'pytest==8.4.2' 'requests==2.32.3'
+          python -m pytest -q tests/test_mois_historical9600_taxonomic_breadth_vs_local_support.py
+      - name: Recover the already actually verified signed photo and date archives; NO further public provider calls
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p signed_photo signed_date
+          gh run download 39002957961 --repo zuizui0223/mois \
+            --name mois-actually-measured-FCP-wave4-completed-photo-partitions-snapshot --dir signed_photo
+          gh run download 39008584811 --repo zuizui0223/mois \
+            --name mois-original9600-real-public-iNat-photo-date-recovery-and-season-aggregation --dir signed_date
+          test -s signed_photo/mois_fcp_wave4_PARTIAL_completed_pixel_original_photo_union.csv.gz
+          test -s signed_date/mois_historical_9600_original_photo_dates_current_public.csv
+          zip -j -q original_pixels_source.zip signed_photo/*
+          zip -j -q original_observed_dates.zip signed_date/*
+      - name: Recalculate 3308 additional taxa and same fine-locality/year summer-winter eligibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_historical9600_taxonomic_breadth_vs_local_season_support \
+            --original-photo-archive original_pixels_source.zip \
+            --recovered-historical9600-archive original_observed_dates.zip \
+            --output observed_breadth_vs_positivity
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('observed_breadth_vs_positivity/mois_original9600_date_taxonomic_gain_vs_spatial_temporal_positivity.json').read_text())
+          previous=json.loads(Path('results/mois_original9600_date_taxonomic_gain_vs_spatial_temporal_support_20261017.json').read_text())
+          for key,old in (('before_actual_photo_dated_and_classifiable',81867),
+            ('after_actual_photo_dated_and_classifiable',86172),
+            ('additional_classified_original_historical_hues',4305),
+            ('before_dated_photographed_taxa',2007),
+            ('after_dated_photographed_taxa',5315),
+            ('additional_dated_photographed_taxa',3308),
+            ('historical_sample_dated_hue_taxa',3801),
+            ('historical_sample_taxa_with_exactly_one_classified_dated_photo',3435)):
+              assert r[key]==old,(key,r[key],old)
+          for zone in ('north_extratropical','south_extratropical'):
+              for phase in ('before','after'):
+                  found=[d for d in r['support'] if d['cohort']==phase and
+                    d['hemisphere']==zone and
+                    d['matched_same_local_meteorological_season_year'] and
+                    d['minimum_original_observation_IDs_in_summer_and_winter']==2]
+                  assert len(found)==1
+                  assert found[0]['matched_groups']==(1 if zone.startswith('north') else 0)
+          assert abs(r['historical_sample_singleton_taxon_fraction'] - 3435/3801)<0.00001
+          print('MOIS_AUTHENTIC_DATE_TAXON_GAIN_NO_NEW_LOCAL_YEAR_REPLICATION_CONFIRMED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-original9600-date-new-taxa-versus-unchanged-local-year-seasonal-support
+          path: observed_breadth_vs_positivity/
+          retention-days: 90
+          if-no-files-found: error
