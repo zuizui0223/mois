@@ -183,7 +183,11 @@ def audit(archive:Path,out:Path,*,400_source:Path|None=None,
                     if key in observation:
                         base["repeated_photo_from_same_observation"]+=1
                         old=observation[key]
-                        if old[:3]!=(lat,lon,day) or old[3]!=morph:
+                        if old is None:
+                            # Once photos of an observation contradict, later
+                            # photos cannot restore clean biological independence.
+                            pass
+                        elif old[:3]!=(lat,lon,day) or old[3]!=morph:
                             base["conflicting_multi_photo_observation"]+=1
                             observation[key]=None
                     else:
