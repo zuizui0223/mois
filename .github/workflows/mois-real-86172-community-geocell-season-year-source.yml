@@ -67,7 +67,7 @@ jobs:
           assert n5['north_extratropical']['after']['coarse_cell_season_years']==2
           assert n5['south_extratropical']['before']['coarse_cell_season_years']==1
           assert n5['south_extratropical']['after']['coarse_cell_season_years']==1
-          expected={'.5':(28,12),'1.0':(70,31),'2.0':(108,58),'5.0':(120,74)}
+          expected={'0.5':(28,12),'1.0':(70,31),'2.0':(108,58),'5.0':(120,74)}
           for scale,(n,s) in expected.items():
               record=r['after_min5_multiscale'][scale]
               assert record['north_extratropical']['coarse_cell_season_years']==n
