@@ -71,7 +71,7 @@ def site_bio(new:pd.DataFrame,worldclim:Path)->pd.DataFrame:
 def fit(photo_union:Path,union_receipt:Path,old_site:Path,old_site_receipt:Path,
         worldclim:Path,vapr:Path,vapr_zip:Path,outdir:Path,
         *,expected_waves:int=1):
-    need(expected_waves in (1,2),"Only 1 or 2 SHA-verified original photo waves supported")
+    need(expected_waves in (1,2,3),"Only 1-3 SHA-verified original photo waves supported")
     need(not outdir.exists() or not any(outdir.iterdir()),
          "Refuse overwriting genuine original 100k-method water source result")
     rec=json.loads(union_receipt.read_text())

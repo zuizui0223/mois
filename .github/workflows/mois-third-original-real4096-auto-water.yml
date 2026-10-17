@@ -1,0 +1,241 @@
+name: MOIS third measured 4096 originals then original moisture maxT on 260600 photos
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_append_real_third4096_photo_wave.py
+      - scripts/analysis/mois_reassemble_original_new4096_measurements.py
+      - scripts/analysis/mois_refit_original_water_with_actual_new_original_photos.py
+      - .github/workflows/mois-third-original-real4096-auto-water.yml
+  workflow_run:
+    workflows:
+      - "MOIS third disjoint 4096 real original photo ROI-v4 from full 3430502 source"
+    types: [completed]
+  schedule:
+    - cron: "47 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-finish-third-real4096-source-and-260600-original-moisture
+  cancel-in-progress: false
+
+jobs:
+  source-verified-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    env:
+      GH_TOKEN: ${{ github.token }}
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      prior_run: ${{ steps.check.outputs.prior_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate existing original MOIS ROI source assembler and water-refit code
+        run: |
+          python -m py_compile \
+            scripts/analysis/mois_append_real_third4096_photo_wave.py \
+            scripts/analysis/mois_reassemble_original_new4096_measurements.py \
+            scripts/analysis/mois_refit_original_water_with_actual_new_original_photos.py
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/analysis/mois_reassemble_original_new4096_measurements.py').read_text()
+          assert 'wave3' in s and 'WAVE3_4096.csv' in s
+          t=Path('scripts/analysis/mois_refit_original_water_with_actual_new_original_photos.py').read_text()
+          assert 'expected_waves in (1,2,3)' in t
+          print('MOIS_AUTHENTIC_THIRD_ORIGINAL_PHOTOS_999BOOTSTRAP_SOURCE_CONTRACT_PASS')
+          PY
+      - name: Fail closed when real third ROI work or prior true 256504-photo union has not finished
+        id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            echo "CI-only validation: do not import incomplete third photo pixels"
+            exit 0
+          fi
+          # This control checks existing original Action results; no unapproved
+          # work is run indefinitely or on unverified original photos.
+          if [ "$(date -u +%Y%m%d)" -gt 20261104 ]; then
+            echo "Original-photo source import window expired"
+            exit 0
+          fi
+          gh api repos/zuizui0223/mois/actions/runs/39002092027 > third_source_run.json
+          python - <<'PY'
+          import json
+          p=json.load(open('third_source_run.json'))
+          assert p['head_repository']['full_name']=='zuizui0223/mois'
+          assert p['head_sha']=='789a3f991c929f7eb884e5b4d44ae090ba0e58c7'
+          PY
+          status=$(python - <<'PY'
+          import json
+          p=json.load(open('third_source_run.json'))
+          print(p["status"]+":"+(p["conclusion"] or ""))
+          PY
+          )
+          if [ "$status" != "completed:success" ]; then
+            echo "Third original photo ROI all 16 jobs incomplete: $status"
+            exit 0
+          fi
+          prior_id=$(gh api 'repos/zuizui0223/mois/actions/artifacts?name=mois-original256504-photo-8192-genuine-new-ROI-pixels-sealed&per_page=25' \
+            --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id // empty')
+          if [ -z "$prior_id" ] || [ "$prior_id" = null ]; then
+            echo "First two complete original ROI photo waves have no SHA-verified combined data yet"
+            exit 0
+          fi
+          existing=$(gh api 'repos/zuizui0223/mois/actions/artifacts?name=mois-real260600-3waves-original-999genus-water-maxT&per_page=25' \
+            --jq '[.artifacts[] | select(.expired == false)] | length')
+          if [ "$existing" != 0 ]; then
+            echo "Already archived true third original photo-water result"
+            exit 0
+          fi
+          prior_run=$(gh api "repos/zuizui0223/mois/actions/artifacts/$prior_id" --jq '.workflow_run.id')
+          if [ -z "$prior_run" ] || [ "$prior_run" = null ]; then
+            echo "Cannot authenticate prior two real pixel source run"
+            exit 0
+          fi
+          echo "prior_run=$prior_run" >> "$GITHUB_OUTPUT"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "Third ROI and first two image-source populations fully completed"
+
+  three-wave-real-photo-identity-and-hue-union:
+    needs: source-verified-preflight
+    if: needs['source-verified-preflight'].outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PRIOR_RUN: ${{ needs.source-verified-preflight.outputs.prior_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore 256504 original-photo two-wave union, full third ID freeze and all sixteen actual ROI-v4 third terminals
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_prior256504 third_plan third_roi
+          gh run download "$PRIOR_RUN" --repo zuizui0223/mois \
+            --name mois-original256504-photo-8192-genuine-new-ROI-pixels-sealed \
+            --dir original_prior256504
+          gh run download 39002092027 --repo zuizui0223/mois \
+            --name mois-full3430502-third4096-original-source-frozen-photoIDs-only \
+            --dir third_plan
+          gh run download 39002092027 --repo zuizui0223/mois \
+            --pattern 'mois-real-third-original4096-ROI256-shard-*' \
+            --dir third_roi
+      - name: Verify all actual pixels before admitting third original 4096 photo IDs into MOIS
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_append_real_third4096_photo_wave \
+            --previous-256504-original-hue-gzip original_prior256504/mois_all_real_original_hue_measured_248312_plus_new_waves.csv.gz \
+            --previous-two-waves-receipt original_prior256504/mois_real_additional_photo_waves_receipt.json \
+            --third-4096-photo-source third_plan \
+            --third-actual-roi-results third_roi \
+            --output real_mois_three_waves
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("real_mois_three_waves/mois_real_additional_photo_waves_receipt.json").read_text())
+          assert x["all_original_unique_photos"]==260600
+          assert x["new_original_source_photos"]==12288
+          assert len(x["source_waves"])==3
+          assert x["new_third_4096_source_four_hue_classified"]+x["new_third_4096_source_unclassified"]==4096
+          assert x["all_four_hue_classified_photos"]==120807+x["new_four_hue_measured_photo_ids"]
+          assert x["original_model_SHA_verified_for_every_photo"]
+          assert not x["genetic_polymorphism_spatial_D_W_or_50km_measured"]
+          print("MOIS_REAL_260600_PHOTO_IDENTITIES_AND_ACTUAL_HUES_SEALED")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-260600-original-photographs-3x4096-new-genuine-photo-ROI-pixels
+          path: real_mois_three_waves/
+          retention-days: 90
+          if-no-files-found: error
+
+  original-genus-bootstrap-moisture-260600:
+    needs: three-wave-real-photo-identity-and-hue-union
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frozen original global photo-water statistics and geographic raster reader
+        run: |
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 statsmodels==0.14.4 rasterio==1.4.3
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-260600-original-photographs-3x4096-new-genuine-photo-ROI-pixels
+          path: complete_mois_source
+      - name: Restore original unchanged 248312 source photo-site WorldClim and old 100k water model inputs
+        shell: bash
+        run: |
+          mkdir -p original_site_worldclim
+          gh run download 38992341847 --repo zuizui0223/mois \
+            --name mois-248312-REAL-site-worldclim19-bio-elev2p5m-terrain-monthnormal \
+            --dir original_site_worldclim
+      - name: Authenticate official BIO/solar/vapour raster archives at newly measured photo sites
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p climate/{bio,srad} vapor
+          curl --fail --location --silent --show-error --retry 3 --max-time 480 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_bio.zip \
+            -o climate/bio/wc2.1_10m_bio.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 480 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_srad.zip \
+            -o climate/srad/wc2.1_10m_srad.zip
+          echo '00513224583665ec0f2f955a4ec252730c4deb2004cce9e793492a3f26df4dcf  climate/bio/wc2.1_10m_bio.zip' | sha256sum -c -
+          echo 'c72ee7f4f9a0eb4b5f6cd7a003eddc05bda22a2e5666d968ed4e817fd36b9026  climate/srad/wc2.1_10m_srad.zip' | sha256sum -c -
+          unzip -q climate/bio/wc2.1_10m_bio.zip -d climate/bio
+          unzip -q climate/srad/wc2.1_10m_srad.zip -d climate/srad
+          curl --fail --location --silent --show-error --retry 3 --max-time 480 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_vapr.zip \
+            -o vapor/wc2.1_10m_vapr.zip
+          unzip -q vapor/wc2.1_10m_vapr.zip -d vapor
+          test "$(find vapor -name 'wc2.1_10m_vapr_??.tif' | wc -l)" -eq 12
+      - name: Refit identical original six moisture anchors x four hues, genus-equal 999 bootstrap and maxT familywise intervals on REAL 260600 photos
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_refit_original_water_with_actual_new_original_photos \
+            --expanded-photo-union complete_mois_source/mois_all_real_original_hue_measured_248312_plus_new_waves.csv.gz \
+            --expanded-photo-receipt complete_mois_source/mois_real_additional_photo_waves_receipt.json \
+            --original-248312-photo-worldclim original_site_worldclim/mois_248312_original_photo_worldclim_static_monthly_normal_terrain.csv.gz \
+            --original-248312-worldclim-receipt original_site_worldclim/mois_248312_worldclim_static_month_normal_receipt.json \
+            --worldclim-raster-dir climate \
+            --worldclim-vapr-dir vapor \
+            --worldclim-vapr-zip vapor/wc2.1_10m_vapr.zip \
+            --number-of-new-4096-waves 3 \
+            --output original_mois_260600_water
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("original_mois_260600_water/mois_260600_real_original_photo_six_water_maxT999_receipt.json").read_text())
+          assert x["all_original_photo_ids"]==260600
+          assert x["new_photo_ids"]==12288
+          assert x["all_four_hue_classified_photos"]>122383
+          assert x["original_genus_bootstrap_draws"]==999
+          assert x["original_conservative_fourhue_times_six_anchors_maxT_family"]==24
+          assert not x["FCP_within_species_colour_polymorphism_estimands_reanalysed"]
+          assert x["water_results"]["newly_expanded_MOIS_global_photos"]["genus_equal__wc_bio12"]["anchor"]=="wc_bio12"
+          print("MOIS_REAL_260600_PHOTOS_ORIGINAL_100543_WATER_MAXT999_SAME_METHOD_COMPLETE")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-real260600-3waves-original-999genus-water-maxT
+          path: original_mois_260600_water/
+          retention-days: 90
+          if-no-files-found: error
