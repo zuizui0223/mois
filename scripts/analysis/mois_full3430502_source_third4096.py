@@ -126,6 +126,9 @@ def plan(full:Path,selected:Path,prior:Path,prior_receipt:Path,wave2:Path,wave2_
             counts["not_previously_measured"]+=1
             if pid in screened:continue
             counts["not_measured_outside_first_photo_screen"]+=1
+            if pid in wave2_ids:
+                counts["previously_reserved_wave2"]+=1
+                continue
             taxa[r["inat_taxon_id"]]+=1
             if (r["source_snapshot_date"]!="2026-09-27"
                 or not r["observer_id"] or not r["observation_id"]
@@ -159,7 +162,8 @@ def plan(full:Path,selected:Path,prior:Path,prior_receipt:Path,wave2:Path,wave2_
     if (counts["all"]!=SOURCE_N or counts["already_measured"]!=ALREADY_MEASURED_OVERLAP_N
         or counts["not_previously_measured"]!=UNMEASURED_FULL_N
         or counts["not_measured_outside_first_photo_screen"]!=UNMEASURED_OUTSIDE_FIRST_SAMPLE_N
-        or len(encountered_screen)!=SCREEN_SELECTED_N or len(taxa)!=1000):
+        or len(encountered_screen)!=SCREEN_SELECTED_N or len(taxa)!=1000
+        or counts["previously_reserved_wave2"]!=4096):
         raise ValueError("Expanded 3.43M original photo source/candidate census did not reproduce")
     pools={tax:[row for rank,pid,row in sorted(
         heap,key=lambda t:(-t[0],int(t[1])))] for tax,heap in heaps.items()}
@@ -177,14 +181,14 @@ def plan(full:Path,selected:Path,prior:Path,prior_receipt:Path,wave2:Path,wave2_
             cursors[tax]=idx+1
             if idx>=len(source):continue
             row=source[idx].copy()
-            if row["photo_id"] in seen_old or row["photo_id"] in screened:
-                raise ValueError("Wave2 reused a previously measured/photo-screen source")
+            if row["photo_id"] in seen_old or row["photo_id"] in screened or row["photo_id"] in wave2_ids:
+                raise ValueError("Third wave reused old, source-screen or second-wave photo")
             global_observers.add(row["observer_id"])
             chosen.append(row)
         if len(chosen)>=WAVE_N:break
     if (len(chosen)!=WAVE_N or len(global_observers)!=WAVE_N
         or len({r["inat_taxon_id"] for r in chosen})!=1000):
-        raise ValueError("Observer-disjoint four-photo-per-taxon source wave2 unavailable")
+        raise ValueError("Observer-disjoint four-photo-per-taxon source wave3 unavailable")
     original=[]
     for idx,r in enumerate(chosen):
         row=dict(r)
@@ -194,7 +198,7 @@ def plan(full:Path,selected:Path,prior:Path,prior_receipt:Path,wave2:Path,wave2_
         row["image_filename"]=row["measurement_id"]+".jpg"
         original.append(row)
     outdir.mkdir(parents=True,exist_ok=True)
-    allfile=outdir/"mois_original_full_3430502_outside_first_screen_WAVE2_4096.csv"
+    allfile=outdir/"mois_original_full_3430502_outside_first_screen_WAVE3_4096.csv"
     save(allfile,original)
     shards={}
     for k in range(N_SHARDS):
@@ -210,7 +214,7 @@ def plan(full:Path,selected:Path,prior:Path,prior_receipt:Path,wave2:Path,wave2_
         w.writerow(("inat_taxon_id","unmeasured_photo_ids_outside_initial_106376"))
         w.writerows((tax,taxa[tax]) for tax in sorted(taxa,key=int))
     receipt={
-      "schema":"mois_full3430502_original_source_outside_first106376_wave2_v1",
+      "schema":"mois_full3430502_original_source_outside_first106376_wave3_v1",
       "status":"SOURCE_ONLY_4096_RESERVED_NO_NEW_PIXEL_HUES",
       "authoritative_original_source_snapshot":"2026-09-27",
       "original_complete_source_photo_ids":counts["all"],
@@ -218,6 +222,9 @@ def plan(full:Path,selected:Path,prior:Path,prior_receipt:Path,wave2:Path,wave2_
       "new_original_unmeasured_source_photo_ids":counts["not_previously_measured"],
       "previous_original_106376_photo_screen_ids":len(encountered_screen),
       "new_unmeasured_source_photo_ids_outside_first_screen":counts["not_measured_outside_first_photo_screen"],
+      "previous_wave2_photo_ids_excluded":counts["previously_reserved_wave2"],
+      "unmeasured_outside_first_screen_after_wave2_exclusion":counts["not_measured_outside_first_photo_screen"]-counts["previously_reserved_wave2"],
+      "previous_wave2_original_source_sha256":digest(wave2),
       "original_taxa_with_new_source_photos":len(taxa),
       "full_3p43M_original_source_file_sha256":FULL_SHA,
       "first_106376_source_file_sha256":FIRST_SELECTED_SHA,
@@ -241,7 +248,7 @@ def plan(full:Path,selected:Path,prior:Path,prior_receipt:Path,wave2:Path,wave2_
     print("MOIS_FULL_ORIGINAL_3430502_SOURCE_3420814_UNMEASURED_SECOND4096_FROZEN",
           json.dumps({"from_source":counts["all"],"new_unmeasured":counts["not_previously_measured"],
                       "outside_prior_screen":counts["not_measured_outside_first_photo_screen"],
-                      "reserved_wave2":len(chosen)},sort_keys=True),flush=True)
+                      "reserved_wave3":len(chosen)},sort_keys=True),flush=True)
     return receipt
 
 
