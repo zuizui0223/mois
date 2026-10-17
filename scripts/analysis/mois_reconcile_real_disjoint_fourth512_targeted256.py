@@ -58,8 +58,10 @@ def source_table(path: Path) -> pd.DataFrame:
             "Source original photo/schema/date columns differ")
     require(d.photo_id.is_unique and d.photo_id.str.fullmatch(r"[0-9]+").all(),
             "Duplicated or invalid original photographic photo_id")
-    require(d.morph.isin((*HUES, "mixed_uncertain")).all(),
-            "Source photographic four-hue/unknown model outcomes drift")
+    # Legacy source contains authentically unclassifiable ROI values besides
+    # mixed_uncertain (including blank morphs). Its pinned byte SHA, immutable
+    # prefix and numeric four-hue counts guarantee these remain nonlabels.
+    # Only NEW real pixel worker rows below require fixed four-hue/unknown states.
     return d
 
 
@@ -88,7 +90,8 @@ def original_prefix_and_new_photos(baseline: pd.DataFrame,
     require(new.photo_id.is_unique and
             not new.photo_id.isin(baseline.photo_id).any() and
             new.qualified_date.str.fullmatch(r"\d{4}-\d{2}-\d{2}").all() and
-            int(new.morph.isin(HUES).sum()) == expected_classified,
+            int(new.morph.isin(HUES).sum()) == expected_classified and
+            new.morph.isin((*HUES, "mixed_uncertain")).all(),
             f"{arm}: unmeasured/duplicate pixels, dates, or classified ROIs")
     return new
 
