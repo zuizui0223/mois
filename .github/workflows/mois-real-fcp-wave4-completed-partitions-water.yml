@@ -9,6 +9,8 @@ on:
       - ".github/workflows/mois-real-fcp-wave4-completed-partitions-water.yml"
       - "docs/MOIS_COMPLETED_PARTIAL_FCP_WAVE4_IN_MOIS_20261017.md"
   workflow_dispatch:
+  schedule:
+    - cron: '13 */3 * * *'
 
 permissions:
   contents: read
@@ -19,7 +21,72 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  FCP-completed-ROI-progress-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    outputs:
+      ready: ${{ steps.ready.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Only recompute complete original FCP photo pixels when enough new signed partitions appear
+        id: ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'ready=false' >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_EVENT_NAME" != schedule ]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+            echo 'Manual/PR authoring run executes source-signature tests and actual photographic source materialization'
+            exit 0
+          fi
+          if [ "$(date -u +%Y%m%d)" -gt 20261104 ]; then
+            echo 'Bounded source-watch period ended; never treat photos without pixels as completed'
+            exit 0
+          fi
+          run=$(gh api repos/zuizui0223/fcp/actions/runs/38992543115 --jq '.status + ":" + (.conclusion // "")')
+          if [ "$run" = 'completed:success' ]; then
+            echo 'All original FCP wave4 pixels complete; merged PR #29 runs full original 49800 importer'
+            exit 0
+          fi
+          current=$(gh api 'repos/zuizui0223/fcp/actions/runs/38992543115/artifacts?per_page=1' --jq '.total_count')
+          # The original run contains exactly one source firewall artifact
+          # plus one artifact for every successfully finished ROI partition.
+          partitions=$((current-1))
+          if [ "$partitions" -lt 16 ]; then
+            echo "Original image pixels insufficient: $partitions signed partitions"
+            exit 0
+          fi
+          previous_run=$(gh api 'repos/zuizui0223/mois/actions/artifacts?name=mois-actually-measured-FCP-wave4-completed-photo-partitions-snapshot&per_page=50' \
+            --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .workflow_run.id // empty')
+          if [ -z "$previous_run" ] || [ "$previous_run" = null ]; then
+            echo 'No prior signed partial ROI snapshot: full first collection needed'
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          mkdir -p previous_snapshot
+          gh run download "$previous_run" --repo zuizui0223/mois \
+            --name mois-actually-measured-FCP-wave4-completed-photo-partitions-snapshot \
+            --dir previous_snapshot
+          old=$(python - <<'PY'
+          import json
+          p=json.load(open('previous_snapshot/mois_fcp_wave4_PARTIAL_real_completed_original_ROI_receipt.json'))
+          assert p['schema']=='mois_authentic_completed_original_FCP_wave4_ROI_PARTITIONS_source_v1'
+          assert p['source_FCP_wave4_original_run_sha'] if 'source_FCP_wave4_original_run_sha' in p else p['FCP_original_run_head_sha']
+          print(p['FCP_completed_ROI_partitions'])
+          PY
+          )
+          if [ "$partitions" -lt $((old+16)) ]; then
+            echo "Only $partitions-$old finished ROI partitions: wait for >=16 new photo-pixel partitions"
+            exit 0
+          fi
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+          echo "Original FCP real ROI partitions now $partitions (previous $old), admit new pixels and refit water"
+
   original-FCP-measured-hue-partitions-into-MOIS:
+    needs: FCP-completed-ROI-progress-gate
+    if: needs['FCP-completed-ROI-progress-gate'].outputs.ready == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     env:
