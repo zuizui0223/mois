@@ -1,0 +1,82 @@
+name: MOIS 400 original botanist review adjudication - blank-state QC
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_validate_400_blinded_botanical_reviews.py"
+      - "tests/test_mois_validate_400_blinded_botanical_reviews.py"
+      - ".github/workflows/mois-400-independent-botanical-review-qc.yml"
+      - "docs/MOIS_400_REVIEW_ADJUDICATION_PROTOCOL_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  frozen-original-400-review-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run botanical review independence and adjudication unit tests
+        run: |
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q tests/test_mois_validate_400_blinded_botanical_reviews.py tests/test_mois_prepare_400_botanical_review_handoff.py
+      - name: Recover exact 400 pre-colour source-ID selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_source
+          gh api repos/zuizui0223/mois/actions/runs/38929402279 > original_source/original_run.json
+          python - <<'PY'
+          import json
+          r=json.load(open('original_source/original_run.json'))
+          assert r['id']==38929402279 and r['conclusion']=='success'
+          assert r['head_sha']=='adfd0a6edfc3438080ade2a3d9e76587d7322898'
+          assert r['head_repository']['full_name']=='zuizui0223/mois'
+          PY
+          gh run download 38929402279 --repo zuizui0223/mois \
+            --name mois-5taxa-400-original-photo-ID-disjoint-season-wave-UNREVIEWED \
+            --dir original_source
+      - name: Recreate authentic review sheets and keep coordinator mapping ephemeral
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_prepare_400_botanical_review_handoff \
+            --source-original-400 original_source/new_mois_photo_wave/first_five_taxa_temporal_colour_blind_original_photo_manifest.csv \
+            --outdir private_generated
+      - name: Require exactly zero invented botanical verdicts on pristine 400 forms
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_validate_400_blinded_botanical_reviews \
+            --blank-a private_generated/mois_400_botanical_open_flower_reviewer_A_UNFILLED.csv \
+            --blank-b private_generated/mois_400_botanical_open_flower_reviewer_B_UNFILLED.csv \
+            --coordinator-map private_generated/mois_400_review_token_source_mapping_COORDINATOR_ONLY.csv \
+            --filled-a private_generated/mois_400_botanical_open_flower_reviewer_A_UNFILLED.csv \
+            --filled-b private_generated/mois_400_botanical_open_flower_reviewer_B_UNFILLED.csv \
+            --outdir review_qc_coordinator_private
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('review_qc_coordinator_private/MOIS_400_BOTANICAL_REVIEW_STATUS_REDACTED.json').read_text())
+          assert q['original_source_400_photo_ids']==400
+          assert q['status']=='BOTANICAL_REVIEW_INCOMPLETE_NO_WHITE_FLOWER_RATE'
+          assert q['reviewer_A_complete_votes']==q['reviewer_B_complete_votes']==0
+          assert q['status_counts']=={'both_unreviewed':400}
+          assert q['unresolved_photo_count']==400
+          assert q['confirmed_open_petaloid_photos_for_FUTURE_original_photo_ROI']==0
+          assert q['white_frequency_or_monthly_climate_effect_NOT_estimated']
+          print('MOIS_400_ORIGINAL_BLIND_HUMAN_REVIEW_PROTOCOL_QC_PASS_NO_FALSE_BIOLOGY')
+          PY
+      - name: Upload only redacted counts, never original site/photo mapping or filled reviewer IDs
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-original400-botanical-review-redacted-QC-NO-BLOOM-LABELS
+          path: review_qc_coordinator_private/MOIS_400_BOTANICAL_REVIEW_STATUS_REDACTED.json
+          retention-days: 90
