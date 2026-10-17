@@ -240,6 +240,11 @@ def run(prior:Path,finished:Path,finished_receipt:Path,output:Path):
 
     panel=enriched.copy()
     panel["observed_on"]=panel.qualified_date
+    # The true original source photo CSV is deliberately read with dtype=str
+    # to preserve literal IDs and digit representations. Convert coordinates
+    # ONLY in a disposable statistical panel; never rewrite stored originals.
+    for geo in ("latitude","longitude"):
+        panel[geo]=pd.to_numeric(panel[geo],errors="coerce")
     cal=labelled_calendar(panel)
     require(int((cal.date.notna()&cal.classified).sum())==
             result["expanded_dated_original_four_hue_ROIs"],
