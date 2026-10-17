@@ -87,7 +87,7 @@ def test_refuse_modifying_previously_classified_source_pixel(tmp_path,monkeypatc
     r=json.loads(proof.read_text())
     r["archive_exact_original_new_photo_source_SHA256"]=m.sha_file(photos)
     proof.write_text(json.dumps(r))
-    with pytest.raises(ValueError,match="silently re-labelled"):
+    with pytest.raises(ValueError,match="morph was overwritten"):
         m.verify(photos,proof,climate,climate_proof)
 
 
