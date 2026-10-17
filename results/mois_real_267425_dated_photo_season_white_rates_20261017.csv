@@ -1,0 +1,10 @@
+zone,season,photo_attempts,classified_hues,white_hues,photographed_taxa,white_share_of_classified,classified_fraction_of_attempts
+north_extratropical,autumn,13592,7089,3358,1130,0.47369163,0.52155680
+north_extratropical,spring,53485,27712,13179,1501,0.47557015,0.51812658
+north_extratropical,summer,51755,27210,13312,1545,0.48923190,0.52574630
+north_extratropical,winter,6797,3246,1481,824,0.45625385,0.47756363
+south_extratropical,autumn,3741,1618,758,440,0.46847960,0.43250468
+south_extratropical,spring,11129,5168,2213,551,0.42821207,0.46437236
+south_extratropical,summer,6528,3030,1627,527,0.53696370,0.46415441
+south_extratropical,winter,4730,2098,765,396,0.36463298,0.44355180
+tropical_or_unknown,month_only,10004,4696,1794,428,0.38202726,0.46941224
