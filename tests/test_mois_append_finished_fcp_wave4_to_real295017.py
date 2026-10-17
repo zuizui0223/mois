@@ -23,7 +23,7 @@ def record(photo, hue, *, taxon="400", observed_on="2025-06-14",
              morph=hue,source_original_measured=original_source,
              old_mois_or_new_fcp="fcp_additional_ROI",
              measurement_status=("classified_four_state_morph" if hue in m.HUES
-                                 else "mixed_uncertain"),
+                                 else "not_evaluable_roi_or_flip_gate"),
              latitude="39.01",longitude="140.01",
              observation_id=observation_id or "obs-"+photo,observed_on=observed_on)
     return d
@@ -36,7 +36,7 @@ def fake_sources(monkeypatch):
         record("12","red_pink",original_source="fcp_wave4_partial_original_ROI_v4"),
         record("13","mixed_uncertain",observed_on="",
                original_source="other_old_mois")])
-    a.loc[a.photo_id.eq("13"),"measurement_status"]="mixed_uncertain"
+    a.loc[a.photo_id.eq("13"),"measurement_status"]="not_evaluable_roi_or_flip_gate"
     b=a.copy()
     b["qualified_date"]=["2025-06-14","2025-06-14","2024-01-01"]
     b["original_source_date_provenance"]=["old","old","historic_s3"]
