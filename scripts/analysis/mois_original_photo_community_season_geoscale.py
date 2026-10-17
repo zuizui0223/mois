@@ -171,9 +171,6 @@ def run(photo_zip:Path,date_zip:Path,output:Path):
     require(int((p.classified&p.date.notna()).sum())==86172 and
             int((before.classified&before.date.notna()).sum())==81867,
             "Current photo/observed date hue support changed")
-    p["source_calendar_type"]=np.where(
-        p.photo_id.isin(d.original_photo_id),
-        "original_plus_public_verified" ,"original_only")
     original_date_ids=set(original.loc[original.observed_on.notna(),"photo_id"])
     p["source_calendar_type"]=np.where(
         p.photo_id.isin(original_date_ids),"original_only",
@@ -218,7 +215,7 @@ def run(photo_zip:Path,date_zip:Path,output:Path):
          "A 0.25 degree geocell is tens of kilometres wide and not a biological population.",
          "Photos are automated hue ROIs, no independent open-flower organ confirmation.",
          "No independent photographer effort or count of absent flowering was observed.",
-         "1999-site/group photo confidence intervals are descriptive source cluster bootstrap, not simultaneous confidence intervals.",
+         "999-draw geocell-cluster photo bootstrap intervals are descriptive source cluster bootstrap, not simultaneous confidence intervals.",
          "No actual observation-year monthly temperature, water deficit or solar mechanism tested.",
          "FCP within species W/D local phenotype-space inferences and historical genus moisture maxT unchanged.",
         ],
