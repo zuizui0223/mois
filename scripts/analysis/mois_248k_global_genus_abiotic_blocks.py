@@ -106,6 +106,10 @@ def design(s:pd.DataFrame,features:tuple[str,...],hue:str)->tuple[np.ndarray,np.
     require(bool(names),"All covariates are constant")
     for i in range(X.shape[1]):
         X[:,i]-=pd.Series(X[:,i],index=s.index).groupby(s.genus).transform("mean").to_numpy()
+    usable=np.isfinite(X).all(axis=0)&(np.std(X,axis=0)>1e-10)
+    X=X[:,usable]
+    names=[k for k,ok in zip(names,usable) if ok]
+    require(len(names)>0, "No among-species contrasts within the qualifying genera")
     y=s["y_"+hue].to_numpy(float)
     y-=pd.Series(y,index=s.index).groupby(s.genus).transform("mean").to_numpy()
     counts=s.groupby("genus").genus.transform("size").to_numpy(float)
@@ -243,7 +247,7 @@ def main(source:Path,receipt_path:Path,outdir:Path):
             and rec["n_four_hue_classified"]==SOURCE_EXPECTED_CLASSIFIED,
             "Source actual 248k, 120807 measured photographic hue counts changed")
     cols=["photo_id","inat_taxon_id","species","morph","original_source",
-          "observed_on","latitude","longitude",*GEOG[4:],*CLIM,*TERRAIN,*SOIL]
+          "observed_on","latitude","longitude","wc2_elev_2p5m",*CLIM,*TERRAIN,*SOIL]
     cols=list(dict.fromkeys(cols))
     raw=pd.read_csv(source,compression="gzip",usecols=cols,
                     low_memory=False,dtype={"photo_id":str,"inat_taxon_id":str})
