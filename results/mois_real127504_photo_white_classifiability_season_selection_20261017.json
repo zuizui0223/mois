@@ -82,7 +82,7 @@
     "Classification success is a photo/source quality-and-composition outcome, not an independently verified flowering state.",
     "The white label yield identity is mathematical and not a decomposition of true biological pigment frequencies.",
     "The within-cell/year cohort is itself chosen on having sufficient classifiable original photos and taxa; selection and positivity restrictions remain.",
-    "99th-percentile geographical bootstrap correction does not adjust post hoc multiple spatial/minimum effort analyses; these are 95% exploratory percentile intervals.",
+    "999-draw geographical bootstrap percentile intervals do not adjust post hoc multiple spatial/minimum-effort analyses; these are exploratory 95% intervals.",
     "0.25 degree cells do not uniquely identify biological breeding populations or independent photographers.",
     "No actual observation-year meteorological temperature, radiation, deficit or pigment-fitness response fitted.",
     "FCP within-species W/D and MOIS frozen annual maxT effects are not imported or changed."
