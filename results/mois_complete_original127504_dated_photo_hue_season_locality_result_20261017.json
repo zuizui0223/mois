@@ -1,0 +1,103 @@
+{
+  "schema": "mois_measured_original127504_verified_dated_hue_photo_season_composition_20261017_v1",
+  "created_date": "2026-10-17",
+  "original_source_photo_run": "https://github.com/zuizui0223/mois/actions/runs/39002957961",
+  "full_official_monthly_S3_original_photo_date_run": "https://github.com/zuizui0223/mois/actions/runs/39009539731",
+  "live_API_verified9600_original_photo_date_run": "https://github.com/zuizui0223/mois/actions/runs/39008584811",
+  "actual_joined_original_photo_season_run": "https://github.com/zuizui0223/mois/actions/runs/39012110980",
+  "actual_final_run_artifact_id": 12092839760,
+  "original_photo_csv_sha256": "fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9",
+  "historic_official_S3_dated_original_photo_csv_sha256": "d9f599d4ff6d479d8714344b014e604ade1af90a3e8dd8640a19d1be48407566",
+  "historic_verified9600_API_photo_date_csv_sha256": "dac4f2d9776a665c431d8ec251adffcf42e8c118c67626abd24d2e169db0064a",
+  "final_result_json_sha256": "cfdafc6c7e1d9c92fd0f8b67fc490b72c13107312618afae46bc635bd29e66f9",
+  "final_full_historical_photo_date_source_csv_sha256": "ac5056e25cb9322618dda3b4f2e4e2a97907dfb16749d84c65ee9f3149143564",
+  "final_photo_season_label_table_sha256": "fb9fecda67b51ac6d2be67202184ead4f85fd3f2e7b3927c3d398a4380d13b80",
+  "final_local_season_cell_scale_table_sha256": "1f58377283ff85b84ca721a2f685bbc9e7d9affc97745f91bf0775c1e97b180b",
+  "actual_original_photo_pixel_attempts": 267425,
+  "actual_original_photo_4hue_labels": 129795,
+  "historical_original_source_photos": 100543,
+  "historical_original_four_hue_classified_photo_ids": 45953,
+  "historical_photo_date_S3_20260927_exact_verified": 99732,
+  "additional_historical_photo_date_from_numeric_observation_photo_verified_API_only": 85,
+  "historical_photo_dates_verified_total": 99817,
+  "historical_photo_dates_still_unresolved": 726,
+  "historic_classified_photo_hues_now_dated": 45637,
+  "previously_dated_and_classified_photo_ids": 81867,
+  "full_original_automated_hue_photo_ids_with_date": 127504,
+  "full_original_photo_ids_with_any_observed_on": 261578,
+  "distinct_original_taxa_with_dated_automatically_four_hue_classified_photo": 25257,
+  "S3_API_photo_ids_with_dates_in_both_snapshots": 9512,
+  "S3_API_conflicting_dates_retained_separately": 1,
+  "canonical_date_precedence": "2026-09-27 S3 monthly before later exact original numeric observation photo ID public API for fallback only",
+  "original_photographic_label_and_taxonomic_identity_modified": false,
+  "source_observation_date_missing_photos_not_imputed": true,
+  "taxon_turnover_photo_hue_summer_winter": {
+    "north_extratropical": {
+      "summer_classified_photo_labels": 38121,
+      "summer_white_photo_labels": 18620,
+      "winter_classified_photo_labels": 4059,
+      "winter_white_photo_labels": 1850,
+      "raw_summer_minus_winter_white_pp": 3.26674,
+      "summer_photo_taxa": 6340,
+      "winter_photo_taxa": 1237,
+      "photographed_taxa_both_seasons": 562,
+      "photo_taxa_Jaccard": 0.080114,
+      "common_taxon_white_rate_component_pp": 2.524766,
+      "common_taxon_relative_photo_frequency_component_pp": -1.105285,
+      "only_summer_photo_taxa_support_component_pp": 3.039191,
+      "only_winter_photo_taxa_support_component_pp": -1.191932
+    },
+    "south_extratropical": {
+      "summer_classified_photo_labels": 5827,
+      "summer_white_photo_labels": 2996,
+      "winter_classified_photo_labels": 4082,
+      "winter_white_photo_labels": 1589,
+      "raw_summer_minus_winter_white_pp": 12.488826,
+      "summer_photo_taxa": 2577,
+      "winter_photo_taxa": 1882,
+      "photographed_taxa_both_seasons": 320,
+      "photo_taxa_Jaccard": 0.077313,
+      "common_taxon_white_rate_component_pp": 3.412163,
+      "common_taxon_relative_photo_frequency_component_pp": 10.596692,
+      "only_summer_photo_taxa_support_component_pp": 2.665823,
+      "only_winter_photo_taxa_support_component_pp": -4.185852
+    }
+  },
+  "same_0p25_source_geocell_meteorological_seasonyear": {
+    "same_taxon_2_independent_original_observations_in_both_summer_winter": {
+      "north_groups": 2,
+      "south_groups": 0,
+      "north_photos": 8,
+      "south_photos": 0
+    },
+    "photographed_community_5_distinct_observation_ID_and_2_named_taxa_each_season": {
+      "north_groups": 16,
+      "south_groups": 18,
+      "north_photos": 232,
+      "south_photos": 367,
+      "north_equal_geocell_year_summer_minus_winter_white_pp": 5.035741,
+      "north_exploratory_geocell_cluster_bootstrap95_pp": [
+        -8.963149,
+        20.547887
+      ],
+      "south_equal_geocell_year_summer_minus_winter_white_pp": -4.633622,
+      "south_exploratory_geocell_cluster_bootstrap95_pp": [
+        -16.450156,
+        6.54875
+      ],
+      "repeated_geocells_bootstrap_draws": 999,
+      "multiple_selection_maxT_adjustment": false
+    }
+  },
+  "limits": [
+    "The photo ROI automatic visible-hue classification is not independently verified open floral petal or tepal anthesis.",
+    "The sample is original iNaturalist source photos; observational absence is not biological absence of flowers.",
+    "Date is public observation snapshot metadata not original EXIF timestamp; one verified S3/API date disagreement retained.",
+    "Taxon mix, photographer effort, latitude, region and source sampling affect pooled seasonal white photo proportions.",
+    "0.25 degree cells already cover multiple tens of kilometres; matching is not identical source breeding population.",
+    "Source-level taxon photographic frequency decomposition is exact descriptive accounting, not causal mechanism.",
+    "Within-named-taxon local seasonal climate response remains unidentified: only two northern and zero southern groups with repeated source observations.",
+    "Observed-year/month TerraClimate moisture/solar effects, actual pigment fitness or pollinator selection not identified.",
+    "FCP within-species W/D/50km local polymorphism paper estimates not imported; historical annual MOIS genus-equal moisture maxT not overwritten."
+  ]
+}
