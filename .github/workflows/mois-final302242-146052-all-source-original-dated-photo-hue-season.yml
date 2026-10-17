@@ -1,0 +1,94 @@
+name: MOIS full 302242 real original photographed ROIs with 146052 exact source-dated hue labels
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_reconcile_original302242_all_three_verified_photo_date_sources.py"
+      - "tests/test_mois_reconcile_original302242_all_three_verified_photo_date_sources.py"
+      - ".github/workflows/mois-final302242-146052-all-source-original-dated-photo-hue-season.yml"
+      - "docs/MOIS_FINAL302242_REAL_MEASURED_PHOTO_ALL_OBSERVED_DATES_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-all-three-original-FCP218-numeric1751-uuid4096-public-dates-photo-id-cohort
+  cancel-in-progress: false
+
+jobs:
+  original-photo-pixels-taxon-date-and-season-final-rejoin:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test nonoverwriting source provenance, numeric and UUID IDs and real four-hue photo counts
+        run: |
+          python -m pip install -q 'pandas==2.2.3' 'numpy==2.1.3' 'scipy==1.15.2' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_reconcile_original302242_all_three_verified_photo_date_sources.py
+      - name: Stage exactly three already successful original photograph and public observation-date source artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p new302242 verified_numeric1751 source_UUID4096
+          gh run download 39018960100 --repo zuizui0223/mois \
+            --name mois-next-actually-measured-original-photos-after-295017-fcp-new-pixel-date-union \
+            --dir new302242
+          gh run download 39019305535 --repo zuizui0223/mois \
+            --name mois-actual-original295017-missing1751-numeric-photo-IDs-observed-dates-source \
+            --dir verified_numeric1751
+          gh run download 39020077340 --repo zuizui0223/mois \
+            --name mois-real-first4096-UUID-original-photo-to-3430502-source-observed-day \
+            --dir source_UUID4096
+          test -s new302242/mois_next_finished_fcp_original_photo_date_hues_plus295017.csv.gz
+          test -s verified_numeric1751/mois_real295017_photo_source_plus_exact_remaining_numeric_API_dates.csv.gz
+          test -s source_UUID4096/mois_first4096_uuid_only_original_photo_source_date_exact3430502.csv
+          zip -j -q source_302242_new_FCP218_pixels.zip new302242/*
+          zip -j -q source_1732_numeric_original_observation_photo_days.zip verified_numeric1751/*
+          zip -j -q source_4096_UUID_original_photo_days.zip source_UUID4096/*
+      - name: Join full original pixels and both exact photo-date proofs, recalculate regional seasonality and cell-year uncertainty
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_reconcile_original302242_all_three_verified_photo_date_sources \
+            --new302242-fcp218-source-archive source_302242_new_FCP218_pixels.zip \
+            --numeric1751-observed-on-recovery-archive source_1732_numeric_original_observation_photo_days.zip \
+            --uuid4096-observed-on-recovery-archive source_4096_UUID_original_photo_days.zip \
+            --output real302242_full_observed_on_hue
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('real302242_full_observed_on_hue/mois_real302242_146052_verified_date_hues_photo_source_season_decision.json')
+          r=json.loads(p.read_text())
+          assert r['original_measured_photo_ids']==302242
+          assert r['original_four_hue_roi_photo_ids']==146061
+          assert r['initial_date_plus_four_hue_original_photos']==143770
+          assert r['new_exact_numeric_observation_photo_ID_dates']==1732
+          assert r['new_date_and_classified_four_hue_from_numeric_photo_source']==706
+          assert r['new_original_UUID_only_observation_photo_dates']==4096
+          assert r['new_date_and_classified_four_hue_from_UUID_photo_source']==1576
+          assert r['final_real_photo_IDs_with_any_verified_observed_on']==302223
+          assert r['final_real_photo_IDs_with_four_hue_and_verified_observed_on']==146052
+          assert r['missing_original_photo_observation_dates_after_recovery']==19
+          assert r['automatic_four_hue_classifications_still_without_verified_observation_day']==9
+          assert len(r['source_hemispheric_season_counts'])==4
+          assert len(r['original_photo_source_same_locality_year_community_white_scale'])==8
+          assert r['no_original_photo_RGB_or_four_hue_label_changed']
+          assert r['source_date_is_observation_metadata_not_camera_EXIF']
+          assert r['no_FCP_D_W_50km_intraspecific_estimates_imported']
+          print('MOIS_302242_ACTUAL_PIXELS_AND_146052_SOURCE_DATED_FOUR_HUE_ROIS_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-final302242-genuine-pixels-146052-original-photo-dated-hues-and-season-geocell
+          path: real302242_full_observed_on_hue/
+          retention-days: 90
+          if-no-files-found: warn
