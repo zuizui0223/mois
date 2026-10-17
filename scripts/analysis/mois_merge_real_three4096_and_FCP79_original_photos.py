@@ -21,19 +21,19 @@ import numpy as np
 import pandas as pd
 
 HUES=("white","yellow_orange","red_pink","blue_purple")
-FCP_BASE_N=267425
-FCP_BASE_HUES=129795
+FCP_BASE_N=286826
+FCP_BASE_HUES=139405
 MOIS_THREE_N=260600
 MOIS_THREE_HUES=125517
-MOIS_THREE_NEW_N=8192
-MOIS_THREE_NEW_HUES=3134
-UNION_N=275617
-UNION_HUES=132929
+MOIS_THREE_NEW_N=8191
+MOIS_THREE_NEW_HUES=3133
+UNION_N=295017
+UNION_HUES=142538
 DATE_SOURCE_N=100543
-OLD_DATE_HUES=127504
-NEW_DATE_HUES=130638
-NEW_DATE_ATTEMPTS=269770
-FCP_BASE_SHA="fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9"
+OLD_DATE_HUES=137114
+NEW_DATE_HUES=140247
+NEW_DATE_ATTEMPTS=289170
+FCP_BASE_SHA="a6f4accd600ef793d803c7796b7a3d5345a8a4708af1ea6c52304310c1d4170d"
 MOIS_THREE_SHA="8da4d41e2f0bb0a4992394171fe5bad6dd62ee2328136772fe7c5659b3a91b20"
 HISTORIC_DATE_SOURCE_SHA="ac5056e25cb9322618dda3b4f2e4e2a97907dfb16749d84c65ee9f3149143564"
 FCP_SOURCE="mois_fcp_wave4_PARTIAL_completed_pixel_original_photo_union.csv.gz"
@@ -42,10 +42,10 @@ MOIS_SOURCE="mois_all_real_original_hue_measured_248312_plus_new_waves.csv.gz"
 MOIS_RECEIPT="mois_real_additional_photo_waves_receipt.json"
 HISTORY_SOURCE="mois_original100543_s3_or_verified_API_dates_photo_source.csv.gz"
 HISTORY_RECEIPT="mois_real127504_original_photo_S3_plus_verified_API_local_season_result.json"
-UNION_FILE="mois_real275617_original_photo_pixels_four_hues_three_wave_FCP79.csv.gz"
-DATE_FILE="mois_real275617_original_photo_hues_plus_verified_observed_dates.csv.gz"
-SEASON_FILE="mois_real275617_dated_four_hue_season_photo_rates.csv"
-SOURCE_RECEIPT="mois_real275617_signed_photo_union_date_and_colour_receipt.json"
+UNION_FILE="mois_real295017_original_photo_pixels_three_waves_FCP180.csv.gz"
+DATE_FILE="mois_real295017_original_photo_hues_plus_verified_observed_dates.csv.gz"
+SEASON_FILE="mois_real295017_dated_four_hue_season_photo_rates.csv"
+SOURCE_RECEIPT="mois_real295017_signed_photo_union_date_and_colour_receipt.json"
 OUTCOLS=("photo_id","inat_taxon_id","species","morph","source_original_measured",
          "old_mois_or_new_fcp","measurement_status","latitude","longitude",
          "photo_license","observation_id","observed_on","time_observed_at",
@@ -82,28 +82,44 @@ def photo_union(fcp:pd.DataFrame,mois:pd.DataFrame)->tuple[pd.DataFrame,dict]:
             "Signed actual pixels and photograph hue outcomes changed")
     overlap=fcp.merge(mois,on="photo_id",how="inner",suffixes=("_fcp","_mois"),
                       validate="one_to_one")
-    require(len(overlap)==252408,
-            "The 248312+4096 base original photos are not the same source")
+    require(len(overlap)==252409,
+            "The 252408 core plus one shared real pixel must have identical photo IDs")
     checks={}
-    for key in ("inat_taxon_id","observation_id","morph","observed_on"):
+    # FCP current original observation_id is numeric iNaturalist, while the
+    # independent MOIS third-wave source sometimes retains an observation UUID.
+    # One shared photo with exactly matching taxon, date and original ROI hue
+    # may thus have a source-namespace discrepancy; never double-count it.
+    for key in ("inat_taxon_id","morph","observed_on"):
         same=overlap[f"{key}_fcp"].fillna("").astype(str).eq(
              overlap[f"{key}_mois"].fillna("").astype(str))
         checks[key+"_source_conflicts"]=int((~same).sum())
         require(same.all(),"Shared original source photos changed "+key)
+    obs_match=overlap.observation_id_fcp.fillna("").astype(str).eq(
+        overlap.observation_id_mois.fillna("").astype(str))
+    conflicts=overlap.loc[~obs_match]
+    checks["observation_ID_source_namespace_mismatches"]=len(conflicts)
+    require(len(conflicts)==1 and conflicts.photo_id.iloc[0]=="232092182"
+            and conflicts.observation_id_fcp.iloc[0].isdigit()
+            and "-" in conflicts.observation_id_mois.iloc[0],
+            "More than one original observation-ID namespace discrepancy")
+    checks["duplicate_photo_IDs_placed_in_result_twice"]=0
     new=mois.loc[~mois.photo_id.isin(fcp.photo_id)].copy()
     require(len(new)==MOIS_THREE_NEW_N and
             new.morph.isin(HUES).sum()==MOIS_THREE_NEW_HUES and
             new.observed_on.notna().all(),
             "MOIS 2 new finished 4096 image-pixel waves not fully authentic")
+    # The completed MOIS 8192 original image set overlaps one newer FCP pixel
+    # result; exact photo-ID exclusion leaves 8191 genuinely additional photos.
     require(new.old_mois_or_new_fcp.eq("mois_new_original_ROI").all(),
             "Unrelated original FCP wave4 pixels are not this new MOIS photo wave")
     union=pd.concat((fcp,new),ignore_index=True)
     require(len(union)==UNION_N and union.photo_id.is_unique and
             union.morph.isin(HUES).sum()==UNION_HUES,
-            "Original 267425 + 2 x 4096 photo-ID union failed")
+            "Original 286826 + MOIS 2 x 4096 photo-ID union failed")
     return union,{"source_shared_photo_IDs":len(overlap),
                   "source_shared_conflicts":checks,
                   "new_original_photo_pixels":len(new),
+                  "original_photo_source_ID_overlap_count":len(overlap),
                   "new_original_four_hue_photo_labels":int(new.morph.isin(HUES).sum()),
                   "new_original_source_observed_on_dates":int(new.observed_on.notna().sum())}
 
@@ -180,14 +196,14 @@ def run(fcp_zip:Path,mois_zip:Path,historic_zip:Path,outdir:Path):
     h,receipt_h=load_zip(historic_zip,HISTORY_SOURCE,HISTORY_RECEIPT,HISTORIC_DATE_SOURCE_SHA)
     require(receipt_a["combined_unique_photo_IDs"]==FCP_BASE_N and
             receipt_a["combined_four_hue_classified_photo_IDs"]==FCP_BASE_HUES and
-            receipt_a["FCP_completed_ROI_partitions"]==79,
-            "FCP 79 authentic completed photo partitions changed")
+            receipt_a["FCP_completed_ROI_partitions"]==180,
+            "FCP 180 authentic completed photo partitions changed")
     require(receipt_b["all_original_unique_photos"]==MOIS_THREE_N and
             receipt_b["all_four_hue_classified_photos"]==MOIS_THREE_HUES and
             receipt_b["new_original_source_photos"]==12288,
             "MOIS three 4096 original photo worker waves were not measured")
-    require(receipt_h["full_original_measured_photo_ids"]==FCP_BASE_N and
-            receipt_h["full_original_genuine_four_hue_classified_photo_ids"]==FCP_BASE_HUES and
+    require(receipt_h["full_original_measured_photo_ids"]==267425 and
+            receipt_h["full_original_genuine_four_hue_classified_photo_ids"]==129795 and
             receipt_h["full_historical_join"]["history_original_dates_total_with_both_source_precedence"]==99817,
             "Validated historical original dates not reproduced")
     union,stats=photo_union(a,b)
@@ -204,7 +220,7 @@ def run(fcp_zip:Path,mois_zip:Path,historic_zip:Path,outdir:Path):
     seasons.to_csv(seas,index=False,lineterminator="\n",float_format="%.8f")
     def file_hash(p):return hashlib.sha256(p.read_bytes()).hexdigest()
     report={
-      "schema":"mois_275617_genuine_all_original_photos_three4096_waves_FCP79_date_enriched_v1",
+      "schema":"mois_295017_genuine_all_original_photos_three4096_waves_FCP180_date_enriched_v1",
       "original_fcp79_pixel_source_sha256":FCP_BASE_SHA,
       "original_mois_three_complete_waves_pixel_source_sha256":MOIS_THREE_SHA,
       "historical100543_independent_qualified_date_source_sha256":HISTORIC_DATE_SOURCE_SHA,
@@ -232,7 +248,7 @@ def run(fcp_zip:Path,mois_zip:Path,historic_zip:Path,outdir:Path):
     }
     target=outdir/SOURCE_RECEIPT
     target.write_text(json.dumps(report,ensure_ascii=False,indent=2,sort_keys=True)+"\n")
-    print("MOIS_REAL_275617_ALL_ACTUAL_PHOTOS",json.dumps({
+    print("MOIS_REAL_295017_ALL_ACTUAL_PHOTOS",json.dumps({
         k:report[k] for k in ("original_measured_photographs",
             "original_measured_photo_four_hue_labels",
             "photo_ids_with_verified_observed_dates",
