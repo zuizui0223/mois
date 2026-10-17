@@ -45,5 +45,38 @@
   "no_photo_specific_open_flower_petal_botanical_QC": true,
   "partial_worker_completion_source_is_not_photo_sampling_representative": true,
   "NOT_independent_source_replication_and_DO_NOT_sum_with_final_fourth4096": true,
-  "no_full_309951_genus_moisture_bootstrap_model_fitted": true
+  "no_full_309951_genus_moisture_bootstrap_model_fitted": true,
+  "fourth512_original_pixel_hue_counts": {
+    "white": 91,
+    "yellow_orange": 64,
+    "red_pink": 31,
+    "blue_purple": 17,
+    "mixed_uncertain": 309
+  },
+  "fourth512_photographed_nominal_taxa_all_photo_attempts": 471,
+  "fourth512_taxa_with_classifiable_hue": 193,
+  "fourth512_classifiable_taxa_with_only_one_photo": 183,
+  "same_taxon_same_025degree_cell_same_meteorological_seasonyear_summer_winter_source_support": {
+    "before": {
+      "north_extratropical": {
+        "min1": 40,
+        "min2": 2
+      },
+      "south_extratropical": {
+        "min1": 34,
+        "min2": 0
+      }
+    },
+    "after_partial_512": {
+      "north_extratropical": {
+        "min1": 40,
+        "min2": 2
+      },
+      "south_extratropical": {
+        "min1": 34,
+        "min2": 0
+      }
+    }
+  },
+  "ecological_qualification": "First 512 taxon-balanced source photo RGB outcomes raise photographic denominators but yield ZERO new exact named-taxon/coarse-site/local-season-year summer–winter pair opportunities. This reinforces targeted source selection as an independent future sampling-design arm."
 }
