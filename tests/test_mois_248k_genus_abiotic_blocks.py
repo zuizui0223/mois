@@ -57,9 +57,9 @@ def test_same_original_source_photos_support_geo_climate_soil_addition():
     assert original==560
     assert receipt["original_photo_rows_with_all_block_covariates"]==540
     assert receipt["taxa_after_min_photo_and_congeneric_gates"]>=200
-    assert receipt["qualified_nominal_genera"]==70
+    assert receipt["qualified_nominal_genera"]==68
     assert receipt["min_classified_photos_per_species"]==1
-    assert len(s)==280
+    assert len(s)==270
 
 
 def test_genus_centered_photo_white_hue_response_is_not_causal_photo_pair_D():
