@@ -4,6 +4,22 @@ The surprising observation is that **white visible flower-photo labels are
 almost as numerous as the three chromatic categories combined**. This does
 NOT mean evolution maintains an exact 50:50 evolutionary equilibrium.
 
+### Actual expanded photo balance, independently source-verified
+
+The complete 309,439-photo primary measured snapshot yields 70,662 white,
+46,481 yellow/orange, 16,020 red/pink, and 16,499 blue/purple four-hue
+ROI labels (149,662 total). White is 47.21% photo-weighted, 46.93% after
+nominal taxon-equal weighting over 25,640 taxa, and 50.01% after equal
+genus weighting over 5,429 genera. A whole-genus 999-resampling exploratory
+95% interval for the latter is 48.97–51.02%. Restricting to genera with
+at least 2 or 5 photo-classifiable taxa changes this to 48.66% or 46.55%,
+respectively. Equal weighting over 207 sufficiently photographed 10°
+geographic source cells gives 46.90%. None implies a genetically maintained
+50:50 equilibrium, and unclassifiable original ROIs remain 159,777.
+
+The primary draft is now:
+[Why is white so common?](MOIS_PRIMARY_NEAR_HALF_WHITE_CHROMATIC_ENVIRONMENT_ARTICLE_20261017.md).
+
 In the original 100,543-photo cohort, 21,574 of 45,953 classifiable
 photos (46.95%) were labelled white, and 53.05% were yellow/orange,
 red/pink or blue/purple. 54,590 photographed ROI attempts were unknown.
