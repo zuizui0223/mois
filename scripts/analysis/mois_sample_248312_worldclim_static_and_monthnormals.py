@@ -208,17 +208,32 @@ def run(photo_gzip: Path, source_receipt: Path, raster_dir: Path, outdir: Path) 
     out["wc2_month_tavg_normal_10m_C"] = np.float32(np.nan)
     out["wc2_month_prec_normal_10m_mm"] = np.float32(np.nan)
     out["wc2_month_srad_normal_10m_Wm2"] = np.float32(np.nan)
+    # Annual mean irradiance is a site-level long-term climate baseline for
+    # ALL photos. Unlike photo-month irradiance it needs no observation date.
+    # Keep it separate from genuinely observed-year/month solar radiation.
+    radiation_sum = np.zeros(n,dtype=np.float64)
+    radiation_count = np.zeros(n,dtype=np.int8)
     for m in range(1,13):
         take=np.flatnonzero(month==m)
-        if not len(take):continue
         for key,field,unit in (
             ("tavg","wc2_month_tavg_normal_10m_C","tavg"),
             ("prec","wc2_month_prec_normal_10m_mm","prec"),
             ("srad","wc2_month_srad_normal_10m_Wm2","srad")
         ):
             name=f"wc2.1_10m_{unit}_{m:02d}.tif"
-            val=sample_tiff(find_zip_tiff(raster_dir,key,name),lon[take],lat[take])
-            out.loc[take,field]=val
+            tif=find_zip_tiff(raster_dir,key,name)
+            if len(take):
+                val=sample_tiff(tif,lon[take],lat[take])
+                out.loc[take,field]=val
+            if key=="srad":
+                annual=sample_tiff(tif,lon,lat)
+                valid=np.isfinite(annual)
+                radiation_sum[valid]+=annual[valid]
+                radiation_count[valid]+=1
+    annual_irradiance=np.full(n,np.nan,dtype=np.float32)
+    valid_annual=radiation_count==12
+    annual_irradiance[valid_annual]=(radiation_sum[valid_annual]/12).astype(np.float32)
+    out["wc2_annual_srad_normal_10m_Wm2"]=annual_irradiance
     # No season/time variable or monthly climate covariate is filled without an
     # original observed calendar date. Month-specific WorldClim is a NORMAL.
     require(out.loc[date.isna(),[
@@ -234,7 +249,7 @@ def run(photo_gzip: Path, source_receipt: Path, raster_dir: Path, outdir: Path) 
         "wc2_bio01_10m","wc2_bio05_10m","wc2_bio12_10m","wc2_bio15_10m",
         "wc2_month_tavg_normal_10m_C",
         "wc2_month_prec_normal_10m_mm",
-        "wc2_month_srad_normal_10m_Wm2")}
+        "wc2_month_srad_normal_10m_Wm2","wc2_annual_srad_normal_10m_Wm2")}
     previous={}
     for key,b in (
         ("wc_bio1","wc2_bio01_10m"),
@@ -260,7 +275,7 @@ def run(photo_gzip: Path, source_receipt: Path, raster_dir: Path, outdir: Path) 
     diagnostics=[]
     for variable in ("wc2_elev_2p5m","terrain_slope_2p5m_degree",
                      "terrain_roughness_2p5m_m","wc2_bio01_10m","wc2_bio05_10m",
-                     "wc2_bio12_10m","wc2_bio15_10m"):
+                     "wc2_bio12_10m","wc2_bio15_10m","wc2_annual_srad_normal_10m_Wm2"):
         for source in sorted(out.original_source.unique()):
             p=out.loc[(out.original_source==source)&classified&
                       out[variable].notna(),["inat_taxon_id",variable,"morph"]].copy()
