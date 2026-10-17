@@ -271,7 +271,10 @@ def local_support(p:pd.DataFrame):
                 })
     for zone in ("north_extratropical","south_extratropical"):
         sub=q[q.zone.eq(zone)]
-        z=eligible_site_photo_support(sub,.25,True,2)
+        if sub.empty or not {"summer","winter"}.issubset(set(sub.season)):
+            z={"matched_groups":0,"matched_photos":0}
+        else:
+            z=eligible_site_photo_support(sub,.25,True,2)
         result.append({"geographic_cell_degrees":.25,
             "minimum_distinct_original_observation_ID_per_summer_and_winter":2,
             "minimum_named_original_taxa_per_season":1,
