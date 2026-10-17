@@ -1,0 +1,164 @@
+name: MOIS admit already completed FCP wave4 real ROI pixels and original maxT999 water
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_reuse_fcp_wave4_completed_roi_partitions.py"
+      - "scripts/analysis/mois_refit_water_FCP_wave4_partial_real_ROI.py"
+      - "tests/test_mois_reuse_fcp_wave4_partitions_now.py"
+      - ".github/workflows/mois-real-fcp-wave4-completed-partitions-water.yml"
+      - "docs/MOIS_COMPLETED_PARTIAL_FCP_WAVE4_IN_MOIS_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-originalFCP49800-real-completed-pixel-partition-source-snapshot
+  cancel-in-progress: false
+
+jobs:
+  original-FCP-measured-hue-partitions-into-MOIS:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test original source blinding and genuine ROI terminal partition admission
+        run: |
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q tests/test_mois_reuse_fcp_wave4_partitions_now.py
+      - name: Recover original first-wave MOIS 252408 REAL photographed hues and FCP 49800 original source firewall
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original252408 authentic_fcp_firewall authentic_finished_FCP_ROI
+          gh run download 39000213324 --repo zuizui0223/mois \
+            --name mois-252408-original-photos-122383-measured-four-hue-pixels \
+            --dir original252408
+          gh api repos/zuizui0223/fcp/actions/runs/38992543115 > original_fcp_workflow_snapshot.json
+          gh run download 38992543115 --repo zuizui0223/fcp \
+            --name fcp-wave4-unchanged-original-blind-firewall \
+            --dir authentic_fcp_firewall
+          gh run download 38992543115 --repo zuizui0223/fcp \
+            --pattern 'fcp-wave4-original-b*' \
+            --dir authentic_finished_FCP_ROI
+      - name: Read actual original photo pixels ONLY from completed signed worker terminals; dedup with MOIS by photo ID
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_reuse_fcp_wave4_completed_roi_partitions \
+            --prior-252408-original-photos original252408/mois_all_real_original_hue_measured_248312_plus_new_waves.csv.gz \
+            --prior-252408-photo-source-receipt original252408/mois_real_additional_photo_waves_receipt.json \
+            --fcp-wave4-original-blind-firewall authentic_fcp_firewall \
+            --fcp-wave4-completed-original-pixel-partitions authentic_finished_FCP_ROI \
+            --fcp-wave4-original-run-snapshot original_fcp_workflow_snapshot.json \
+            --output actual_partial_completed_FCP_49800
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          s=json.loads(Path('actual_partial_completed_FCP_49800/mois_fcp_wave4_PARTIAL_real_completed_original_ROI_receipt.json').read_text())
+          assert 16<=s['FCP_completed_ROI_partitions']<=256
+          assert s['FCP_real_completed_original_image_pixel_rows']>=1000
+          assert s['combined_unique_photo_IDs'] == 252408+s['additional_new_original_photo_IDs']
+          assert s['combined_four_hue_classified_photo_IDs'] == 122383+s['additional_new_real_four_hue_classified_photo_IDs']
+          assert s['additional_new_real_four_hue_classified_photo_IDs']>0
+          assert s['missing_FCP_wave4_partitions_are_not_hues']
+          assert not s['FCP_genetic_or_within_species_D_W_50km_polymorphism_statistics_imported']
+          print('MOIS_FCP49800_REAL_COMPLETED_ORIGINAL_ROI_PIXELS_PARTIAL_SOURCE_INTEGRITY_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-actually-measured-FCP-wave4-completed-photo-partitions-snapshot
+          path: actual_partial_completed_FCP_49800/
+          retention-days: 90
+          if-no-files-found: error
+
+  original-100543-water-method-on-more-FCP-pixel-labels:
+    needs: original-FCP-measured-hue-partitions-into-MOIS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install unchanged genus-equal four-hue six-environmental-anchor maxT999 method
+        run: |
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 statsmodels==0.14.4 rasterio==1.4.3
+          python -m py_compile scripts/analysis/mois_refit_water_FCP_wave4_partial_real_ROI.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-actually-measured-FCP-wave4-completed-photo-partitions-snapshot
+          path: actual_mois_new_pixels
+      - name: Restore previously frozen complete original 248312 photo-location climate values
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_worldclim
+          gh run download 38992341847 --repo zuizui0223/mois \
+            --name mois-248312-REAL-site-worldclim19-bio-elev2p5m-terrain-monthnormal \
+            --dir original_worldclim
+      - name: Retrieve official fixed-source global WorldClim BIO, solar and vapour
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p wc/{bio,srad} vapr
+          curl --fail --location --silent --show-error --retry 3 --max-time 420 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_bio.zip \
+            -o wc/bio/wc2.1_10m_bio.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 420 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_srad.zip \
+            -o wc/srad/wc2.1_10m_srad.zip
+          echo '00513224583665ec0f2f955a4ec252730c4deb2004cce9e793492a3f26df4dcf  wc/bio/wc2.1_10m_bio.zip' | sha256sum -c -
+          echo 'c72ee7f4f9a0eb4b5f6cd7a003eddc05bda22a2e5666d968ed4e817fd36b9026  wc/srad/wc2.1_10m_srad.zip' | sha256sum -c -
+          unzip -q wc/bio/wc2.1_10m_bio.zip -d wc/bio
+          unzip -q wc/srad/wc2.1_10m_srad.zip -d wc/srad
+          curl --fail --location --silent --show-error --retry 3 --max-time 420 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_vapr.zip \
+            -o vapr/wc2.1_10m_vapr.zip
+          unzip -q vapr/wc2.1_10m_vapr.zip -d vapr
+          test "$(find vapr -name 'wc2.1_10m_vapr_??.tif' | wc -l)" -eq 12
+      - name: Refit ORIGINAL six-anchor x four-hue 999 genus bootstrap maxT after real source-photo growth
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_refit_water_FCP_wave4_partial_real_ROI \
+            --authentic-partial-FCP-photo-source actual_mois_new_pixels/mois_fcp_wave4_PARTIAL_completed_pixel_original_photo_union.csv.gz \
+            --authentic-partial-FCP-photo-receipt actual_mois_new_pixels/mois_fcp_wave4_PARTIAL_real_completed_original_ROI_receipt.json \
+            --source-original-248312-site-worldclim original_worldclim/mois_248312_original_photo_worldclim_static_monthly_normal_terrain.csv.gz \
+            --source-original-248312-worldclim-receipt original_worldclim/mois_248312_worldclim_static_month_normal_receipt.json \
+            --worldclim-raster-root wc \
+            --official-monthly-vapr-raster-root vapr \
+            --official-monthly-vapr-zip vapr/wc2.1_10m_vapr.zip \
+            --output FCP_partial_original_water_maxT999
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('FCP_partial_original_water_maxT999/mois_FCP_wave4_partial_real_ROI_original_water_maxT999_decision.json').read_text())
+          assert x['status']=='AUTHENTIC_FINISHED_FCP_IMAGE_PIXELS_ORIGINAL_MOIS_WATER_REFITTED'
+          assert x['actual_union_original_photo_IDs']>252408
+          assert x['actual_union_four_hue_classified_photo_IDs']>122383
+          assert x['water_model_actual_genus_bootstrap_draws']==999
+          assert x['water_model_four_hue_times_six_anchors_familywise_maxT']==24
+          assert not x['FCP_within_species_D_W_local_spatial_polymorphism_reanalysis']
+          print('MOIS_PARTIAL_FCP_WAVE4_ACTUAL_ORIGINAL_FOUR_HUE_WATER_ANALYSIS_SUCCESS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-authentic-partial-FCP-wave4-actual-photo-hues-original-water-maxT999
+          path: FCP_partial_original_water_maxT999/
+          retention-days: 90
+          if-no-files-found: error
