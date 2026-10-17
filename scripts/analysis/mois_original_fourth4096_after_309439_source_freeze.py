@@ -209,9 +209,9 @@ def run(full:Path,old:Path,outdir:Path):
             counts["original_measured_photo_IDs_encountered"],
         "number_unmeasured_original_photo_ID_opportunities":
             counts["original_eligible_unmeasured_photo_IDs_seen"],
-        "number_source_photo_metadata_unusable":counts["invalid_source_metadata_no_pixel_inference"],
+        "number_source_photo_metadata_unusable":counts.get("invalid_source_metadata_no_pixel_inference",0),
         "number_source_photo_url_license_unusable":
-            counts["invalid_original_licensed_photo_URL_no_pixel_inference"],
+            counts.get("invalid_original_licensed_photo_URL_no_pixel_inference",0),
         "first_wave_original_source_photo_ids":SELECTION_N,
         "first_wave_taxa":len({r["inat_taxon_id"] for r in chosen}),
         "first_wave_distinct_source_observers":len({r["observer_id"] for r in chosen}),
