@@ -73,7 +73,7 @@ jobs:
           import json
           p=json.load(open('previous_snapshot/mois_fcp_wave4_PARTIAL_real_completed_original_ROI_receipt.json'))
           assert p['schema']=='mois_authentic_completed_original_FCP_wave4_ROI_PARTITIONS_source_v1'
-          assert p['source_FCP_wave4_original_run_sha'] if 'source_FCP_wave4_original_run_sha' in p else p['FCP_original_run_head_sha']
+          assert p['FCP_original_run_head_sha']=='ef448c9514e0c702e7887e00b288ee966728b0d5'
           print(p['FCP_completed_ROI_partitions'])
           PY
           )
