@@ -115,11 +115,6 @@ def normal_season_table(source:pd.DataFrame, selected:pd.DataFrame,
                "calendar_day_for_source_qualified_summary"]].rename(
         columns={"calendar_day_for_source_qualified_summary":"observed_on"})
     labelled = labelled_calendar(table)
-    require(int((labelled.date.notna() & labelled.classified).sum()) ==
-            int((source.observed_on.notna() & source.morph.isin(HUES)).sum())+
-            int(selected.photo_id.isin(admitted.photo_id).sum() -
-                selected.photo_id.isin(admitted.photo_id) .sum()) if False else True,
-            "no-op")  # real identity/count check below
     old_count=int((source.observed_on.notna() & source.morph.isin(HUES)).sum())
     new_classified=int((selected.photo_id.isin(admitted.photo_id) &
                         selected.morph.isin(HUES)).sum())
