@@ -1,0 +1,79 @@
+{
+  "schema": "mois_verified_original146052_photo_hue_date_summer_winter_source_decomposition_20261017_v1",
+  "actual_original_source_run": "https://github.com/zuizui0223/mois/actions/runs/39020466312",
+  "actual_taxon_decomposition_run": "https://github.com/zuizui0223/mois/actions/runs/39021361156",
+  "actual_taxon_decomposition_artifact_id": 12096417908,
+  "original_source_all_real_photo_pixels": 302242,
+  "original_four_hue_photo_ROIs": 146061,
+  "original_date_and_four_hue_photo_ROIs": 146052,
+  "full_original_photo_date_hue_SHA256": "9c9692238f58cc61561270f7c07b1d782ce711adeade9c58550866f668fb4690",
+  "original_8row_figure_CSV_SHA256": "c05ac205fff1145448338dcddabfcde250c47b7c91ab1578e6c8989d22ff5c38",
+  "bootstrap_nominal_taxa_draws": 999,
+  "north": {
+    "summer": {
+      "n": 43717,
+      "white": 21448,
+      "n_taxa": 6510
+    },
+    "winter": {
+      "n": 4662,
+      "white": 2164,
+      "n_taxa": 1344
+    },
+    "common_taxa_both": 647,
+    "summer_winter_union_taxa": 7207,
+    "photographic_taxon_Jaccard": 0.089774,
+    "full_summer_minus_winter_white_photo_pp": 2.64316,
+    "within_common_taxon_photo_white_rate_pp": 2.760936,
+    "common_taxon_relative_original_photo_frequency_pp": -0.964651,
+    "summer_exclusive_photographed_taxa_pp": 3.004414,
+    "winter_exclusive_photographed_taxa_pp": -2.157539,
+    "common_taxon_within_rate_bootstrap95_pp": [
+      0.237305,
+      5.258091
+    ],
+    "common_taxon_photo_frequency_bootstrap95_pp": [
+      -6.933521,
+      4.683818
+    ],
+    "summer_photos_of_taxa_unphotographed_in_winter_fraction": 0.848023
+  },
+  "south": {
+    "summer": {
+      "n": 6721,
+      "white": 3404,
+      "n_taxa": 2725
+    },
+    "winter": {
+      "n": 4685,
+      "white": 1843,
+      "n_taxa": 2030
+    },
+    "common_taxa_both": 391,
+    "summer_winter_union_taxa": 4364,
+    "photographic_taxon_Jaccard": 0.089597,
+    "full_summer_minus_winter_white_photo_pp": 11.308911,
+    "within_common_taxon_photo_white_rate_pp": 3.515981,
+    "common_taxon_relative_original_photo_frequency_pp": 7.689004,
+    "summer_exclusive_photographed_taxa_pp": 3.831938,
+    "winter_exclusive_photographed_taxa_pp": -3.728011,
+    "common_taxon_within_rate_bootstrap95_pp": [
+      0.072215,
+      7.032108
+    ],
+    "common_taxon_photo_frequency_bootstrap95_pp": [
+      -0.422807,
+      14.99916
+    ],
+    "summer_photos_of_taxa_unphotographed_in_winter_fraction": 0.672965
+  },
+  "conclusions": [
+    "Full source original photo white-labelled summer minus winter difference reflects strongly changing photographed taxon mix and observer/source photo frequency; mathematically exact 4term decomposition",
+    "Photographic relative taxon frequency changes are not experimental causality or flowering assemblage abundance",
+    "Same-coarse-cell same-season-year white-label photo difference retains exploratory geocell CIs containing zero",
+    "Original observed-on day restored for 146052 genuine colour outcomes and source pixel label preserved; no date/hue imputation",
+    "Distinct source photographed taxa in both summer/winter only 647 North and 391 South; no inference absent photos imply lack of flowers",
+    "Taxon bootstrap lacks geographic/observer independence or multiple testing adjustment",
+    "No direct actual-year solar water deficit atmospheric dryness source linked yet and no botanically validated open petals"
+  ]
+}
