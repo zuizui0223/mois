@@ -17,6 +17,20 @@ The fourth photo is not the first public API photo on its current observation, w
 
 This independently establishes that the historical date column can be **enriched from verified actual observation records** rather than artificially treating historical photo dates as absent or inferring the month from climate. It is not evidence that each image contains open flower petals: one currently annotated observation with a `Flowers` tag would still require photo-specific botanical review, as public current annotations are associated with the observation, not verified independently with the target photographed organ.
 
+## Actual completed blind 200-photo result
+
+The [complete successful MOIS real provider-data workflow run #39007591041](https://github.com/zuizui0223/mois/actions/runs/39007591041) executed the **four actual public iNaturalist batches** on the pre-colour/outcome-blind 200 original photo IDs and source-locked their original SHA256:
+
+- **200/200** original public observation records found.
+- **200/200** exact original `photo_id` found within the *correct* original `observation_id` returned current photo list.
+- **200/200** actual public `observed_on` date strings recovered; date range **1988-03-28 through 2026-08-31**.
+- **200/200** originally recorded source taxon IDs still match current public observation taxon IDs, in this specific pilot.
+- **0/200** have a current public observation-level `Flowers` annotation in this source sample. **This is no evidence of no actual flowering**; flower visibility remains unverified for all 200 photographs, and no outcome-specific denominator is enlarged yet.
+
+This is empirical evidence that the original 100,543-photo historical source's blank date column is **recoverable metadata omission**, not necessarily loss of its original observation-date provenance. It does **not** prove the rest of the 100,543 historical records have all retained public dates, nor that today's editable iNaturalist `observed_on` always equals historical capture/upload time. The source photo/hue data are unchanged and the already-fitted MOIS seasonal white rates have not yet been recalculated. We will not silently extrapolate a 200/200 technical recovery proportion to a fabricated 100,543 date-complete result.
+
+Frozen citation-safe result: [signed 200-original-photo measured date decision](../results/mois_historical_original100543_blind200_date_recovery_decision_20261017.json); actual detailed artifact `mois-original100543-blind200-photo-exact-observed-on-public-iNat-source-QC` attached to the successful workflow, containing all original selected photo IDs, source/current taxonomy and date, as well as source API-response SHA256 values.
+
 ## New bounded source-frozen 200-photo feasibility workflow
 
 - Deterministically select exactly **200** real original photos **blind to colour, environment, observed date and taxon identity** by SHA256 of the original `photo_id`. Keep the original 100,543-photo sampling frame and *every* selected original ID; do not replace missing, deleted or ambiguous API observations with more favourable photos.
