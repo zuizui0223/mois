@@ -66,7 +66,6 @@ jobs:
         shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
     env:
       GH_TOKEN: ${{ github.token }}
-      FCP_PROVIDER_GLOBAL_RATE_FILE: ${{ runner.temp }}/mois-original-photo-s3-per-run-rate
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -92,6 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp_source"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-original-photo-s3-per-run-rate"
           number=${{ matrix.shard }}
           indexed=$(printf '%02d' "$number")
           python -m scripts.analysis.mois_measure_original_new_photos_roi_v4 \
