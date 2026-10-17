@@ -82,12 +82,12 @@ jobs:
 
   actual-complete-49800-original-roi-photo-union:
     needs: source-only-preflight
-    if: needs.source-only-preflight.outputs.ready == 'true'
+    if: needs['source-only-preflight'].outputs.ready == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
       GH_TOKEN: ${{ github.token }}
-      MOIS_SOURCE_RUN: ${{ needs.source-only-preflight.outputs.mois_run }}
+      MOIS_SOURCE_RUN: ${{ needs['source-only-preflight'].outputs.mois_run }}
     steps:
       - uses: actions/checkout@v4
       - name: Verify original 256-compute-part photo ROI study completed and never borrow FCP D/W results
