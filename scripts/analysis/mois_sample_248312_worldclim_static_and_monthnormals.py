@@ -194,7 +194,7 @@ def run(photo_gzip: Path, source_receipt: Path, raster_dir: Path, outdir: Path) 
       "species":d.species,"morph":d.morph,
       "original_source":d.old_mois_or_new_fcp,
       "observed_on":d.observed_on,
-      "latitude":lon*0+lat,"longitude":lon,
+      "latitude":lat,"longitude":lon,
     })
     for col in STATIC_SOURCE:
         if col not in ("latitude","longitude") and col in d:
