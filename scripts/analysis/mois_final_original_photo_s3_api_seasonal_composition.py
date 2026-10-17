@@ -40,6 +40,13 @@ from scripts.analysis.mois_historical9600_taxonomic_breadth_vs_local_season_supp
 )
 
 HISTORICAL_N=100543
+API_N=9600
+EXPECTED_S3_DATED=99732
+EXPECTED_API_FALLBACK=85
+EXPECTED_DATE_BOTH=9512
+EXPECTED_DATE_CONFLICT=1
+EXPECTED_DATED_HUES=127504
+EXPECTED_DATED_PHOTOS=261578
 S3_FILENAME="mois_historical_100543_original_photo_id_s3_uuid_date_real_snapshot.csv.gz"
 S3_RECEIPT="mois_full_historical_photo_dates_official_monthly_s3_source_receipt.json"
 S3_TABLE_SHA="d9f599d4ff6d479d8714344b014e604ade1af90a3e8dd8640a19d1be48407566"
@@ -109,7 +116,7 @@ def rejoin(photo:pd.DataFrame,s3:pd.DataFrame,api:pd.DataFrame):
     require(joined.morph.fillna("").eq(
         joined.original_frozen_ROI_morph.fillna("")).all(),
         "Original historical hue predictions have changed")
-    require(len(api)==9600 and api.original_photo_id.is_unique,
+    require(len(api)==API_N and api.original_photo_id.is_unique,
             "Original 9600 pilot ID source changed")
     api_rows=api[["original_photo_id","original_observation_id","source_taxon_id",
                   "provenance_status","retrieved_observed_on"]].copy()
@@ -118,7 +125,7 @@ def rejoin(photo:pd.DataFrame,s3:pd.DataFrame,api:pd.DataFrame):
                       "api_public_observed_on"]
     merged=joined.merge(api_rows,on="photo_id",how="left",validate="one_to_one")
     old_api=merged.api_original_observation_id.notna()
-    require(int(old_api.sum())==9600 and
+    require(int(old_api.sum())==API_N and
             merged.loc[old_api,"observation_id"].astype(str).eq(
                 merged.loc[old_api,"api_original_observation_id"].astype(str)).all() and
             merged.loc[old_api,"inat_taxon_id"].astype(str).eq(
@@ -131,8 +138,10 @@ def rejoin(photo:pd.DataFrame,s3:pd.DataFrame,api:pd.DataFrame):
     both=s3_date & valid_api
     disagreement=both & merged.snapshot_observed_on.ne(merged.api_public_observed_on)
     api_fallback=~s3_date & valid_api
-    require(int(s3_date.sum())==99732 and int(api_fallback.sum())==85 and
-            int(both.sum())==9512 and int(disagreement.sum())==1,
+    require(int(s3_date.sum())==EXPECTED_S3_DATED and
+            int(api_fallback.sum())==EXPECTED_API_FALLBACK and
+            int(both.sum())==EXPECTED_DATE_BOTH and
+            int(disagreement.sum())==EXPECTED_DATE_CONFLICT,
             "Source original API/S3 photo-date overlap or conflict changed")
     # Snapshot date retains priority on the one public metadata disagreement.
     merged["qualified_date_source"]=np.select(
@@ -154,8 +163,8 @@ def rejoin(photo:pd.DataFrame,s3:pd.DataFrame,api:pd.DataFrame):
           columns={"effective_observed_on":"observed_on"})
     p=labelled_calendar(as_date)
     require(int(p.classified.sum())==MOIS_HUES and
-            int((p.classified&p.date.notna()).sum())==127504 and
-            int(p.date.notna().sum())==261578,
+            int((p.classified&p.date.notna()).sum())==EXPECTED_DATED_HUES and
+            int(p.date.notna().sum())==EXPECTED_DATED_PHOTOS,
             "Original photo/date four hue denominators changed")
     return merged,p,{
         "original_historical_photo_ids":HISTORICAL_N,
@@ -298,7 +307,7 @@ def run(photo_archive:Path,s3_archive:Path,api_archive:Path,outdir:Path):
         "photo_original_full_source_SHA256":sha,
         "official_monthly_20260927_full_S3_99732_historic_dates_archive_SHA256":S3_TABLE_SHA,
         "independent_original_9600_current_iNat_API_dates_archive_SHA256":DATE_SHA,
-        "independent_current_API_date_sample_count":9600,
+        "independent_current_API_date_sample_count":API_N,
         "original_100543_historical_photo_IDs_exactly_preserved":True,
         "full_original_measured_photo_ids":MOIS_ROWS,
         "full_original_genuine_four_hue_classified_photo_ids":MOIS_HUES,
