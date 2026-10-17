@@ -1,0 +1,52 @@
+{
+  "schema": "mois_actual_source_fcp_wave4_218_partition_302242_measured_original_photos_v1",
+  "actual_source_run": "https://github.com/zuizui0223/mois/actions/runs/39018960100",
+  "actual_result_artifact_id": 12096016949,
+  "original_photo_source_SHA256": "1b0aff1d1f411aa0e214c826d084abe2cc924d4f38ff688a1472a79590504a55",
+  "actual_date_enriched_original_photo_source_SHA256": "b83871c6cd69cb624693364742c2a1d61003253d084af0cb6d80ab9f898c3959",
+  "actual_photo_season_table_SHA256": "772d6535fd3a84c004805acd2499b4d685d6e8cf882a41fa6794b3ef862d777a",
+  "actual_original_FCP_pixel_partition_source_SHA256": "ea97117e85be94086c9d2b2de584f492cd3a1c5d8d7ba2ec46d0b01e1820b14b",
+  "FCP_original_run": "https://github.com/zuizui0223/fcp/actions/runs/38992543115",
+  "FCP_completed_original_photo_pixel_partitions": 218,
+  "FCP_total_planned_photo_pixel_partitions": 256,
+  "actual_prior_unique_original_measured_photos": 295017,
+  "actual_prior_original_four_hue_labels": 142538,
+  "actual_prior_dated_original_four_hue_labels": 140247,
+  "additional_actual_new_original_photos": 7225,
+  "additional_genuine_four_hue_original_photo_labels": 3523,
+  "additional_real_dated_and_colour_original_photos": 3523,
+  "current_original_measured_unique_photo_ids": 302242,
+  "current_original_classifiable_photo_hues": 146061,
+  "current_source_observation_dated_photos": 296395,
+  "current_source_date_and_classifiable_four_hue": 143770,
+  "current_date_but_technical_unclassified_photo_attempts": 152625,
+  "verified_photo_id_overlap_dedup_against295017": 286826,
+  "new_fcp_photo_observation_date_from_original_source": 7225,
+  "original_full_date_and_colour_previous_source_unmodified": true,
+  "new_original_photo_data_photo_specific_open_flower_anthesis_confirmed": false,
+  "global_photographed_white_original_hues": {
+    "north_extratropical": {
+      "summer_white": 21231,
+      "summer_classified": 43277,
+      "winter_white": 2120,
+      "winter_classified": 4594,
+      "raw_summer_minus_winter_pp": 2.911243
+    },
+    "south_extratropical": {
+      "summer_white": 3317,
+      "summer_classified": 6530,
+      "winter_white": 1809,
+      "winter_classified": 4575,
+      "raw_summer_minus_winter_pp": 11.255341
+    }
+  },
+  "limits": [
+    "Source original hue from completed photos, automatic image ROI not independently verified flowering organ",
+    "Observation date is original source observation metadata plus prior historical verified September S3/API, not image EXIF",
+    "Original 256 planned FCP image partitions are not all completed at this snapshot; 38 remain",
+    "Global hemisphere summer minus winter original photo-white ratios are unpaired photo observations conditioned on classifiability",
+    "No actual observed-year monthly temperature/radiation/water estimate nor measured pollinator fitness",
+    "FCP within-species D/W/50km genotype/spatial polymorphism estimands not imported",
+    "Original MOIS global six-axis 999-genus maxT coefficients must be separately refitted before representing new 302242-photo slopes"
+  ]
+}
