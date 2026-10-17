@@ -95,7 +95,9 @@ def scan_table(client:requests.Session,entry:dict,
             last=max(indices.values())
             for line in gz:
                 total+=1
-                fields=line.rstrip(b"\r\n").split(b"\t",last)
+                # Split one delimiter beyond the final requested field,
+                # otherwise the last selected value includes trailing columns.
+                fields=line.rstrip(b"\r\n").split(b"\t",last+1)
                 require(len(fields)>last,
                         f"Missing required official metadata column on {progress_name} row {total}")
                 callback(fields,indices)
