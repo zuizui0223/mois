@@ -1,0 +1,9 @@
+hemisphere,source_scope,photographic_estimand,summer_minus_winter_pp,bootstrap95_low_pp,bootstrap95_high_pp,dated_original_photo_attempts,classifiable_original_photos,site_season_year_comparisons
+north_extratropical,unpaired_global_source,technical_four_hue_classifiability,4.938033,,,81423,42180,
+north_extratropical,0.25_degree_same_site_seasonyear,technical_four_hue_classifiability,-10.778843,-21.916378,-0.733227,428,232,16
+north_extratropical,unpaired_global_source,white_fraction_conditional_on_classified,3.266740,,,81423,42180,
+north_extratropical,0.25_degree_same_site_seasonyear,white_fraction_conditional_on_classified,5.035741,-9.198881,19.424992,428,232,16
+south_extratropical,unpaired_global_source,technical_four_hue_classifiability,2.709032,,,22078,9909,
+south_extratropical,0.25_degree_same_site_seasonyear,technical_four_hue_classifiability,-4.049915,-11.132685,4.405563,843,367,18
+south_extratropical,unpaired_global_source,white_fraction_conditional_on_classified,12.488826,,,22078,9909,
+south_extratropical,0.25_degree_same_site_seasonyear,white_fraction_conditional_on_classified,-4.633622,-15.399814,7.855510,843,367,18

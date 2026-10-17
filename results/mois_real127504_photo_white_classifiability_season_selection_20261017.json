@@ -1,0 +1,90 @@
+{
+  "schema": "mois_authentic_original127504_photo_white_hue_classifiability_season_selection_20261017_v1",
+  "scientific_owner": "zuizui0223/mois",
+  "date_jst": "2026-10-17",
+  "source_actual_compute_run": "https://github.com/zuizui0223/mois/actions/runs/39014110319",
+  "source_artifact_id": 12093528305,
+  "original_source_photo_csv_sha256": "fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9",
+  "final_historical_source_photo_date_sha256": "ac5056e25cb9322618dda3b4f2e4e2a97907dfb16749d84c65ee9f3149143564",
+  "locality_scale_aggregate_csv_sha256": "575fd01e9c6f98d699c703b97a4eb39d91bedaa684767186a97a2291f6bace44",
+  "total_original_attempted_photo_ids": 267425,
+  "total_four_hue_original_photo_ids": 129795,
+  "date_original_photo_attempts": 261578,
+  "date_and_classifiable_photo_hues": 127504,
+  "date_and_technical_unknown_photo_hues": 134074,
+  "global_hemisphere": {
+    "north_extratropical": {
+      "summer_original_photo_attempts": 72857,
+      "winter_original_photo_attempts": 8566,
+      "summer_four_hue_classifiable": 38121,
+      "winter_four_hue_classifiable": 4059,
+      "summer_white_labeled": 18620,
+      "winter_white_labeled": 1850,
+      "summer_four_hue_classifiability_percent": 52.323044,
+      "winter_four_hue_classifiability_percent": 47.385011,
+      "summer_minus_winter_classifiability_pp": 4.938033,
+      "summer_minus_winter_white_share_conditional_classified_pp": 3.26674,
+      "summer_minus_winter_recorded_white_labels_per_attempt_pp": 3.959901,
+      "recorded_white_label_yield_symmetric_photo_hue_component_pp": 1.628602,
+      "recorded_white_label_yield_symmetric_classifiability_component_pp": 2.3313
+    },
+    "south_extratropical": {
+      "summer_original_photo_attempts": 12657,
+      "winter_original_photo_attempts": 9421,
+      "summer_four_hue_classifiable": 5827,
+      "winter_four_hue_classifiable": 4082,
+      "summer_white_labeled": 2996,
+      "winter_white_labeled": 1589,
+      "summer_four_hue_classifiability_percent": 46.037766,
+      "winter_four_hue_classifiability_percent": 43.328734,
+      "summer_minus_winter_classifiability_pp": 2.709032,
+      "summer_minus_winter_white_share_conditional_classified_pp": 12.488826,
+      "summer_minus_winter_recorded_white_labels_per_attempt_pp": 6.804121,
+      "recorded_white_label_yield_symmetric_photo_hue_component_pp": 5.580413,
+      "recorded_white_label_yield_symmetric_classifiability_component_pp": 1.223708
+    }
+  },
+  "matched_0p25_degree_cell_same_meteorological_season_year_min5_classified_observations_min2_taxa_each_season": {
+    "north_extratropical": {
+      "eligible_site_years": 16,
+      "distinct_geocells": 16,
+      "all_attempted_photos_in_paired_seasons": 428,
+      "classifiable_hue_photo_ids_in_paired_seasons": 232,
+      "classifiability_summer_minus_winter_pp": -10.778843,
+      "classifiability_geocell_bootstrap999_percentile95_pp": [
+        -21.916378,
+        -0.733227
+      ],
+      "white_given_classified_summer_minus_winter_pp": 5.035741,
+      "white_given_classified_geocell_bootstrap999_percentile95_pp": [
+        -9.198881,
+        19.424992
+      ]
+    },
+    "south_extratropical": {
+      "eligible_site_years": 18,
+      "distinct_geocells": 18,
+      "all_attempted_photos_in_paired_seasons": 843,
+      "classifiable_hue_photo_ids_in_paired_seasons": 367,
+      "classifiability_summer_minus_winter_pp": -4.049915,
+      "classifiability_geocell_bootstrap999_percentile95_pp": [
+        -11.132685,
+        4.405563
+      ],
+      "white_given_classified_summer_minus_winter_pp": -4.633622,
+      "white_given_classified_geocell_bootstrap999_percentile95_pp": [
+        -15.399814,
+        7.85551
+      ]
+    }
+  },
+  "source_inference_limits": [
+    "Classification success is a photo/source quality-and-composition outcome, not an independently verified flowering state.",
+    "The white label yield identity is mathematical and not a decomposition of true biological pigment frequencies.",
+    "The within-cell/year cohort is itself chosen on having sufficient classifiable original photos and taxa; selection and positivity restrictions remain.",
+    "999-draw geographical bootstrap percentile intervals do not adjust post hoc multiple spatial/minimum-effort analyses; these are exploratory 95% intervals.",
+    "0.25 degree cells do not uniquely identify biological breeding populations or independent photographers.",
+    "No actual observation-year meteorological temperature, radiation, deficit or pigment-fitness response fitted.",
+    "FCP within-species W/D and MOIS frozen annual maxT effects are not imported or changed."
+  ]
+}
