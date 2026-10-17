@@ -32,6 +32,7 @@ EXPECTED_ONE_OBSERVATION_NAMESPACE_DIFFERENCE_PHOTO_ID="232092182"
 UNION_N=295017
 UNION_HUES=142538
 DATE_SOURCE_N=100543
+HISTORICAL_VERIFIED_DATE_N=99817
 OLD_DATE_HUES=137114
 NEW_DATE_HUES=140247
 NEW_DATE_ATTEMPTS=289170
@@ -129,7 +130,7 @@ def photo_union(fcp:pd.DataFrame,mois:pd.DataFrame)->tuple[pd.DataFrame,dict]:
 def restore_historic_dates(union:pd.DataFrame,hist:pd.DataFrame)->pd.DataFrame:
     require(len(hist)==DATE_SOURCE_N and
             hist.photo_id.is_unique and
-            hist.qualified_observed_on.notna().sum()==99817,
+            hist.qualified_observed_on.notna().sum()==HISTORICAL_VERIFIED_DATE_N,
             "Historic true observed-date photo-ID repair incomplete")
     required=("photo_id","original_numeric_observation_id","original_taxon_id",
               "original_frozen_ROI_morph","qualified_observed_on")
