@@ -1,0 +1,41 @@
+{
+  "schema": "mois_historical_original100543_public_observed_on_blind200_measured_decision_20261017_v1",
+  "scientific_project": "zuizui0223/mois",
+  "actual_source_run": "https://github.com/zuizui0223/mois/actions/runs/39007591041",
+  "source_artifact_id": 12091756239,
+  "source_photo_union_sha256": "fbb54b58dc91e40e2e166081212588acc18adb19af4bdbcd1c7fe1778bee28d9",
+  "blind_sample_original_photo_ids_sha256": "2e2cb7098a8539407a54badd89dce2058da2b9d2c56c58ebd8f0f898496604e7",
+  "verified_photo_date_csv_sha256": "5a8a4b5e5af8f4a3c2187b1e38b7dbdbafb88de035e376c28c8a0da43f946dff",
+  "source_original_historical_photo_ids": 100543,
+  "all_source_date_blank_in_combined_union": true,
+  "photo_ids_blindly_preselected_before_API": 200,
+  "original_source_photo_and_observation_IDs_found_in_current_public_API": 200,
+  "matching_original_photo_in_correct_observation": 200,
+  "valid_public_observed_on_dates": 200,
+  "matching_current_taxon_id_with_original_source_taxon_id": 200,
+  "current_observation_level_Flowers_annotations": 0,
+  "current_retrieved_observation_date_range": [
+    "1988-03-28",
+    "2026-08-31"
+  ],
+  "actual_iNaturalist_public_API_calls": 4,
+  "observation_ids_per_API_batch": 50,
+  "API_response_SHA256_by_batch": [
+    "b4cfabace2fd862dc148b4ff7267d7205003f2158f4636910515f3ccd1dc0458",
+    "a1ab5ba17d9749e70a2e25bd2869bdad5f24635db39cc75b0cbab9d2c07e06bc",
+    "c3663aa81102e69f13c662f9e72d4992d5dfde4c2b3a2a607f06c78d03575320",
+    "78ad95e74c752974d6fcae960a9de9f186ee01e2daf2ba9f9a05508f29b43d67"
+  ],
+  "provider_retrieval_date_UTC": "2026-10-17",
+  "manual_prior_independent_source_verification": "4 public original photo+observation IDs had valid observed_on and same source taxon",
+  "inference": "Missing observed_on in historical CSV is metadata omission, not evidence of absent original date; current public records permit exact photo-ID-observation-ID verified date recovery in this blind 200 sample",
+  "uncertainties": [
+    "200/200 is a bounded blind pilot, NOT verified full 100543-photo recovery nor confirmation of every public record's immutable original acquisition date",
+    "Current iNaturalist observed_on values may change, and are not necessarily original upload timestamps or verified timezone-qualified camera capture dates",
+    "No observation in the pilot carries a current public Flowering annotation; annotation absence is unknown, not evidence of nonflowering",
+    "Even present observation-level Flowers annotation cannot verify photo-specific open petal, fruit or bract anatomy",
+    "Photo ROI four-hue predictions are not independently botanical photo-specific open flower diagnoses",
+    "Historical original source colour phenotypes, taxonomic assignment, global moisture model and FCP spatial polymorphism statistics are unchanged"
+  ],
+  "compliant_scale_up_recommendation": "For entire 100543 original observations prefer iNaturalist export/GBIF citable weekly public dataset or provider-coordinated bulk source; preserve exact photo+observation matching and a SHA of every imported original observed_on"
+}
