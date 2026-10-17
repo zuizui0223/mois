@@ -133,6 +133,8 @@ def scan_metadata(source:pd.DataFrame,probe:dict,client:requests.Session,
     matched_by_photo={}
     uuid_to_photo={}
     duplicated_photo=0
+    ambiguous_photo_ids=set()
+    ambiguous_observation_uuids=set()
     def one_photo(fields,at):
         nonlocal duplicated_photo
         pid=fields[at["photo_id"]]
@@ -141,18 +143,27 @@ def scan_metadata(source:pd.DataFrame,probe:dict,client:requests.Session,
         require(len(uid)>0, "Original photo maps to blank official observation UUID")
         if pid in matched_by_photo:
             duplicated_photo+=1
-            require(matched_by_photo[pid]==uid,
-                    "Original source photo maps to conflicting observation UUIDs")
+            if matched_by_photo[pid]!=uid:
+                ambiguous_photo_ids.add(pid)
+                ambiguous_observation_uuids.update((matched_by_photo[pid],uid))
         else:
             matched_by_photo[pid]=uid
-            require(uid not in uuid_to_photo,
-                    "Distinct historical original observations map to one provider observation UUID")
-            uuid_to_photo[uid]=pid
+            if uid in uuid_to_photo and uuid_to_photo[uid]!=pid:
+                ambiguous_observation_uuids.add(uid)
+                ambiguous_photo_ids.update((uuid_to_photo[uid],pid))
+            else:
+                uuid_to_photo[uid]=pid
     photo_receipt=scan_table(client,probe["source"]["photo_table"],
         ("photo_id","observation_uuid"),one_photo,"photos.csv.gz")
+    # Moved/reassigned photographic records can collapse two old numeric
+    # observations into one *current* UUID. Both source dates are then
+    # ambiguous; preserve as unknown instead of crashing or inventing them.
+    for ambiguous in ambiguous_observation_uuids:
+        uuid_to_photo.pop(ambiguous,None)
     print("MOIS_S3_PHOTO_UUID_JOIN",
           json.dumps({"original_historical_photos":len(targets),
               "source_original_photos_found_in_open_data":len(matched_by_photo),
+              "ambiguous_current_photo_or_UUID_mappings_excluded":len(ambiguous_photo_ids),
               "duplicated_photo_rows":duplicated_photo}),flush=True)
     recovered={}
     def one_observation(fields,at):
@@ -175,6 +186,7 @@ def scan_metadata(source:pd.DataFrame,probe:dict,client:requests.Session,
         "photos":photo_receipt,"observations":obs_receipt,
         "photo_IDs_found_in_open_snapshot":len(matched_by_photo),
         "duplicated_photo_rows":duplicated_photo,
+        "ambiguous_current_photo_ID_mappings_excluded":len(ambiguous_photo_ids),
         "matched_observation_uuid_found_in_metadata":len(recovered),
     }
 
