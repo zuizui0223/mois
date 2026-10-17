@@ -19,7 +19,7 @@ import pandas as pd
 
 from scripts.analysis import mois_refit_original_water_with_actual_new_original_photos as legacy
 
-OLD_N, OLD_HUES = 295017, 139405
+OLD_N, OLD_HUES = 295017, 142538
 NEW_N, NEW_HUES = 14422, 7124
 FULL_N, FULL_HUES = OLD_N+NEW_N,OLD_HUES+NEW_HUES
 FULL_SHA = "546266e2bbaa340a2523864c28c5a877842eb4b0904a7e0dff90870c6519a47e"
