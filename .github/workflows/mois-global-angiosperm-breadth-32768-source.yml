@@ -1,0 +1,135 @@
+name: MOIS global angiosperm species-first photo source cached breadth 32768
+on:
+  pull_request:
+    paths:
+      - "scripts/acquisition/mois_global_angiosperm_breadth_source.py"
+      - "tests/test_mois_global_angiosperm_breadth_source.py"
+      - "docs/MOIS_BROAD_ANGIOSPERM_SPECIES_FIRST_ACQUISITION_20261018.md"
+      - ".github/workflows/mois-global-angiosperm-breadth-32768-source.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/acquisition/mois_global_angiosperm_breadth_source.py"
+      - "tests/test_mois_global_angiosperm_breadth_source.py"
+      - "docs/MOIS_BROAD_ANGIOSPERM_SPECIES_FIRST_ACQUISITION_20261018.md"
+      - ".github/workflows/mois-global-angiosperm-breadth-32768-source.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-broad-angiosperm-original-open-metadata-species-first
+  cancel-in-progress: false
+jobs:
+  source-species-breadth-synthetic-QC:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test new angiosperm taxa, observer, open licence, original photo priority
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests==2.32.3 numpy==2.1.3 pandas==2.2.3 \
+            scipy==1.15.2 rasterio==1.4.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_global_angiosperm_breadth_source.py
+  one-time-broad-original-open-S3-metadata-source:
+    needs: source-species-breadth-synthetic-QC
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install original open metadata ETAG/CRC streaming runtime
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests==2.32.3 numpy==2.1.3 pandas==2.2.3 \
+            scipy==1.15.2 rasterio==1.4.3 pyarrow==19.0.1 pytest==8.4.2
+      - name: Restore immutable 313535 real original photo IDs and two disjoint existing photo reservations
+        run: |
+          set -euo pipefail
+          mkdir -p original313535 old_fifth4096 SI4096
+          gh release download mois-primary-313535-fullfourth4096-featurelake-v2 \
+            --repo zuizui0223/mois --dir original313535 \
+            --pattern 'primary313535_fullfourth4096_original_photo_hues.parquet' \
+            --pattern 'primary313535_fullfourth4096_featurelake_manifest.json'
+          gh run download 39091745230 --repo zuizui0223/mois \
+            --name mois-fifth4096-original-photo-ID-only-frozen-reservation \
+            --dir old_fifth4096
+          gh run download 39033985014 --repo zuizui0223/mois \
+            --name mois-targeted4096-photo-ID-original-pixel-source-plan-only \
+            --dir SI4096
+          test -s original313535/primary313535_fullfourth4096_original_photo_hues.parquet
+          test -s old_fifth4096/mois_new4096_photo_source_after313535_frozen_receipt.json
+          test -s SI4096/mois_first4096_original_source_only_freeze.json
+      - name: Stream exact snapshot of ALL angiosperm taxa, research grade observations and open photos ONCE
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_global_angiosperm_breadth_source \
+            --previous313535-photo-release original313535 \
+            --fifth4096-reserved-source old_fifth4096 \
+            --season4096-reserved-source SI4096 \
+            --output global_species_first_source
+          python - <<'PY'
+          import json
+          import pandas as pd
+          from pathlib import Path
+          p=Path('global_species_first_source')
+          j=json.loads((p/'mois_broad_angiosperm_new_taxa_32768_pool_first4096_receipt.json').read_text())
+          assert j['status']=='SOURCE_ONLY_4096_RESERVED_NO_NEW_PIXEL_HUES'
+          assert j['first_wave_distinct_photo_ids']==4096
+          assert j['first_wave_named_taxa']>1000
+          assert j['source_photo_IDs_disjoint_from_both_running_and_SI_reservations']
+          assert j['first_wave_all_source_photo_IDs_are_unprocessed']
+          assert not j['new_photo_pixels_actually_measured']
+          plan=pd.read_csv(p/'mois_broad_first4096_original_open_flower_photo_ID_source.csv',dtype=str)
+          assert len(plan)==4096 and plan.photo_id.is_unique
+          assert plan.inat_taxon_id.nunique()==j['first_wave_named_taxa']
+          assert plan.genus.nunique()==j['first_wave_named_genera']
+          print('MOIS_GLOBAL_ANGIOSPERMS_REAL_NEW_TAXON_ORIGINAL_PHOTO_SOURCE_ONLY',
+                j['first_wave_named_taxa'],j['first_wave_named_genera'],
+                j['pool_original_photo_IDs'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-angiosperm-species-first-cached-first4096-and-future-source
+          path: global_species_first_source/
+          retention-days: 90
+          if-no-files-found: error
+  persist-broad-source-as-versioned-release:
+    if: github.event_name != 'pull_request'
+    needs: one-time-broad-original-open-S3-metadata-source
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-angiosperm-species-first-cached-first4096-and-future-source
+          path: original_broad_source
+      - name: Permanently publish source PHOTO IDS ONLY (no pixels or colour inference)
+        run: |
+          set -euo pipefail
+          tag=mois-angiosperm-broad-species-first-source-cache-v1-20261018
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo 'Immutable candidate source already exists; do not overwrite'
+          else
+            gh release create "$tag" original_broad_source/*.csv original_broad_source/*.json \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS genus and species breadth original angiosperm photo-ID source' \
+              --notes 'Unmeasured PHOTO IDS, NOT flower-colour ROI outcomes. All angiosperm species official iNaturalist licensed photos/taxa/observations, 3 original metadata files scanned exactly once with ETag and SHA. Source prioritized unseen genus/species and regional gaps, excluded 313535 existing real photo IDs and both independent 4096-source reservations, first 4096 worker shards and reusable future candidate pool. Must perform actual RGB pixel inference and source SHA QC before augmenting any global flower-colour ratio.'
+          fi
