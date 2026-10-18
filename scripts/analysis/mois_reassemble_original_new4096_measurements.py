@@ -66,6 +66,7 @@ def load_plan(root:Path,source_name:str)->tuple[list[dict],dict]:
         "wave1":"mois_source_only_4096_original_photo_selection.csv",
         "wave2":"mois_original_full_3430502_outside_first_screen_WAVE2_4096.csv",
         "wave3":"mois_original_full_3430502_outside_first_screen_WAVE3_4096.csv",
+        "wave5":"mois_next4096_after313535_photo_ID_source_blind_wave5.csv",
     }
     require(source_name in source_file,"Unknown original-wave ID selection")
     allfiles=list(root.rglob(source_file[source_name]))
