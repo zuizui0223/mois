@@ -1,0 +1,50 @@
+name: MOIS real global island mainland flower composition
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_global_geography_composition.py
+      - tests/test_mois_global_geography_composition.py
+      - .github/workflows/mois-global-island-mainland-composition.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-global-island-mainland-composition-v1
+  cancel-in-progress: true
+jobs:
+  real-photo-geography:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install and test photo and landmass estimands
+        run: |
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 pyarrow==19.0.1 geopandas==1.0.1 shapely==2.0.7 pyogrio==0.10.0 statsmodels==0.14.4
+          python -m unittest -v tests.test_mois_global_geography_composition
+      - name: Restore genuine measured colour and existing environment, without RGB reprocessing
+        run: |
+          set -euo pipefail
+          mkdir -p core
+          gh release download mois-primary-313535-fullfourth4096-featurelake-v2 --repo zuizui0223/mois --dir core --pattern 'primary313535_*.parquet' --pattern 'primary313535_fullfourth4096_featurelake_manifest.json'
+          curl --fail --location --retry 2 --max-time 300 https://github.com/GenericMappingTools/gshhg-gmt/releases/download/2.3.7/gshhg-shp-2.3.7.zip -o gshhg.zip
+          echo '8dbbe7e071e77e9e75f2d639239099ebca8d5c16d6a07df8169729d49f15cf41  gshhg.zip' | sha256sum -c -
+      - name: Island mainland colour composition and exploratory geographic climate adjustment
+        run: |
+          python -m scripts.analysis.mois_global_geography_composition --core core --coast gshhg.zip --output geography_results
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real313535-island-mainland-macro-geography
+          path: |
+            geography_results/*.csv
+            geography_results/*.csv.gz
+            geography_results/result.json
+          if-no-files-found: error
+          retention-days: 90
