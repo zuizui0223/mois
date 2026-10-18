@@ -26,6 +26,7 @@ def test_completed_units_are_not_downloaded_again(tmp_path,monkeypatch):
     frozen.METHOD=method
     analysis=types.ModuleType('scripts.analysis');analysis.__path__=[]
     monkeypatch.setitem(sys.modules,core.__name__,core)
+    monkeypatch.setattr(sys.modules['scripts.acquisition'], 'mois_collect_remaining_pool', core, raising=False)
     monkeypatch.setitem(sys.modules,fcp.__name__,fcp)
     monkeypatch.setitem(sys.modules,'scripts.analysis',analysis)
     monkeypatch.setitem(sys.modules,frozen.__name__,frozen)
