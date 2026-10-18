@@ -84,7 +84,7 @@ def reservation_ids(fifth,season,original_ids):
         "first_wave_original_4096_csv_sha256",4096)
     need(season_rec.get("schema")==
          "mois_3430502_targeted_opposite_season_after309439_and_reserved4096_v1"
-         and season_rec.get("prior_measured_original_photo_ids")==309439,
+         and season_rec.get("prior_original_measured_photo_ids")==309439,
          "Independent season-SI photo reservation source drift")
     need(fifth_ids.isdisjoint(season_ids)
          and fifth_ids.isdisjoint(original_ids)
