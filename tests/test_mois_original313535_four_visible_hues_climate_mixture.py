@@ -9,7 +9,7 @@ def photos(n=450):
     rows=[]
     for i in range(n):
         rain=float(100+(i%3)*600+i*.02)
-        solar=float(70+((i//3)%3)*100)
+        solar=float(70+((i//3)%3)*100+i*.001)
         hue=m.HUES[(i*13+i//9)%4]
         if i%17==0:hue="mixed_uncertain"
         rows.append({
