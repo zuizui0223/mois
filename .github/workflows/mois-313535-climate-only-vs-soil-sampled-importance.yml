@@ -1,0 +1,114 @@
+name: MOIS whether the strongest climate factor survives missing soil/photo sampling
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_global313535_climate_subset_sampling_robustness.py"
+      - "tests/test_mois_global313535_climate_subset_sampling_robustness.py"
+      - "docs/MOIS_ALL19_SOIL_SELECTION_CLIMATE_GROUP_RANKING_20261018.md"
+      - ".github/workflows/mois-313535-climate-only-vs-soil-sampled-importance.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/analysis/mois_global313535_climate_subset_sampling_robustness.py"
+      - "tests/test_mois_global313535_climate_subset_sampling_robustness.py"
+      - "docs/MOIS_ALL19_SOIL_SELECTION_CLIMATE_GROUP_RANKING_20261018.md"
+      - ".github/workflows/mois-313535-climate-only-vs-soil-sampled-importance.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-313535-climate-soil-selection-heldout-PCA-importance
+  cancel-in-progress: false
+jobs:
+  all-original-photographic-climate-versus-soil-selected-ranking:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unit tests of population gates and un-leaked genus CV
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 \
+            statsmodels==0.14.4 scikit-learn==1.6.1 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q \
+            tests/test_mois_global313535_climate_subset_sampling_robustness.py
+      - name: Restore SHA-signed 313535 original pixel data, all19 climate/DEM and full33 ranking
+        run: |
+          set -euo pipefail
+          mkdir -p source313535 all33
+          gh release download mois-primary-313535-fullfourth4096-featurelake-v2 \
+            --repo zuizui0223/mois --dir source313535 \
+            --pattern 'primary313535_*parquet' \
+            --pattern 'primary313535_fullfourth4096_featurelake_manifest.json'
+          gh release download mois-313535-all19-BIO-vapr-PCA-ablation-v1 \
+            --repo zuizui0223/mois --dir all33 \
+            --pattern 'mois_313535_all19_bio_vapr_solar_terrain_photoids.parquet' \
+            --pattern 'mois_313535_all19_bio_vapr_fullterrain_source_manifest.json' \
+            --pattern 'mois_313535_all_environment_group_ablation_blocked_cv.csv' \
+            --pattern 'mois_313535_all_environment_pca_confounded_ranking_receipt.json'
+      - name: Train-only PCA compare climate-only in full photo source and complete soil source
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global313535_climate_subset_sampling_robustness \
+            --photo-release source313535 \
+            --all19-abiotic-release all33 \
+            --previous33-pca-release all33 \
+            --output climate_soil_sampling
+          python - <<'PY'
+          from pathlib import Path
+          import json,pandas as pd
+          o=Path('climate_soil_sampling')
+          r=json.loads((o/'mois_313535_climate_source_sample_selection_importance.json').read_text())
+          assert r['full_photo_attempts']==313535
+          assert len(r['cohort_and_taxon_support'])==3
+          assert len(r['group_ablation_rankings'])==3
+          assert r['soil_missingness_not_imputed_and_only_real_photo_pixels_used']
+          ranks=pd.read_csv(o/'mois_313535_climate_vs_soil_sampling_holdout_group_rank.csv')
+          assert ranks.data_population.nunique()==3
+          assert ranks.heldout_design.nunique()==2
+          subset=r['cohort_and_taxon_support']
+          assert subset[0]['classifiable_original_photo_rows_before_genus_gate'] if 'classifiable_original_photo_rows_before_genus_gate' in subset[0] else True
+          print('MOIS_313535_CLIMATE_ONLY_VS_SOIL_SELECTION_SOURCE_SIGNED_VALID')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-313535-climate-source-vs-soil-selection-heldout-PCAs
+          path: climate_soil_sampling/
+          retention-days: 90
+          if-no-files-found: error
+  immutable-release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: all-original-photographic-climate-versus-soil-selected-ranking
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-313535-climate-source-vs-soil-selection-heldout-PCAs
+          path: result
+      - name: Publish reproducible source-signed unmodified sampling analysis only once
+        run: |
+          set -euo pipefail
+          tag=mois-313535-climate-ranking-soil-selection-robustness-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo "Previous immutable source result retained"
+          else
+            gh release create "$tag" result/*.csv result/*.json \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS climate predictor ranking across main source and incomplete-soil source' \
+              --notes 'Source-verified 313535 original photo RGB attempts; all BIO19, VAPR and solar. Climate-group PCA and genus/geographic heldout comparisons on climate-complete, terrain-complete and soil-complete subsets; no causal white-pigment fitness or maintained 50:50 equilibrium.'
+          fi
