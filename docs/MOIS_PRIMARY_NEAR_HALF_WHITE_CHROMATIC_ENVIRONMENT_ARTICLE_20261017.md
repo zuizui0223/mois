@@ -8,7 +8,7 @@ White floral colour remains common worldwide despite the potential signalling, o
 
 In two observational precipitation×annual-irradiance tertile comparisons, photographed white frequencies ranged from **42.31%** in the dry/high-irradiance cell to **51.28%** in the wet/low-irradiance cell. A wet-minus-dry comparison across **19 hemisphere/10° latitude/solar strata** averaged **+2.51 percentage points**, with exploratory 95% stratum-bootstrap interval **[−0.32,+5.19]**, so a common conditional moisture direction is uncertain. In a novel **23,076-nominal-taxon/2,892-genus** geography- and genus-conditioned exploratory model, annual precipitation related positively to photographed white (+1.92 percentage points per original taxon-source SD, *nominal* genus-cluster interval [+0.15,+3.69]), whereas adjusted solar and the rainfall×solar and rainfall×temperature interactions had intervals spanning zero. Geography and annual climate explained only approximately **0.40%** of the genus-centred observed taxon-level white-photo variation. Matched-source soil and terrain blocks improved within-sample fit slightly, on distinct incompletely covered source subsets. An older frozen 309,439-photo six-axis maxT/999-genus model likewise supports overall annual water correlates but not a direction confirmed under coarse geographic conditioning.
 
-Thus a globally near-half photographic composition masks differences across sampled environments, but does **not** identify the selective fitness benefits, pigment-production costs, or evolutionary maintenance of any fixed white–chromatic proportion. The main ecological question is which abiotic and biogeographic conditions accompany different colour compositions; observed-month seasonality remains Supplementary Information.
+Thus a globally near-half photographic composition masks differences across sampled environments, but does **not** identify the selective fitness benefits, pigment-production costs, or evolutionary maintenance of any fixed white–chromatic proportion. A new full-19-BIO, vapour, solar, terrain and soil analysis identifies **temperature and moisture as leading predictive groups**, but their ordering changes with geographic versus genus holdouts and missing-soil source selection. No single globally robust strongest environmental driver is identified; observed-month seasonality remains Supplementary Information.
 
 **Keywords:** floral hue; white flowers; flower colour; macroecology; moisture; solar radiation; environmental filtering; observer bias; iNaturalist
 
@@ -82,6 +82,70 @@ The exploratory genus-centred annual geography/climate fit contained **150,977 p
 On **different, internally matched original complete-case populations**, adding DEM terrain to geography/climate increased within-sample R² by **0.00052** (104,809 classified photo rows, 20,639 qualifying taxa), and adding the originally measured historical soil properties increased it by **0.00175** (31,951 classified photo rows, 18,416 qualifying taxa). These are tiny observational fit differences on unequal soil/terrain source supports; they **cannot** be read as relative causal costs or site-level pigment mechanisms.
 
 The complete source-replay, 18 rain×solar/heat cells, source-hue count and model terms are versioned in the [313,535-photo environmental-result release](https://github.com/zuizui0223/mois/releases/tag/mois-real313535-white-water-light-habitat-observational-v1). No seasonal climate regressions, flowering-anthesis truth set, experimental pigment biochemistry or fitness measurement was introduced.
+
+### All 33 environmental covariates: PCA and the effect of incomplete soil coverage
+
+We extended the original 313,535-photo feature lake to **all 19 WorldClim BIO
+climatological variables**, mean annual vapour pressure, annual solar
+radiation, seven coarse DEM-derived terrain indices, and the five
+previously sourced soil fields. These 33 predictors are correlated
+and not 33 independent experiments. An unsupervised PCA of the
+all-environment matched source explains **30.55% of environmental
+variance on PC1**; this is emphatically *not 30.55% explained flower colour*.
+
+The all-33 model can only use **30,109 classifiable photo rows from 17,585
+eligible nominal taxa/2,397 genera** because soil values are missing
+for many original photos. With training-fold-only standardization and
+blockwise PCA (90% environmental variance, maximum six axes per
+block), fivefold genus-equal Ridge prediction under whole-genus
+and approximate 10° regional holdouts ranked **temperature** first
+in that specific restricted complete-case subset. The full-minus-drop
+weighted held-out R² improvements were **+0.000946** (unseen genera)
+and **+0.001255** (unseen regional blocks), which are both very small.
+
+To examine source selection, we repeated climate-only block comparisons
+in three populations, always comparing source-matched photo rows within
+each model and refitting PCA only on each training fold:
+
+| Source population | Top predictor group: held-out genera | Top predictor group: held-out broad geographic blocks |
+|---|---|---|
+| 313,204 climate-complete original photo attempts, 151,107 labelled hues | **Moisture** | **Temperature** |
+| 271,545 climate+terrain complete photo attempts, 131,765 labelled hues | **Temperature** | **Temperature** |
+| 66,012 climate+terrain+soil complete photo attempts, 30,112 labelled hues; climate predictors only | **Temperature** | **Moisture** |
+| Exactly the same soil-complete photos; all five environmental groups | **Temperature** | **Temperature** |
+
+In the largest climate-supported photo population, genus-heldout
+moisture importance was **ΔR² +0.002178** versus temperature
+**+0.001659**; geographic-heldout temperature importance was
+**+0.002043** versus moisture **+0.000780**.
+On the soil-complete climate-only source, genus-heldout temperature
+and moisture effects were respectively **+0.001202** and
+**+0.001033**, but in regional holdout moisture **+0.001364**
+exceeded temperature **+0.001181**. These are small conditional
+*predictive* differences, not independent climate-selection effects.
+
+The climatic population maps to **150,977 classified photos from
+23,076 eligible taxa/2,892 genera**, whereas only **30,109** labelled
+photo records supported every soil and terrain variable.
+The full soil+terrain source's classifiable photographic white rate
+was **46.38%**, versus **47.23%** in the entire source.
+Consequently, naming temperature the unique global strongest factor
+would be an artefact of treating soil-incomplete photo sampling as
+representative.
+
+**Decision:** Water and temperature are plausible leading predictors,
+but **no single abiotic factor is consistently strongest across source
+populations and validation targets**. Rain and vapour associations remain
+worth studying without claiming a causal water-to-colour mechanism.
+Neither PCA nor predictor-drop crossvalidation measures pigment
+metabolic cost, selection, or relative floral fitness. Collecting
+genuine soil observations across more original photo locations and
+assessing observer and taxonomic composition remain priorities.
+
+The [all-33 photo-ID/source-verified PCA/held-out Release](https://github.com/zuizui0223/mois/releases/tag/mois-313535-all19-BIO-vapr-PCA-ablation-v1)
+and [climate-only versus missing-soil sensitivity Release](https://github.com/zuizui0223/mois/releases/tag/mois-313535-climate-ranking-soil-selection-robustness-v1)
+contain the complete denominators, PCA loadings, conditional group
+and original-variable ablations, and source fingerprints.
 
 ## Discussion and limits
 
