@@ -346,8 +346,8 @@ def rank_by_breadth(candidates,taxa,old_taxa,old_canon,old_genera,old_cells,
                 chosen.append(q);source_counts[stage]+=1
             if len(chosen)>=limit:break
         if len(chosen)>=limit:break
-    require(len(chosen)>=FIRST_WAVE,
-            "Globally broadened source failed to supply 4096 original photos")
+    require(len(chosen)>=min(limit,FIRST_WAVE),
+            "Globally broadened source failed to supply required original photo IDs")
     return chosen,dict(source_counts)
 
 
