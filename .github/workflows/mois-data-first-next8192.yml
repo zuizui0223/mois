@@ -1,0 +1,168 @@
+name: MOIS data first - next 8192 cached photos, no ecological analysis
+on:
+  pull_request:
+    types: [opened, reopened]
+    paths:
+      - scripts/acquisition/mois_collect_remaining_pool.py
+      - tests/test_mois_collect_remaining_pool.py
+      - .github/workflows/mois-data-first-next8192.yml
+  workflow_dispatch:
+    inputs:
+      resume_run:
+        description: Earlier run with completed units to restore; leave empty for the first run
+        type: string
+        required: false
+        default: ''
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-cached-next8192-photo-acquisition-only
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      run_images: ${{ steps.source.outputs.run_images }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_collect_remaining_pool.py
+      - name: Reuse source pool, exclude the two finished waves, and verify the next 8192
+        id: source
+        run: |
+          set -euo pipefail
+          if gh release view mois-cached-next8192-measured-data-only-v1 --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo 'run_images=false' >> "$GITHUB_OUTPUT"
+            echo 'This data snapshot already exists; no image acquisition repeated.'
+            exit 0
+          fi
+          test "$(gh api repos/zuizui0223/mois/actions/runs/39115773617 --jq .conclusion)" = success
+          gh release download mois-angiosperm-broad-species-first-source-cache-v1-20261018 --repo zuizui0223/mois --dir pool \
+            --pattern 'mois_global_angiosperms_broad_open_source_photo_ID_pool.csv' \
+            --pattern 'mois_broad_first4096_original_open_flower_photo_ID_source.csv' \
+            --pattern 'mois_broad_angiosperm_new_taxa_32768_pool_first4096_receipt.json'
+          gh release download mois-cached-global-angiosperm-second4096-source-only-v1 --repo zuizui0223/mois --dir second \
+            --pattern 'mois_global_angiosperm_second4096_source_only_original_photoids.csv' \
+            --pattern 'mois_global_angiosperm_cached_second4096_source_only_receipt.json'
+          gh release download mois-broad-wave2-4096-measured-data-only-v1 --repo zuizui0223/mois --dir done \
+            --pattern 'wave2_measured_photos.parquet' --pattern 'receipt.json'
+          python -m scripts.acquisition.mois_collect_remaining_pool prepare --pool pool --second second --completed done --output source --count 8192
+          echo 'run_images=true' >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: steps.source.outputs.run_images == 'true'
+        with:
+          name: next8192-source
+          path: source/
+          if-no-files-found: error
+          retention-days: 90
+  images:
+    needs: check
+    if: needs.check.outputs.run_images == 'true' && (github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == 'zuizui0223/mois')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: [0,1,2,3,4,5,6,7]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      RESUME_RUN: ${{ inputs.resume_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: next8192-source
+          path: source
+      - name: Restore any completed units without overwriting their photo results
+        run: |
+          set -euo pipefail
+          mkdir -p measurements
+          if [ -n "$RESUME_RUN" ]; then
+            gh run download "$RESUME_RUN" --repo zuizui0223/mois --name "next8192-group-${{ matrix.group }}" --dir measurements
+          fi
+      - name: Install the same frozen FCP loader and model once per group
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy Pillow ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Acquire images, measure colours and save completed units; no statistical model
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-cached-photo-rate"
+          start=$(( ${{ matrix.group }} * 4 ))
+          for shard in $(seq "$start" "$((start+3))"); do
+            python -m scripts.acquisition.mois_collect_remaining_pool measure --source source --shard "$shard" --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" --output measurements
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: next8192-group-${{ matrix.group }}
+          path: measurements/
+          if-no-files-found: warn
+          retention-days: 90
+  save:
+    needs: images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: next8192-source
+          path: source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: next8192-group-*
+          path: workers
+          merge-multiple: false
+      - name: Save complete source-labelled photo data, including acquisition and colour failures
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m scripts.acquisition.mois_collect_remaining_pool collect --source source --workers workers --output completed
+          cp source/source.json completed/source.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: next8192-complete-data-only
+          path: completed/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Archive data without running ecological analyses
+        run: |
+          set -euo pipefail
+          tag=mois-cached-next8192-measured-data-only-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            gh release download "$tag" --repo zuizui0223/mois --dir previous --pattern receipt.json
+            cmp previous/receipt.json completed/receipt.json
+          else
+            gh release create "$tag" completed/*.parquet completed/*.json --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS next 8192 cached original photos: acquired images and colour data' \
+              --notes 'Data acquisition only. Earlier 8192 broad-wave photo IDs excluded; no provider-wide metadata rescan, no ecological regression/PCA or manuscript update. Same fixed image model; original source metadata and distinct acquired/failed/unclassifiable records retained. No raw image redistribution.'
+          fi
