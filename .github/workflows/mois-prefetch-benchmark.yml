@@ -13,7 +13,7 @@ permissions:
   actions: read
 concurrency:
   group: mois-prefetch-paired-benchmark
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   paired:
     runs-on: ubuntu-24.04
@@ -26,11 +26,35 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Reuse the measured result when the executor and benchmark bytes are unchanged
+        id: cache
+        run: |
+          set -euo pipefail
+          executor=$(git hash-object scripts/acquisition/mois_prefetch.py)
+          bench=$(git hash-object scripts/acquisition/mois_prefetch_benchmark.py)
+          if [ "$executor" = 0b96dcae7cc99513345f87933424328cf3220b40 ] && \
+             [ "$bench" = 1ae6a3d1402a617688de06526dcd94adf58b3669 ] && \
+             [ "$(gh api repos/zuizui0223/mois/actions/runs/39137639189 --jq .conclusion)" = success ]; then
+            gh run download 39137639189 --repo zuizui0223/mois --name mois-prefetch-paired-real-photo-benchmark --dir benchmark
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path('benchmark/benchmark.json').read_text())
+          assert b['schema']=='mois_prefetch_paired_real_photo_replay_v1'
+          assert b['all_terminal_columns_exactly_equal']
+          assert b['source_sha256']=='3483808cc4ae773073e191baac282e8cc87f1dd8996b6369067f89980ab93cf3'
+          print('REUSED_COMPLETED_BENCHMARK_NO_IMAGE_DOWNLOAD_OR_INFERENCE',b['mean_seconds'])
+          PY
+            echo 'run_images=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run_images=true' >> "$GITHUB_OUTPUT"
+          fi
       - name: Verify overlap, source order, bounded storage and original error handling
         run: |
           python -m pip install -q pytest==8.4.2
           python -m pytest -q tests/test_mois_prefetch.py
       - name: Install the unchanged FCP loader and original flower model
+        if: steps.cache.outputs.run_images == 'true'
         run: |
           set -euo pipefail
           git init -q "$RUNNER_TEMP/fcp"
@@ -41,9 +65,11 @@ jobs:
           cd "$RUNNER_TEMP/fcp"
           bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
       - name: Reuse the completed wave source; no new candidate search
+        if: steps.cache.outputs.run_images == 'true'
         run: |
           gh run download 39115773617 --repo zuizui0223/mois --name wave2-cached-source --dir source
       - name: Same 16 real photos and measured load delays, sequential-prefetch then prefetch-sequential
+        if: steps.cache.outputs.run_images == 'true'
         run: |
           set -euo pipefail
           export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
