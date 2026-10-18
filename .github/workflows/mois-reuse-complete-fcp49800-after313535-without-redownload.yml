@@ -1,0 +1,127 @@
+name: MOIS reuse 49800 already image-processed FCP wave4 ROI photos without repeated RGB inference
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_instant_reuse_fcp49800_after313535.py"
+      - "tests/test_mois_instant_reuse_fcp49800_after313535.py"
+      - "docs/MOIS_FAST_GROWTH_BY_REUSING_FINISHED_FCP_PHOTO_PIXELS_20261018.md"
+      - ".github/workflows/mois-reuse-complete-fcp49800-after313535-without-redownload.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/analysis/mois_instant_reuse_fcp49800_after313535.py"
+      - "tests/test_mois_instant_reuse_fcp49800_after313535.py"
+      - "docs/MOIS_FAST_GROWTH_BY_REUSING_FINISHED_FCP_PHOTO_PIXELS_20261018.md"
+      - ".github/workflows/mois-reuse-complete-fcp49800-after313535-without-redownload.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-source-verified-reuse-FCP49800-real-original-ROI-without-inference
+  cancel-in-progress: false
+
+jobs:
+  genuinely-completed-photo-ID-dedup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test authentic original photo IDs, prior-colour preservation and separate sampling arm
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 \
+            scipy==1.15.2 statsmodels==0.14.4 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_instant_reuse_fcp49800_after313535.py
+      - name: Restore real photo measurements and immutable original MOIS photo-colour source
+        run: |
+          set -euo pipefail
+          mkdir -p base313535 completed_FCP49800 reserved_fifth4096 reserved_SI4096
+          gh release download mois-primary-313535-fullfourth4096-featurelake-v2 \
+            --repo zuizui0223/mois --dir base313535 \
+            --pattern 'primary313535_*parquet' \
+            --pattern 'primary313535_fullfourth4096_featurelake_manifest.json'
+          gh run download 38992543115 --repo zuizui0223/fcp \
+            --name fcp-wave4-149900-method-expansion-actual-measured-and-inferred \
+            --dir completed_FCP49800
+          gh run download 39091745230 --repo zuizui0223/mois \
+            --name mois-fifth4096-original-photo-ID-only-frozen-reservation \
+            --dir reserved_fifth4096
+          gh run download 39033985014 --repo zuizui0223/mois \
+            --name mois-targeted4096-photo-ID-original-pixel-source-plan-only \
+            --dir reserved_SI4096
+          test -s base313535/primary313535_fullfourth4096_original_photo_hues.parquet
+          test -s base313535/primary313535_fullfourth4096_featurelake_manifest.json
+          test -s reserved_fifth4096/mois_new4096_photo_source_after313535_frozen_receipt.json
+          test -s reserved_SI4096/mois_first4096_original_source_only_freeze.json
+          test "$(find completed_FCP49800 -name wave4_original_method_measured_photos.csv | wc -l)" -eq 1
+          test "$(find completed_FCP49800 -name terminal_result.json | wc -l)" -eq 1
+      - name: Reuse original 49800 measured photographic ROI outcomes with exact photo-ID dedup and no new photos downloaded
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_instant_reuse_fcp49800_after313535 \
+            --previous313535-Parquet-release base313535 \
+            --FCP-49800-completed-original-photo-pixels completed_FCP49800 \
+            --ongoing-fifth4096-original-photo-reservation reserved_fifth4096 \
+            --season4096-source-only-photo-reservation reserved_SI4096 \
+            --output actual_fcp49800_reused
+          python - <<'PY'
+          from pathlib import Path
+          import json,pandas as pd
+          p=Path('actual_fcp49800_reused')
+          r=json.loads((p/'mois_reused_complete_FCP49800_after313535_photoID_source_receipt.json').read_text())
+          assert r['original_MOIS_image_processed_photo_attempts']==313535
+          assert r['FCP_original_photo_attempts_with_real_pixels']==49800
+          assert r['new_original_photo_pixel_attempts_admitted']>0
+          assert r['expanded_actual_original_photo_attempts']==313535+r['new_original_photo_pixel_attempts_admitted']
+          assert r['original_first313535_photo_hues_date_taxon_unchanged']
+          assert r['already_running_4096_real_pixel_reservation_excluded']
+          assert r['separate_SI_priority_reservation_excluded']
+          assert r['new_498taxon_highdepth_arm_NOT_unweighted_global_flora_prevalence']
+          old=pd.read_parquet(p/'mois_primary313535_plus_FCP49800_nonoverlapping_verified_RGB_photo_labels.parquet')
+          assert len(old)==r['expanded_actual_original_photo_attempts'] and old.photo_id.is_unique
+          print('MOIS_FCP_REAL49800_PHOTO_RGB_REUSE_NO_SECOND_DOWNLOAD',r['new_original_photo_pixel_attempts_admitted'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-completed-FCP49800-original-RGB-photo-reuse-beyond313535
+          path: actual_fcp49800_reused/
+          retention-days: 90
+          if-no-files-found: error
+
+  archive-photo-labels-once:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: genuinely-completed-photo-ID-dedup
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-completed-FCP49800-original-RGB-photo-reuse-beyond313535
+          path: source_verified
+      - name: Save source-arm-specific photographic colours in immutable GitHub Release without licensed RGB bytes
+        run: |
+          set -euo pipefail
+          tag=mois-fcp-wave4-49800-finished-original-rgb-reuse-after313535-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo 'Previously signed data release retained; no overwrite.'
+          else
+            gh release create "$tag" source_verified/*.parquet source_verified/*.csv source_verified/*.json \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS original visible photo hues reused from all 49800 completed FCP wave4 ROIs' \
+              --notes 'Actually processed original image/ROI-v4 only. Prior 313535 photo-ID/taxon/date/hue unchanged, duplicates and SI/fifth reservation IDs excluded, new high-depth 498-taxon colour source-arm recorded separately. No RGB re-download, global representative prevalence or plant fitness inference.'
+          fi
