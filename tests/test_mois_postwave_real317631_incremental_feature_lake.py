@@ -45,6 +45,7 @@ def test_raster_extract_new_photos_only(monkeypatch,tmp_path):
 
 def test_previous_photo_rows_immutable_append_only(monkeypatch):
     monkeypatch.setattr(m,"TOTAL",4)
+    monkeypatch.setattr(m,"NEW",2)
     monkeypatch.setattr(m.base,"N_PHOTOS",2)
     old=pd.DataFrame({"photo_id":["1","2"],"morph":["white","red_pink"]})
     new=pd.DataFrame({"photo_id":["3","4"],"morph":["mixed_uncertain","white"]})
