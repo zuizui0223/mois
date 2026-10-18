@@ -1,0 +1,254 @@
+name: MOIS species-first broad angiosperm original RGB 256-photo pilot and reused-model groups
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_measure_broad_angiosperm_original_photo_roi_v4.py
+      - scripts/analysis/mois_integrate_broad_angiosperm_real4096.py
+      - tests/test_mois_broad_angiosperm_real_rgb_v4.py
+      - docs/MOIS_BROAD_ANGIOSPERM_ACTUAL_PIXEL_EFFICIENCY_20261018.md
+      - .github/workflows/mois-broad-angiosperm-actual-image-pilot-and-batched-4096.yml
+  workflow_run:
+    workflows:
+      - "MOIS global angiosperm species-first photo source cached breadth 32768"
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Successful official broad angiosperm source workflow run ID"
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-broad-world-species-ROI-v4-first4096-reused-model
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test frozen original ROI source, mutable-month snapshot receipt and photo-ID conservation
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 scipy==1.15.2 rasterio==1.4.3 requests==2.32.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_broad_angiosperm_real_rgb_v4.py
+  pilot256:
+    needs: tests
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
+        github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download original new genus/species precolour photo-ID source
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          source_run=${{ github.event.workflow_run.id || inputs.source_run_id }}
+          test -n "$source_run"
+          gh run download "$source_run" --repo zuizui0223/mois \
+            --name mois-angiosperm-species-first-cached-first4096-and-future-source --dir source
+          test -s source/mois_broad_source_only_shard_00_256.csv
+          test -s source/mois_broad_angiosperm_new_taxa_32768_pool_first4096_receipt.json
+      - name: Prepare unchanged original location-blind ROI-v4 model
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q 'numpy<3' 'pandas<3' scipy Pillow ultralytics==8.4.112 \
+            onnxruntime==1.23.2 scikit-image==0.25.2 requests==2.32.3 rasterio==1.4.3
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/roisam"
+      - name: Measure 256 real original photos and gate low-flower yield before further expense
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/broad_original_photo_rate"
+          python -m scripts.analysis.mois_measure_broad_angiosperm_original_photo_roi_v4 \
+            --photo-shard source/mois_broad_source_only_shard_00_256.csv \
+            --precolour-receipt source/mois_broad_angiosperm_new_taxa_32768_pool_first4096_receipt.json \
+            --shard-id 0 --fcp-runtime-root "$RUNNER_TEMP/fcp" \
+            --original-sam "$RUNNER_TEMP/roisam" --outdir pilot_real_RGB0
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('pilot_real_RGB0/mois_original_256_ROI_shard_00_receipt.json').read_text())
+          assert r['terminal_rows']==256
+          assert r['four_hue_classified']>=52, (
+            'Pilot original-photo flowering ROI yield below 20%; '
+            'stop before running 3840 additional photo downloads')
+          assert r['pixels_ephemeral_no_original_image_bytes_persisted']
+          print('MOIS_BREADTH_FIRST_REAL_PIXEL_SOURCE_PILOT',
+                r['four_hue_classified'],r['unclassified'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-broad-first4096-real-ROI256-pilot0
+          path: pilot_real_RGB0/
+          retention-days: 90
+          if-no-files-found: error
+  four_model_amortized_groups:
+    needs: pilot256
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: [0,1,2,3]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-angiosperm-species-first-cached-first4096-and-future-source
+          path: source
+          run-id: ${{ github.event.workflow_run.id || inputs.source_run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bootstrap original frozen detector/EfficientSAM ONCE for several 256-photo runs
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q 'numpy<3' 'pandas<3' scipy Pillow ultralytics==8.4.112 \
+            onnxruntime==1.23.2 scikit-image==0.25.2 requests==2.32.3 rasterio==1.4.3
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/roisam"
+      - name: Up to four distinct 256-photo ROI shards with one installed immutable model
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/broad_original_photo_rate"
+          group=${{ matrix.group }}
+          for offset in 1 2 3 4; do
+            shard=$((group*4+offset))
+            if [ "$shard" -gt 15 ]; then continue; fi
+            name=$(printf 'source/mois_broad_source_only_shard_%02d_256.csv' "$shard")
+            ix=$(printf '%02d' "$shard")
+            python -m scripts.analysis.mois_measure_broad_angiosperm_original_photo_roi_v4 \
+              --photo-shard "$name" \
+              --precolour-receipt source/mois_broad_angiosperm_new_taxa_32768_pool_first4096_receipt.json \
+              --shard-id "$shard" \
+              --fcp-runtime-root "$RUNNER_TEMP/fcp" \
+              --original-sam "$RUNNER_TEMP/roisam" \
+              --outdir "real_broad_shard_$ix"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-broad-original-ROI-group-${{ matrix.group }}
+          path: real_broad_shard_*/
+          retention-days: 90
+          if-no-files-found: error
+  integrate:
+    needs: [pilot256,four_model_amortized_groups]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore signed main RGB phenotype source, metadata plan, and all real photo workers
+        run: |
+          set -euo pipefail
+          mkdir -p source old313535
+          gh release download mois-primary-313535-fullfourth4096-featurelake-v2 \
+            --repo zuizui0223/mois --dir old313535 \
+            --pattern 'primary313535_fullfourth4096_original_photo_hues.parquet' \
+            --pattern 'primary313535_fullfourth4096_featurelake_manifest.json'
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-angiosperm-species-first-cached-first4096-and-future-source
+          path: source
+          run-id: ${{ github.event.workflow_run.id || inputs.source_run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-broad-first4096-real-ROI256-pilot0
+          path: workers/pilot
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-broad-original-ROI-group-*
+          path: workers/groups
+          merge-multiple: false
+      - name: Verify 16 signed original photo pixel ROI terminals then measure species/genera gain per 1000 real photos
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 \
+            requests==2.32.3 rasterio==1.4.3 pyarrow==19.0.1
+          python -m scripts.analysis.mois_integrate_broad_angiosperm_real4096 \
+            --prior313535-hue-Parquet-release old313535 \
+            --source-plan-first4096 source \
+            --actual16-broad-original-RGB-workers workers \
+            --output broadened_RGB4096
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('broadened_RGB4096/mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json').read_text())
+          assert r['genuine_new_breadth_photo_attempts']==4096
+          assert r['expanded_actual_original_photo_attempts']==317631
+          assert r['new_original_four_hue_classifier_successes']>0
+          assert r['original_photo_IDs_hues_dates_unchanged']
+          assert r['separate_sampling_arm_tagged_and_NOT_unbiased_global_white_frequency']
+          print('MOIS_GLOBAL_BREADTH_REAL_RGB_NOVEL_SPECIES_AND_GENUS',
+                r['new_original_taxa_with_classified_visible_hue_not_in_core'],
+                r['new_original_genera_with_classified_visible_hue_not_in_core'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-broad-original-4096-genuine-RGB-hue-coverage
+          path: broadened_RGB4096/
+          retention-days: 90
+          if-no-files-found: error
+  signed_release:
+    needs: integrate
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-broad-original-4096-genuine-RGB-hue-coverage
+          path: result
+      - name: Preserve original RGB/ROI photo results without raw licensed pixels
+        run: |
+          set -euo pipefail
+          tag=mois-broad-world-angiosperm-newtaxa4096-real-RGB-ROI-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo 'Prior signed original-photo result retained'
+          else
+            gh release create "$tag" result/*.parquet result/*.csv result/*.json \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS global angiosperm breadth-first actual original photo ROI labels' \
+              --notes '16 source-verified original RGB/photo YOLO/EfficientSAM worker terminals, genus/species-breadth new original photo IDs, explicit unknown hue and source observer/licence QC. Not a probability representative sample of flowering individuals, anthesis-confirmed petals, biochemical pigments or genetic fitness.'
+          fi
