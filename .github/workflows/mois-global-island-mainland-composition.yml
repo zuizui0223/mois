@@ -11,7 +11,7 @@ permissions:
   actions: read
 concurrency:
   group: mois-global-island-mainland-composition-v1
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   real-photo-geography:
     runs-on: ubuntu-24.04
