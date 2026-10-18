@@ -28,7 +28,6 @@ from scripts.analysis.mois_import_full_FCP_wave4_completed_original_photos impor
     read_fcp_wave4,
     EXPECTED_FCP_PHOTOS,
 )
-from scripts.analysis import mois_next4096_original_photo_ids_after313535 as wave
 
 PHOTO_OUT="mois_primary313535_plus_FCP49800_nonoverlapping_verified_RGB_photo_labels.parquet"
 NOVEL_OUT="mois_only_new_FCP_wave4_genuine_photo_ROIs_not_reserved.parquet"
@@ -72,7 +71,8 @@ def _csv_reservation(root, filename, receipt_filename, expected_key, expected_n)
 
 def reservation_ids(fifth,season,original_ids):
     fifth_ids,fifth_rec=_csv_reservation(
-        fifth,wave.SOURCE,wave.FREEZE,
+        fifth,"mois_new4096_original_photo_source_after313535_outcome_blind.csv",
+        "mois_new4096_photo_source_after313535_frozen_receipt.json",
         "first_wave_original_4096_csv_sha256",4096)
     need(fifth_rec.get("schema")==
          "mois_next4096_after_true313535_photo_ID_blind_source_v1"
