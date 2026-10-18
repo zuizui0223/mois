@@ -1,0 +1,109 @@
+name: MOIS second angiosperm 4096 source from immutable 32768 cached metadata
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_cached_angiosperm_second4096_source.py
+      - tests/test_mois_cached_angiosperm_second4096_source.py
+      - .github/workflows/mois-cached-angiosperm-second4096-source-only.yml
+      - docs/MOIS_NEXT4096_FROM_CACHED_GLOBAL_ANGIOSPERM_SOURCE_20261018.md
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_cached_angiosperm_second4096_source.py
+      - tests/test_mois_cached_angiosperm_second4096_source.py
+      - .github/workflows/mois-cached-angiosperm-second4096-source-only.yml
+      - docs/MOIS_NEXT4096_FROM_CACHED_GLOBAL_ANGIOSPERM_SOURCE_20261018.md
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-global-angiosperm-source-second4096-cached-no-fullS3-rescan
+  cancel-in-progress: false
+jobs:
+  test-and-create-new-taxa-cached-plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify distinct PHOTO IDs, taxon/observer priority, outcome-blind metadata and no repeated first-wave
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests==2.32.3 pandas==2.2.3 numpy==2.1.3 scipy==1.15.2 rasterio==1.4.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_cached_angiosperm_second4096_source.py
+      - name: Fetch only previously archived 32768 original photo candidate IDs - NO worldwide S3 rescan
+        run: |
+          set -euo pipefail
+          mkdir -p previous_broad_source
+          gh release download mois-angiosperm-broad-species-first-source-cache-v1-20261018 \
+            --repo zuizui0223/mois --dir previous_broad_source \
+            --pattern 'mois_global_angiosperms_broad_open_source_photo_ID_pool.csv' \
+            --pattern 'mois_broad_first4096_original_open_flower_photo_ID_source.csv' \
+            --pattern 'mois_broad_angiosperm_new_taxa_32768_pool_first4096_receipt.json'
+          test -s previous_broad_source/mois_global_angiosperms_broad_open_source_photo_ID_pool.csv
+          test -s previous_broad_source/mois_broad_angiosperm_new_taxa_32768_pool_first4096_receipt.json
+      - name: Seal 4096 MORE novel original angiosperm species photo IDs and sixteen 256-photo source-only shards
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_cached_angiosperm_second4096_source \
+            --previously-released-broad-source previous_broad_source \
+            --output second_angiosperm_source_only
+          python - <<'PY'
+          import json,pandas as pd
+          from pathlib import Path
+          p=Path('second_angiosperm_source_only')
+          r=json.loads((p/'mois_global_angiosperm_cached_second4096_source_only_receipt.json').read_text())
+          assert r['status']=='SOURCE_ONLY_4096_RESERVED_NO_NEW_PIXEL_HUES'
+          assert r['second4096_photo_candidates']==4096
+          assert r['second4096_unique_named_taxa']==4096
+          assert r['no_repeat_worldwide_iNaturalist_photo_metadata_scan']
+          assert r['first4096_taxa_and_photo_IDs_excluded']
+          assert r['first4096_and_new4096_disjoint_photo_IDs']
+          assert not r['new_photo_pixels_actually_measured']
+          plan=pd.read_csv(p/'mois_global_angiosperm_second4096_source_only_original_photoids.csv',dtype=str)
+          assert plan.photo_id.is_unique and plan.inat_taxon_id.nunique()==4096
+          assert plan.genus.nunique()==r['second4096_unique_genera']
+          assert plan.measurement_id.is_unique
+          assert plan.source_sampling_priority.str.contains('genus|species').all()
+          print('MOIS_SOURCE_ONLY_CACHED_ANGIOSPERM_SECOND4096_NEW_SPECIES_NO_S3_RESCAN',
+                r['second4096_unique_genera'],
+                r['second4096_additional_genera_not_in_first_wave'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-second4096-angiosperm-new-species-source-only-cache
+          path: second_angiosperm_source_only/
+          retention-days: 90
+          if-no-files-found: error
+  versioned-source-plan-release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test-and-create-new-taxa-cached-plan
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-second4096-angiosperm-new-species-source-only-cache
+          path: candidate
+      - name: Archive second wave as colour-unknown PHOTO-ID source, not RGB observations
+        run: |
+          set -euo pipefail
+          tag=mois-cached-global-angiosperm-second4096-source-only-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo 'Do not overwrite previously frozen source-only second wave'
+          else
+            gh release create "$tag" candidate/*.csv candidate/*.json \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS cached global angiosperm second wave: 4096 novel named-species original photo IDs' \
+              --notes 'Unmeasured 4096 original PHOTO IDS, not visible hue or flowering plant colour. All candidates are different species and photo IDs from first 4096, frozen to previously SHA-authenticated worldwide monthly source 32768-pool, no re-download of 500M original metadata. Requires actual source-verified RGB-photo YOLO11/EfficientSAM ROI-v4 workers and append-only cohort before used in global white fraction. Original 313535 photo measurements and supplemental season / FCP reservations remain excluded by source provenance.'
+          fi
