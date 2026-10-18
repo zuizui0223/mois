@@ -1,0 +1,114 @@
+name: MOIS full four visible hues moisture solar temperature class mixture
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_original313535_four_visible_hues_climate_mixture.py
+      - tests/test_mois_original313535_four_visible_hues_climate_mixture.py
+      - docs/MOIS_FOUR_VISIBLE_HUES_WATER_LIGHT_CLIMATE_MIXTURE_20261018.md
+      - .github/workflows/mois-313535-four-hue-climate-genus-geography.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/analysis/mois_original313535_four_visible_hues_climate_mixture.py
+      - tests/test_mois_original313535_four_visible_hues_climate_mixture.py
+      - docs/MOIS_FOUR_VISIBLE_HUES_WATER_LIGHT_CLIMATE_MIXTURE_20261018.md
+      - .github/workflows/mois-313535-four-hue-climate-genus-geography.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-313535-four-hue-worldclim-brier-source-genus-geography
+  cancel-in-progress: false
+jobs:
+  provenance-verified-original-four-hue-composition:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test classification unknowns, source-original hue partitions and train-only PCA
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 statsmodels==0.14.4 scikit-learn==1.6.1 rasterio==1.4.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_original313535_four_visible_hues_climate_mixture.py
+      - name: Restore source-authenticated 313535 original photographs and all19 BIO/VAPR/terrain site variables
+        run: |
+          set -euo pipefail
+          mkdir -p source313535 full19_abiotic
+          gh release download mois-primary-313535-fullfourth4096-featurelake-v2 \
+            --repo zuizui0223/mois --dir source313535 \
+            --pattern 'primary313535_*parquet' \
+            --pattern 'primary313535_fullfourth4096_featurelake_manifest.json'
+          gh release download mois-313535-all19-BIO-vapr-PCA-ablation-v1 \
+            --repo zuizui0223/mois --dir full19_abiotic \
+            --pattern 'mois_313535_all19_bio_vapr_solar_terrain_photoids.parquet' \
+            --pattern 'mois_313535_all19_bio_vapr_fullterrain_source_manifest.json'
+          test -s source313535/primary313535_fullfourth4096_original_photo_hues.parquet
+          test -s full19_abiotic/mois_313535_all19_bio_vapr_solar_terrain_photoids.parquet
+      - name: Recompute actual original four-hue composition and train-only PCA genus/geography heldout Brier
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_original313535_four_visible_hues_climate_mixture \
+            --original-photo-release source313535 \
+            --full19-abiotic-release full19_abiotic \
+            --output four_visible_hue_results
+          python - <<'PY'
+          import json
+          import pandas as pd
+          from pathlib import Path
+          r=Path('four_visible_hue_results')
+          q=json.loads((r/'mois_313535_four_hue_climate_heterogeneity_provenance.json').read_text())
+          assert q['real_original_photo_attempts']==313535
+          assert q['original_classified_hues']==151239
+          assert q['original_white_hue_ROIs']==71427
+          assert q['covariate_bins_formed_before_any_photo_hue_filter']
+          assert q['four_hue_photo_labels_NOT_anthocyanin_or_flowering_stage_verified']
+          grid=pd.read_csv(r/'mois_313535_four_visible_hues_water_solar_tertile_composition.csv')
+          assert len(grid)==9
+          assert grid.original_processed_photo_attempts.sum()<=313535
+          assert grid.real_original_classifiable_ROI_photos.min()>0
+          cv=pd.read_csv(r/'mois_313535_four_hues_climate_group_predictive_brier_ablation.csv')
+          assert len(cv)==8 and cv.holdout_design.nunique()==2
+          print('MOIS_FOUR_ORIGINAL_VISIBLE_HUE_CLASSES_CLIMATE_SOURCE_SIGNED_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-original313535-four-visible-hue-climate-multiclass
+          path: four_visible_hue_results/
+          retention-days: 90
+          if-no-files-found: error
+  persist-original-four-hues:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: provenance-verified-original-four-hue-composition
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-original313535-four-visible-hue-climate-multiclass
+          path: source_result
+      - name: Publish immutable multi-class source and ecological diagnostic
+        run: |
+          set -euo pipefail
+          tag=mois-original313535-four-hues-water-solar-genus-20261018-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo "Keep original four-hue analysis source signed; do not overwrite"
+          else
+            gh release create "$tag" source_result/*.csv source_result/*.json \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS full original 313535 photographed visible white/yellow/red/blue ecological composition' \
+              --notes '313535 original pixel attempts, four independently labelled visible ROI hues; source classifiability unknown kept unknown. Water×solar source fractions and genus/10-degree heldout multi-hue Brier climate-block diagnostics. Not petal anthesis verified, anthocyanin-specific chemistry or pigmentation fitness experiment.'
+          fi
