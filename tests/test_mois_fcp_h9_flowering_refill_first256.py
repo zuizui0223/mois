@@ -112,7 +112,8 @@ def test_source_only_uses_failed_photo_species_once_and_keeps_signature(
     season=tmp_path/"season";season.mkdir()
     pd.DataFrame({"photo_id":["91234","95432"]}).to_csv(
         source/m.broad.POOL,index=False)
-    rr={"original_broad_all_future_source_pool_SHA256":
+    rr={"source_snapshot_date":"2026-10-18",
+        "original_broad_all_future_source_pool_SHA256":
         m.sha(source/m.broad.POOL),
         "first_wave_original_4096_csv_sha256":"sha-global"}
     monkeypatch.setattr(m,"load_pilot",lambda *_:(q,{"99"},rr,{
