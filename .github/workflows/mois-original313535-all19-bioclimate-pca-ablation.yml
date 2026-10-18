@@ -1,0 +1,159 @@
+name: MOIS all19 BIO vapour soil terrain PCA and blocked strongest environmental effects
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_original313535_full19_bio_vapr_terrain_lake.py
+      - scripts/analysis/mois_global313535_all_environment_pca_ablation.py
+      - tests/test_mois_original313535_full19_bio_vapr_terrain_lake.py
+      - tests/test_mois_global313535_all_environment_pca_ablation.py
+      - docs/MOIS_ALL_ENVIRONMENT_CONFOUNDING_PCA_IMPORTANCE_20261018.md
+      - .github/workflows/mois-original313535-all19-bioclimate-pca-ablation.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/analysis/mois_original313535_full19_bio_vapr_terrain_lake.py
+      - scripts/analysis/mois_global313535_all_environment_pca_ablation.py
+      - tests/test_mois_original313535_full19_bio_vapr_terrain_lake.py
+      - tests/test_mois_global313535_all_environment_pca_ablation.py
+      - docs/MOIS_ALL_ENVIRONMENT_CONFOUNDING_PCA_IMPORTANCE_20261018.md
+      - .github/workflows/mois-original313535-all19-bioclimate-pca-ablation.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-all19-BIO-313535-immutable-environment-pca-blocked-cv
+  cancel-in-progress: false
+
+jobs:
+  real-all19-annual-climatology-and-pca-blocked-prediction:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test real photo-ID climate, PCA training leakage and source-matched heldout genus/geography
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 statsmodels==0.14.4 \
+            scikit-learn==1.6.1 rasterio==1.4.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_original313535_full19_bio_vapr_terrain_lake.py \
+            tests/test_mois_global313535_all_environment_pca_ablation.py
+      - name: Restore immutable 313535 genuine image results and original WorldClim regression receipt
+        run: |
+          set -euo pipefail
+          mkdir -p original_313535 original_water_309439 worldclim/{bio,vapr,elev}
+          gh release download mois-primary-313535-fullfourth4096-featurelake-v2 \
+            --repo zuizui0223/mois --dir original_313535 \
+            --pattern 'primary313535_*parquet' \
+            --pattern 'primary313535_fullfourth4096_featurelake_manifest.json'
+          gh run download 39029308911 --repo zuizui0223/mois \
+            --name mois-original309439-actual-photo-hue-six-water-genus999-maxT \
+            --dir original_water_309439
+          test -s original_water_309439/original_309439_maxT/mois_309439_real_original_photo_six_water_maxT999_receipt.json
+          test -s original_313535/primary313535_fullfourth4096_original_photo_hues.parquet
+      - name: Source-verify official WorldClim original 19 BIO, all 12 VAPR and 2p5m DEM
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_bio.zip \
+            -o worldclim/bio/wc2.1_10m_bio.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_vapr.zip \
+            -o worldclim/vapr/wc2.1_10m_vapr.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_2.5m_elev.zip \
+            -o worldclim/elev/wc2.1_2.5m_elev.zip
+          echo '00513224583665ec0f2f955a4ec252730c4deb2004cce9e793492a3f26df4dcf  worldclim/bio/wc2.1_10m_bio.zip' | sha256sum -c -
+          for x in bio vapr elev; do
+            unzip -q worldclim/$x/*.zip -d worldclim/$x
+          done
+          test "$(find worldclim/bio -name 'wc2.1_10m_bio_*.tif' | wc -l)" -eq 19
+          test "$(find worldclim/vapr -name 'wc2.1_10m_vapr_*.tif' | wc -l)" -eq 12
+          test -s worldclim/elev/wc2.1_2.5m_elev.tif
+      - name: Measure all still-missing real photo-site bioclimate/vapor/DEM features, without reprocessing pixels
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_original313535_full19_bio_vapr_terrain_lake \
+            --original-photo-release original_313535 \
+            --worldclim-raster-root worldclim \
+            --original309439-water-model-receipt original_water_309439/original_309439_maxT/mois_309439_real_original_photo_six_water_maxT999_receipt.json \
+            --output complete_abiotic313535
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('complete_abiotic313535/mois_313535_all19_bio_vapr_fullterrain_source_manifest.json').read_text())
+          assert r['real_original_processed_photo_ids']==313535
+          assert r['num_BIO_variables']==19
+          assert r['original_four_hue_photo_labels']==151239
+          assert r['soil_stays_source_partial_and_no_missing_value_invented']
+          assert r['previous_313535_photo_IDs_and_hues_unchanged']
+          print('MOIS_ALL_19_BIO_VAPOUR_TERRAIN_SOURCE_READY')
+          PY
+      - name: Train-only PCA and identical-cohort genus/spatial blocked group and individual predictor ablations
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global313535_all_environment_pca_ablation \
+            --existing-photo-feature-release original_313535 \
+            --full19-extended-abiotic-source complete_abiotic313535 \
+            --output all_environment_PCA_models
+          python - <<'PY'
+          import json,pandas as pd
+          from pathlib import Path
+          d=Path('all_environment_PCA_models')
+          r=json.loads((d/'mois_313535_all_environment_pca_confounded_ranking_receipt.json').read_text())
+          assert r['n_abiotic_variables_considered']==33
+          assert r['all_environment_importance_compared_on_exact_same_complete_case_photos']
+          assert r['holdout_group_PCAs_standardized_and_fitted_on_training_only']
+          assert r['soil_missingness_not_imputed']
+          assert len(r['rankings_by_heldout_group'])==2
+          m=pd.read_csv(d/'mois_313535_all_environment_group_ablation_blocked_cv.csv')
+          assert m.heldout_design.nunique()==2
+          assert set(m[m.model.str.startswith('drop_')].environment_group)=={
+            'temperature','moisture','solar','terrain','soil'}
+          print('MOIS_PCA_AND_HELDOUT_GENUS_GEOGRAPHY_IMPORTANCE_FINISHED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-original313535-full19-bioclimate-terrain-soil-PCA-importance-v1
+          path: |
+            complete_abiotic313535/
+            all_environment_PCA_models/
+          retention-days: 90
+          if-no-files-found: error
+
+  preserve-immutable-complete-abiotic-and-pca:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: real-all19-annual-climatology-and-pca-blocked-prediction
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-original313535-full19-bioclimate-terrain-soil-PCA-importance-v1
+          path: outputs
+      - name: Save source photo-ID features and multicollinear predictor comparisons in versioned Release
+        run: |
+          set -euo pipefail
+          tag=mois-313535-all19-BIO-vapr-PCA-ablation-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo 'Do not overwrite previous SHA-signed environment/PCA result'
+          else
+            gh release create "$tag" outputs/complete_abiotic313535/* outputs/all_environment_PCA_models/* \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS 313535 original photographs full 19BIO/VAPR/soil/terrain PCA and genus/spatial heldout importance' \
+              --notes 'Measured original ROI photos only; 33 abiotic variables grouped into moisture, temperature, solar, terrain, soil. Soil unknown sites not filled. Train-fold-only PCA, held-out genus and 10-degree geography; importances are conditional photographic prediction, not selection, physiological fitness or exact 50:50 equilibrium.'
+          fi
