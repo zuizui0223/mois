@@ -1,0 +1,112 @@
+name: MOIS source-signed first256 genus-first original photo hue and acquisition quality
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_broad_first256_roi_taxonomic_gain_audit.py"
+      - "tests/test_mois_broad_first256_roi_taxonomic_gain_audit.py"
+      - ".github/workflows/mois-broad-first256-true-hue-and-novel-taxa-audit.yml"
+      - "docs/MOIS_FIRST256_BROAD_ANGIOSPERM_ACTUAL_HUE_YIELD_20261018.md"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/analysis/mois_broad_first256_roi_taxonomic_gain_audit.py"
+      - "tests/test_mois_broad_first256_roi_taxonomic_gain_audit.py"
+      - ".github/workflows/mois-broad-first256-true-hue-and-novel-taxa-audit.yml"
+      - "docs/MOIS_FIRST256_BROAD_ANGIOSPERM_ACTUAL_HUE_YIELD_20261018.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-broad-first256-photo-source-ROI-novel-genus-audit
+  cancel-in-progress: false
+jobs:
+  validate-original-first256:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unit test actual photo-ID source, new taxonomic units and unavailable ROI handling
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1 requests==2.32.3 scipy==1.15.2 rasterio==1.4.3 pytest==8.4.2
+          python -m pytest -q tests/test_mois_broad_first256_roi_taxonomic_gain_audit.py
+      - name: Get prior true photo source, first4096 precolour plan and signed actual first256 RGB/pixel ROI outputs
+        run: |
+          set -euo pipefail
+          mkdir -p core313535 source_broad pilot256
+          gh release download mois-primary-313535-fullfourth4096-featurelake-v2 \
+            --repo zuizui0223/mois --dir core313535 \
+            --pattern 'primary313535_fullfourth4096_original_photo_hues.parquet' \
+            --pattern 'primary313535_fullfourth4096_featurelake_manifest.json'
+          gh release download mois-angiosperm-broad-species-first-source-cache-v1-20261018 \
+            --repo zuizui0223/mois --dir source_broad \
+            --pattern 'mois_broad_first4096_original_open_flower_photo_ID_source.csv' \
+            --pattern 'mois_broad_angiosperm_new_taxa_32768_pool_first4096_receipt.json'
+          gh run download 39097521005 --repo zuizui0223/mois \
+            --name mois-broad-first4096-real-ROI256-pilot0 --dir pilot256
+          test -s core313535/primary313535_fullfourth4096_original_photo_hues.parquet
+          test -s source_broad/mois_broad_angiosperm_new_taxa_32768_pool_first4096_receipt.json
+          test "$(find pilot256 -name 'mois_original_256_fresh_ROI_shard_00.csv' | wc -l)" -eq 1
+          test "$(find pilot256 -name 'mois_original_256_ROI_shard_00_receipt.json' | wc -l)" -eq 1
+      - name: Check frozen photo/model/source receipt; report truly new classified species and genera
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_broad_first256_roi_taxonomic_gain_audit \
+            --original313535-verified-Parquet core313535 \
+            --frozen-broad4096-source source_broad \
+            --signed-pilot256-original-ROI pilot256 \
+            --output first256_taxonomic_yield
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('first256_taxonomic_yield/mois_broad_first256_photo_RBG_novel_taxa_genera_QC_receipt.json').read_text())
+          m=q['actual_pilot_metrics']
+          assert m['actual_original_photo_attempts']==256
+          assert m['new_photo_hue_classifications']==69
+          assert m['technical_unknown_or_acquisition_failed_attempts']==187
+          assert m['newly_classified_named_taxa_not_in_main_original_source']>0
+          assert m['newly_classified_genera_not_in_main_original_source']>0
+          assert sum(m['visible_hue_photo_counts'].values())==69
+          assert q['original_photo_ID_taxon_licence_site_and_model_attestation_verified']
+          print('MOIS_FIRST256_BROAD_ACTUAL_RGB_SOURCE_TAXONIC_YIELD',m)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-broad-first256-signed-photo-new-genus-and-hue-audit
+          path: first256_taxonomic_yield/
+          retention-days: 90
+          if-no-files-found: error
+
+  publish-original-pilot:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate-original-first256
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-broad-first256-signed-photo-new-genus-and-hue-audit
+          path: result
+      - name: Immutable original photo ROI and newly validated taxon/genera receipt
+        run: |
+          set -euo pipefail
+          tag=mois-broad-first256-actual-RGB-newtaxa-verified-v1-20261018
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo 'Original source pilot snapshot already signed and published'
+          else
+            gh release create "$tag" result/*.csv result/*.json \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS new angiosperm genus/taxon gains in first 256 genuine photo RGB ROI attempts' \
+              --notes 'Exactly 256 original RGB-photo attempts, 69 classifiable automatic flower-like hue ROI outcomes, unknowns and access failures separately identified. Unique newly classifiable species/genera vs prior 313535 source, model/photo ID attested. Not true population white rate, blooming petal proof, pigment chemistry or fitness.'
+          fi
