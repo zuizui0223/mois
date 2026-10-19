@@ -1,0 +1,112 @@
+name: MOIS 350399 real photograph geography-genus matched selection audit
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_real350399_geogenus_arm_white_balance_20261019.py
+      - tests/test_mois_real350399_geogenus_arm_white_balance_20261019.py
+      - .github/workflows/mois-350399-geogenus-source-bias.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/analysis/mois_real350399_geogenus_arm_white_balance_20261019.py
+      - .github/workflows/mois-350399-geogenus-source-bias.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-real350399-geogenus-source-bias-v1
+  cancel-in-progress: false
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_real350399_geogenus_arm_white_balance_20261019.py
+          python -m py_compile scripts/analysis/mois_real350399_geogenus_arm_white_balance_20261019.py
+  real-source-analysis:
+    needs: contracts
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install existing scientific Parquet reader
+        run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Reuse all five published actually processed original photo sources
+        run: |
+          set -euo pipefail
+          gh release download mois-primary-real317631-next4096-incremental-all19-featurelake-v3 --repo zuizui0223/mois --dir actual/core --pattern primary317631_actual_photo_hue_RGB_attempts.parquet --pattern mois_317631_new4096_incremental_climate_feature_lake_receipt.json
+          gh release download mois-broad-world-angiosperm-newtaxa4096-real-RGB-ROI-v1 --repo zuizui0223/mois --dir actual/broad --pattern primary313535_plus_broad4096_genuine_original_hue_photos.parquet --pattern mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json
+          gh release download mois-broad-wave2-4096-measured-data-only-v1 --repo zuizui0223/mois --dir actual/wave2 --pattern wave2_measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-next8192-measured-data-only-v1 --repo zuizui0223/mois --dir actual/cached8192 --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-tail16384-measured-data-only-v1 --repo zuizui0223/mois --dir actual/tail16384 --pattern measured_photos.parquet --pattern receipt.json
+      - name: Authenticated SHA and attempt count audit BEFORE geographical matching
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          def sha(p):
+              h=hashlib.sha256()
+              with Path(p).open('rb') as f:
+                  for b in iter(lambda:f.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          c=Path('actual/core')
+          r=json.loads((c/'mois_317631_new4096_incremental_climate_feature_lake_receipt.json').read_text())
+          f='primary317631_actual_photo_hue_RGB_attempts.parquet'
+          assert r['all_original_photo_attempts']==317631 and sha(c/f)==r['photo_ID_aligned_Zstd_files_sha256'][f]
+          b=Path('actual/broad')
+          r=json.loads((b/'mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json').read_text())
+          f='primary313535_plus_broad4096_genuine_original_hue_photos.parquet'
+          assert r['expanded_actual_original_photo_attempts']==317631 and sha(b/f)==r['new_combined_photo_parquet_SHA256']
+          for name,f,n in (('wave2','wave2_measured_photos.parquet',4096),('cached8192','measured_photos.parquet',8192),('tail16384','measured_photos.parquet',16384)):
+              p=Path('actual')/name
+              r=json.loads((p/'receipt.json').read_text())
+              assert r['attempted']==n and sha(p/f)==r['photo_data_sha256'],(name,r)
+          print('MOIS_FULL_350399_ORIGINAL_REAL_PHOTO_RELEASE_SHAS_VERIFIED')
+          PY
+      - name: Compare 5 10 and 20 degree source arm photo-white patterns within shared genera
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real350399_geogenus_arm_white_balance_20261019 \
+            --core actual/core/primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --broad actual/broad/primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --wave2 actual/wave2/wave2_measured_photos.parquet \
+            --cached8192 actual/cached8192/measured_photos.parquet \
+            --tail16384 actual/tail16384/measured_photos.parquet \
+            --output results_actual
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real350399-geogenus-taxonomy-and-region-arm-audit
+          path: results_actual/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish versioned bias assessment only if original RGB source validation succeeded
+        run: |
+          set -euo pipefail
+          tag=mois-real350399-geogenus-matched-source-selection-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            gh release download "$tag" --repo zuizui0223/mois --pattern mois350399_real_photo_arm_geogenus_balance.json --dir published
+            cmp published/mois350399_real_photo_arm_geogenus_balance.json results_actual/mois350399_real_photo_arm_geogenus_balance.json
+            echo 'Identical source result already permanently published.'
+          else
+            gh release create "$tag" results_actual/* --repo zuizui0223/mois \
+              --target "$GITHUB_SHA" \
+              --title 'MOIS actual 350399 RGB photos: matched genus geography four-hue and recruitment sensitivity' \
+              --notes 'Actual same YOLO11+EfficientSAM pixel hues, five authenticated SHA receipts, 350399 unique photo IDs; prespecified 5/10/20-degree matched genus-by-source comparisons and geographic-only contrasts, classifiability preserved, four hue differences sum zero. Source arms are taxonomically selected, with unknown global inclusion rates; no photos imputed, no global floral prevalence, pigment-cost or genetic/fitness effect claimed.'
+          fi
