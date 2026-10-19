@@ -135,3 +135,64 @@ def test_taxon_name_uncertainty_unresolved_not_auto_mapped():
     assert clean_name("Poa sp.")==""
     assert clean_name("Poa")==""
     assert clean_name("poa annua")==""
+
+
+def test_original_kew_raw_columns_supported_without_guessing_native_points(tmp_path):
+    """Kew raw CSV uses kew_id/rank/taxonomic_status/accepted_kew_id.
+
+    The rWCVP data package has a DIFFERENT renamed schema. Both should
+    resolve to the exact same accepted species/locality result.
+    """
+    from io import StringIO
+    path=tmp_path/"official_original.zip"
+    names=[
+        {"kew_id":"101","taxon_name":"Poa annua","rank":"Species",
+         "taxonomic_status":"Accepted","accepted_kew_id":"101"},
+        {"kew_id":"102","taxon_name":"Poa minor","rank":"Species",
+         "taxonomic_status":"Synonym","accepted_kew_id":"101"}
+    ]
+    dist=[
+        {"kew_id":"101","area_code_l3":"JAP","area":"Japan",
+         "introduced":"0","extinct":"0","location_doubtful":"0"},
+        {"kew_id":"101","area_code_l3":"NZS","area":"New Zealand South",
+         "introduced":"1","extinct":"0","location_doubtful":"0"}
+    ]
+    def csv_text(rows):
+        buff=StringIO()
+        w=csv.DictWriter(buff,fieldnames=list(rows[0]),lineterminator="\n")
+        w.writeheader()
+        w.writerows(rows)
+        return buff.getvalue()
+    with zipfile.ZipFile(path,"w",zipfile.ZIP_DEFLATED) as z:
+        z.writestr("wcvp_names.csv",csv_text(names))
+        z.writestr("wcvp_distribution.csv",csv_text(dist))
+    with zipfile.ZipFile(path) as z:
+        candidates,states,count,member=collect_wcvp_names(
+            z,{"Poa annua","Poa minor"},min_source_rows=2)
+        assert count==2
+        assert candidates["Poa annua"]=={"101"}
+        assert candidates["Poa minor"]=={"101"}
+        accepted=accepted_name_metadata(z,{"101"})
+        assert accepted=={"101":"Poa annua"}
+        ranges,n,matching,member=native_distribution_TDWG3(
+            z,{"101"},accepted,min_source_rows=2)
+    assert n==2
+    assert matching==2
+    assert dict(zip(ranges.tdwg_level3_code,
+                    ranges.native_introduced_state))=={
+        "JAP":"native_at_TDWG3",
+        "NZS":"introduced_at_TDWG3",
+    }
+    assert ranges.native_on_specific_island.eq("not_established_by_TDWG3").all()
+
+
+def test_unknown_official_name_field_fails_explicitly(tmp_path):
+    from io import StringIO
+    path=tmp_path/"bad.zip"
+    with zipfile.ZipFile(path,"w",zipfile.ZIP_DEFLATED) as z:
+        z.writestr("wcvp_names.csv",
+            "kew_id,taxon_name,rank,taxonomic_status\n101,Poa annua,Species,Accepted\n")
+    import pytest
+    with zipfile.ZipFile(path) as z,pytest.raises(
+        ValueError,match="Missing canonical WCVP field accepted_plant_name_id"):
+        collect_wcvp_names(z,{"Poa annua"},min_source_rows=1)
