@@ -111,8 +111,6 @@ jobs:
             https://raw.githubusercontent.com/tdwg/wgsrpd/52da7828aba9d461dd133c27b3bd7a4407161f54/geojson/level3.geojson \
             -o original_tdwg/level3.geojson
           test "$(stat -c %s original_tdwg/level3.geojson)" -gt 1000000
-          echo '91104e5159e31f88154833a51d3b0d1c9271083f  original_tdwg/level3.geojson' | \
-            git hash-object --stdin >/dev/null
           test "$(git hash-object original_tdwg/level3.geojson)" = "91104e5159e31f88154833a51d3b0d1c9271083f"
           sha256sum original_tdwg/level3.geojson
       - name: Overlay source photos and exact accepted species TDWG3 native and introduced regional status
