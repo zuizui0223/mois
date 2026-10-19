@@ -114,7 +114,7 @@ def collect_wcvp_names(z, wanted, *, min_source_rows=10000):
     return candidates,candidate_statuses,n_total,member
 
 
-def resolve_photo_taxa(taxa, candidates, states):
+def resolve_photo_taxa(taxa, candidates, states, *, expected_photos=FRAME_N):
     resolved=[]
     selected=set()
     for row in taxa.to_dict("records"):
@@ -150,7 +150,7 @@ def resolve_photo_taxa(taxa, candidates, states):
         })
     out=pd.DataFrame(resolved)
     require(out.inat_taxon_id.is_unique and
-            int(out.source_original_photo_attempts.sum())==FRAME_N,
+            int(out.source_original_photo_attempts.sum())==expected_photos,
             "Original WCVP taxa summary lost photo IDs")
     return out,selected
 
