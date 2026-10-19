@@ -31,6 +31,8 @@ N_NEW = 32768
 N_TOTAL = N_CORE + N_NEW
 N_CLASSIFIED = 164297
 N_WHITE = 78026
+OLD_CLASSIFIED = 152827
+OLD_WHITE = 72175
 PHOTO = "mois350399_original_rgb_photo_hues_sourcearms.parquet"
 ENVIRONMENT = "mois350399_original_site_worldclim_bio19_vapr_solar_terrain.parquet"
 RECEIPT = "mois350399_original_rgb_photo_full_environment_receipt.json"
@@ -100,8 +102,8 @@ def assemble_lake(photo_files, core_environment: Path, core_receipt: Path,
     receipt = json.loads(core_receipt.read_text())
     require(receipt["schema"] == "mois_real317631_fifth4096_incremental_RGB_annual_bio19_terrain_v1"
             and receipt["all_original_photo_attempts"] == N_CORE
-            and receipt["all_classified_four_hue_photo_ROIs"] == 152827
-            and receipt["all_white_photo_ROIs"] == 72175,
+            and receipt["all_classified_four_hue_photo_ROIs"] == OLD_CLASSIFIED
+            and receipt["all_white_photo_ROIs"] == OLD_WHITE,
             "Previous 317631 real original RGB/photo population changed")
     expected_core_sha = receipt["photo_ID_aligned_Zstd_files_sha256"].get(core_environment.name)
     require(expected_core_sha == sha256(core_environment),
