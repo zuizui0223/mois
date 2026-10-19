@@ -1,0 +1,175 @@
+name: MOIS full 93m original photo-ID index from frozen Open Data
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_export_all_source_index.py
+      - tests/test_mois_export_all_source_index.py
+      - .github/workflows/mois-build-full-photo-index-20261019.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/mois-build-full-photo-index-20261019.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-20260927-full-93m-original-photo-index
+  cancel-in-progress: false
+jobs:
+  source-index-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_mois_export_all_source_index.py' -v
+          python -m py_compile scripts/acquisition/mois_export_all_source_index.py
+  build-and-archive-full-source:
+    needs: source-index-tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MOIS_TAG: mois-full-93209351-indexed-photo-observation-source-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Skip already published and authenticated complete source
+        id: reuse
+        run: |
+          set -euo pipefail
+          if gh release view "$MOIS_TAG" --repo zuizui0223/mois --json isDraft --jq .isDraft 2>/dev/null | grep -qx false; then
+            mkdir -p previous
+            gh release download "$MOIS_TAG" --repo zuizui0223/mois --pattern manifest.json --dir previous
+            python - <<'PY'
+          import json
+          r=json.load(open('previous/manifest.json'))
+          assert r['schema']=='mois_full_42111_93209351_uncapped_original_photo_observation_index_v1'
+          assert r['photos_emitted']==93209351 and r['taxa_in_frame']==42111
+          assert r['photo_caps'] is None and not r['photo_colours_measured']
+          PY
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+            echo 'Signed all-photo index already exists; skip expensive provider download.'
+          else
+            echo 'needed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Free SDK scratch and verify >=80GB disk before 36GB transfer
+        if: steps.reuse.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          for p in /usr/local/lib/android /usr/share/dotnet /usr/local/share/powershell /usr/share/swift; do
+            if [ -d "$p" ]; then sudo rm -rf -- "$p"; fi
+          done
+          df -h "$RUNNER_TEMP"
+          free=$(df -B1 --output=avail "$RUNNER_TEMP" | tail -1 | tr -d ' ')
+          if [ "$free" -lt 80000000000 ]; then
+            echo "Need >=80GB scratch, found $free bytes; no provider request made." >&2
+            exit 1
+          fi
+      - name: Fetch the exact FCP-audited photo-count receipt and byte-pinned source importer
+        if: steps.reuse.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p source_counts
+          gh run download 38749681793 --repo zuizui0223/fcp \
+            --name fcp-42111-real-source-photo-opportunity-counts-20260927-complete-not-colours \
+            --dir source_counts
+          countfile=$(find source_counts -name all_42111_species_photo_opportunity_counts.csv -print -quit)
+          test -s "$countfile"
+          echo 'ef26c16252dd785f2d08bde3b18938c7624d73a54386fa3d3974dceb09ed97a9  '"$countfile" | sha256sum -c -
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch --no-tags --depth=1 origin b6bc01ee3cf55c9fb5c539eb703d91ec1c4181f3
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          git -C "$RUNNER_TEMP/fcp" fetch --no-tags --depth=1 origin 7e538e5c51c05a7cc47b2fcf53eea92634c8a863
+          git -C "$RUNNER_TEMP/fcp" show 7e538e5c51c05a7cc47b2fcf53eea92634c8a863:data/frozen/global_monte_carlo_species_discovery_combined_v2_species_v1.csv > "$RUNNER_TEMP/all_42111_source_taxa.csv"
+          echo '5d871bd1f1190c68fd513bb527e6c93de1606dc35ff8cfff5f6187850dc382cc  '"$RUNNER_TEMP"'/all_42111_source_taxa.csv' | sha256sum -c -
+      - name: Stage every globally unique original photo ID and observation, no caps
+        if: steps.reuse.outputs.needed == 'true'
+        timeout-minutes: 290
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 Pillow==11.1.0
+          cd "$RUNNER_TEMP/fcp"
+          python scripts/acquisition/execute_fcp_42111_census.py \
+            --frame "$RUNNER_TEMP/all_42111_source_taxa.csv" \
+            --work "$RUNNER_TEMP/mois_93m_stage" \
+            --expected-species 42111 --shards 128 --worker-partitions 128 \
+            --minimum-free-disk-gb 80 --release-verified-temporary-tables \
+            --stage-only --skip-package
+      - name: Export ALL 93209351 original ID rows plus original location/date via a 128-part joinable index
+        if: steps.reuse.outputs.needed == 'true'
+        timeout-minutes: 45
+        run: |
+          set -euo pipefail
+          counts=$(find source_counts -name all_42111_species_photo_opportunity_counts.csv -print -quit)
+          db="$RUNNER_TEMP/mois_93m_stage/complete_42111_metadata_source/_working_fcp_snapshot.sqlite"
+          test -s "$db"
+          python scripts/acquisition/mois_export_all_source_index.py \
+            --stage-db "$db" --counts "$counts" \
+            --output "$RUNNER_TEMP/mois_index" --partitions 128
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.load((Path(os.environ['RUNNER_TEMP'])/'mois_index'/'manifest.json').open())
+          assert d['photos_emitted']==93209351 and d['taxa_in_frame']==42111
+          assert len(d['shards'])==128 and d['photo_caps'] is None
+          assert sum(x['photo_count'] for x in d['shards'])==93209351
+          assert not d['photo_colours_measured']
+          PY
+      - name: Package 16 bounded source archives with checksums
+        if: steps.reuse.outputs.needed == 'true'
+        timeout-minutes: 16
+        run: |
+          set -euo pipefail
+          mkdir -p release_parts
+          cp "$RUNNER_TEMP/mois_index/manifest.json" release_parts/manifest.json
+          for start in $(seq 0 8 120); do
+            files=()
+            for i in $(seq "$start" "$((start+7))"); do
+              p=$(printf '%03d' "$i")
+              files+=("photos/part-$p.csv.gz" "observations/part-$p.csv.gz")
+            done
+            n=$(printf '%02d' "$((start/8))")
+            tar -C "$RUNNER_TEMP/mois_index" -cf "release_parts/source-$n.tar" "${files[@]}"
+            test "$(stat -c %s "release_parts/source-$n.tar")" -lt 2000000000
+          done
+          (cd release_parts && sha256sum source-*.tar > SHA256SUMS.txt)
+      - name: Publish a draft source metadata Release and publish only after all 16 parts arrive
+        if: steps.reuse.outputs.needed == 'true'
+        timeout-minutes: 35
+        run: |
+          set -euo pipefail
+          if gh release view "$MOIS_TAG" --repo zuizui0223/mois >/dev/null 2>&1; then
+            test "$(gh release view "$MOIS_TAG" --repo zuizui0223/mois --json isDraft --jq .isDraft)" = true
+          else
+            gh release create "$MOIS_TAG" --repo zuizui0223/mois --target "$GITHUB_SHA" --draft \
+              --title 'MOIS complete 93,209,351 photo and observation source IDs' \
+              --notes 'Exact 2026-09-27 original FCP-audited source of 42,111 taxa, no species/observation/photo cap. 128 paired original photo+observation partitions with coordinate/date/license, source-wide photo IDs unique and quarantined IDs excluded. This is SOURCE METADATA, not 93m image pixels or measured flower colours. No licensed image bytes redistributed.'
+          fi
+          gh release upload "$MOIS_TAG" release_parts/* --repo zuizui0223/mois --clobber
+          test "$(gh release view "$MOIS_TAG" --repo zuizui0223/mois --json assets --jq '.assets | length')" -ge 18
+          gh release edit "$MOIS_TAG" --repo zuizui0223/mois --draft=false
+          echo MOIS_FULL_93M_ORIGINAL_PHOTO_INDEX_RELEASED
+      - name: Preserve progress receipts without falsely counting candidate IDs as colours
+        if: always() && steps.reuse.outputs.needed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-full-93m-index-progress-source-only
+          retention-days: 90
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/mois_93m_stage/full_source_execution_receipt.json
+            ${{ runner.temp }}/mois_93m_stage/complete_42111_metadata_source/fcp_staged_sqlite_source_receipt.json
+            ${{ runner.temp }}/mois_93m_stage/complete_42111_metadata_source/fcp_source_progress.ndjson
+            ${{ runner.temp }}/mois_index/manifest.json
+            release_parts/SHA256SUMS.txt
