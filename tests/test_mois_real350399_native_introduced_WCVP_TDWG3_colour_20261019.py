@@ -95,7 +95,7 @@ def test_two_status_source_photo_classifiability_not_false_nonwhite():
     missing.loc[:,"morph"]=""
     missing.loc[:,"white"]=False
     d=pd.concat([x,unknown,missing],ignore_index=True)
-    qc=photo_status_table(d)
+    qc=photo_status_table(d,expected_photos=50,expected_classified=48)
     assert qc.original_source_photo_attempts.sum()==50
     assert qc.classifiable_photo_ROIs.sum()==48
     native=qc[qc.region_species_status.eq("WCVP_native_at_TDWG3")].iloc[0]
