@@ -266,14 +266,35 @@ def run(core, broad, wave2, cached8192, output, tail16384=None, strict=True):
         rows.append({"arm": key, **{k: v for k, v in value.items()
                                     if not isinstance(v, dict)}})
     pd.DataFrame(rows).to_csv(output / "cohort_white_balance.csv", index=False)
+    # This human-readable receipt is extracted from the SAME SHA-verified
+    # 334k real-photo calculation and permits full auditing without copying
+    # the 10KB released JSON. The full lossless report remains the Release.
     print("MOIS_ACTUAL_RGB_NEW_COHORT_AUDIT", json.dumps({
         "photo_union": len(d),
         "classifiable": report["actual_original_pixel_photo_union"]["four_hue_classified"],
         "tail_included": tail16384 is not None,
-        "north_local_season_support":
-            report["seasonal_source_photo_support_all_cohorts"]["north"].get(
-                "same_taxon_0p25deg_same_season_year_support", {}),
-    }, sort_keys=True), flush=True)
+        "full_photo_hue_stats": report["actual_original_pixel_photo_union"],
+        "by_actual_acquisition_cohort": {
+            arm: {"attempted": r["attempted_original_photos"],
+                  "four_hue": r["four_hue_classified"],
+                  "white_photo_fraction": r["white_fraction_among_classifiable"],
+                  "taxa": r["nominal_taxa_with_classifiable_hues"],
+                  "genera": r["nominal_genera_with_classifiable_hues"]}
+            for arm, r in report["cohort_measured_photo_statistics"].items()},
+        "season_by_hemisphere": {
+            hemi: {"season_photos": r.get("seasons", {}),
+                   "taxa_in_both_seasons": r.get("taxa_in_both_seasons"),
+                   "summer_minus_winter_white_pp":
+                       r.get("raw_summer_minus_winter_white_pp"),
+                   "taxa_season_nonoverlap": {
+                       "fraction_summer_photos_from_taxa_absent_in_winter":
+                           r.get("fraction_summer_photos_from_taxa_absent_in_winter"),
+                       "fraction_winter_photos_from_taxa_absent_in_summer":
+                           r.get("fraction_winter_photos_from_taxa_absent_in_summer")},
+                   "same_taxon_local_year_observed_support":
+                       r.get("same_taxon_0p25deg_same_season_year_support", {})}
+            for hemi, r in report["seasonal_source_photo_support_all_cohorts"].items()},
+    }, sort_keys=True, allow_nan=False), flush=True)
     return report
 
 
