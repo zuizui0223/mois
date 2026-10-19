@@ -1,0 +1,228 @@
+{
+  "schema": "mois_five_photo_hypotheses_holdout_protocol_v1",
+  "protocol_date": "2026-10-19",
+  "status": "prospective_analysis_plan_for_future_unseen_photo_outcomes_NOT_retrospective_preregistration",
+  "project": "zuizui0223/mois",
+  "original_images_currently_seen": {
+    "source_photos_attempted": 350399,
+    "photo_four_hue_classified": 164297,
+    "source_release": "mois-20261019-real-photo-source-arm-season-including-tail16384-v1",
+    "prior_outcomes_exposed": true
+  },
+  "photo_universe": {
+    "source_snapshot_date": "2026-09-27",
+    "source_taxa": 42111,
+    "photo_candidates": 93209351,
+    "complete_photo_observation_index_required": true,
+    "release_tag": "mois-full-93209351-indexed-photo-observation-source-v1",
+    "index_verified_at_protocol_date": false
+  },
+  "estimand": {
+    "primary": "Taxon-equal expected share of genuine, visibly open-flower white photographic labels in prespecified equal-area habitat cells, conditional on photographed and classifiable flowers in the eligible previously-unseen iNaturalist observation universe.",
+    "unit": "accepted_species_ID × EPSG6933_equal_area_100km_grid_cell × annual_window",
+    "data_unit": "unique_source_observation_id, with all attached source photos retained and averaged within observation",
+    "season_SI": "separate taxon × equal-area cell × local meteorological season, with observer/effort sensitivity; missing seasonal photographs NOT interpreted as biological absence",
+    "four_hue_labels": [
+      "white",
+      "yellow_orange",
+      "red_pink",
+      "blue_purple"
+    ],
+    "unknown_flower_or_hue": "missing_outcome_with_independent_quality_audit_never_nonwhite",
+    "mixed_colour_species": "retain photo-derived proportional white probability; do not force majority phenotype for known polymorphic taxa",
+    "species_level_polymorphism": "Use signed externally validated FCP D only where taxon IDs align and D is independently sourced; otherwise mark D missing, do not impute monomorphism.",
+    "primary_weights": "one_taxon_equal_within_cell; one_eligible_cell_equal_within_prespecified_biogeographic_stratum",
+    "secondary_weights": [
+      "observation_equal",
+      "genus_equal",
+      "photo_equal_descriptive_only"
+    ],
+    "interpretation": "photographically encountered and machine or independently verified visible flower colours, not population abundance or adaptive fitness"
+  },
+  "historical_exploration": {
+    "all_five_related_hypotheses_have_prior_exposure": true,
+    "island_core_result": "313535 prior island–mainland raw +4.223pp and adjusted +3.160pp, source-dependent, already seen",
+    "elevation_core_result": "previous raw white share falls with elevation; already seen",
+    "arctic_core_result": "previous exploratory >66.562N white share 43.987%; already seen",
+    "moisture_core_result": "positive water/vapour slopes attenuated under spatial conditioning; already seen",
+    "season_core_result": "south summer−winter +10.496pp photographed WHITE, common photographed taxon frequency term +8.036pp, already seen",
+    "possible_brightness_result": "image brightness odds ratio must be source-verified independently; do not treat user-proposed OR as measured fact here",
+    "inference_status": "historical datasets only exploratory, not confirmatory regardless of protocols authored now"
+  },
+  "directional_hypotheses": [
+    {
+      "id": "H1_ALTITUDE",
+      "contrast": "increase log1p(elevation_m_clipped_0)",
+      "white_direction": "negative",
+      "biological_explanation": "possible UV/low_temperature pigmentation protection",
+      "previously_explored": true,
+      "modifier": "UVB1 and temperature needed; bee richness and habitat alternative"
+    },
+    {
+      "id": "H2_DRY_SEASON",
+      "contrast": "increase -log1p(WorldClim_BIO14_driest_month_precipitation_mm)",
+      "white_direction": "negative",
+      "biological_explanation": "aridity-associated pigmented photoprotection",
+      "previously_explored": true,
+      "modifier": "linked water family with H5; not independent mechanistic proof"
+    },
+    {
+      "id": "H3_NATIVE_ISLAND",
+      "contrast": "native-only island vs native-only mainland, comparable latitude/realm and cell coverage",
+      "white_direction": "positive",
+      "biological_explanation": "candidate pollination-generalisation and ecological filtering",
+      "previously_explored": true,
+      "modifier": "requires separately verified island native/introduced status; WCVP TDWG3 alone does not establish native for a specific islet"
+    },
+    {
+      "id": "H4_ARCTIC",
+      "contrast": "latitude>=66.562 north vs matched non-Arctic high-latitude land cells",
+      "white_direction": "positive",
+      "biological_explanation": "candidate pollinator limitation; photos and introduced flora confounding",
+      "previously_explored": true,
+      "modifier": "not tested by treating all Southern Hemisphere as one analogue"
+    },
+    {
+      "id": "H5_ATMOSPHERIC_MOISTURE",
+      "contrast": "increase annual_mean_WorldClim_VAPR",
+      "white_direction": "positive",
+      "biological_explanation": "candidate water balance and pollination associations",
+      "previously_explored": true,
+      "modifier": "correlated with H2 and thermal stress, joint identifiability gate required"
+    }
+  ],
+  "contextual_predictors": {
+    "baseline": [
+      "WorldClim_BIO05",
+      "WorldClim_BIO12",
+      "WorldClim_BIO14",
+      "WorldClim_annual_VAPR",
+      "WorldClim_annual_solar_Wm2",
+      "WorldClim_DEM_elevation_m",
+      "latitude",
+      "longitude_cyclic",
+      "altitude_roughness",
+      "biogeographic_realm",
+      "original_photo_source_arm",
+      "original_observation_year",
+      "native_status_TDWG3",
+      "island_mainland_GSHHG"
+    ],
+    "UVB": "glUV UVB1, 15 arcminute UVB annual mean, OMI-era 2004–2013; NO substitution of shortwave WorldClim solar Wm2 for UVB",
+    "pollinators": "independent validated spatial bee richness with coverage, scale and effort uncertainty; global bee abundance or effective visitation NOT assumed",
+    "image_brightness": "reconstruct source-authenticated image exposure/illumination proxy outcome-blind; absent or unavailable must remain unknown, not assumed equal",
+    "photo_effort": "all identifiable plant observations and unique observer IDs per cell/month if available, never count only four-hue classification successes as effort denominator"
+  },
+  "external_source_gates": {
+    "WCVP": {
+      "source": "https://powo.science.kew.org/about-wcvp",
+      "native_introduced_resolution": "TDWG_level3",
+      "status": "NOT_JOINED",
+      "same_island_native_assertion_permitted": false,
+      "unknown": "unresolved_not_native"
+    },
+    "glUV": {
+      "source": "https://doi.org/10.1111/2041-210X.12168",
+      "spatial_resolution_arcmin": 15,
+      "status": "NOT_DOWNLOADED",
+      "time_period": "2004-2013"
+    },
+    "bee_richness": {
+      "source": "https://doi.org/10.1016/j.cub.2020.10.053",
+      "status": "CANDIDATE_NOT_SPATIALLY_VERIFIED",
+      "separate_from_photo_observation_effort": true,
+      "visitation_causality_claim_permitted": false
+    },
+    "GSHHG": {
+      "source": "https://github.com/GenericMappingTools/gshhg-gmt",
+      "status": "PREVIOUS_EXPLORATORY_SOURCE",
+      "require_matching_landmass_and_position_accuracy": true
+    },
+    "original_photo_and_climate": {
+      "colour_release": "mois-20261019-real-photo-source-arm-season-including-tail16384-v1",
+      "annual_release": "mois-real350399-original-photo-all19-incremental-climate-v1",
+      "status": "EXPLORATORY_EXISTING"
+    }
+  },
+  "holdout": {
+    "mode": "future_precolour_hashed_observation_cohort_drawn_from_full_source_index",
+    "proposed_initial_probability": 0.0002,
+    "previously_seen_photo_ids_forbidden": true,
+    "previously_seen_observation_ids_forbidden": true,
+    "all_photos_from_selected_observation_retained": true,
+    "no_per_taxon_or_per_genus_photo_cap": true,
+    "source_arm_status": "separate_from_legacy_species_first_without_known_inclusion_weights",
+    "source_photo_id_frame_and_shard_hash_must_be_saved": true,
+    "observer_or_species_sampling_augmentation_after_white_labels_forbidden": true,
+    "no_result_disclosure_until_frozen_holdout_manifest_and_covariate_source_digests_exist": true,
+    "require_fully_finished_original_image_ROI_units": true,
+    "preregistered_subset_not_a_full93m_pixel_census": true,
+    "prospective_only_for_newly_unseen_image_outcomes": true
+  },
+  "model": {
+    "response": "four_hue_white_positive, chromatic_other, with photo-origin observation clustering and taxon × equal-area-cell aggregation",
+    "effect_type": "conditional_association_only",
+    "covariates_joint": [
+      "log1p_elevation",
+      "negative_log1p_BIO14",
+      "annual_vapour",
+      "BIO05",
+      "BIO12",
+      "UVB1",
+      "annual_solar",
+      "bee_richness_if_source_verified",
+      "native_island",
+      "northern_arctic_indicator",
+      "latitude_longitude",
+      "realm",
+      "year",
+      "observer_effort",
+      "source_arm",
+      "image_brightness_if_available"
+    ],
+    "spatial_dependence": "equal_area_100km_cell spatial cluster/block and smooth spatial random effect",
+    "taxonomy_dependence": "accepted_genus random effect plus family if source taxonomy validated; not dated phylogeny",
+    "collinearity": "prior standardize on training folds; if correlated water terms not identifiable report water_block_only and DO NOT assign separate stress/pollinator pathways",
+    "numerical_method": "regularised hierarchical binomial/beta-binomial/partial pooling with cluster-aware calibration; compare against geography-only, taxonomy-only and effort-only baselines",
+    "separate_bee_model": "fit only after independently validated spatial source and adequate joint coverage, no causal mediation inference",
+    "quality": "blinded flower/petal organ review and independent error calibration on pre-hue selected classifiable AND unknown original image attempts",
+    "temperature_source": "annual/long-term WorldClim not actual observation-month weather",
+    "prediction": "spatial and held-out genus blocked validation, not random per-photo split",
+    "minimum_support_reporting": [
+      "taxa per genus×realm×cell",
+      "cells with two seasons",
+      "total independent observations",
+      "observer diversity",
+      "native status coverage",
+      "predictor complete cases",
+      "probability-weighted source eligibility"
+    ]
+  },
+  "inference": {
+    "familywise_hypotheses": [
+      "H1_ALTITUDE",
+      "H2_DRY_SEASON",
+      "H3_NATIVE_ISLAND",
+      "H4_ARCTIC",
+      "H5_ATMOSPHERIC_MOISTURE"
+    ],
+    "multiplicity": "Holm familywise 0.05 for five directional tests in untouched holdout; joint water H2/H5 not counted as independent replications",
+    "planned_sensitivity": [
+      "genus_equal",
+      "photo_equal",
+      "strict_botanical_petal_review",
+      "native_only_high_confidence",
+      "introduced_separate",
+      "island_landmass_size",
+      "photographic_illumination",
+      "unknown_hue_bounds",
+      "source_arm",
+      "climate_collinearity",
+      "independent_bee_data",
+      "FCP_D_validated_only"
+    ],
+    "output_if_no_independent_bee_source": "No pollinator pathway hypothesis tested; publish abiotic joint conditional associations only",
+    "output_if_native_resolution_mismatch": "No native-only island confirmation; report explicit unknown/native match coverage",
+    "output_if_unseen_holdout_unavailable": "EXPLORATORY_ONLY; no formal hypothesis confirmation"
+  }
+}
