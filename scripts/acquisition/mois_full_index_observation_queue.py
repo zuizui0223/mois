@@ -19,6 +19,9 @@ COLUMNS=["measurement_id","photo_id","inat_taxon_id","species","observation_id",
          "photo_license","photo_url_large","image_filename","source_arm",
          "selection_probability","source_snapshot_date","shard"]
 SEED="mois-global-observation-v1"
+N_PHOTOS=93209351
+N_TAXA=42111
+N_SHARDS=128
 def require(ok,msg):
     if not ok:raise ValueError(msg)
 def sha(path):
@@ -50,13 +53,13 @@ def prepare(index,counts,prior_files,out,*,p=0.0002,batch_size=256):
     require(not out.exists() or not any(out.iterdir()),"Source output must not overwrite frozen measurements")
     source=json.loads((index/"manifest.json").read_text())
     require(source["schema"]==SCHEMA and source["photo_caps"] is None
-            and source["photos_emitted"]==93209351
-            and source["taxa_in_frame"]==42111
+            and source["photos_emitted"]==N_PHOTOS
+            and source["taxa_in_frame"]==N_TAXA
             and not source["photo_colours_measured"]
-            and len(source["shards"])==128,
+            and len(source["shards"])==N_SHARDS,
             "Must use the complete authenticated original PHOTO IDs, not a count-only or selected source")
     names={int(x["inat_taxon_id"]):x["species"] for x in csvrows(counts)}
-    require(len(names)==42111,"All original source taxon names required")
+    require(len(names)==N_TAXA,"All original source taxon names required")
     previous=known_ids(prior_files)
     seen=set(); selected=[]; reused=0; total=0; candidate_n=0; nobs=0
     for item in source["shards"]:
