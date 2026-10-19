@@ -53,13 +53,51 @@ def _member_name(z, suffixes):
     return matches[0]
 
 
+_OFFICIAL_NAMES_ALIASES={
+    "plant_name_id":("plant_name_id","kew_id"),
+    "taxon_name":("taxon_name",),
+    "taxon_rank":("taxon_rank","rank"),
+    "taxon_status":("taxon_status","taxonomic_status"),
+    "accepted_plant_name_id":("accepted_plant_name_id","accepted_kew_id"),
+}
+_OFFICIAL_DISTRIBUTION_ALIASES={
+    "plant_name_id":("plant_name_id","kew_id"),
+    "area_code_l3":("area_code_l3",),
+    "introduced":("introduced",),
+    "extinct":("extinct",),
+    "location_doubtful":("location_doubtful",),
+}
+
 def wcvp_reader(z, member):
+    """Normalize official Kew raw CSV columns OR rWCVP harmonized columns.
+
+    If Kew adds/removes native/accepted identity fields, REFUSE silently
+    misjoining a distribution. Actual source header is logged for audit.
+    """
     with z.open(member) as raw:
         reader=csv.DictReader(io.TextIOWrapper(
             raw,encoding="utf-8-sig",errors="strict",newline=""))
         require(reader.fieldnames is not None,"WCVP header is absent")
+        original=tuple(reader.fieldnames)
+        names=Path(member).name.lower()=="wcvp_names.csv"
+        candidates=(_OFFICIAL_NAMES_ALIASES if names
+                    else _OFFICIAL_DISTRIBUTION_ALIASES)
+        mapping={}
+        for canonical,options in candidates.items():
+            available=[name for name in options if name in original]
+            require(bool(available),
+                    "Missing canonical WCVP field "+canonical+
+                    "; actual original CSV columns="+repr(original))
+            mapping[canonical]=available[0]
+        print("MOIS_WCVP_OFFICIAL_SCHEMA",json.dumps({
+            "member":member,
+            "source_columns":list(original),
+            "canonical_columns_used":mapping,
+            "native_assigned_to_photo_point":False,
+        },sort_keys=True),flush=True)
         for row in reader:
-            yield row
+            yield {**row,**{target:row[source]
+                            for target,source in mapping.items()}}
 
 
 def source_taxon_table(real_photos, *, expected_photos=FRAME_N, expected_hues=KNOWN_HUES):
