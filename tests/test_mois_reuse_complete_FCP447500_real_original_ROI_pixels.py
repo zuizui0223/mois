@@ -2,7 +2,7 @@
 import json
 import pandas as pd
 import pytest
-from scripts.analysis import mois_reuse_complete_FCP447500_real_original_ROI_pixels as mod
+from scripts.acquisition import mois_reuse_complete_FCP447500_real_original_ROI_pixels as mod
 from scripts.analysis.mois_actual_photo_cohort_season_audit_20261019 import load_pixels, sha256
 
 
