@@ -1,0 +1,161 @@
+name: MOIS original350399 WCVP TDWG3 regional native photo-coordinate overlay
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_real350399_wcvp_geographic_native_status_20261019.py
+      - tests/test_mois_real350399_wcvp_geographic_native_status_20261019.py
+      - .github/workflows/mois-real350399-wcvp-TDWG3-photo-geography.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/analysis/mois_real350399_wcvp_geographic_native_status_20261019.py
+      - .github/workflows/mois-real350399-wcvp-TDWG3-photo-geography.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-real350399-WCVP-TDWG3-photo-geoposition-v1
+  cancel-in-progress: false
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test WCVP native-source status and TDWG boundaries on synthetic sites
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 geopandas==1.0.1 shapely==2.0.7 pyogrio==0.10.0 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_real350399_wcvp_geographic_native_status_20261019.py
+          python -m py_compile scripts/analysis/mois_real350399_wcvp_geographic_native_status_20261019.py
+  actual-WCVP-TDWG3-photo-geography:
+    needs: contracts
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned GeoPandas original source overlay runtime
+        run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 geopandas==1.0.1 shapely==2.0.7 pyogrio==0.10.0 pyarrow==19.0.1
+      - name: Restore five original source-RGB releases and officially recorded WCVP species regions
+        run: |
+          set -euo pipefail
+          gh release download mois-primary-real317631-next4096-incremental-all19-featurelake-v3 \
+            --repo zuizui0223/mois --dir actual/core \
+            --pattern primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --pattern mois_317631_new4096_incremental_climate_feature_lake_receipt.json
+          gh release download mois-broad-world-angiosperm-newtaxa4096-real-RGB-ROI-v1 \
+            --repo zuizui0223/mois --dir actual/broad \
+            --pattern primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --pattern mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json
+          gh release download mois-broad-wave2-4096-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/wave2 \
+            --pattern wave2_measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-next8192-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/cached8192 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-tail16384-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/tail16384 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-real350399-kew-wcvp-native-tdwg3-source-v1 \
+            --repo zuizui0223/mois --dir original_wcvp \
+            --pattern mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+            --pattern mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz \
+            --pattern mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json
+      - name: Verify all original SHA-signed published photo and WCVP source bytes
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          def sha(f):
+              h=hashlib.sha256()
+              with Path(f).open('rb') as s:
+                  for b in iter(lambda:s.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          c=Path('actual/core')
+          r=json.loads((c/'mois_317631_new4096_incremental_climate_feature_lake_receipt.json').read_text())
+          f='primary317631_actual_photo_hue_RGB_attempts.parquet'
+          assert r['all_original_photo_attempts']==317631 and sha(c/f)==r['photo_ID_aligned_Zstd_files_sha256'][f]
+          b=Path('actual/broad')
+          r=json.loads((b/'mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json').read_text())
+          f='primary313535_plus_broad4096_genuine_original_hue_photos.parquet'
+          assert r['expanded_actual_original_photo_attempts']==317631 and sha(b/f)==r['new_combined_photo_parquet_SHA256']
+          for arm,f,n in (('wave2','wave2_measured_photos.parquet',4096),('cached8192','measured_photos.parquet',8192),('tail16384','measured_photos.parquet',16384)):
+              p=Path('actual')/arm
+              r=json.loads((p/'receipt.json').read_text())
+              assert r['attempted']==n and sha(p/f)==r['photo_data_sha256'],arm
+          w=Path('original_wcvp')
+          r=json.loads((w/'mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json').read_text())
+          assert r['source_photo_attempts']==350399 and not r['island_native_status_inferred']
+          for filename,expected in r['data_files_sha256'].items():
+              assert sha(w/filename)==expected,filename
+          print('MOIS_REAL350399_ORIGINAL_PHOTOS_AND_WCVP_TDWG3_SOURCE_SHAS_AUTHENTIC')
+          PY
+      - name: Download immutable original TDWG World Geographical Scheme Level-3 GeoJSON
+        run: |
+          set -euo pipefail
+          mkdir -p original_tdwg
+          curl --fail --location --silent --show-error --retry 3 --max-time 300 \
+            https://raw.githubusercontent.com/tdwg/wgsrpd/52da7828aba9d461dd133c27b3bd7a4407161f54/geojson/level3.geojson \
+            -o original_tdwg/level3.geojson
+          test "$(stat -c %s original_tdwg/level3.geojson)" -gt 1000000
+          test "$(git hash-object original_tdwg/level3.geojson)" = "91104e5159e31f88154833a51d3b0d1c9271083f"
+          sha256sum original_tdwg/level3.geojson
+      - name: Overlay source photos and exact accepted species TDWG3 native and introduced regional status
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real350399_wcvp_geographic_native_status_20261019 \
+            --core actual/core/primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --broad actual/broad/primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --wave2 actual/wave2/wave2_measured_photos.parquet \
+            --cached8192 actual/cached8192/measured_photos.parquet \
+            --tail16384 actual/tail16384/measured_photos.parquet \
+            --wcvp-dir original_wcvp \
+            --tdwg-geojson original_tdwg/level3.geojson \
+            --output results_real350399_tdwg3
+          python - <<'PY'
+          import json
+          f='results_real350399_tdwg3/mois350399_TDWG3_WCVP_geography_source_receipt.json'
+          d=json.load(open(f))
+          assert d['original_actual_photo_attempts']==350399
+          assert d['four_hue_classifiable_original_ROIs']==164297
+          assert not d['native_on_specific_island_determined']
+          assert not d['inferred_wild_vs_cultivated_individual_status']
+          assert not d['H3_native_island_adaptation_tested']
+          assert sum(d['photo_regional_taxon_annotation_counts'].values())==350399
+          print('MOIS_WCVP_TDWG3_REAL350399_REGIONAL_SOURCE_STATUS_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real350399-WCVP-TDWG3-original-photo-regional-status
+          path: results_real350399_tdwg3/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Version and publish checked source-photo-region evidence
+        run: |
+          set -euo pipefail
+          tag=mois-real350399-wcvp-tdwg3-photo-regional-status-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            gh release download "$tag" --repo zuizui0223/mois \
+              --pattern mois350399_TDWG3_WCVP_geography_source_receipt.json --dir existing
+            cmp existing/mois350399_TDWG3_WCVP_geography_source_receipt.json \
+              results_real350399_tdwg3/mois350399_TDWG3_WCVP_geography_source_receipt.json
+            echo 'Identical original-photo TDWG3 regional source already preserved.'
+          else
+            gh release create "$tag" results_real350399_tdwg3/* \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS 350399 actual photo WCVP native introduced range at TDWG level3' \
+              --notes '35e4 original photo ROI IDs unchanged, Kew accepted taxon ID and official TDWG3 polygon membership verified with immutable SHA. Native is regional species-range annotation; neither island-level provenance nor photographed wild/cultivated individual status is inferred. Unassigned/coast/missing taxon/absent area retained; technical hue unknowns remain missing. Attribution TDWG WGSRPD and Kew WCVP. Island-specific H3 not tested.'
+          fi
