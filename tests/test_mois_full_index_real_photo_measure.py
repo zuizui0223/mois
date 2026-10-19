@@ -74,6 +74,39 @@ class TestFullSourceRealRGB(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"corrupted"):
             m.measure_group(self.plan,0,self.root/"runtime",self.root/"sam",
                             folder,runner=self.fake_runner)
+    def test_non_frozen_image_extensions_become_permanent_technical_unknown(self):
+        called=[]
+        class FakePermanentOriginalPhotoError(ValueError):
+            pass
+        def original_loader(url):
+            called.append(url)
+            return b"authentic-photo-bytes"
+        for ext in ("gif","webp","unsupported","avif","heic",""):
+            url=f"https://inaturalist-open-data.s3.amazonaws.com/photos/1234/large.{ext}"
+            self.assertFalse(m.original_source_loader_supported(url))
+            with self.assertRaisesRegex(FakePermanentOriginalPhotoError,
+                                        "technical unknown"):
+                m.original_source_image_loader(url, original_loader,
+                                               FakePermanentOriginalPhotoError)
+        self.assertEqual(called,[])
+        for ext in ("jpg","jpeg","png","JPG"):
+            url=f"https://inaturalist-open-data.s3.amazonaws.com/photos/1234/large.{ext}"
+            self.assertTrue(m.original_source_loader_supported(url))
+            self.assertEqual(m.original_source_image_loader(
+                url,original_loader,FakePermanentOriginalPhotoError),
+                b"authentic-photo-bytes")
+        self.assertEqual(len(called),4)
+
+    def test_source_original_URL_cannot_escape_pinned_provider(self):
+        for url in (
+            "https://evil.example/photos/1234/large.jpg",
+            "http://inaturalist-open-data.s3.amazonaws.com/photos/1234/large.jpg",
+            "https://inaturalist-open-data.s3.amazonaws.com/photos/1234/large.jpg?redirect=x",
+            "https://inaturalist-open-data.s3.amazonaws.com/photos/1234/large.jpg#fragment",
+            "https://inaturalist-open-data.s3.amazonaws.com/photos/1234/../../../large.jpg"
+        ):
+            self.assertFalse(m.original_source_loader_supported(url))
+
     def test_precolour_source_id_drift_rejected(self):
         filename=self.plan/"shards"/"shard-000.csv"
         filename.write_text(filename.read_text()+"unlicensed,photo\n")
