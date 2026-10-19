@@ -247,6 +247,17 @@ def run(core, broad, wave2, cached8192, tail16384, output):
         "raw_new_minus_core_white_pp": report["source"]["raw_new_minus_core_white_percentage_points"],
         "shared_source_named_taxa": report["source"]["overlapping_classifiable_named_taxon_ids"],
         "shared_nominal_genera": report["source"]["overlapping_classifiable_nominal_genera"],
+        "classified_photo_ROIs_by_arm": report["source"]["source_arm_classifiable_photo_ROIs"],
+        "raw_core_white_fraction": report["source"]["raw_core_white_fraction"],
+        "raw_new_white_fraction": report["source"]["raw_new_white_fraction"],
+        "geography_only": [
+            {"tile": r["tile_degrees"], "min_taxa": r["minimum_distinct_named_taxa_per_arm_per_cell"],
+             "matched_strata": r["matched_strata"],
+             "matched_stratum_equal_white_difference_pp": r["matched_stratum_equal_white_difference_pp"],
+             "core_coverage": r["retained_taxon_cell_share_by_arm"]["core"],
+             "new_coverage": r["retained_taxon_cell_share_by_arm"]["new_species_first"]}
+            for r in report["matched_geography_only"]
+        ],
         "geogenus": [
             {"tile": r["tile_degrees"], "min_taxa": r["minimum_distinct_named_taxa_per_arm_per_cell"],
              "matched_strata": r["matched_strata"],
