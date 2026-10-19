@@ -97,7 +97,7 @@ def source(photo_parquet,photo_receipt,wcvp_distribution,wcvp_receipt):
     return data,accepted,photo_rec,ranges_rec
 
 
-def photo_status_table(full):
+def photo_status_table(full, *, expected_photos=FULL, expected_classified=KNOWN):
     rows=[]
     for category, frame in full.groupby("taxon_TDWG3_range_annotation",
                                         observed=True,dropna=False,sort=True):
@@ -118,8 +118,8 @@ def photo_status_table(full):
         row.update({h+"_photographic_ROI":int(classified.morph.eq(h).sum()) for h in HUES})
         rows.append(row)
     result=pd.DataFrame(rows)
-    require(int(result.original_source_photo_attempts.sum())==FULL
-            and int(result.classifiable_photo_ROIs.sum())==KNOWN,
+    require(int(result.original_source_photo_attempts.sum())==expected_photos
+            and int(result.classifiable_photo_ROIs.sum())==expected_classified,
             "Photo WCVP region status partition must retain full original image denominator")
     return result
 
