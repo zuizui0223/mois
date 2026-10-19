@@ -7,6 +7,12 @@ on:
       - tests/test_mois_full_index_observation_queue.py
       - tests/test_mois_full_index_real_photo_measure.py
       - .github/workflows/mois-full-index-incremental-RGB.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_full_index_observation_queue.py
+      - scripts/acquisition/mois_full_index_real_original_photo_measure.py
+      - .github/workflows/mois-full-index-incremental-RGB.yml
   workflow_run:
     workflows:
       - "MOIS full 93m original photo-ID index from frozen Open Data"
@@ -44,6 +50,7 @@ jobs:
     if: >-
       github.event_name != 'pull_request' &&
       (github.event_name == 'workflow_dispatch' ||
+       github.event_name == 'push' ||
        (github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
         github.event.workflow_run.head_branch == 'main'))
@@ -135,6 +142,10 @@ jobs:
           assert d['full_frame_photo_ids']==93209351
           assert d['selection_probability']==0.0002
           assert d['new_photo_attempts_planned']>0
+          assert (d['new_photo_attempts_planned']+
+                  d['previously_measured_photo_ids_skipped']+
+                  d['selected_new_photos_unsupported_by_frozen_loader']==
+                  d['sampled_photo_ids_before_prior_dedup'])
           assert d['all_unselected_source_photos_eligible_at_higher_probability']
           with open(os.environ['GITHUB_OUTPUT'],'a') as o:
             o.write('groups='+json.dumps(d['group_ids'])+'\n')
