@@ -58,6 +58,50 @@ class TestFullSourceQueue(unittest.TestCase):
         self.assertEqual(sum(r["observation_id"]=="OBS-A" for r in data),2)
         self.assertTrue(all(r["selection_probability"]=="1.0" for r in data))
         self.assertFalse(doc["colour_measured"])
+    def test_unfamiliar_source_extensions_are_retained_in_precolour_photo_queue(self):
+        # Original 93m has heterogeneous image_extension metadata. Previously
+        # an unsupported selected photo aborted the entire source-frame draw.
+        updates={"101":"WEBP","102":"GIF","104":"JPG"}
+        for i in range(2):
+            filename=self.root/"index"/"photos"/f"part-{i:03d}.csv.gz"
+            with gzip.open(filename,"rt",newline="") as stream:
+                reader=csv.DictReader(stream)
+                header=reader.fieldnames
+                rows=list(reader)
+            for row in rows:
+                row["image_extension"]=updates.get(row["photo_id"],row["image_extension"])
+            with gzip.open(filename,"wt",newline="") as stream:
+                writer=csv.DictWriter(stream,fieldnames=header)
+                writer.writeheader();writer.writerows(rows)
+            manifest_file=self.root/"index"/"manifest.json"
+            manifest=json.loads(manifest_file.read_text())
+            manifest["shards"][i]["photos_sha256"]=q.sha(filename)
+            manifest_file.write_text(json.dumps(manifest))
+        receipt=self.run_queue(1.0,"nonjpeg")
+        self.assertEqual(receipt["new_photo_attempts_planned"],3)
+        self.assertTrue(receipt["all_selected_unsupported_extension_original_photo_IDs_retained"])
+        self.assertEqual(receipt["selected_original_image_format_status"],
+                         {"frozen_original_roi_supported":1,
+                          "outside_frozen_original_roi_loader":2})
+        with (self.root/"nonjpeg"/"shards"/"shard-000.csv").open(newline="") as stream:
+            rows={r["photo_id"]:r for r in csv.DictReader(stream)}
+        self.assertEqual(set(rows),{"101","102","104"})
+        self.assertEqual(rows["101"]["source_image_extension_original"],"WEBP")
+        self.assertEqual(rows["101"]["source_image_extension_status"],
+                         "outside_frozen_original_roi_loader")
+        self.assertTrue(rows["101"]["photo_url_large"].endswith("/large.webp"))
+        self.assertTrue(rows["104"]["photo_url_large"].endswith("/large.jpg"))
+
+    def test_malformed_extension_has_safe_deterministic_nonfetchable_url(self):
+        ext, status=q.extension_for_frozen_original_loader(
+            "jpg?redirect=https://evil.example/test")
+        self.assertEqual(ext,"unsupported")
+        self.assertEqual(status,"malformed_or_blank_original_extension")
+        self.assertEqual(q.extension_for_frozen_original_loader("  .JPEG "),
+                         ("jpeg","frozen_original_roi_supported"))
+        self.assertEqual(q.extension_for_frozen_original_loader(""),
+                         ("unsupported","malformed_or_blank_original_extension"))
+
     def test_nested_probability_milestones_do_not_drop_prior_included_observations(self):
         ids=["OBS-A","OBS-B","OBS-C","OBS-D","OBS-E"]
         low={x for x in ids if q.obs_draw(x)<0.1}
