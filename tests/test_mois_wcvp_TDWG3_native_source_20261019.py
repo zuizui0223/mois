@@ -194,7 +194,7 @@ def test_unknown_official_name_field_fails_explicitly(tmp_path):
             "kew_id,taxon_name,rank,taxonomic_status\n101,Poa annua,Species,Accepted\n")
     import pytest
     with zipfile.ZipFile(path) as z,pytest.raises(
-        ValueError,match="Missing canonical WCVP field accepted_plant_name_id"):
+        ValueError,match="Unable to uniquely recognise official WCVP CSV delimiter"):
         collect_wcvp_names(z,{"Poa annua"},min_source_rows=1)
 
 
