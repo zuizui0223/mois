@@ -1,0 +1,173 @@
+name: MOIS real350399 WorldClim all19 incremental 32768 original photo sites
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_real350399_incremental_all19_climate_20261019.py
+      - tests/test_mois_real350399_incremental_all19_climate_20261019.py
+      - .github/workflows/mois-real350399-incremental-climate.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/analysis/mois_real350399_incremental_all19_climate_20261019.py
+      - .github/workflows/mois-real350399-incremental-climate.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-real350399-original-worldclim-only-new32768-v1
+  cancel-in-progress: false
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify actual-pixel environment append and solar units contracts
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 rasterio==1.4.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_real350399_incremental_all19_climate_20261019.py
+          python -m py_compile scripts/analysis/mois_real350399_incremental_all19_climate_20261019.py
+  real-new-site-worldclim:
+    needs: contracts
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install verified original WorldClim raster and Parquet runtime
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 rasterio==1.4.3 pyarrow==19.0.1
+      - name: Restore signed 317631 environment AND exactly five independently measured RGB photo sources
+        run: |
+          set -euo pipefail
+          gh release download mois-primary-real317631-next4096-incremental-all19-featurelake-v3 \
+            --repo zuizui0223/mois --dir actual/core \
+            --pattern primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --pattern primary317631_all19_BIO_vapr_solar_terrain.parquet \
+            --pattern mois_317631_new4096_incremental_climate_feature_lake_receipt.json
+          gh release download mois-broad-world-angiosperm-newtaxa4096-real-RGB-ROI-v1 \
+            --repo zuizui0223/mois --dir actual/broad \
+            --pattern primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --pattern mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json
+          gh release download mois-broad-wave2-4096-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/wave2 \
+            --pattern wave2_measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-next8192-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/cached8192 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-tail16384-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/tail16384 \
+            --pattern measured_photos.parquet --pattern receipt.json
+      - name: Refuse source mismatch before any remote raster requests
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          def sha(f):
+              h=hashlib.sha256()
+              with Path(f).open('rb') as v:
+                  for b in iter(lambda:v.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          c=Path('actual/core')
+          r=json.loads((c/'mois_317631_new4096_incremental_climate_feature_lake_receipt.json').read_text())
+          for f in ('primary317631_actual_photo_hue_RGB_attempts.parquet',
+                    'primary317631_all19_BIO_vapr_solar_terrain.parquet'):
+              assert sha(c/f)==r['photo_ID_aligned_Zstd_files_sha256'][f],f
+          assert r['all_original_photo_attempts']==317631
+          b=Path('actual/broad')
+          r=json.loads((b/'mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json').read_text())
+          f='primary313535_plus_broad4096_genuine_original_hue_photos.parquet'
+          assert r['expanded_actual_original_photo_attempts']==317631 and sha(b/f)==r['new_combined_photo_parquet_SHA256']
+          for arm,f,n in (('wave2','wave2_measured_photos.parquet',4096),('cached8192','measured_photos.parquet',8192),('tail16384','measured_photos.parquet',16384)):
+              p=Path('actual')/arm
+              r=json.loads((p/'receipt.json').read_text())
+              assert r['attempted']==n and sha(p/f)==r['photo_data_sha256']
+          print('MOIS_ORIGINAL350399_REAL_RGB_AND317631_CLIMATE_SHAS_VERIFIED')
+          PY
+      - name: Download original SHA-pinned WorldClim BIO19 monthly VAPR and SRAD plus 2.5m DEM
+        timeout-minutes: 40
+        run: |
+          set -euo pipefail
+          mkdir -p worldclim/{bio,srad,vapr,elev}
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_bio.zip \
+            -o worldclim/bio/wc2.1_10m_bio.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_srad.zip \
+            -o worldclim/srad/wc2.1_10m_srad.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_vapr.zip \
+            -o worldclim/vapr/wc2.1_10m_vapr.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_2.5m_elev.zip \
+            -o worldclim/elev/wc2.1_2.5m_elev.zip
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          def sha(f):
+              h=hashlib.sha256()
+              with Path(f).open('rb') as v:
+                  for b in iter(lambda:v.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          r=json.loads(Path('actual/core/mois_317631_new4096_incremental_climate_feature_lake_receipt.json').read_text())
+          for k,f in (('bio','wc2.1_10m_bio.zip'),('srad','wc2.1_10m_srad.zip'),('vapr','wc2.1_10m_vapr.zip'),('elev','wc2.1_2.5m_elev.zip')):
+              p=Path('worldclim')/k/f
+              assert sha(p)==r['source_original_raster_sha256'][k],k
+          print('ALL_4_WORLDCLIM_SOURCE_ARCHIVES_PREEXISTING_SHA_VERIFIED')
+          PY
+          for k in bio srad vapr elev; do unzip -q "worldclim/$k/"*.zip -d "worldclim/$k"; done
+      - name: Sample 32768 NEW original photo locations; append immutable 317631 WorldClim values
+        timeout-minutes: 35
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real350399_incremental_all19_climate_20261019 \
+            --core actual/core/primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --broad actual/broad/primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --wave2 actual/wave2/wave2_measured_photos.parquet \
+            --cached8192 actual/cached8192/measured_photos.parquet \
+            --tail16384 actual/tail16384/measured_photos.parquet \
+            --old-env actual/core/primary317631_all19_BIO_vapr_solar_terrain.parquet \
+            --old-receipt actual/core/mois_317631_new4096_incremental_climate_feature_lake_receipt.json \
+            --raster worldclim --output annual350399
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          f=Path('annual350399/mois350399_immutable_annual_climate_source_receipt.json')
+          r=json.loads(f.read_text())
+          assert r['source_photo_attempts']==350399 and r['previous_unchanged_photo_climate']==317631
+          assert r['new_only_original_image_photo_sites_sampled']==32768
+          assert r['original_317631_climate_data_immutable'] and not r['original_photo_pixels_reprocessed']
+          print('MOIS_ORIGINAL350399_ANNUAL_WORLDCLIM_COMPLETED_AND_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real350399-all19-original-photo-annual-climate-incremental-32768
+          path: annual350399/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish durable original photo-ID-keyed 350399 annual environmental feature lake
+        run: |
+          set -euo pipefail
+          tag=mois-real350399-original-photo-all19-incremental-climate-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo 'Already published signed original-photo WorldClim result; refuse overwrite'
+          else
+            gh release create "$tag" annual350399/* --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS 350399 original RGB photo IDs matched to all19 1970-2000 WorldClim and DEM' \
+              --notes 'Only the 32768 species-first new original image photo sites point-sampled from exactly SHA-verified historical WorldClim BIO19, monthly VAPR and solar converted to Wm2, and 2.5m DEM. Original 317631 photo climate rows identical. Technical hue failures and missing locations retained. Soil missing is NOT imputed; long-term climate normals are not real photo-month weather or verified flowering. Analysis includes source-arm-conditional descriptive rain×solar tertile table. No unmeasured 93m photo IDs given colours.'
+          fi
