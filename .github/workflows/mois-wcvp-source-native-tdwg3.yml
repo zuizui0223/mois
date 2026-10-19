@@ -1,0 +1,159 @@
+name: MOIS source Kew WCVP exact taxa and TDWG3 native introduction (NOT point native)
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_wcvp_TDWG3_native_source_20261019.py
+      - tests/test_mois_wcvp_TDWG3_native_source_20261019.py
+      - .github/workflows/mois-wcvp-source-native-tdwg3.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_wcvp_TDWG3_native_source_20261019.py
+      - .github/workflows/mois-wcvp-source-native-tdwg3.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-official-wcvp-native-tdwg3-actual-photo-name-only-v1
+  cancel-in-progress: false
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_wcvp_TDWG3_native_source_20261019.py
+          python -m py_compile scripts/acquisition/mois_wcvp_TDWG3_native_source_20261019.py
+  Kew-WCVP-original-taxonomy-and-native-distribution:
+    needs: contracts
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      WCVP_ORIGINAL_URL: https://sftp.kew.org/pub/data-repositories/WCVP/wcvp.zip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+      - name: Download five separately authenticated original measured MOIS ROI source photo files
+        run: |
+          set -euo pipefail
+          gh release download mois-primary-real317631-next4096-incremental-all19-featurelake-v3 \
+            --repo zuizui0223/mois --dir actual/core \
+            --pattern primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --pattern mois_317631_new4096_incremental_climate_feature_lake_receipt.json
+          gh release download mois-broad-world-angiosperm-newtaxa4096-real-RGB-ROI-v1 \
+            --repo zuizui0223/mois --dir actual/broad \
+            --pattern primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --pattern mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json
+          gh release download mois-broad-wave2-4096-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/wave2 \
+            --pattern wave2_measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-next8192-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/cached8192 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-tail16384-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/tail16384 \
+            --pattern measured_photos.parquet --pattern receipt.json
+      - name: Refuse any source RGB original photo mismatch before requesting Kew data
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          def sha(f):
+              h=hashlib.sha256()
+              with Path(f).open('rb') as p:
+                  for b in iter(lambda:p.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          c=Path('actual/core')
+          r=json.loads((c/'mois_317631_new4096_incremental_climate_feature_lake_receipt.json').read_text())
+          f='primary317631_actual_photo_hue_RGB_attempts.parquet'
+          assert r['all_original_photo_attempts']==317631
+          assert sha(c/f)==r['photo_ID_aligned_Zstd_files_sha256'][f]
+          b=Path('actual/broad')
+          r=json.loads((b/'mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json').read_text())
+          f='primary313535_plus_broad4096_genuine_original_hue_photos.parquet'
+          assert r['expanded_actual_original_photo_attempts']==317631
+          assert sha(b/f)==r['new_combined_photo_parquet_SHA256']
+          for arm,f,n in (('wave2','wave2_measured_photos.parquet',4096),('cached8192','measured_photos.parquet',8192),('tail16384','measured_photos.parquet',16384)):
+              p=Path('actual')/arm
+              r=json.loads((p/'receipt.json').read_text())
+              assert r['attempted']==n and sha(p/f)==r['photo_data_sha256']
+          print('MOIS_350399_ORIGINAL_REAL_RGB_SOURCE_VERIFIED_BEFORE_KEW_WCVP')
+          PY
+      - name: Retrieve original Kew authoritative WCVP names and TDWG3 regions (external public source)
+        run: |
+          set -euo pipefail
+          mkdir -p wcvp
+          curl --fail --location --silent --show-error --retry 3 --retry-delay 4 \
+            --connect-timeout 30 --max-time 900 \
+            --dump-header wcvp/download_headers.txt \
+            "$WCVP_ORIGINAL_URL" -o wcvp/wcvp.zip
+          test "$(stat -c %s wcvp/wcvp.zip)" -gt 20000000
+          unzip -t -q wcvp/wcvp.zip
+          sha256sum wcvp/wcvp.zip
+          python - <<'PY'
+          import zipfile
+          z=zipfile.ZipFile('wcvp/wcvp.zip')
+          names=z.namelist()
+          print('WCVP_ORIGINAL_ARCHIVE_MEMBERS',repr(names[:30]))
+          assert any(n.lower().endswith('wcvp_names.csv') for n in names)
+          assert any(n.lower().endswith(('wcvp_distribution.csv','wcvp_distributions.csv')) for n in names)
+          PY
+      - name: Exact WCVP species names and accepted-ID TDWG3 native and introduced source only
+        timeout-minutes: 35
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_wcvp_TDWG3_native_source_20261019 \
+            --core actual/core/primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --broad actual/broad/primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --wave2 actual/wave2/wave2_measured_photos.parquet \
+            --cached8192 actual/cached8192/measured_photos.parquet \
+            --tail16384 actual/tail16384/measured_photos.parquet \
+            --wcvp wcvp/wcvp.zip --output wcvp_derived
+          python - <<'PY'
+          import json
+          r=json.load(open('wcvp_derived/mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json'))
+          assert r['source_photo_attempts']==350399 and r['source_four_hue_classified']==164297
+          assert r['wcvp_name_source_rows_scanned']>10000 and r['wcvp_distribution_source_rows_scanned']>10000
+          assert not r['island_native_status_inferred']
+          assert not r['photo_coordinate_overlaid_TDWG3_polygons']
+          assert not r['H3_native_island_hypothesis_tested']
+          print('MOIS_WCVP_REAL350399_TDWG3_NATIVE_SOURCE_ONLY_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status
+          path: wcvp_derived/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Release filtered accepted taxa native TDWG3 evidence not full redistributed archive
+        run: |
+          set -euo pipefail
+          tag=mois-real350399-kew-wcvp-native-tdwg3-source-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            gh release download "$tag" --repo zuizui0223/mois \
+              --pattern mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json \
+              --dir previously
+            cmp previously/mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json \
+                wcvp_derived/mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json
+            echo 'Existing exact WCVP source digest unchanged; do not replace.'
+          else
+            gh release create "$tag" wcvp_derived/* --repo zuizui0223/mois \
+              --target "$GITHUB_SHA" \
+              --title 'MOIS 350399 real-photo source taxa: Kew WCVP accepted taxa and native TDWG3 metadata' \
+              --notes 'Independent Kew original WCVP latest archive downloaded with SHA256 evidence. Exact taxon-name/accepted species synonym matching; TDWG Level 3 native/introduced/doubtful states only. Does not assert particular island or source-photo point is native; unaccepted/ambiguous names are unknown. No colour labels, photopixel bytes or Kew complete archive redistributed. Source: https://sftp.kew.org/pub/data-repositories/WCVP/wcvp.zip ; cite Kew WCVP version/terms.'
+          fi
