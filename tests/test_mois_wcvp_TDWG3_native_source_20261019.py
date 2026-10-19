@@ -97,7 +97,7 @@ def test_wcvp_exact_accepted_synonyms_and_ambiguous_protected(tmp_path):
         assert candidates["Poa annua"]=={"101"}
         assert candidates["Poa minor"]=={"101"}
         assert candidates["Poa dubia"]=={"101","104"}
-        matched,selected=resolve_photo_taxa(taxa,candidates,states)
+        matched,selected=resolve_photo_taxa(taxa,candidates,states,expected_photos=5)
         assert selected=={"101"}
         assert list(matched.wcvp_match_state)==[
             "unique_exact_name_to_accepted_id",
