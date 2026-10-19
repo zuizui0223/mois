@@ -62,7 +62,7 @@ jobs:
             --pattern fcp_all4730_actual_colour_results_receipt.json
           echo '99f7ee68c3fd009e8ab60fd0cfcdf1fb407e3a8de07edd38341b27889310bc25  original_FCP/fcp_all4730_original_method_actual_measured_data_and_inference.tar.gz' | sha256sum -c -
           echo 'b0b152fcfaa1e0015a6e5524192265bb95c1663c10b5da3a4e885cb7be49747c  original_FCP/fcp_all4730_actual_colour_results_receipt.json' | sha256sum -c -
-          tar -tzf original_FCP/fcp_all4730_original_method_actual_measured_data_and_inference.tar.gz | head -n 28
+          tar -tzf original_FCP/fcp_all4730_original_method_actual_measured_data_and_inference.tar.gz | sed -n '1,28p'
           tar -xzf original_FCP/fcp_all4730_original_method_actual_measured_data_and_inference.tar.gz -C original_FCP
           test -s original_FCP/measured/fcp_all4730_original_method_measured_photos.csv.gz
           test -s original_FCP/measured/fcp_all4730_original_photo_combine_receipt.json
