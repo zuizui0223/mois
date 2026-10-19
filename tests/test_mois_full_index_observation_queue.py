@@ -129,4 +129,40 @@ class TestFullSourceQueue(unittest.TestCase):
         self.assertIsNone(q.frozen_original_extension(""))
         self.assertIsNone(q.frozen_original_extension("../large.jpg?format=PNG"))
 
+
+    def test_second_p0004_source_draw_adds_only_new_observations_not_first_pixels(self):
+        # Frozen observation draw is nested: A in both p0002/p0004;
+        # B enters only p0004; C in neither. Previous original photo IDs
+        # must not be acquired again even when their observation is selected.
+        chance={"OBS-A":0.0001,"OBS-B":0.0003,"OBS-C":0.9}
+        with patch.object(q,"N_PHOTOS",4),patch.object(q,"N_TAXA",2), \
+             patch.object(q,"N_SHARDS",2), \
+             patch.object(q,"obs_draw",side_effect=lambda uuid:chance[uuid]):
+            first=q.prepare(self.root/"index",self.count,
+                [self.prior],self.root/"first_p0002",p=0.0002,batch_size=3)
+            self.assertEqual(first["new_photo_attempts_planned"],2)
+            first_roster=[]
+            for source_path in (self.root/"first_p0002"/"shards").glob("*.csv"):
+                with source_path.open(newline="") as stream:
+                    first_roster.extend(csv.DictReader(stream))
+            self.assertEqual({r["photo_id"] for r in first_roster},{"101","102"})
+            # Existing original sampled observations are already genuine
+            # measurements; include one additional historical photo 104.
+            previous=self.root/"all_finished_prior.csv"
+            previous.write_text("photo_id\n101\n102\n104\n")
+            second=q.prepare(self.root/"index",self.count,
+                [previous],self.root/"second_p0004",p=0.0004,batch_size=3)
+        self.assertEqual(second["sampled_photo_ids_before_prior_dedup"],3)
+        self.assertEqual(second["previously_measured_photo_ids_skipped"],2)
+        self.assertEqual(second["new_photo_attempts_planned"],1)
+        self.assertEqual(second["selected_new_photos_unsupported_by_frozen_loader"],0)
+        with (self.root/"second_p0004"/"shards"/"shard-000.csv").open(newline="") as stream:
+            selected=list(csv.DictReader(stream))
+        self.assertEqual([r["photo_id"] for r in selected],["103"])
+        self.assertEqual(selected[0]["observation_id"],"OBS-B")
+        self.assertEqual(selected[0]["selection_probability"],"0.0004")
+        self.assertFalse(second["colour_measured"])
+        self.assertFalse(second["ecological_analysis_run"])
+        self.assertTrue(second["all_unselected_source_photos_eligible_at_higher_probability"])
+
 if __name__=="__main__":unittest.main()
