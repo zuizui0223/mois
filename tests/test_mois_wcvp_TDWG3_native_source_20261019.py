@@ -13,7 +13,7 @@ from scripts.acquisition.mois_wcvp_TDWG3_native_source_20261019 import (
 )
 
 
-def tiny_archive(tmp_path):
+def tiny_archive(tmp_path, *, delimiter=","):
     path=tmp_path/"wcvp.zip"
     fields_names=("plant_name_id","taxon_name","taxon_rank",
                   "taxon_status","accepted_plant_name_id")
@@ -52,7 +52,7 @@ def tiny_archive(tmp_path):
     from io import StringIO
     def build(rows,fields):
         s=StringIO()
-        w=csv.DictWriter(s,fieldnames=fields,lineterminator="\n")
+        w=csv.DictWriter(s,fieldnames=fields,delimiter=delimiter,lineterminator="\n")
         w.writeheader()
         w.writerows(rows)
         return s.getvalue()
@@ -194,5 +194,29 @@ def test_unknown_official_name_field_fails_explicitly(tmp_path):
             "kew_id,taxon_name,rank,taxonomic_status\n101,Poa annua,Species,Accepted\n")
     import pytest
     with zipfile.ZipFile(path) as z,pytest.raises(
-        ValueError,match="Missing canonical WCVP field accepted_plant_name_id"):
+        ValueError,match="Unable to uniquely recognise official WCVP CSV delimiter"):
         collect_wcvp_names(z,{"Poa annua"},min_source_rows=1)
+
+
+def test_official_2026_pipe_delimited_wcvp_names_and_distributions(tmp_path):
+    """True June 2026 Kew names header is one pipe-separated CSV row.
+
+    Detection is based on every required species and native identity field,
+    not by counting commas in an arbitrarily complex botanical description.
+    """
+    zpath=tiny_archive(tmp_path,delimiter="|")
+    with zipfile.ZipFile(zpath) as z:
+        candidates,states,n,member=collect_wcvp_names(
+            z,{"Poa annua","Poa minor","Poa dubia"},min_source_rows=2)
+        assert n==6
+        assert candidates["Poa annua"]=={"101"}
+        assert candidates["Poa minor"]=={"101"}
+        accepted=accepted_name_metadata(z,{"101"})
+        assert accepted=={"101":"Poa annua"}
+        ranges,total,matching,member=native_distribution_TDWG3(
+            z,set(accepted),accepted,min_source_rows=2)
+    assert total==7 and matching==6
+    assert ranges.loc[ranges.tdwg_level3_code.eq("JAP"),
+                      "native_introduced_state"].iloc[0]=="native_at_TDWG3"
+    assert ranges.native_at_original_photo_lat_lon.eq(
+        "not_evaluated_no_TDWG3_polygon").all()

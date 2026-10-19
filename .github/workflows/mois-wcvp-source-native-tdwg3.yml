@@ -104,7 +104,7 @@ jobs:
             "$WCVP_ORIGINAL_URL" -o wcvp/wcvp.zip
           test "$(stat -c %s wcvp/wcvp.zip)" -gt 20000000
           unzip -t -q wcvp/wcvp.zip
-          sha256sum wcvp/wcvp.zip
+          echo 'd32ea2b3a85e489b14e83bcc9eae7274532e1d113753f7be290d4b2dfde573fa  wcvp/wcvp.zip' | sha256sum -c -
           python - <<'PY'
           import zipfile
           z=zipfile.ZipFile('wcvp/wcvp.zip')
