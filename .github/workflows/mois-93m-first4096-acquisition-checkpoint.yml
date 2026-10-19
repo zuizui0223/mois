@@ -1,0 +1,102 @@
+name: MOIS preserve completed first4096 actual RGB pixels from full93m source
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_archive_first93m_complete_original_photo_groups.py
+      - tests/test_mois_archive_first93m_complete_original_photo_groups.py
+      - .github/workflows/mois-93m-first4096-acquisition-checkpoint.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_archive_first93m_complete_original_photo_groups.py
+      - .github/workflows/mois-93m-first4096-acquisition-checkpoint.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-93m-first4096-source-original-ROI-partial-release-v1
+  cancel-in-progress: false
+jobs:
+  source-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check original sampled photo IDs, terminal SHAs and unknown hue classes
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_archive_first93m_complete_original_photo_groups.py
+          python -m py_compile scripts/acquisition/mois_archive_first93m_complete_original_photo_groups.py
+  publish-first-four-finished-groups:
+    needs: source-contracts
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+      - name: Reuse ONLY completed first four actual original-ROI units from source run 39232152549
+        run: |
+          set -euo pipefail
+          gh run download 39232152549 --repo zuizui0223/mois \
+            --name mois-93m-precolour-observation-baseline --dir original
+          for g in 0 1 2 3; do
+            printf -v padded '%02d' "$g"
+            gh run download 39232152549 --repo zuizui0223/mois \
+              --name "mois-93m-RGB-group-$g" --dir "workers/group$padded"
+          done
+          test -f original/manifest.json
+          test "$(find workers -type f -path '*/shard_*/receipt.json' | wc -l)" -eq 16
+          test "$(find original/shards -type f -name 'shard-*.csv' | wc -l)" -eq 73
+      - name: Assert original signed 93m precolour source and true pixel ROI terminal for 4096 photos
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_archive_first93m_complete_original_photo_groups \
+            --source original --groups workers --output first4096
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('first4096/mois93m_first4096_photo_acquisition_checkpoint_receipt.json').read_text())
+          assert r['schema']=='mois_full93m_first4096_true_RGB_partial_checkpoint_v1'
+          assert r['genuine_original_photo_attempts_in_partial']==4096
+          assert r['complete_roi_work_units_in_this_partial']==16
+          assert r['photo_IDs_unique']
+          assert sum(r['hue_counts_classified'].values())==r['classified_four_hues']
+          assert r['classified_four_hues']+r['technical_unknown_after_download']+r['verified_original_photo_acquisition_failures']==4096
+          assert r['completion_of_remaining_14366_new_photos_NOT_claimed']
+          assert not r['H3_native_island_or_any_abiotic_ecological_model_performed']
+          print('MOIS_REAL93M_FIRST4096_ORIGINAL_PIXEL_SOURCE_CHECKPOINT_SHA_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-93m-first4096-real-RGB-photo-source-permanent-checkpoint
+          path: first4096/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish permanent original-photo pixel-only partial Release
+        run: |
+          set -euo pipefail
+          tag=mois-full93m-first4096-completed-original-RGB-p0002-source-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            gh release download "$tag" --repo zuizui0223/mois \
+              --pattern mois93m_first4096_photo_acquisition_checkpoint_receipt.json --dir existing
+            cmp existing/mois93m_first4096_photo_acquisition_checkpoint_receipt.json \
+                first4096/mois93m_first4096_photo_acquisition_checkpoint_receipt.json
+            echo 'Exactly the same first real4096 frozen ROI photo source already permanently released.'
+          else
+            gh release create "$tag" first4096/* --repo zuizui0223/mois \
+              --target "$GITHUB_SHA" \
+              --title 'MOIS: first 4096 source-SHA-verified actual RGB photos from 93m source' \
+              --notes 'Permanent checkpoint of the FIRST 4 OF 19 completed actual image/YOLO11+EfficientSAM ROI workers from 93,209,351 original ID frame (full p=.0002 draw selected 18,462 new photo images). This release contains only 4096 truly attempted original image pixels and classified/unknown/failed outcomes. No image files redistributed, no remaining photo workers assumed completed, no WCVP/native/ecological analysis, no flower petal botanical claim. Individual source photo ID, observation and terminal original ROI/source hashes verified. The complete 18,462-image acquisition continues in original workflow run 39232152549.'
+          fi
