@@ -69,19 +69,32 @@ _OFFICIAL_DISTRIBUTION_ALIASES={
 }
 
 def wcvp_reader(z, member):
-    """Normalize official Kew raw CSV columns OR rWCVP harmonized columns.
+    """Read original Kew PIPE-delimited CSV or comma R-package CSV safely.
 
-    If Kew adds/removes native/accepted identity fields, REFUSE silently
-    misjoining a distribution. Actual source header is logged for audit.
+    The actual June 2026 WCVP wcvp.zip uses `|` between columns; older
+    derived rWCVP fixtures can use commas. Recognise a delimiter only if
+    every REQUIRED canonical identity/native field is unambiguously present
+    in its parsed header. Never guess the first available delimiter.
     """
+    import itertools
     with z.open(member) as raw:
-        reader=csv.DictReader(io.TextIOWrapper(
-            raw,encoding="utf-8-sig",errors="strict",newline=""))
-        require(reader.fieldnames is not None,"WCVP header is absent")
-        original=tuple(reader.fieldnames)
+        stream=io.TextIOWrapper(raw,encoding="utf-8-sig",
+                                errors="strict",newline="")
+        first_line=stream.readline()
+        require(first_line.strip(),"Original Kew WCVP header is empty")
         names=Path(member).name.lower()=="wcvp_names.csv"
         candidates=(_OFFICIAL_NAMES_ALIASES if names
                     else _OFFICIAL_DISTRIBUTION_ALIASES)
+        valid=[]
+        for separator in (",","|","\t"):
+            parts=next(csv.reader([first_line],delimiter=separator))
+            if all(any(alias in parts for alias in options)
+                   for options in candidates.values()):
+                valid.append((separator,tuple(parts)))
+        require(len(valid)==1,
+                "Unable to uniquely recognise official WCVP CSV delimiter: "+
+                repr(first_line[:600]))
+        delimiter,original=valid[0]
         mapping={}
         for canonical,options in candidates.items():
             available=[name for name in options if name in original]
@@ -91,10 +104,14 @@ def wcvp_reader(z, member):
             mapping[canonical]=available[0]
         print("MOIS_WCVP_OFFICIAL_SCHEMA",json.dumps({
             "member":member,
+            "original_csv_delimiter":"PIPE" if delimiter=="|" else
+                "COMMA" if delimiter=="," else "TAB",
             "source_columns":list(original),
             "canonical_columns_used":mapping,
-            "native_assigned_to_photo_point":False,
+            "native_assigned_to_photo_point":False
         },sort_keys=True),flush=True)
+        reader=csv.DictReader(itertools.chain((first_line,),stream),
+                              delimiter=delimiter)
         for row in reader:
             yield {**row,**{target:row[source]
                             for target,source in mapping.items()}}
