@@ -1,0 +1,42 @@
+name: MOIS five-hypothesis future photo holdout protocol and leakage contracts
+on:
+  pull_request:
+    paths:
+      - analysis_specs/mois_five_global_photo_hypotheses_future_holdout_v1.json
+      - docs/MOIS_FIVE_HYPOTHESES_FUTURE_HOLDOUT_PROTOCOL_20261019.md
+      - scripts/analysis/mois_five_hypotheses_protocol_gate.py
+      - tests/test_mois_five_hypotheses_protocol_gate.py
+      - .github/workflows/mois-five-hypotheses-future-holdout-gate.yml
+  push:
+    branches: [main]
+    paths:
+      - analysis_specs/mois_five_global_photo_hypotheses_future_holdout_v1.json
+      - scripts/analysis/mois_five_hypotheses_protocol_gate.py
+      - .github/workflows/mois-five-hypotheses-future-holdout-gate.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-protocol-not-new-ecology:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check frozen known/discovery vs untouched future hypotheses
+        run: |
+          set -euo pipefail
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q tests/test_mois_five_hypotheses_protocol_gate.py
+          python -m py_compile scripts/analysis/mois_five_hypotheses_protocol_gate.py
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.analysis.mois_five_hypotheses_protocol_gate import sha256,validate_protocol
+          f=Path("analysis_specs/mois_five_global_photo_hypotheses_future_holdout_v1.json")
+          p=validate_protocol(f)
+          print("MOIS_FIVE_HYPOTHESES_PROTOCOL_FROZEN",sha256(f))
+          print("PREVIOUSLY_EXPOSED_HISTORICAL_HYPOTHESES",len(p["directional_hypotheses"]))
+          print("GATE_ONLY_NO_PHOTO_OR_POLLINATOR_RESULTS_NO_FORMAL_CONFIRMATION")
+          PY
