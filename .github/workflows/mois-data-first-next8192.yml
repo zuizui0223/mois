@@ -6,6 +6,9 @@ on:
       - scripts/acquisition/mois_collect_remaining_pool.py
       - tests/test_mois_collect_remaining_pool.py
       - .github/workflows/mois-data-first-next8192.yml
+  push:
+    branches: [main]
+    paths: [.github/workflows/mois-data-first-next8192.yml]
   workflow_dispatch:
     inputs:
       resume_run:
@@ -25,6 +28,7 @@ jobs:
     timeout-minutes: 15
     outputs:
       run_images: ${{ steps.source.outputs.run_images }}
+      archive_run: ${{ steps.source.outputs.archive_run }}
       prefetch: ${{ steps.speed.outputs.prefetch }}
     env:
       GH_TOKEN: ${{ github.token }}
@@ -36,14 +40,35 @@ jobs:
       - run: |
           python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 pytest==8.4.2
           python -m pytest -q tests/test_mois_collect_remaining_pool.py tests/test_mois_prefetch.py tests/test_mois_prefetch_group.py
+      - name: Reuse the completed data before considering any image acquisition
+        id: source
+        run: |
+          set -euo pipefail
+          echo 'run_images=false' >> "$GITHUB_OUTPUT"
+          if gh release view mois-cached-next8192-measured-data-only-v1 --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo 'This data snapshot already exists; no image acquisition repeated.'
+            exit 0
+          fi
+          # All 32 image units completed. The old PR run failed only at Release upload.
+          # Inspect the completed artifact, not the failed overall run conclusion.
+          gh api repos/zuizui0223/mois/actions/artifacts/12143251048 > complete_artifact.json
+          python - <<'PY'
+          import json
+          a=json.load(open('complete_artifact.json'))
+          assert a['id']==12143251048 and a['name']=='next8192-complete-data-only'
+          assert a['workflow_run']['id']==39132545774 and not a['expired']
+          assert a['digest']=='sha256:3cc0720245a06f1a88e8c90b5f2d668eaea1d96a5f68808e6a25eb236d66cfbb'
+          PY
+          echo 'archive_run=39132545774' >> "$GITHUB_OUTPUT"
+          echo 'All 8192 photo attempts are already measured; restore final data only.'
       - name: Enable overlap only after exact paired results and a measured speed improvement
+        if: steps.source.outputs.run_images == 'true'
         id: speed
         run: |
           set -euo pipefail
           state=$(gh api repos/zuizui0223/mois/actions/runs/39137639189 --jq .conclusion)
           if [ "$state" != success ]; then
             echo 'prefetch=false' >> "$GITHUB_OUTPUT"
-            echo 'Paired benchmark not yet successful; retain the original execution mode.'
             exit 0
           fi
           gh run download 39137639189 --repo zuizui0223/mois --name mois-prefetch-paired-real-photo-benchmark --dir speed_check
@@ -58,36 +83,9 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
               f.write('prefetch='+str(ok).lower()+'\n')
           print('Paired small-sample benchmark enables overlap:',ok)
-          print('Replay speed ratio:',b['speed_ratio'],'; not a full production throughput claim')
           PY
-      - name: Reuse source pool, exclude the two finished waves, and verify the next 8192
-        id: source
-        run: |
-          set -euo pipefail
-          if gh release view mois-cached-next8192-measured-data-only-v1 --repo zuizui0223/mois >/dev/null 2>&1; then
-            echo 'run_images=false' >> "$GITHUB_OUTPUT"
-            echo 'This data snapshot already exists; no image acquisition repeated.'
-            exit 0
-          fi
-          test "$(gh api repos/zuizui0223/mois/actions/runs/39115773617 --jq .conclusion)" = success
-          gh release download mois-angiosperm-broad-species-first-source-cache-v1-20261018 --repo zuizui0223/mois --dir pool \
-            --pattern 'mois_global_angiosperms_broad_open_source_photo_ID_pool.csv' \
-            --pattern 'mois_broad_first4096_original_open_flower_photo_ID_source.csv' \
-            --pattern 'mois_broad_angiosperm_new_taxa_32768_pool_first4096_receipt.json'
-          gh release download mois-cached-global-angiosperm-second4096-source-only-v1 --repo zuizui0223/mois --dir second \
-            --pattern 'mois_global_angiosperm_second4096_source_only_original_photoids.csv' \
-            --pattern 'mois_global_angiosperm_cached_second4096_source_only_receipt.json'
-          gh release download mois-broad-wave2-4096-measured-data-only-v1 --repo zuizui0223/mois --dir done \
-            --pattern 'wave2_measured_photos.parquet' --pattern 'receipt.json'
-          python -m scripts.acquisition.mois_collect_remaining_pool prepare --pool pool --second second --completed done --output source --count 8192
-          echo 'run_images=true' >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@v4
-        if: steps.source.outputs.run_images == 'true'
-        with:
-          name: next8192-source
-          path: source/
-          if-no-files-found: error
-          retention-days: 90
+  # Retain the original executor for provenance, but a completed immutable
+  # snapshot is never launched again. Future data must have a new source roster.
   images:
     needs: check
     if: needs.check.outputs.run_images == 'true' && (github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == 'zuizui0223/mois')
@@ -150,7 +148,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 90
   save:
-    needs: images
+    needs: [check, images]
+    if: always() && needs.check.result == 'success' && (needs.check.outputs.archive_run != '' || needs.images.result == 'success')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -163,28 +162,48 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
-        with:
-          name: next8192-source
-          path: source
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: next8192-group-*
-          path: workers
-          merge-multiple: false
-      - name: Save complete source-labelled photo data, including acquisition and colour failures
+      - name: Restore the existing completed photo table without loading a model
+        env:
+          ARCHIVE_RUN: ${{ needs.check.outputs.archive_run }}
         run: |
           set -euo pipefail
-          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
-          python -m scripts.acquisition.mois_collect_remaining_pool collect --source source --workers workers --output completed
-          cp source/source.json completed/source.json
+          test "$ARCHIVE_RUN" = 39132545774
+          gh run download "$ARCHIVE_RUN" --repo zuizui0223/mois --name next8192-complete-data-only --dir completed
+      - name: Verify unchanged complete source, actual counts and original model receipt
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 pyarrow==19.0.1
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          import pandas as pd
+          p=Path('completed')
+          r=json.loads((p/'receipt.json').read_text())
+          s=json.loads((p/'source.json').read_text())
+          actual=hashlib.sha256((p/'measured_photos.parquet').read_bytes()).hexdigest()
+          assert actual==r['photo_data_sha256']=='11be4908cbd92221bf5cc3df4c1fc6d9b9fa412ccd2702b90762b9b1abfc22fe'
+          assert r['schema']=='mois_cached_remaining_complete_data_only_v1'
+          assert r['source_sha256']==s['data_sha256']=='93585144e539ce7d4fe6e69b24bd209a292f425b7ce84329d6cd8615177f5a8d'
+          d=pd.read_parquet(p/'measured_photos.parquet')
+          known=d.morph.isin(['white','yellow_orange','red_pink','blue_purple'])
+          failed=d.measurement_status.eq('image_acquisition_failed')
+          assert len(d)==8192 and d.photo_id.is_unique and d.measurement_id.is_unique
+          assert int(known.sum())==r['classified']==2780
+          assert int(failed.sum())==r['acquisition_failed']==50
+          assert int((~failed).sum())==r['downloaded']==8142
+          assert int((~known & ~failed).sum())==r['acquired_unclassified']==5362
+          assert known.eq(d.classified_four_hue.astype(str).eq('true')).all()
+          assert not r['ecological_models_run'] and not r['raw_photo_bytes_retained']
+          print('MOIS_8192_ALREADY_MEASURED_DATA_RESTORED_NO_IMAGE_RERUN',json.dumps(r,sort_keys=True))
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: next8192-complete-data-only
           path: completed/
           if-no-files-found: error
           retention-days: 90
-      - name: Archive data without running ecological analyses
+      - name: Archive only from the trusted main branch, never a PR merge ref
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
           set -euo pipefail
           tag=mois-cached-next8192-measured-data-only-v1
@@ -194,5 +213,5 @@ jobs:
           else
             gh release create "$tag" completed/*.parquet completed/*.json --repo zuizui0223/mois --target "$GITHUB_SHA" \
               --title 'MOIS next 8192 cached original photos: acquired images and colour data' \
-              --notes 'Data acquisition only. Earlier 8192 broad-wave photo IDs excluded; no provider-wide metadata rescan, no ecological regression/PCA or manuscript update. Same fixed image model; original source metadata and distinct acquired/failed/unclassifiable records retained. No raw image redistribution.'
+              --notes 'Complete measured data recovered without image reprocessing. 8192 attempts, 8142 acquired, 2780 classified, 50 acquisition failures, 5362 acquired but unclassifiable. Original photo IDs, source metadata, model and SHA unchanged. No ecological analysis or raw image redistribution.'
           fi
