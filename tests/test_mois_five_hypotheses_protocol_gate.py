@@ -176,7 +176,7 @@ def test_prior_known_observations_must_include_other_repositories_and_unknowns(t
     d=json.loads(receipt.read_text())
     d["includes_other_repositories_and_failed_original_attempts"]=False
     write_json(receipt,d)
-    with pytest.raises(ValueError,match="all repositories"):
+    with pytest.raises(ValueError,match="other repositories"):
         gate(SPEC,index,queue,future,prior,receipt,
              expected_photos=5,expected_taxa=2,expected_shards=2,
              min_prior_attempts=3)
