@@ -76,4 +76,57 @@ class TestFullSourceQueue(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"complete"):
             self.run_queue(1.0,"bad")
 
+    def test_full_frame_selected_unsupported_formats_are_source_only_not_inferred_hues(self):
+        # Simulate exact upstream source records of GIF, empty extension,
+        # and case/dot variations of a genuinely supported JPEG.
+        photos=self.root/"index"/"photos"/"part-001.csv.gz"
+        with gzip.open(photos,"rt",newline="") as stream:
+            reader=csv.DictReader(stream)
+            header=reader.fieldnames
+            contents=list(reader)
+        for pid,extension in (("105","gif"),("106",".JPEG "),("107","")):
+            contents.append(dict(zip(header,(pid,"OBS-A","1","cc-by",extension,"user1"))))
+        with gzip.open(photos,"wt",newline="") as stream:
+            writer=csv.DictWriter(stream,fieldnames=header)
+            writer.writeheader();writer.writerows(contents)
+        manifest=self.root/"index"/"manifest.json"
+        m=json.loads(manifest.read_text())
+        m["photos_emitted"]=7
+        m["shards"][1]["photo_count"]+=3
+        m["shards"][1]["photos_sha256"]=q.sha(photos)
+        manifest.write_text(json.dumps(m))
+        with patch.object(q,"N_PHOTOS",7),patch.object(q,"N_TAXA",2),patch.object(q,"N_SHARDS",2):
+            result=q.prepare(self.root/"index",self.count,[self.prior],
+                             self.root/"unusual",p=1.0,batch_size=3)
+        self.assertEqual(result["sampled_photo_ids_before_prior_dedup"],7)
+        self.assertEqual(result["previously_measured_photo_ids_skipped"],1)
+        self.assertEqual(result["new_photo_attempts_planned"],4)
+        self.assertEqual(result["selected_new_photos_unsupported_by_frozen_loader"],2)
+        self.assertEqual(result["unsupported_original_source_photo_ext_counts"],
+                         {"":1,"gif":1})
+        self.assertTrue(result["no_per_taxon_or_observation_photo_count_cap"])
+        unsupported=self.root/"unusual"/"unsupported_selected_original_photo_formats.jsonl"
+        self.assertEqual(q.sha(unsupported),
+                         result["selected_new_photo_formats_unsupported_sha256"])
+        rows=[json.loads(s) for s in unsupported.read_text().splitlines()]
+        self.assertEqual({r["photo_id"] for r in rows},{"105","107"})
+        self.assertTrue(all("morph" not in r and "white" not in r for r in rows))
+        selected=[]
+        for path in sorted((self.root/"unusual"/"shards").glob("*.csv")):
+            with path.open(newline="") as stream:
+                selected.extend(csv.DictReader(stream))
+        self.assertEqual({r["photo_id"] for r in selected},{"101","102","104","106"})
+        jpeg=next(r for r in selected if r["photo_id"]=="106")
+        self.assertTrue(jpeg["photo_url_large"].endswith("/106/large.jpeg"))
+        self.assertTrue(all("white" not in r and "morph" not in r for r in selected))
+
+    def test_only_original_frozen_loader_extensions_are_normalized(self):
+        self.assertEqual(q.frozen_original_extension(" .JPG "),"jpg")
+        self.assertEqual(q.frozen_original_extension(".JPEG"),"jpeg")
+        self.assertEqual(q.frozen_original_extension("PNG"),"png")
+        self.assertIsNone(q.frozen_original_extension("gif"))
+        self.assertIsNone(q.frozen_original_extension("webp"))
+        self.assertIsNone(q.frozen_original_extension(""))
+        self.assertIsNone(q.frozen_original_extension("../large.jpg?format=PNG"))
+
 if __name__=="__main__":unittest.main()
