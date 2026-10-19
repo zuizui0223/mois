@@ -2,7 +2,7 @@
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import box
+from shapely.geometry import box, Polygon
 
 from scripts.analysis.mois_real350399_wcvp_geographic_native_status_20261019 import (
     assign_photo_regions, attach_region_status, polygons_read, summarise_source_status,
@@ -122,3 +122,40 @@ def test_several_photos_same_observation_are_not_pseudoreplicated():
     table=summarise_source_status(status)
     assert table.photo_attempts.sum()==2
     assert table.source_distinct_observations.sum()==1
+
+
+def test_original_invalid_bowtie_polygon_is_polygon_only_repaired_and_audited(tmp_path):
+    # Real historical WGSRPD contains invalid coast rings. A self-crossing
+    # polygon must be deterministically fixed, never silently treated as native.
+    source=gpd.GeoDataFrame(
+        {"Level3_cod":["AAA","BBB"]},
+        geometry=[
+            Polygon([(10,10),(20,20),(10,20),(20,10),(10,10)]),
+            box(30,30,40,40)
+        ], crs="EPSG:4326")
+    assert not source.geometry.is_valid.iloc[0]
+    path=tmp_path/"old_country_rings.geojson"
+    source.to_file(path,driver="GeoJSON")
+    original=path.read_bytes()
+    fixed=polygons_read(path,minimum_codes=2)
+    assert fixed.geometry.is_valid.all()
+    assert fixed.geometry.notna().all()
+    assert fixed.geometry.geom_type.isin(["Polygon","MultiPolygon"]).all()
+    assert path.read_bytes()==original
+    a=fixed.attrs["source_geometry_repair_audit"]
+    assert a["original_invalid_polygon_count"]==1
+    assert a["repair_attempted_count"]==1
+    assert a["remaining_invalid_after_polygon_only_make_valid"]==0
+    assert not a["original_input_file_modified"]
+    assert not a["coastline_or_island_specific_native_status_inferred"]
+
+
+def test_no_country_assignment_from_unrepairable_missing_geometry(tmp_path):
+    source=gpd.GeoDataFrame(
+        {"Level3_cod":["AAA","BBB"]},
+        geometry=[box(10,10,20,20),None],crs="EPSG:4326")
+    path=tmp_path/"incomplete.geojson"
+    source.to_file(path,driver="GeoJSON")
+    import pytest
+    with pytest.raises(ValueError,match="missing and"):
+        polygons_read(path,minimum_codes=2)

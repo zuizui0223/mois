@@ -19,6 +19,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+from shapely import make_valid, union_all
+from shapely.geometry import GeometryCollection, Polygon, MultiPolygon
 
 from scripts.analysis.mois_actual_photo_cohort_season_audit_20261019 import (
     HUES, assemble, require, sha256,
@@ -41,28 +43,79 @@ TDWG_SOURCE_COMMIT="52da7828aba9d461dd133c27b3bd7a4407161f54"
 TDWG_GIT_BLOB="91104e5159e31f88154833a51d3b0d1c9271083f"
 
 
-def polygons_read(path, *, minimum_codes=300):
-    frame=gpd.read_file(path)
-    # The 2011 TDWG shape source spells this property Level3_cod;
-    # some GeoJSON conversions uppercase it. Accept only that exact
-    # case-insensitive field, not arbitrary substrings/country codes.
-    column=[k for k in frame.columns if k.casefold()=="level3_cod"]
-    require(len(column)==1 and "geometry" in frame,
-            "Original TDWG level3 polygon feature schema changed")
-    require(frame.crs is not None and frame.crs.to_epsg()==4326,
-            "TDWG3 source geometry must explicitly be EPSG:4326")
-    frame=frame[[column[0],"geometry"]].rename(
-        columns={column[0]:"LEVEL3_COD"}).copy()
-    frame["LEVEL3_COD"]=frame.LEVEL3_COD.astype(str).str.strip()
-    require(frame.LEVEL3_COD.str.fullmatch(r"[A-Z]{3}").all(),
-            "TDWG3 polygons do not use expected official three-letter codes")
-    require(frame.geometry.notna().all() and frame.geometry.is_valid.all()
-            and not frame.geometry.is_empty.any(),
-            "TDWG3 source polygons are incomplete or invalid")
-    require(frame.LEVEL3_COD.nunique()>=minimum_codes,
-            "TDWG3 polygon table covers too few official level3 regions")
-    return frame
+def _polygonal_only(geometry):
+    """Drop linear artefacts produced while repairing historical TDWG rings."""
+    if isinstance(geometry, (Polygon, MultiPolygon)):
+        return geometry
+    if isinstance(geometry, GeometryCollection):
+        pieces = [_polygonal_only(g) for g in geometry.geoms]
+        polygonal = [g for g in pieces if g is not None and not g.is_empty]
+        if not polygonal:
+            return None
+        return union_all(polygonal)
+    return None
 
+
+def polygons_read(path, *, minimum_codes=300):
+    frame = gpd.read_file(path)
+    # The historical GIS source spells this field Level3_cod, but GeoJSON
+    # exports can change its case. Require exactly one canonical field.
+    column = [k for k in frame.columns if k.casefold() == "level3_cod"]
+    require(len(column) == 1 and "geometry" in frame,
+            "Original TDWG3 code or polygon field schema changed")
+    require(frame.crs is not None and frame.crs.to_epsg() == 4326,
+            "TDWG3 original source geometry must declare EPSG:4326")
+    frame = frame[[column[0], "geometry"]].rename(
+        columns={column[0]: "LEVEL3_COD"}).copy()
+    frame["LEVEL3_COD"] = frame.LEVEL3_COD.astype(str).str.strip()
+    require(frame.LEVEL3_COD.str.fullmatch(r"[A-Z]{3}").all(),
+            "Original TDWG Level-3 country codes are not valid three-letter codes")
+    missing = int(frame.geometry.isna().sum())
+    empty = int(frame.geometry.is_empty.sum())
+    require(missing == 0 and empty == 0,
+            f"Original TDWG3 has {missing} missing and {empty} empty shapes; "
+            "do not classify points to those undefined country boundaries")
+    # Real, pinned TDWG/WGSRPD 2011 coast/botanical-country shapes contain
+    # invalid ring self-crossings. Record AND repair them deterministically
+    # (GEOS make_valid), rather than assuming invalid shapely predicates
+    # reflect genuine native locations. Never modify original GeoJSON bytes.
+    invalid_mask = ~frame.geometry.is_valid
+    invalid_count = int(invalid_mask.sum())
+    collection_count = 0
+    repaired = 0
+    for idx in frame.index[invalid_mask]:
+        original = frame.at[idx, "geometry"]
+        corrected = make_valid(original)
+        if isinstance(corrected, GeometryCollection):
+            collection_count += 1
+        corrected = _polygonal_only(corrected)
+        require(corrected is not None and not corrected.is_empty,
+                f"Invalid historical TDWG3 polygon {idx} has no repairable polygon")
+        require(corrected.is_valid,
+                f"Historical TDWG3 polygon {idx} remains invalid after make_valid")
+        frame.at[idx, "geometry"] = corrected
+        repaired += 1
+    require(frame.geometry.is_valid.all() and not frame.geometry.is_empty.any(),
+            "Not all original TDWG3 polygons can be repaired for geographic overlay")
+    require(frame.LEVEL3_COD.nunique() >= minimum_codes,
+            "Original TDWG3 polygon table covers too few Level-3 regions")
+    frame.attrs["source_geometry_repair_audit"] = {
+        "original_feature_count": len(frame),
+        "original_unique_TDWG3_codes": int(frame.LEVEL3_COD.nunique()),
+        "original_missing_shape_count": missing,
+        "original_empty_shape_count": empty,
+        "original_invalid_polygon_count": invalid_count,
+        "repair_attempted_count": repaired,
+        "original_invalid_repair_geometry_collections": collection_count,
+        "remaining_invalid_after_polygon_only_make_valid": 0,
+        "geometry_repair": "GEOS make_valid_polygon_components_only",
+        "original_input_file_modified": False,
+        "coastline_or_island_specific_native_status_inferred": False,
+    }
+    print("MOIS_ORIGINAL_TDWG3_GEOMETRY_REPAIR_AUDIT",
+          json.dumps(frame.attrs["source_geometry_repair_audit"],
+                     sort_keys=True), flush=True)
+    return frame
 
 def assign_photo_regions(photos, geo):
     """Unambiguous point-within-polygon TDWG3, never snapping ocean/coasts."""
@@ -256,6 +309,8 @@ def run(core,broad,wave2,cached8192,tail16384, wcvp_dir,
         "TDWG_original_Git_blob_SHA1":TDWG_GIT_BLOB,
         "TDWG_original_GeoJSON_SHA256":sha256(tdwg_geojson),
         "TDWG_original_unique_level3_codes":int(geo.LEVEL3_COD.nunique()),
+        "TDWG_original_geometry_repair_audit":geo.attrs.get(
+            "source_geometry_repair_audit",{}),
         "WCVP_native_distributions_are_only_TDWG_level3":True,
         "photo_geographic_status_counts":{
             str(k):int(v) for k,v in
