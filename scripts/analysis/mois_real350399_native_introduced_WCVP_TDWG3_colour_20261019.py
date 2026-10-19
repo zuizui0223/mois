@@ -71,9 +71,12 @@ def source(photo_parquet,photo_receipt,wcvp_distribution,wcvp_receipt):
                        ["wcvp_accepted_plant_name_id","tdwg_level3_code",
                         "wcvp_accepted_name","native_introduced_state"]].copy()
     allowed["accepted_genus"]=allowed.wcvp_accepted_name.str.split().str[0]
-    require(allowed.accepted_genus.map(
-            lambda v:isinstance(v,str) and bool(GENUS.fullmatch(v))).all(),
-            "WCVP cannot verify the accepted genus for selected regional statuses")
+    # Accepted names with hybrid signs or unsupported genus spellings cannot
+    # be forced into a nominal genus cluster; retain original source photo
+    # evidence and leave that genus missing in the *matched* comparison.
+    accepted_genus_ok=allowed.accepted_genus.map(
+        lambda v:isinstance(v,str) and bool(GENUS.fullmatch(v)))
+    allowed.loc[~accepted_genus_ok,"accepted_genus"]=""
     accepted=data.merge(
         allowed,
         on=["wcvp_accepted_plant_name_id","tdwg_level3_code",
@@ -145,7 +148,9 @@ def distinct_original_observations(frame):
 
 
 def species_region_table(obs,cohort):
-    z=obs.loc[~obs.conflicting_observation_identity].copy()
+    z=obs.loc[~obs.conflicting_observation_identity &
+              obs.accepted_genus.map(
+                  lambda v: isinstance(v,str) and bool(GENUS.fullmatch(v)))].copy()
     if cohort!="all_source_arms":
         z=z.loc[z.cohort.eq(cohort)]
     keys=["tdwg_level3_code","accepted_genus",
@@ -272,6 +277,8 @@ def run(photo_parquet,photo_receipt,wcvp_distribution,wcvp_receipt,outdir):
         },
         "regional_WCVP_record_photo_attempts":len(regional),
         "regional_WCVP_record_classified_ROIs":int(regional.classified.sum()),
+        "regional_classified_original_ROIs_without_verified_accepted_genus":int(
+            (regional.classified & regional.accepted_genus.eq("")).sum()),
         "unique_classified_source_observations_aggregated":len(obs),
         "conflicting_original_observation_identity_rows":
             int(obs.conflicting_observation_identity.sum()),
