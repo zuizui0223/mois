@@ -25,9 +25,12 @@ import pandas as pd
 from scripts.analysis.mois_actual_photo_cohort_season_audit_20261019 import (
     HUES, require, sha256,
 )
-from scripts.analysis.mois_real350399_wcvp_geographic_native_status_20261019 import (
-    PHOTO_OUT, AUDIT_OUT, WCVP_DIST, WCVP_RECEIPT,
-)
+# Keep the frozen source filenames local: no GeoPandas dependency is needed
+# to analyse the already authenticated TDWG3/photo-location Parquet.
+PHOTO_OUT="mois350399_original_photo_TDWG3_WCVP_region_source_status.parquet"
+AUDIT_OUT="mois350399_TDWG3_WCVP_geography_source_receipt.json"
+WCVP_DIST="mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz"
+WCVP_RECEIPT="mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json"
 
 OUT_JSON="mois350399_region_native_introduced_original_photo_white_diagnostic.json"
 OUT_RAW="mois350399_region_range_photo_classifiability_and_white.csv"
