@@ -62,12 +62,11 @@ def wcvp_reader(z, member):
             yield row
 
 
-def source_taxon_table(real_photos):
-    require(len(real_photos)==FRAME_N and real_photos.photo_id.is_unique
-            and int(real_photos.classified.sum())==KNOWN_HUES,
+def source_taxon_table(real_photos, *, expected_photos=FRAME_N, expected_hues=KNOWN_HUES):
+    require(len(real_photos)==expected_photos and real_photos.photo_id.is_unique
+            and int(real_photos.classified.sum())==expected_hues,
             "MOIS source must be genuinely attempted 350399 pixel ROIs")
     d=real_photos[["inat_taxon_id","species","photo_id","classified","arm"]].copy()
-    require(d.inat_taxon_id.ne("").all(),"Missing iNaturalist source name ID")
     group=d.groupby("inat_taxon_id",sort=True)
     taxa=group.agg(
         source_species_n=("species","nunique"),
@@ -80,7 +79,7 @@ def source_taxon_table(real_photos):
     return taxa
 
 
-def collect_wcvp_names(z, wanted):
+def collect_wcvp_names(z, wanted, *, min_source_rows=10000):
     """Exact species-rank names, resolving synonyms only via accepted WCVP ID."""
     member=_member_name(z,{"wcvp_names.csv"})
     header=None
@@ -110,7 +109,7 @@ def collect_wcvp_names(z, wanted):
             continue
         candidates[name].add(accepted)
         candidate_statuses[name].add(state)
-    require(n_total>10000,
+    require(n_total>=min_source_rows,
             "Official archive has too few plant names; refuse incomplete WCVP source")
     return candidates,candidate_statuses,n_total,member
 
@@ -122,7 +121,9 @@ def resolve_photo_taxa(taxa, candidates, states):
         original=str(row["source_species"])
         name=row["match_binomial"]
         values=candidates.get(name,set())
-        if row["source_taxon_inconsistent"]:
+        if not str(row["inat_taxon_id"]).strip():
+            match="missing_original_taxon_id"
+        elif row["source_taxon_inconsistent"]:
             match="inconsistent_original_taxon_id"
         elif not name:
             match="not_exact_species_binomial"
@@ -189,7 +190,7 @@ def _tdwg_state(row):
     return "introduced_at_TDWG3" if introduced else "native_at_TDWG3"
 
 
-def native_distribution_TDWG3(z, selected, accepted):
+def native_distribution_TDWG3(z, selected, accepted, *, min_source_rows=10000):
     member=_member_name(z,{"wcvp_distribution.csv","wcvp_distributions.csv"})
     seen=collections.defaultdict(set)
     loc_names=collections.defaultdict(set)
@@ -209,7 +210,7 @@ def native_distribution_TDWG3(z, selected, accepted):
         seen[(pid,area)].add(_tdwg_state(row))
         loc_names[(pid,area)].add(row.get("area","").strip())
         matched+=1
-    require(n_source>10000,
+    require(n_source>=min_source_rows,
             "Official WCVP distribution table is implausibly small")
     out=[]
     for (pid,area), states in sorted(seen.items()):
