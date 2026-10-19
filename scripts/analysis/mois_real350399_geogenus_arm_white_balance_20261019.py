@@ -49,7 +49,7 @@ def verified(d):
     x = d[d.classified].copy()
     x["cohort"] = np.where(x.arm.eq("core"), "core", "new_species_first")
     x["genus"] = x.species.str.strip().str.split().str[0]
-    x["valid_genus"] = x.genus.map(lambda z: bool(GENUS_PATTERN.fullmatch(z or "")))
+    x["valid_genus"] = x.genus.map(lambda z: isinstance(z, str) and bool(GENUS_PATTERN.fullmatch(z)))
     x["valid_geography"] = x.latitude.between(-90, 90) & x.longitude.between(-180, 180)
     x["valid_taxon"] = x.inat_taxon_id.ne("")
     return x
