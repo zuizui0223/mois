@@ -10,6 +10,7 @@ a reproducible image-acquisition queue, NOT any flower-colour data.
 """
 from __future__ import annotations
 import argparse,csv,gzip,hashlib,json,math
+from collections import Counter
 from pathlib import Path
 
 SCHEMA="mois_full_42111_93209351_uncapped_original_photo_observation_index_v1"
@@ -179,7 +180,7 @@ def prepare(index,counts,prior_files,out,*,p=0.0002,batch_size=256):
         "selected_new_photos_unsupported_by_frozen_loader":len(unsupported),
         "selected_new_photo_formats_unsupported_sha256":sha(unsupported_file),
         "unsupported_original_source_photo_ext_counts":{
-            ext:n for ext,n in sorted(__import__("collections").Counter(
+            ext:n for ext,n in sorted(Counter(
                 r["source_image_extension"] for r in unsupported).items())
         },
         "supported_frozen_source_image_extensions":sorted(SUPPORTED_FROZEN_IMAGE_EXTENSIONS),
