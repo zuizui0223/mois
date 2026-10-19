@@ -82,9 +82,10 @@ def new_sites_climate(photos, raster, *, sampler=sample_tiff,
     return out
 
 
-def append_immutable(old_env, core_photos, new_photos, new_env):
-    require(len(old_env)==BASE and len(core_photos)==BASE
-            and len(new_env)==len(new_photos)==NEW,
+def append_immutable(old_env, core_photos, new_photos, new_env, *,
+                     expected_base=BASE, expected_new=NEW):
+    require(len(old_env)==expected_base and len(core_photos)==expected_base
+            and len(new_env)==len(new_photos)==expected_new,
             "Original previous climate lake and actual 32768 pixels differ")
     require(old_env.photo_id.is_unique and new_env.photo_id.is_unique
             and core_photos.photo_id.is_unique and new_photos.photo_id.is_unique,
@@ -97,8 +98,8 @@ def append_immutable(old_env, core_photos, new_photos, new_env):
     require(list(old_env.columns)==list(new_env.columns),
             "ABIOTIC variable units/columns do not match immutable prior source")
     result=pd.concat([old_env,new_env],ignore_index=True)
-    require(len(result)==FULL and result.photo_id.is_unique
-            and result.iloc[:BASE].reset_index(drop=True).equals(
+    require(len(result)==expected_base+expected_new and result.photo_id.is_unique
+            and result.iloc[:expected_base].reset_index(drop=True).equals(
                 old_env.reset_index(drop=True)),
             "Previously measured WorldClim photo-site results were changed")
     return result
