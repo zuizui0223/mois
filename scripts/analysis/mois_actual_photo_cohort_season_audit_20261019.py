@@ -47,8 +47,13 @@ def load_pixels(path, arm):
         d[key] = d[key].fillna("").astype(str)
     require(d.photo_id.str.fullmatch(r"\d+").all() and d.photo_id.is_unique,
             f"{arm}: blank/duplicate/non-numeric original photo IDs")
-    require(d.morph.isin((*HUES, "mixed_uncertain")).all(),
-            f"{arm}: unexpected original ROI colour label")
+    # Historical core releases use multiple legitimate technical unknown codes.
+    # Only these four exact hue labels count as classified; retain all other
+    # source status strings verbatim for review, never assume they are chromatic.
+    if "classified" in d:
+        reported = d["classified"].astype(str).str.lower().eq("true")
+        require(reported.eq(d.morph.isin(HUES)).all(),
+                f"{arm}: original four-hue classified flag contradicts source morph")
     if "classified_four_hue" in d:
         actual = d.classified_four_hue.astype(str).str.lower().eq("true")
         require(actual.eq(d.morph.isin(HUES)).all(),
@@ -122,6 +127,9 @@ def summary(d):
         "unclassifiable_or_failed": n - nc,
         "acquisition_failures_when_status_recorded": technical,
         "hue_counts": {h: int(classified.morph.eq(h).sum()) for h in HUES},
+        "original_unclassified_morph_label_counts": {
+            str(k): int(v) for k, v in d.loc[~d.classified, "morph"].value_counts(
+                dropna=False).items()},
         "white_fraction_among_classifiable": white / nc if nc else None,
         "taxon_equal_white_fraction": float(named.fraction.mean()) if len(named) else None,
         "genus_equal_white_fraction": float(gen.mean()) if len(gen) else None,

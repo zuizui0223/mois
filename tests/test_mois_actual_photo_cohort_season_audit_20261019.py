@@ -94,3 +94,17 @@ def test_real_pixel_receipt_not_source_only_and_no_overwrite(tmp_path):
     assert (out / "cohort_white_balance.csv").is_file()
     with pytest.raises(ValueError, match="Never overwrite"):
         run(c, b, w, e, out, strict=False)
+
+
+def test_legacy_unknown_morph_kept_unclassified_without_relabelling(tmp_path):
+    c, *_ = sources(tmp_path)
+    frame = pd.read_parquet(c)
+    frame.loc[3, "morph"] = "unresolved_legacy_ROI"
+    frame["classified"] = frame.morph.isin(
+        ("white", "yellow_orange", "red_pink", "blue_purple"))
+    frame.to_parquet(c, index=False)
+    d = load_pixels(c, "core")
+    z = summary(d)
+    assert z["original_unclassified_morph_label_counts"]["unresolved_legacy_ROI"] == 1
+    assert z["four_hue_classified"] == 5
+    assert z["hue_counts"]["white"] == 3
