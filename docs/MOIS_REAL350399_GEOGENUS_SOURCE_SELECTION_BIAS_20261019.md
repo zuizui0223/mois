@@ -25,6 +25,35 @@ We predeclared geographic 5°, 10° and 20° latitude/longitude grid cells (not 
 
 The apparently strong **+3.78 pp raw contrast does not remain a well-identified signed effect** after matching genus and geography. This is a comparison of **different, much smaller matched-support source subpopulations**, not an algebraic proof that geography and genus causally account for exactly 3.15 points. Moreover, the taxon-equal within matched groups is a *different estimand* from raw photo weighting even before matching.
 
+### Geography-only versus genus×geography: a scientifically important diagnostic
+
+This *separate* actual-photograph comparison matches 5°, 10°, and 20° cells
+**without requiring the same named genus**, still giving equal weight to
+nominal taxa within each arm and then an equal weight to every matched
+geographic cell. It is not the same estimand as the genus-equal test.
+
+| Matching design | 5° cells | 10° cells | 20° cells |
+|---|---:|---:|---:|
+| Geographic cells with both source arms, ≥1 nominal taxon/arm | 630 | 259 | 99 |
+| Geographic-only new-minus-core WHITE pp, ≥1 | **+5.503** | **+6.199** | **+4.630** |
+| Geographic-only new-minus-core WHITE pp, ≥2 taxa/arm | +5.256 | +5.987 | +6.030 |
+| Matched *genus* × geography, genus-equal WHITE pp, ≥1 | +0.924 | +0.635 | +1.823 |
+
+The geographic-only 10° comparator retains **98.01% of core and 99.78% of
+new taxon×cell occurrences**, whereas 10° genus×cell matching admits
+just 6.05% / 24.90%. Geography-only equal-cell matching makes the new
+source WHITE excess *larger*, not smaller. Requiring taxonomic support
+changes both the average and the comparison population. This directly
+supports the importance of interspecific photographic assemblage
+composition and warns against a universal abiotic explanation.
+
+Do **NOT** subtract the 10° +0.635 from +6.199 and claim that 5.56 pp is
+the causal contribution of taxon turnover: geography-only versus
+genus-and-geography estimators have different weighting and overlap.
+A fully identified causal decomposition would need shared source
+selection probabilities and adequate same-taxon/time/site replication,
+which these species-first acquisitions do not contain.
+
 ### Why this is not proof of a universal unchanged ratio
 
 - Of all classifiable named source taxon IDs, only **14** are observed in both deeply sampled and new species-first photo cohorts; **3,285 nominal genus names** overlap globally. Virtually no directly comparable species-level color observations were collected in the two arms. The same genus in a cell may still contain entirely different species.
