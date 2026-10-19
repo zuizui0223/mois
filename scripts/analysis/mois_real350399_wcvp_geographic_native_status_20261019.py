@@ -43,11 +43,16 @@ TDWG_GIT_BLOB="91104e5159e31f88154833a51d3b0d1c9271083f"
 
 def polygons_read(path, *, minimum_codes=300):
     frame=gpd.read_file(path)
-    require("LEVEL3_COD" in frame and "geometry" in frame,
+    # The 2011 TDWG shape source spells this property Level3_cod;
+    # some GeoJSON conversions uppercase it. Accept only that exact
+    # case-insensitive field, not arbitrary substrings/country codes.
+    column=[k for k in frame.columns if k.casefold()=="level3_cod"]
+    require(len(column)==1 and "geometry" in frame,
             "Original TDWG level3 polygon feature schema changed")
     require(frame.crs is not None and frame.crs.to_epsg()==4326,
             "TDWG3 source geometry must explicitly be EPSG:4326")
-    frame=frame[["LEVEL3_COD","geometry"]].copy()
+    frame=frame[[column[0],"geometry"]].rename(
+        columns={column[0]:"LEVEL3_COD"}).copy()
     frame["LEVEL3_COD"]=frame.LEVEL3_COD.astype(str).str.strip()
     require(frame.LEVEL3_COD.str.fullmatch(r"[A-Z]{3}").all(),
             "TDWG3 polygons do not use expected official three-letter codes")
