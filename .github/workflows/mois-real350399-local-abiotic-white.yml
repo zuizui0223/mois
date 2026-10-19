@@ -1,0 +1,134 @@
+name: MOIS 350399 authentic photos annual abiotic genus-geography overlaps
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_real350399_annual_abiotic_geogenus_white_20261019.py
+      - tests/test_mois_real350399_annual_abiotic_geogenus_white_20261019.py
+      - .github/workflows/mois-real350399-local-abiotic-white.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/analysis/mois_real350399_annual_abiotic_geogenus_white_20261019.py
+      - .github/workflows/mois-real350399-local-abiotic-white.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-real350399-annual-abiotic-genus-local-v1
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify original photo-taxon local within genus climate slopes
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_real350399_annual_abiotic_geogenus_white_20261019.py
+          python -m py_compile scripts/analysis/mois_real350399_annual_abiotic_geogenus_white_20261019.py
+  original-pixel-macro-ecology:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Download exact original RGB pixels, 350399 WorldClim full and source digest
+        run: |
+          set -euo pipefail
+          gh release download mois-primary-real317631-next4096-incremental-all19-featurelake-v3 \
+            --repo zuizui0223/mois --dir actual/core \
+            --pattern primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --pattern mois_317631_new4096_incremental_climate_feature_lake_receipt.json
+          gh release download mois-broad-world-angiosperm-newtaxa4096-real-RGB-ROI-v1 \
+            --repo zuizui0223/mois --dir actual/broad \
+            --pattern primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --pattern mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json
+          gh release download mois-broad-wave2-4096-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/wave2 \
+            --pattern wave2_measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-next8192-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/cached8192 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-tail16384-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/tail16384 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-real350399-original-photo-all19-incremental-climate-v1 \
+            --repo zuizui0223/mois --dir actual/full350399 \
+            --pattern mois350399_all19_annual_vapr_solar_terrain_source_photoids.parquet \
+            --pattern mois350399_immutable_annual_climate_source_receipt.json
+      - name: Verify EXACT photos and the new 350399 environment before local models
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          def sha(f):
+              h=hashlib.sha256()
+              with Path(f).open('rb') as p:
+                  for b in iter(lambda:p.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          c=Path('actual/core')
+          r=json.loads((c/'mois_317631_new4096_incremental_climate_feature_lake_receipt.json').read_text())
+          f='primary317631_actual_photo_hue_RGB_attempts.parquet'
+          assert r['all_original_photo_attempts']==317631 and sha(c/f)==r['photo_ID_aligned_Zstd_files_sha256'][f]
+          b=Path('actual/broad')
+          r=json.loads((b/'mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json').read_text())
+          f='primary313535_plus_broad4096_genuine_original_hue_photos.parquet'
+          assert r['expanded_actual_original_photo_attempts']==317631 and sha(b/f)==r['new_combined_photo_parquet_SHA256']
+          for arm,f,n in (('wave2','wave2_measured_photos.parquet',4096),('cached8192','measured_photos.parquet',8192),('tail16384','measured_photos.parquet',16384)):
+              p=Path('actual')/arm
+              r=json.loads((p/'receipt.json').read_text())
+              assert r['attempted']==n and sha(p/f)==r['photo_data_sha256']
+          q=Path('actual/full350399')
+          r=json.loads((q/'mois350399_immutable_annual_climate_source_receipt.json').read_text())
+          env='mois350399_all19_annual_vapr_solar_terrain_source_photoids.parquet'
+          assert r['source_photo_attempts']==350399 and r['new_only_original_image_photo_sites_sampled']==32768
+          assert r['original_317631_climate_data_immutable']
+          assert sha(q/env)==r['sha256'][env]
+          print('MOIS_ACTUAL350399_SOURCE_AND_CLIMATE_PIXEL_SHA_VERIFIED')
+          PY
+      - name: Fit five predeclared annual abiotic gradients in source-conditioned genus × geographic taxa
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real350399_annual_abiotic_geogenus_white_20261019 \
+            --core actual/core/primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --broad actual/broad/primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --wave2 actual/wave2/wave2_measured_photos.parquet \
+            --cached8192 actual/cached8192/measured_photos.parquet \
+            --tail16384 actual/tail16384/measured_photos.parquet \
+            --environment actual/full350399/mois350399_all19_annual_vapr_solar_terrain_source_photoids.parquet \
+            --env-receipt actual/full350399/mois350399_immutable_annual_climate_source_receipt.json \
+            --output real_abiotic
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real350399-abiotic-within-geogenus-local-source
+          path: real_abiotic/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish all real-photo source signed environmental association evidence
+        run: |
+          set -euo pipefail
+          tag=mois-real350399-local-within-genus-annual-abiotic-white-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo 'Existing original-source result must not be rewritten.'
+          else
+            gh release create "$tag" real_abiotic/* --repo zuizui0223/mois \
+              --target "$GITHUB_SHA" \
+              --title 'MOIS real350399 photographed white hue × within-genus geographic annual moisture heat solar elevation' \
+              --notes 'Original source 350399 genuine ROI photo attempts + original source-SHA verified 1970-2000 WorldClim climatology. Named taxon equal within genus×5/10/20deg cell×source arm, 2/3 taxa support gates. Univariate pp per original environment SD, exploratory whole-genus resampling. Does NOT isolate correlated abiotic predictors, botanically verify open flower, estimate causal selection or imply observed-year weather.'
+          fi
