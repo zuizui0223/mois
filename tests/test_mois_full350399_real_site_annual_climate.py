@@ -17,7 +17,7 @@ def row(pid, morph, arm):
                 observation_id=f"obs-{pid}", observed_on="2025-06-15",
                 latitude=32., longitude=131.,
                 classified=morph in ("white", "red_pink", "blue_purple", "yellow_orange"),
-                white=morph=="white", arm=arm)
+                white=morph=="white", arm=arm, technical_failure=None)
 
 
 def fixed(tmp_path, monkeypatch):
@@ -92,7 +92,7 @@ def test_fails_if_old_abiotic_source_has_drifted(tmp_path,monkeypatch):
     p,env,receipt,raster,sampler=fixed(tmp_path,monkeypatch)
     e=pd.read_parquet(env);e.loc[0,climate.RAIN]=-1
     e.to_parquet(env,index=False)
-    with pytest.raises(ValueError,match="climate Parquet modified"):
+    with pytest.raises(ValueError,match="environment Parquet modified"):
         target.assemble_lake(p,env,receipt,raster,tmp_path/"out",sampler=sampler)
 
 
