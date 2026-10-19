@@ -82,6 +82,16 @@ def read_fcp_genuine(path, release_receipt, combine_receipt,
 
 
 def canonical_fcp(q):
+    # Source CSV and the verified read_fcp_genuine frame must have identical
+    # behaviour: use original FCP global_classifiable whenever a test/source
+    # frame has not precomputed the verified helper boolean.
+    require("global_classifiable" in q,
+            "Original FCP machine ROI classifiability source field missing")
+    from_source=q.global_classifiable.fillna(False).astype(str).str.strip().str.lower().isin(
+        ("true","1","yes"))
+    valid=q.fcp_classifiable.astype(bool) if "fcp_classifiable" in q else from_source
+    require(valid.eq(from_source).all(),
+            "FCP classifiability helper diverged from the original raw ROI source")
     x=pd.DataFrame()
     x["photo_id"]=q.photo_id.astype(str).to_numpy()
     x["inat_taxon_id"]=q.inat_taxon_id.astype(str).to_numpy()
@@ -97,14 +107,14 @@ def canonical_fcp(q):
     # Explicit source original global_classifiable, not a guess based only on
     # descriptive morphology. Retain the exact raw morph separately even if
     # invalid due to technical QC; never treat those as coloured flowers.
-    x["morph"]=np.where(q.fcp_classifiable,
+    x["morph"]=np.where(valid,
                         q.morph.fillna("").astype(str),
                         "mixed_uncertain")
-    x["classified"]=q.fcp_classifiable.to_numpy(bool)
+    x["classified"]=valid.to_numpy(bool)
     x["white"]=x.morph.eq("white")
     x["arm"]="FCP_final_447500_actual_original_ROI"
     x["fcp_source_cohort"]=q.fcp_source_cohort.fillna("").astype(str).to_numpy()
-    x["source_fcp_global_classifiable"]=q.fcp_classifiable.to_numpy(bool)
+    x["source_fcp_global_classifiable"]=valid.to_numpy(bool)
     x["photo_colour_provenance"]="authentic_FCP_original_ROI_v4_same_iNaturalist_source"
     x["measurement_status"]=(q.measurement_status.fillna("").astype(str).to_numpy()
                               if "measurement_status" in q else ["not_reported_by_FCP"]*len(q))
