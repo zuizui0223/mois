@@ -11,11 +11,37 @@ import argparse
 import hashlib
 import json
 from contextlib import nullcontext
+from urllib.parse import urlsplit
+import re
 from pathlib import Path
 import pandas as pd
 
 HUES=("white","yellow_orange","red_pink","blue_purple")
 SCHEMA="mois_full_source_observation_sampling_cohort_v1"
+CANONICAL_ORIGINAL_URL=re.compile(r"^/photos/[0-9]+/large\.([a-z0-9]{1,10})$", re.I)
+ORIGINAL_FROZEN_IMAGE_EXTENSIONS=frozenset(("jpg","jpeg","png"))
+
+
+def original_source_loader_supported(url):
+    """One pure URL preflight: never let non-FCP formats stop an RGB batch.
+
+    All selected PHOTO IDs stay in the source queue. An unsupported URI is
+    deterministically classified as a technical original-image acquisition
+    failure by the wrapper below and no network request is made. The old
+    signed method's three allowed extensions are not silently expanded.
+    """
+    u=urlsplit(str(url))
+    if (u.scheme!="https" or u.netloc!="inaturalist-open-data.s3.amazonaws.com"
+            or u.query or u.fragment):
+        return False
+    m=CANONICAL_ORIGINAL_URL.fullmatch(u.path)
+    return bool(m and m.group(1).lower() in ORIGINAL_FROZEN_IMAGE_EXTENSIONS)
+
+
+def original_source_image_loader(url,original_loader,permanent_error):
+    if not original_source_loader_supported(url):
+        raise permanent_error("Original indexed source image extension is not supported by frozen ROI-v4 photo loader; exact original source photo retained as technical unknown")
+    return original_loader(url)
 
 def require(ok,msg):
     if not ok:raise ValueError(msg)
@@ -81,7 +107,10 @@ def measure_group(source,group,runtime,sam,out,*,runner=None,loader=None):
         from scripts.analysis.mois_reassemble_original_new4096_measurements import METHOD
         runner=run_batch
         urls=[u for _,rows,_,_ in pending for u in rows.photo_url_large.tolist()]
-        context=PrefetchLoader(urls,image_loader,out/"prefetch",
+        def loader(url):
+            return original_source_image_loader(
+                url,image_loader,PermanentOriginalPhotoError)
+        context=PrefetchLoader(urls,loader,out/"prefetch",
             permanent_errors=(PermanentOriginalPhotoError,))
     else: context=nullcontext(loader)
     with context as prefetch:
