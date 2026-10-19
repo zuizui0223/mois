@@ -1,0 +1,127 @@
+name: MOIS genuine RGB cross-cohort white and season source audit
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_actual_photo_cohort_season_audit_20261019.py
+      - tests/test_mois_actual_photo_cohort_season_audit_20261019.py
+      - .github/workflows/mois-real-cohort-white-season-audit.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/analysis/mois_actual_photo_cohort_season_audit_20261019.py
+      - .github/workflows/mois-real-cohort-white-season-audit.yml
+  workflow_run:
+    workflows:
+      - "MOIS data first - cached remaining 16384 with verified prefetch"
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-photo-cohort-season-integrity-v1
+  cancel-in-progress: false
+jobs:
+  source-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_actual_photo_cohort_season_audit_20261019.py
+          python -m py_compile scripts/analysis/mois_actual_photo_cohort_season_audit_20261019.py
+  real-photo-analysis:
+    needs: source-tests
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
+        github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Download immutable genuinely measured original photo releases
+        run: |
+          set -euo pipefail
+          gh release download mois-primary-real317631-next4096-incremental-all19-featurelake-v3 --repo zuizui0223/mois --dir actual/core --pattern primary317631_actual_photo_hue_RGB_attempts.parquet --pattern mois_317631_new4096_incremental_climate_feature_lake_receipt.json
+          gh release download mois-broad-world-angiosperm-newtaxa4096-real-RGB-ROI-v1 --repo zuizui0223/mois --dir actual/broad --pattern primary313535_plus_broad4096_genuine_original_hue_photos.parquet --pattern mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json
+          gh release download mois-broad-wave2-4096-measured-data-only-v1 --repo zuizui0223/mois --dir actual/wave2 --pattern wave2_measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-next8192-measured-data-only-v1 --repo zuizui0223/mois --dir actual/cached8192 --pattern measured_photos.parquet --pattern receipt.json
+      - name: Include final 16384 only if actual-photo Release exists
+        id: tail
+        run: |
+          set -euo pipefail
+          echo 'present=false' >> "$GITHUB_OUTPUT"
+          echo 'suffix=pre-tail' >> "$GITHUB_OUTPUT"
+          if gh release view mois-cached-tail16384-measured-data-only-v1 --repo zuizui0223/mois --json isDraft --jq .isDraft 2>/dev/null | grep -qx false; then
+            gh release download mois-cached-tail16384-measured-data-only-v1 --repo zuizui0223/mois --dir actual/tail16384 --pattern measured_photos.parquet --pattern receipt.json
+            echo 'present=true' >> "$GITHUB_OUTPUT"
+            echo 'suffix=including-tail16384' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Verify every source release byte checksum
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          def sha(f):
+              h=hashlib.sha256()
+              with Path(f).open('rb') as x:
+                  for b in iter(lambda:x.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          c=Path('actual/core')
+          r=json.loads((c/'mois_317631_new4096_incremental_climate_feature_lake_receipt.json').read_text())
+          f='primary317631_actual_photo_hue_RGB_attempts.parquet'
+          assert r['all_original_photo_attempts']==317631
+          assert sha(c/f)==r['photo_ID_aligned_Zstd_files_sha256'][f]
+          b=Path('actual/broad')
+          r=json.loads((b/'mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json').read_text())
+          f='primary313535_plus_broad4096_genuine_original_hue_photos.parquet'
+          assert r['expanded_actual_original_photo_attempts']==317631
+          assert sha(b/f)==r['new_combined_photo_parquet_SHA256']
+          for arm,f,n in [('wave2','wave2_measured_photos.parquet',4096),('cached8192','measured_photos.parquet',8192),('tail16384','measured_photos.parquet',16384)]:
+              folder=Path('actual')/arm
+              if not folder.exists():
+                  assert arm=='tail16384'
+                  continue
+              r=json.loads((folder/'receipt.json').read_text())
+              assert r['attempted']==n and sha(folder/f)==r['photo_data_sha256']
+          print('ALL_REAL_SOURCE_PIXEL_SHA_VERIFIED')
+          PY
+      - name: Analyse actual white rate by arm and local-season paired support
+        run: |
+          set -euo pipefail
+          args=()
+          if [ "${{ steps.tail.outputs.present }}" = true ]; then
+            args+=(--tail16384 actual/tail16384/measured_photos.parquet)
+          fi
+          python -m scripts.analysis.mois_actual_photo_cohort_season_audit_20261019 --core actual/core/primary317631_actual_photo_hue_RGB_attempts.parquet --broad actual/broad/primary313535_plus_broad4096_genuine_original_hue_photos.parquet --wave2 actual/wave2/wave2_measured_photos.parquet --cached8192 actual/cached8192/measured_photos.parquet --output audit "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-actual-white-season-${{ steps.tail.outputs.suffix }}
+          retention-days: 90
+          path: audit/
+          if-no-files-found: error
+      - name: Publish immutable original RGB source and season analysis
+        run: |
+          set -euo pipefail
+          tag="mois-20261019-real-photo-source-arm-season-${{ steps.tail.outputs.suffix }}-v1"
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo "Already published: do not replace immutable result."
+          else
+            gh release create "$tag" audit/* --repo zuizui0223/mois --target "$GITHUB_SHA" --title "MOIS real-photo colour and season: ${{ steps.tail.outputs.suffix }}" --notes 'Real YOLO/EfficientSAM ROI original-photo outcomes only; photo-ID deduplication, nominal taxon and genus white rates, technical missingness, hemispheric date/season and matched local-source support. Different recruitment arms cannot be pooled as an unbiased global population estimator; botanical flowering and monthly observed-year climate were not verified. No source metadata is imputed as hue.'
+          fi
