@@ -20,7 +20,8 @@ Kew original source archive: [WCVP original download](https://sftp.kew.org/pub/d
 |---|---:|
 | Unique iNaturalist taxon IDs with any original photograph attempt | **74,821** |
 | Named iNaturalist source taxa with ≥1 machine four-hue label | **37,107** |
-| Unambiguously verified WCVP accepted species names/IDs | **73,235** |
+| MOIS taxon IDs with a verified unique WCVP accepted species | **73,335** |
+| Distinct verified WCVP accepted species names/IDs after synonym collapsing | **73,235** |
 | WCVP accepted species with ≥1 matching TDWG3 distribution record | **73,232** |
 | Unique exact name→accepted candidate before accepted-species identity check | 73,746 |
 | Names referring to unverified accepted species ranks or IDs | 411 |
