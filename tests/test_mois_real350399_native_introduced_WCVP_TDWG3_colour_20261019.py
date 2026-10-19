@@ -33,7 +33,7 @@ def source_rows():
     result=[]
     serial=1
     for k in range(12):
-        genus=f"G{k}us"
+        genus="ABCDEFGHIJKL"[k]+"aa"
         for nstatus,bit in (("native_at_TDWG3",True),
                             ("introduced_at_TDWG3",False)):
             for tax in range(2):
