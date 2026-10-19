@@ -9,7 +9,7 @@ source (unless the photo ID was already genuinely measured). The output is
 a reproducible image-acquisition queue, NOT any flower-colour data.
 """
 from __future__ import annotations
-import argparse,csv,gzip,hashlib,json,math
+import argparse,csv,gzip,hashlib,json,math,re
 from pathlib import Path
 
 SCHEMA="mois_full_42111_93209351_uncapped_original_photo_observation_index_v1"
@@ -17,11 +17,31 @@ OUT_SCHEMA="mois_full_source_observation_sampling_cohort_v1"
 COLUMNS=["measurement_id","photo_id","inat_taxon_id","species","observation_id",
          "observer_id","observed_on","latitude","longitude","positional_accuracy",
          "photo_license","photo_url_large","image_filename","source_arm",
-         "selection_probability","source_snapshot_date","shard"]
+         "selection_probability","source_snapshot_date","shard",
+         "source_image_extension_original","source_image_extension_status"]
 SEED="mois-global-observation-v1"
 N_PHOTOS=93209351
 N_TAXA=42111
 N_SHARDS=128
+ROI_SUPPORTED_EXTENSIONS=frozenset(("jpg","jpeg","png"))
+CANONICAL_EXTENSION=re.compile(r"^[a-z0-9]{1,10}$")
+
+
+def extension_for_frozen_original_loader(value):
+    """Keep every selected source image, including genuinely unprocessable formats.
+
+    The frozen FCP image loader only allows .jpg/.jpeg/.png. Other public
+    archive extensions must enter the denominator with a deterministic
+    technical failure, never abort the full source queue or be relabelled.
+    An untrusted extension must never be used to inject an arbitrary URL.
+    """
+    raw="" if value is None else str(value)
+    normalized=raw.strip().lower().lstrip(".")
+    if normalized in ROI_SUPPORTED_EXTENSIONS:
+        return normalized,"frozen_original_roi_supported"
+    if CANONICAL_EXTENSION.fullmatch(normalized):
+        return normalized,"outside_frozen_original_roi_loader"
+    return "unsupported","malformed_or_blank_original_extension"
 def require(ok,msg):
     if not ok:raise ValueError(msg)
 def sha(path):
@@ -62,6 +82,7 @@ def prepare(index,counts,prior_files,out,*,p=0.0002,batch_size=256):
     require(len(names)==N_TAXA,"All original source taxon names required")
     previous=known_ids(prior_files)
     seen=set(); selected=[]; reused=0; total=0; candidate_n=0; nobs=0
+    extension_counts={}; source_format_counts={}
     for item in source["shards"]:
         i=int(item["part"])
         photos=index/"photos"/f"part-{i:03d}.csv.gz"
@@ -81,8 +102,12 @@ def prepare(index,counts,prior_files,out,*,p=0.0002,batch_size=256):
             if pid in previous:
                 reused+=1
                 continue
-            require(row["image_extension"] in {"jpg","jpeg","png"},
-                    "Unexpected source image format")
+            original_ext=row["image_extension"]
+            safe_ext,format_status=extension_for_frozen_original_loader(original_ext)
+            extension_counts[original_ext]=extension_counts.get(original_ext,0)+1
+            source_format_counts[format_status]=source_format_counts.get(format_status,0)+1
+            row["safe_photo_extension"]=safe_ext
+            row["source_image_extension_status"]=format_status
             wanted.add(row["observation_uuid"])
             picks.append(row)
         require(scanned==item["photo_count"],"Original photo-count shard mismatch")
@@ -111,12 +136,14 @@ def prepare(index,counts,prior_files,out,*,p=0.0002,batch_size=256):
                 "latitude":o["latitude"],"longitude":o["longitude"],
                 "positional_accuracy":o["positional_accuracy"],
                 "photo_license":row["photo_license"],
-                "photo_url_large":f"https://inaturalist-open-data.s3.amazonaws.com/photos/{pid}/large.{row['image_extension']}",
+                "photo_url_large":f"https://inaturalist-open-data.s3.amazonaws.com/photos/{pid}/large.{row['safe_photo_extension']}",
                 "image_filename":mid+".jpg",
                 "source_arm":"global93m_probability_sample_observations",
                 "selection_probability":str(float(p)),
                 "source_snapshot_date":"2026-09-27",
                 "shard":"",
+                "source_image_extension_original":row["image_extension"],
+                "source_image_extension_status":row["source_image_extension_status"],
             })
     require(total==source["photos_emitted"] and len(selected)+reused==candidate_n,
             "Original indexed photo source sampled/reused accounting failed")
@@ -150,6 +177,10 @@ def prepare(index,counts,prior_files,out,*,p=0.0002,batch_size=256):
         "group_ids":list(range(math.ceil(units/4))),
         "units_per_group":4,"original_model_batch_size":batch_size,
         "photo_shard_sha256":checksums,
+        "source_selected_image_extensions":dict(sorted(extension_counts.items())),
+        "selected_original_image_format_status":dict(sorted(source_format_counts.items())),
+        "all_selected_unsupported_extension_original_photo_IDs_retained":True,
+        "unsupported_source_image_extension_not_called_a_chromatic_flower":True,
         "all_unselected_source_photos_eligible_at_higher_probability":True,
         "no_per_taxon_or_observation_photo_count_cap":True,
         "source_original_images_measured":False,
@@ -159,7 +190,8 @@ def prepare(index,counts,prior_files,out,*,p=0.0002,batch_size=256):
     print("MOIS_GLOBAL_FULL_INDEX_PROBABILITY_SAMPLE_SOURCE_ONLY",json.dumps({
         k:receipt[k] for k in ("full_frame_photo_ids","sampled_photo_ids_before_prior_dedup",
                                "previously_measured_photo_ids_skipped",
-                               "new_photo_attempts_planned","work_units","selection_probability")
+                               "new_photo_attempts_planned","work_units","selection_probability",
+                               "selected_original_image_format_status")
     },sort_keys=True),flush=True)
     return receipt
 
