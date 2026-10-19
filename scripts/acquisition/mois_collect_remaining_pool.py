@@ -36,7 +36,7 @@ def read_csv(path):
     return pd.read_csv(path, dtype=str, keep_default_na=False)
 
 
-def select_remaining(pool, first, second, count):
+def select_remaining(pool, first, second, count, additional_completed=None):
     require(count > 0 and count % 256 == 0, 'Use complete 256-photo units')
     require(all(t.photo_id.is_unique and t.measurement_id.is_unique for t in (pool, first, second)),
             'Duplicate original photo IDs')
@@ -44,16 +44,60 @@ def select_remaining(pool, first, second, count):
     require(set(first.photo_id).isdisjoint(second.photo_id) and excluded.issubset(set(pool.photo_id)),
             'Previous source rosters are overlapping or not in the original pool')
     observations = set(first.observation_id) | set(second.observation_id)
+    if additional_completed is not None:
+        extra = additional_completed
+        require(extra.photo_id.is_unique and extra.measurement_id.is_unique
+                and extra.observation_id.is_unique
+                and set(extra.photo_id).isdisjoint(excluded)
+                and set(extra.photo_id).issubset(set(pool.photo_id)),
+                'Additional completed photo IDs overlap or are outside the pool')
+        immutable = [c for c in pool.columns if c not in ('shard', 'source_arm')]
+        require(extra.set_index('photo_id')[ [c for c in immutable if c != 'photo_id'] ].equals(
+                pool.set_index('photo_id').loc[extra.photo_id, [c for c in immutable if c != 'photo_id']]),
+                'Completed photo metadata differs from the original pool')
+        excluded.update(extra.photo_id)
+        observations.update(extra.observation_id)
     fresh = pool.loc[~pool.photo_id.isin(excluded) & ~pool.observation_id.isin(observations)]
     require(len(fresh) >= count, 'Not enough unprocessed cached photo records')
     selected = fresh.iloc[:count].copy().reset_index(drop=True)
     require(selected.observation_id.is_unique, 'Repeated original observations in new photo source')
-    selected['source_arm'] = 'mois_cached_remaining_after_broad_waves1_2'
+    selected['source_arm'] = ('mois_cached_tail_after_first16384' if additional_completed is not None
+                              else 'mois_cached_remaining_after_broad_waves1_2')
     selected['shard'] = (selected.index // 256).astype(str)
     return selected
 
 
-def prepare(pool_root, second_root, completed_root, output, count=8192):
+def read_completed_snapshot(root, parents, method):
+    """Exclude every attempted ID, not only successful colours, from later batches."""
+    root = Path(root)
+    receipt = json.loads((root / 'receipt.json').read_text())
+    source = json.loads((root / 'source.json').read_text())
+    require(receipt['schema'] == 'mois_cached_remaining_complete_data_only_v1'
+            and source['schema'] == 'mois_cached_remaining_source_v1'
+            and source['status'] == 'SOURCE_ONLY'
+            and receipt['attempted'] == source['count']
+            and receipt['source_sha256'] == source['data_sha256']
+            and receipt['photo_data_sha256'] == digest(root / 'measured_photos.parquet')
+            and receipt['method'] == method
+            and all(receipt['parents'].get(k) == v and source['parents'].get(k) == v
+                    for k, v in parents.items()),
+            'Completed snapshot fingerprint, source or original model changed')
+    data = pd.read_parquet(root / 'measured_photos.parquet')
+    known = data.morph.isin(HUES)
+    failed = data.measurement_status.eq('image_acquisition_failed')
+    totals = dict(attempted=len(data), downloaded=int((~failed).sum()),
+                  acquisition_failed=int(failed.sum()), classified=int(known.sum()),
+                  unclassified=int((~known).sum()), acquired_unclassified=int((~known & ~failed).sum()))
+    require(data.photo_id.is_unique and data.measurement_id.is_unique and data.observation_id.is_unique
+            and data.morph.isin((*HUES, 'mixed_uncertain')).all()
+            and known.eq(data.measurement_status.eq('classified_four_state_morph')).all()
+            and known.eq(data.classified_four_hue.astype(str).eq('true')).all()
+            and all(receipt[k] == v for k, v in totals.items()),
+            'Completed snapshot counts or photo identities disagree')
+    return data, receipt
+
+
+def prepare(pool_root, second_root, completed_root, output, count=8192, exclude_completed=None):
     pool_root, second_root, completed_root, output = map(Path, (pool_root, second_root, completed_root, output))
     a = json.loads((pool_root / FIRST_RECEIPT).read_text())
     b = json.loads((second_root / SECOND_RECEIPT).read_text())
@@ -82,17 +126,24 @@ def prepare(pool_root, second_root, completed_root, output, count=8192):
     immutable = ['measurement_id', 'inat_taxon_id', 'observation_id', 'photo_url_large', 'photo_license']
     require(second.set_index('photo_id')[immutable].equals(original.loc[second.photo_id, immutable]),
             'Previously selected photo metadata does not match the original pool')
-    selected = select_remaining(pool, first, second, count)
+    parents = {'pool': digest(pool_root / POOL), 'first': digest(pool_root / FIRST),
+               'second': digest(second_root / SECOND), 'second_measurement': done['photo_data_sha256']}
+    extra, extra_receipt = None, None
+    if exclude_completed is not None:
+        extra, extra_receipt = read_completed_snapshot(exclude_completed, parents, done['method'])
+    selected = select_remaining(pool, first, second, count, additional_completed=extra)
+    if extra_receipt is not None:
+        parents['additional_completed_measurement'] = extra_receipt['photo_data_sha256']
+        parents['additional_completed_source'] = extra_receipt['source_sha256']
     require(not output.exists() or not any(output.iterdir()), 'Do not overwrite an existing source plan')
     output.mkdir(parents=True, exist_ok=True)
     selected.to_csv(output / 'candidates.csv', index=False, lineterminator='\n')
     receipt = {'schema': 'mois_cached_remaining_source_v1', 'status': 'SOURCE_ONLY',
                'count': count, 'shards': count // 256, 'data_sha256': digest(output / 'candidates.csv'),
                'no_ecological_analysis': True, 'source_pool_count': len(pool),
-               'excluded_previous_photo_ids': len(set(first.photo_id) | set(second.photo_id)),
-               'parents': {'pool': digest(pool_root / POOL), 'first': digest(pool_root / FIRST),
-                           'second': digest(second_root / SECOND),
-                           'second_measurement': done['photo_data_sha256']}}
+               'excluded_previous_photo_ids': len(set(first.photo_id) | set(second.photo_id)) +
+                   (0 if extra is None else len(extra)),
+               'parents': parents}
     (output / 'source.json').write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')
     for i in range(count // 256):
         source_paths(output, i)
@@ -224,12 +275,13 @@ if __name__ == '__main__':
     prep = cmd.add_parser('prepare')
     for key in ('pool', 'second', 'completed', 'output'): prep.add_argument('--' + key, type=Path, required=True)
     prep.add_argument('--count', type=int, default=8192)
+    prep.add_argument('--exclude-completed', type=Path, help='An additional completed data snapshot to exclude')
     work = cmd.add_parser('measure')
     for key in ('source', 'runtime', 'sam', 'output'): work.add_argument('--' + key, type=Path, required=True)
     work.add_argument('--shard', type=int, required=True)
     save = cmd.add_parser('collect')
     for key in ('source', 'workers', 'output'): save.add_argument('--' + key, type=Path, required=True)
     a = p.parse_args()
-    if a.command == 'prepare': prepare(a.pool, a.second, a.completed, a.output, a.count)
+    if a.command == 'prepare': prepare(a.pool, a.second, a.completed, a.output, a.count, a.exclude_completed)
     elif a.command == 'measure': measure(a.source, a.shard, a.runtime, a.sam, a.output)
     else: collect(a.source, a.workers, a.output)

@@ -80,3 +80,46 @@ def test_real_result_checkpoint_reused_without_second_inference(tmp_path):
     p=output/'shard_00'/'photos.csv';p.write_text(p.read_text()+'\n')
     with pytest.raises(ValueError):m.measure(root,0,tmp_path,tmp_path,output,runner=fake_runner)
     assert calls==[0]
+
+
+def test_excludes_latest_completed_attempts_including_unknown_and_failed():
+    pool=rows(1280)
+    done=pool.iloc[512:1024].copy()
+    done['morph']=['white']*170+['mixed_uncertain']*342
+    done['measurement_status']=['classified_four_state_morph']*170+['image_acquisition_failed']*342
+    selected=m.select_remaining(pool,pool.iloc[:256],pool.iloc[256:512],256,additional_completed=done)
+    assert selected.photo_id.tolist()==pool.iloc[1024:].photo_id.tolist()
+    assert selected.inat_taxon_id.nunique()==3
+    assert not set(selected.photo_id)&set(done.photo_id)
+
+
+def test_additional_exclusion_rejects_wrong_source_identity():
+    pool=rows(1280)
+    done=pool.iloc[512:1024].copy()
+    done.loc[512,'photo_url_large']='https://example.org/not-the-source.jpg'
+    with pytest.raises(ValueError,match='metadata'):
+        m.select_remaining(pool,pool.iloc[:256],pool.iloc[256:512],256,additional_completed=done)
+
+
+def test_completed_snapshot_status_and_checksums(tmp_path,monkeypatch):
+    d=rows(256)
+    d['morph']=['white']*80+['mixed_uncertain']*176
+    d['measurement_status']=['classified_four_state_morph']*80+['not_evaluable_roi_or_flip_gate']*174+['image_acquisition_failed']*2
+    d['classified_four_hue']=['true']*80+['false']*176
+    data=tmp_path/'measured_photos.parquet';data.write_bytes(b'test-stand-in')
+    parents={'pool':'b'*64};method={'test_model':'same'}
+    source={'schema':'mois_cached_remaining_source_v1','status':'SOURCE_ONLY','count':256,'data_sha256':'c'*64,'parents':parents}
+    receipt={'schema':'mois_cached_remaining_complete_data_only_v1','attempted':256,'downloaded':254,'acquisition_failed':2,'classified':80,'unclassified':176,'acquired_unclassified':174,'source_sha256':'c'*64,'parents':parents,'method':method,'photo_data_sha256':m.digest(data)}
+    (tmp_path/'source.json').write_text(json.dumps(source))
+    (tmp_path/'receipt.json').write_text(json.dumps(receipt))
+    monkeypatch.setattr(m.pd,'read_parquet',lambda path:d.copy())
+    actual,rec=m.read_completed_snapshot(tmp_path,parents,method)
+    assert actual.equals(d) and rec==receipt
+    wrong={**receipt,'classified':81}
+    (tmp_path/'receipt.json').write_text(json.dumps(wrong))
+    with pytest.raises(ValueError,match='counts'):
+        m.read_completed_snapshot(tmp_path,parents,method)
+    (tmp_path/'receipt.json').write_text(json.dumps(receipt))
+    data.write_bytes(b'changed')
+    with pytest.raises(ValueError,match='fingerprint'):
+        m.read_completed_snapshot(tmp_path,parents,method)
