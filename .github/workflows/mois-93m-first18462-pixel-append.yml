@@ -1,0 +1,176 @@
+name: MOIS append first genuine 93m observation RGB pixels to 350399 original photos
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_append_full93m_first_original_RGB_photo_wave_20261019.py
+      - tests/test_mois_append_full93m_first_original_RGB_photo_wave_20261019.py
+      - .github/workflows/mois-93m-first18462-pixel-append.yml
+  workflow_run:
+    workflows:
+      - "MOIS first genuine RGB photos from the complete 93m source"
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-original350399-plus-first-full93m-real-pixel-append-v1
+  cancel-in-progress: false
+jobs:
+  source-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reject duplicate source photos, signed photo errors and unknown RGB labels
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_append_full93m_first_original_RGB_photo_wave_20261019.py
+          python -m py_compile scripts/analysis/mois_append_full93m_first_original_RGB_photo_wave_20261019.py
+  join-actual-original-RGB-only:
+    needs: source-tests
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
+        github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read source photo Parquets only, never redownload already acquired licensed images
+        run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Require signed NEW actual first 93m photo ROI release, not a source-only roster
+        run: |
+          set -euo pipefail
+          tag=mois-full93m-observation-baseline-original-RGB-p0002-v1
+          gh release view "$tag" --repo zuizui0223/mois --json isDraft --jq .isDraft | grep -qx false
+          gh release download "$tag" --repo zuizui0223/mois --dir new93m \
+            --pattern measured_photos.parquet --pattern receipt.json --pattern source.json
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          def sha(f):
+              h=hashlib.sha256()
+              with Path(f).open('rb') as p:
+                  for b in iter(lambda:p.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          d=json.loads(Path('new93m/receipt.json').read_text())
+          m=json.loads(Path('new93m/source.json').read_text())
+          assert d['schema']=='mois_global93m_observation_baseline_real_RGB_photo_results_v1'
+          assert m['schema']=='mois_full_source_observation_sampling_cohort_v1'
+          assert d['attempted']==m['new_photo_attempts_planned']==18462
+          assert m['sampled_photo_ids_before_prior_dedup']==18533
+          assert m['previously_measured_photo_ids_skipped']==71
+          assert m['selected_new_photos_unsupported_by_frozen_loader']==0
+          assert d['source_plan_sha256']==sha('new93m/source.json')
+          assert d['measured_photo_parquet_sha256']==sha('new93m/measured_photos.parquet')
+          print('MOIS_FULL93M_ACTUALLY_PROCESSED_18462_NEW_RGB_SOURCE_VERIFIED')
+          PY
+      - name: Reuse only immutable previous original photo pixel Parquets
+        run: |
+          set -euo pipefail
+          gh release download mois-primary-real317631-next4096-incremental-all19-featurelake-v3 \
+            --repo zuizui0223/mois --dir actual/core \
+            --pattern primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --pattern mois_317631_new4096_incremental_climate_feature_lake_receipt.json
+          gh release download mois-broad-world-angiosperm-newtaxa4096-real-RGB-ROI-v1 \
+            --repo zuizui0223/mois --dir actual/broad \
+            --pattern primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --pattern mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json
+          gh release download mois-broad-wave2-4096-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/wave2 \
+            --pattern wave2_measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-next8192-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/cached8192 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-tail16384-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/tail16384 \
+            --pattern measured_photos.parquet --pattern receipt.json
+      - name: Verify frozen OLD 350399 raw original photo source SHA receipts
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          def sha(f):
+              h=hashlib.sha256()
+              with Path(f).open('rb') as p:
+                  for b in iter(lambda:p.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          c=Path('actual/core')
+          r=json.loads((c/'mois_317631_new4096_incremental_climate_feature_lake_receipt.json').read_text())
+          f='primary317631_actual_photo_hue_RGB_attempts.parquet'
+          assert r['all_original_photo_attempts']==317631 and sha(c/f)==r['photo_ID_aligned_Zstd_files_sha256'][f]
+          b=Path('actual/broad')
+          r=json.loads((b/'mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json').read_text())
+          f='primary313535_plus_broad4096_genuine_original_hue_photos.parquet'
+          assert r['expanded_actual_original_photo_attempts']==317631 and sha(b/f)==r['new_combined_photo_parquet_SHA256']
+          for arm,f,n in (
+              ('wave2','wave2_measured_photos.parquet',4096),
+              ('cached8192','measured_photos.parquet',8192),
+              ('tail16384','measured_photos.parquet',16384)):
+              q=Path('actual')/arm
+              j=json.loads((q/'receipt.json').read_text())
+              assert j['attempted']==n and sha(q/f)==j['photo_data_sha256']
+          print('MOIS_ORIGINAL350399_EVERY_IMAGE_PHOTO_BYTE_SHA_VERIFIED')
+          PY
+      - name: Publish truly enlarged observation/photo source and four-hue source-arm statistics
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_append_full93m_first_original_RGB_photo_wave_20261019 \
+            --core actual/core/primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --broad actual/broad/primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --wave2 actual/wave2/wave2_measured_photos.parquet \
+            --cached8192 actual/cached8192/measured_photos.parquet \
+            --tail16384 actual/tail16384/measured_photos.parquet \
+            --new-parquet new93m/measured_photos.parquet \
+            --new-receipt new93m/receipt.json \
+            --source-manifest new93m/source.json \
+            --output actual_plus93m
+          python - <<'PY'
+          import json
+          d=json.load(open('actual_plus93m/mois368861_original_real_photo_first93m_rgb_append_receipt.json'))
+          assert d['preexisting_actual_photo_ROIs']==350399
+          assert d['new_actual_original_photo_attempts']==18462
+          assert d['total_actual_original_photo_attempts']==368861
+          assert d['photo_ID_duplicate_count']==0
+          assert not d['old_photo_IDs_altered']
+          assert d['no_native_island_or_environmental_effect_estimated']
+          assert d['all_original_licensed_image_bytes_remain_off_release']
+          print('MOIS_368861_OLD_PLUS_NEW_ACTUAL_IMAGE_PIXELS_APPEND_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-authentic-original368861-photo-ID-four-hue-ROI-union-v1
+          path: actual_plus93m/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Save exact original photo-only union and provenance as a new immutable Release
+        run: |
+          set -euo pipefail
+          tag=mois-genuine368861-original-photo-RGB-first93m-observation-sample-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            gh release download "$tag" --repo zuizui0223/mois \
+              --pattern mois368861_original_real_photo_first93m_rgb_append_receipt.json --dir archived
+            cmp archived/mois368861_original_real_photo_first93m_rgb_append_receipt.json \
+                actual_plus93m/mois368861_original_real_photo_first93m_rgb_append_receipt.json
+            echo 'Original immutable photo append already released, identical receipt.'
+          else
+            gh release create "$tag" actual_plus93m/* \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS 368861 original photo attempts: first 18462 real 93m-source RGB additions' \
+              --notes 'Genuine YOLO11+EfficientSAM fixed ROI-v4 original-photo measurements, only after the 93209351 upstream photo ID/observation provenance and every real 18462 image-attempt worker completed. Frozen old 350399 image rows/colour flags retained; IDs unique, classifiability and original technical failures reported. No old source RGB remeasurement, botanical open-petal confirmation, native/WCVP, environment, phylogeny, pigment cost, fitness or ecological analysis. The full 93m photo source index is not 93m classified image pixels.'
+          fi
