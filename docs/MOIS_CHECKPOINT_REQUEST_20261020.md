@@ -22,3 +22,17 @@ The checkpoint source registry pins these exact four run IDs, their original pho
 A successful [checkpoint workflow](https://github.com/zuizui0223/mois/actions/workflows/mois-completed-pixel-checkpoint.yml) will publish `mois-real-pixel-checkpoint-<run-id>-v1` with `checkpoint_receipt.json`, both Parquet outputs and photo/hue counts. Only after the run is successful and the new receipt matches all file digests should its totals be described as confirmed.
 
 This milestone path is an explicit source-backed way to request an additional checkpoint during active long-running image acquisition without modifying or restarting the measurement workers. It does not schedule repeated artificial snapshots.
+
+## Refresh request: complete p0004 source + new p0008/p0016 group terminals
+
+This new source-verified snapshot was requested after the full p0004 terminal union was separately published as [mois-genuine630602-original-pixels-first-two-93m-waves-v1](https://github.com/zuizui0223/mois/releases/tag/mois-genuine630602-original-pixels-first-two-93m-waves-v1). The **previous partial pixel checkpoint** was [39381982167](https://github.com/zuizui0223/mois/releases/tag/mois-real-pixel-checkpoint-39381982167-v1), with 639,363 attempted photo IDs and 306,186 machine-classified four-hue images. The source-authenticated p0004 complete increment was independently verified at 18,119 attempts / 7,085 classifiable.
+
+New archived image-worker groups are available beyond that checkpoint:
+- p0004 39353343403: all 18/18 complete (unchanged since previous checkpoint)
+- p0008 39371199127: 8 completed source-pinned groups; four acquisition workers active, none failed
+- p0016 39374811084: 3 completed source-pinned groups; two acquisition workers active, none failed
+- full shadow study 39369517433: 569 attempted and 199 classified (unchanged)
+
+**Do not extrapolate a new classified count from group counts.** The existing collector must SHA-check and reconcile each original source photo / observation ID, byte-immutable model method and terminal outcome, then publish the exact newly classified and still-pending counts as an immutable checkpoint. Do not rerun colour inference, re-fetch images or add any low-resolution filter.
+
+This documentation update intentionally triggers the existing one-off data-only `main` checkpoint. It does not schedule a recurring task or change image-acquisition workers.
