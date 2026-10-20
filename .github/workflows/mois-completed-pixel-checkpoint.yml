@@ -11,6 +11,7 @@ on:
     paths:
       - scripts/acquisition/mois_completed_pixel_checkpoint.py
       - .github/workflows/mois-completed-pixel-checkpoint.yml
+      - docs/MOIS_CHECKPOINT_REQUEST_20261020.md
   workflow_run:
     workflows:
       - "MOIS second nested 93m observation RGB p0004 after first source"
