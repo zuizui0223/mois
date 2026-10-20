@@ -1,0 +1,302 @@
+name: MOIS sixth geographic enrichment tier05 original RGB (tropics and south)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/mois-tier05-geographic-enrichment-RGB.yml
+  pull_request:
+    paths:
+      - .github/workflows/mois-tier05-geographic-enrichment-RGB.yml
+      - tests/test_mois_tier05_geographic_enrichment_workflow.py
+  workflow_dispatch:
+    inputs:
+      resume_run:
+        description: 'Previous geo05 run with this exact source, for completed-unit reuse'
+        type: string
+        required: false
+        default: ''
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-original-tier05-geo-enrichment-source-sha-v1
+  cancel-in-progress: false
+jobs:
+  qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 PyYAML==6.0.2
+          for file in test_mois_tier05_geographic_enrichment_workflow.py test_mois_geographic_enrichment_queue.py test_mois_full_index_real_photo_measure.py test_mois_queue_from_full93m_target_tiers.py test_mois_verify_parallel_photo_queues.py; do
+            python -m unittest discover -s tests -p "$file" -v
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-geo05-source-contract-review
+          path: |
+            .github/workflows/mois-tier05-geographic-enrichment-RGB.yml
+            tests/test_mois_tier05_geographic_enrichment_workflow.py
+          include-hidden-files: true
+          retention-days: 14
+  source:
+    needs: qa
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+      groups: ${{ steps.queue.outputs.groups }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require published prior pixels and skip already completed tier05 increment
+        id: gate
+        run: |
+          set -euo pipefail
+          echo 'ready=false' >> "$GITHUB_OUTPUT"
+          for tag in mois-complete-93209351-original-photo-target-tiers-v1 mois-real-pixel-checkpoint-39416137341-v1; do
+            gh release view "$tag" --repo zuizui0223/mois --json isDraft --jq .isDraft | grep -qx false
+          done
+          if gh release view mois-full93m-observation-sixth-geo-enrichment-original-RGB-tier05-v1 --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo 'Original tier05 increment already published; no repeat image processing.'
+            exit 0
+          fi
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+      - if: steps.gate.outputs.ready == 'true'
+        run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Read only tier05 plus completed checkpoint and immutable source reservations
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release download mois-complete-93209351-original-photo-target-tiers-v1 \
+            --repo zuizui0223/mois --dir targets \
+            --pattern 'tier-05-group-*.tar' --pattern 'group-??-receipt.json' \
+            --pattern mois_all_original_photo_target_tiers_receipt.json
+          gh release download mois-real-pixel-checkpoint-39416137341-v1 \
+            --repo zuizui0223/mois --dir prior-pixels \
+            --pattern combined_actual_photo_checkpoint.parquet --pattern checkpoint_receipt.json
+          gh run download 38749681793 --repo zuizui0223/fcp \
+            --name fcp-42111-real-source-photo-opportunity-counts-20260927-complete-not-colours --dir counts
+          gh run download 39353343403 --repo zuizui0223/mois \
+            --name mois-93m-p0004-precolour-observation --dir reserved-p0004
+          gh run download 39371199127 --repo zuizui0223/mois \
+            --name mois-93m-p0008-precolour-observation --dir reserved-p0008
+          gh run download 39369517433 --repo zuizui0223/mois \
+            --name mois-tier03-shadow-b0-source --dir reserved-shadow
+          gh run download 39401484641 --repo zuizui0223/mois \
+            --name mois-93m-p0032-precolour-observation --dir reserved-p0032
+          gh run download 39374811084 --repo zuizui0223/mois \
+            --name mois-93m-p0016-precolour-observation --dir reserved-p0016
+      - name: Freeze every unmeasured tier05 photo with zero overlap against all prior queues
+        id: queue
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,os,subprocess,sys,tarfile
+          from pathlib import Path
+          import pandas as pd
+          def sha(path):
+              h=hashlib.sha256()
+              with Path(path).open('rb') as f:
+                  for b in iter(lambda:f.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          registry=Path('targets/mois_all_original_photo_target_tiers_receipt.json')
+          full=json.loads(registry.read_text())
+          assert full['exact_original_photo_IDs_in_all_disjoint_tiers']==93209351
+          assert full['new_target_counts_by_tier']['5']==297967
+          archives=sorted(Path('targets').glob('tier-05-group-*.tar'))
+          assert len(archives)==16
+          Path('tier-input').mkdir()
+          for file in archives:
+              assert sha(file)==full['published_tier_archive_SHA256'][file.name]
+              with tarfile.open(file) as archive:archive.extractall('tier-input',filter='data')
+          root=Path('prior-pixels')
+          r=json.loads((root/'checkpoint_receipt.json').read_text())
+          file=root/'combined_actual_photo_checkpoint.parquet'
+          assert r['schema']=='mois_sealed_actual_pixel_checkpoint_v1'
+          assert r['combined_unique_photo_attempts']==670083
+          assert r['combined_four_hue_classified']==318062
+          assert r['baseline_projected_rows_preserved']
+          assert r['waves']['shadow']['attempted']==569
+          assert r['waves']['shadow']['classifiable']==199
+          assert sha(file)==r['output_sha256'][file.name]
+          old=pd.read_parquet(file,columns=['photo_id','morph'])
+          ids=old.photo_id.astype(str)
+          assert len(ids)==670083 and ids.is_unique and ids.str.fullmatch(r'\d+').all()
+          assert int(old.morph.isin(['white','yellow_orange','red_pink','blue_purple']).sum())==318062
+          Path('prior.csv').write_text('photo_id\n'+'\n'.join(ids)+'\n')
+          count=next(Path('counts').rglob('all_42111_species_photo_opportunity_counts.csv'))
+          group_receipts=sorted(Path('targets').glob('group-??-receipt.json'))
+          assert len(group_receipts)==16
+          cmd=[sys.executable,'-m','scripts.acquisition.mois_queue_from_full93m_target_tiers',
+              '--registry',str(registry),'--targets','tier-input','--counts',str(count),
+              '--previous','prior.csv','--output','current',
+              '--tier','5','--compute-bucket','0','--compute-bucket-count','1',
+              '--geographic-enrichment']
+          for receipt in group_receipts:cmd+=['--group-receipt',str(receipt)]
+          subprocess.run(cmd,check=True)
+          q=json.load(open('current/manifest.json'))
+          assert q['source_tier_total_photo_candidates']==297967
+          assert q['source_tier_compute_bucket_total_photos']==297967
+          assert q['source_tier_probability_lower_bound']==0.0032
+          assert q['selection_probability'] is None
+          assert q['new_photo_attempts_planned']>0
+          assert q['previously_measured_photo_ids_skipped']>=0
+          assert q['new_photo_attempts_planned']+q['previously_measured_photo_ids_skipped']+q['selected_new_photos_unsupported_by_frozen_loader']+q['geographic_selection_excluded_photo_candidates']==297967
+          assert q['native_photo_status_not_inferred_or_hard_filtered']
+          assert q['geographic_sampling_design']=='source_signed_observation_level_metadata_enrichment_v1'
+          assert q['geographic_probabilities_are_heterogeneous_per_original_observation']
+          assert q['geographic_enrichment_strictly_separate_from_complete_probability_arm']
+          assert q['geographic_selection_rates']=={
+              'tropical':0.5,'south_extratropical':0.25,
+              'north_extratropical':1.0/64,'unknown':1.0/64}
+          assert q['source_tier_compute_bucket_total_photos']==(
+              q['new_photo_attempts_planned']+
+              q['previously_measured_photo_ids_skipped']+
+              q['selected_new_photos_unsupported_by_frozen_loader']+
+              q['geographic_selection_excluded_photo_candidates'])
+          assert 0<len(q['group_ids'])<=256
+          from scripts.acquisition.mois_verify_parallel_photo_queues import verify_disjoint
+          for name,expected in [('p0004',18119),('p0008',36375),('p0016',73872),('p0032',148071),('shadow',569)]:
+              proof=verify_disjoint('current','reserved-'+name)
+              assert proof['active_photo_targets']==expected
+              assert proof['overlapping_photo_ids']==0
+              assert proof['overlapping_observation_ids']==0
+              Path(f'current/parallel_{name}_receipt.json').write_text(json.dumps(proof,indent=2,sort_keys=True)+'\n')
+              print('MOIS_TIER05_GEO_ENRICHMENT_DISJOINT',name,json.dumps(proof,sort_keys=True),flush=True)
+          checkpoint_proof={'completed_prior_photo_IDs':670083,
+              'completed_prior_four_hue_classified':318062,
+              'prior_checkpoint_sha256':sha(root/'checkpoint_receipt.json'),
+              'prior_parquet_sha256':sha(file),
+              'source_plan_sha256':sha('current/manifest.json'),
+              'lowres_filter_enabled':False,'native_hard_filter_enabled':False}
+          Path('current/prior_checkpoint_proof.json').write_text(json.dumps(checkpoint_proof,indent=2,sort_keys=True)+'\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write('groups='+json.dumps(q['group_ids'])+'\n')
+          print('MOIS_TIER05_GEO_NEW_PHOTO_ATTEMPTS_READY',q['new_photo_attempts_planned'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-93m-geo05-precolour-observation
+          path: current/
+          retention-days: 90
+          if-no-files-found: error
+  measure:
+    needs: source
+    if: needs.source.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        group: ${{ fromJSON(needs.source.outputs.groups) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      RESUME_RUN: ${{ inputs.resume_run || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-93m-geo05-precolour-observation
+          path: source
+      - name: Reuse completed original work units when explicitly resuming
+        run: |
+          set -euo pipefail
+          # inputs.resume_run is passed through the environment, not shell interpolation.
+          mkdir -p measured
+          if [ -n "$RESUME_RUN" ]; then
+            [[ "$RESUME_RUN" =~ ^[0-9]+$ ]]
+            gh run download "$RESUME_RUN" --repo zuizui0223/mois \
+              --name 'mois-93m-geo05-RGB-group-${{ matrix.group }}' --dir measured
+          fi
+      - name: Restore unchanged full-resolution ROI model and weights
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Acquire only new photos and run original ROI without screening exclusions
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-geo05-photo-rate"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work \
+            --source source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --group '${{ matrix.group }}' --output measured
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-93m-geo05-RGB-group-${{ matrix.group }}
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+  collect:
+    needs: [source,measure]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-93m-geo05-precolour-observation
+          path: source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-93m-geo05-RGB-group-*
+          path: workers
+      - name: Reconcile every original photo ID and preserve technical unknowns
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure collect \
+            --source source --workers workers --output genuine_photos
+          cp source/manifest.json genuine_photos/source.json
+          cp source/parallel_*_receipt.json source/prior_checkpoint_proof.json genuine_photos/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-93m-geo05-genuine-original-RGB
+          path: genuine_photos/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish only completed new original image outcomes
+        run: |
+          set -euo pipefail
+          tag=mois-full93m-observation-sixth-geo-enrichment-original-RGB-tier05-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            gh release download "$tag" --repo zuizui0223/mois --dir old-release --pattern receipt.json
+            cmp old-release/receipt.json genuine_photos/receipt.json
+          else
+            gh release create "$tag" genuine_photos/*.json genuine_photos/*.parquet \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS remaining tier05 genuine original image ROI outcomes, no lowres exclusion' \
+              --notes 'New photo IDs only in hash interval [0.0032,0.0064), removing the entire completed 670083-photo checkpoint including all 569 shadow attempts. Zero photo and observation overlap with the pinned p0004, p0008 and shadow source queues was required before acquisition. Original frozen full-resolution ROI-v4; no low-resolution exclusion or native-status hard filter. Technical unknowns and download failures retained. This is the remaining tier05 increment, not all p<=0.0064 photos or a world-flora census. No raw photographs redistributed.'
+          fi
