@@ -19,6 +19,7 @@ on:
       - "MOIS new tier03 pixels and lowres screen shadow without image exclusion"
       - "MOIS full remaining tier03 original RGB p0016 without lowres exclusion"
       - "MOIS fifth disjoint tier04 original RGB p0032 without lowres exclusion"
+      - "MOIS sixth geographic enrichment tier05 original RGB (tropics and south)"
     types: [completed]
     branches: [main]
   workflow_dispatch:
@@ -50,7 +51,7 @@ jobs:
       (github.event_name != 'workflow_run' ||
        (github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
         github.event.workflow_run.head_branch == 'main' &&
-        contains(fromJSON('[39353343403,39371199127,39369517433,39374811084,39401484641]'), github.event.workflow_run.id)))
+        contains(fromJSON('[39353343403,39371199127,39369517433,39374811084,39401484641,39417990675]'), github.event.workflow_run.id)))
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
@@ -85,7 +86,8 @@ jobs:
               ('p0008',39371199127,'mois-93m-p0008-precolour-observation','mois-93m-p0008-RGB-group-'),
               ('shadow',39369517433,'mois-tier03-shadow-b0-source','mois-tier03-shadow-b0-RGB-group-'),
               ('p0016',39374811084,'mois-93m-p0016-precolour-observation','mois-93m-p0016-RGB-group-'),
-              ('p0032',39401484641,'mois-93m-p0032-precolour-observation','mois-93m-p0032-RGB-group-')]
+              ('p0032',39401484641,'mois-93m-p0032-precolour-observation','mois-93m-p0032-RGB-group-'),
+              ('geo05',39417990675,'mois-93m-geo05-precolour-observation','mois-93m-geo05-RGB-group-')]
           for name,run,source,prefix in specs:
               root=Path('checkpoint-input/waves')/name
               (root/'workers').mkdir(parents=True)
@@ -125,4 +127,4 @@ jobs:
           gh release create "$tag" sealed-checkpoint/* --repo zuizui0223/mois \
             --target "$GITHUB_SHA" --prerelease \
             --title "MOIS actual measured pixel checkpoint ${GITHUB_RUN_ID}" \
-            --notes 'Only completed original-image units recovered from stored p0004, p0008, p0016, p0032 and shadow artifacts. Byte-checked original source IDs, full-model method, terminal outcomes and prior 612483-photo union. Pending work is explicitly listed and is not counted as measured. Combined Parquet is a compact metadata/hue projection; full new measurements are retained separately and original baseline releases are unchanged. Partial computation completion is not an unbiased ecological or complete-probability cohort. No new image download, model inference, native filtering or raw image redistribution.'
+            --notes 'Only completed original-image units recovered from stored p0004, p0008, p0016, p0032, geo05 and shadow artifacts. Byte-checked original source IDs, full-model method, terminal outcomes and prior 612483-photo union. Pending work is explicitly listed and is not counted as measured. Combined Parquet is a compact metadata/hue projection; full new measurements are retained separately and original baseline releases are unchanged. Partial computation completion is not an unbiased ecological or complete-probability cohort. No new image download, model inference, native filtering or raw image redistribution.'
