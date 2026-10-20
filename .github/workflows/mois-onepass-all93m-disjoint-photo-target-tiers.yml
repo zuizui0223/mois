@@ -1,0 +1,220 @@
+name: MOIS one-pass 93m original-photo target registry by acquisition tier
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_onepass_full93m_target_tiers.py
+      - scripts/acquisition/mois_queue_from_full93m_target_tiers.py
+      - tests/test_mois_onepass_full93m_target_tiers.py
+      - tests/test_mois_queue_from_full93m_target_tiers.py
+      - .github/workflows/mois-onepass-all93m-disjoint-photo-target-tiers.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_onepass_full93m_target_tiers.py
+      - .github/workflows/mois-onepass-all93m-disjoint-photo-target-tiers.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-original93m-source-index-one-pass-all-disjoint-photo-targets-v1
+  cancel-in-progress: false
+jobs:
+  source-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test full-target one-pass photo IDs, disjoint observation tiers and unknowns
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_mois_onepass_full93m_target_tiers.py' -v
+          python -m unittest discover -s tests -p 'test_mois_queue_from_full93m_target_tiers.py' -v
+          python -m py_compile scripts/acquisition/mois_onepass_full93m_target_tiers.py
+          python -m py_compile scripts/acquisition/mois_queue_from_full93m_target_tiers.py
+  start-target-index:
+    needs: source-tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      needed: ${{ steps.gate.outputs.needed }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Avoid re-extracting all full source targets if frozen release exists
+        id: gate
+        run: |
+          set -euo pipefail
+          tag=mois-complete-93209351-original-photo-target-tiers-v1
+          if gh release view "$tag" --repo zuizui0223/mois --json isDraft --jq .isDraft 2>/dev/null | grep -qx false; then
+            mkdir -p previously
+            gh release download "$tag" --repo zuizui0223/mois --dir previously \
+              --pattern mois_all_original_photo_target_tiers_receipt.json
+            python - <<'PY'
+          import json
+          d=json.load(open('previously/mois_all_original_photo_target_tiers_receipt.json'))
+          assert d['schema']=='mois_complete_full93m_original_photo_target_registry_v1'
+          assert d['exact_original_photo_IDs_in_all_disjoint_tiers']==93209351
+          assert d['native_vs_introduced_not_hard_filtered']
+          assert d['source_only_NO_photo_pixels_or_hue_measured']
+          PY
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+            echo 'Exact full 93m target source already complete; not re-scanning.'
+          else
+            echo 'needed=true' >> "$GITHUB_OUTPUT"
+          fi
+  materialize-target-tiers:
+    needs: [source-tests, start-target-index]
+    if: needs.start-target-index.outputs.needed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve ONLY this source archive of eight original photo and observation partitions
+        run: |
+          set -euo pipefail
+          g=$(printf '%02d' '${{ matrix.group }}')
+          mkdir -p downloaded original
+          gh release download mois-full-93209351-indexed-photo-observation-source-v1 \
+            --repo zuizui0223/mois --dir downloaded \
+            --pattern manifest.json --pattern SHA256SUMS.txt --pattern "source-${g}.tar"
+          (cd downloaded && sha256sum -c --ignore-missing SHA256SUMS.txt)
+          cp downloaded/manifest.json original/manifest.json
+          tar -xf "downloaded/source-${g}.tar" -C original
+          test "$(find original/photos -name '*.csv.gz' | wc -l)" -eq 8
+          test "$(find original/observations -name '*.csv.gz' | wc -l)" -eq 8
+      - name: Enumerate every original target photo ID ONCE and build 14 disjoint photo tiers
+        run: |
+          set -euo pipefail
+          start=$(( ${{ matrix.group }} * 8 ))
+          python -m scripts.acquisition.mois_onepass_full93m_target_tiers group \
+            --index original --output results --parts $(seq "$start" "$((start+7))")
+          python - <<'PY'
+          import json
+          d=json.load(open('results/receipt.json'))
+          assert len(d['parts'])==8
+          assert sum(d['counts_by_disjoint_tier'].values())==d['original_photo_IDs_in_this_group']
+          assert d['images_downloaded']==0 and d['colour_pixels_measured']==0
+          assert not d['native_TDWG3_individual_or_island_status_inferred']
+          print('MOIS_ORIGINAL_SOURCE_PHOTO_TARGET_TIER_GROUP_VERIFIED',
+                d['processed_parts'],d['original_photo_IDs_in_this_group'])
+          PY
+      - name: Package 14 deterministic, tier-addressable original-photo source archives
+        run: |
+          set -euo pipefail
+          group=$(printf '%02d' '${{ matrix.group }}')
+          mkdir -p publish
+          for t in $(seq 0 13); do
+            tier=$(printf '%02d' "$t")
+            file="tier-${tier}-group-${group}.tar"
+            tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner \
+              -C results/targets -cf "publish/${file}" "tier-${tier}"
+            size=$(stat -c %s "publish/${file}")
+            test "$size" -lt 1950000000
+          done
+          GROUP="$group" python - <<'PY'
+          import os,json,hashlib
+          from pathlib import Path
+          group=os.environ['GROUP']
+          doc=json.load(open('results/receipt.json'))
+          doc['archive_sha256_by_tier']={
+            p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in sorted(Path('publish').glob('tier-*.tar'))
+          }
+          assert len(doc['archive_sha256_by_tier'])==14
+          Path(f'publish/group-{group}-receipt.json').write_text(
+              json.dumps(doc,ensure_ascii=False,sort_keys=True,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-original93m-target-source-group-${{ matrix.group }}
+          path: publish/
+          retention-days: 14
+          if-no-files-found: error
+  verify-and-publish-complete-targets:
+    needs: [source-tests, start-target-index, materialize-target-tiers]
+    if: needs.start-target-index.outputs.needed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-original93m-target-source-group-*
+          path: all-targets
+          merge-multiple: true
+      - name: Restore signed full source photo-ID count receipt, not the large original pictures
+        run: |
+          set -euo pipefail
+          mkdir -p index
+          gh release download mois-full-93209351-indexed-photo-observation-source-v1 \
+            --repo zuizui0223/mois --dir index --pattern manifest.json
+      - name: Verify all 128 partitions and 93209351 distinct original photo candidates by source SHA
+        run: |
+          set -euo pipefail
+          test "$(find all-targets -maxdepth 1 -name 'group-??-receipt.json' | wc -l)" -eq 16
+          test "$(find all-targets -maxdepth 1 -name 'tier-??-group-??.tar' | wc -l)" -eq 224
+          python -m scripts.acquisition.mois_onepass_full93m_target_tiers verify \
+            --index-manifest index/manifest.json \
+            --group-receipts all-targets/group-??-receipt.json \
+            --tier-archives all-targets \
+            --output all-targets/mois_all_original_photo_target_tiers_receipt.json
+      - name: Publish the COMPLETE source-only original-photo measurement target roster
+        run: |
+          set -euo pipefail
+          tag=mois-complete-93209351-original-photo-target-tiers-v1
+          repo=zuizui0223/mois
+          if gh release view "$tag" --repo "$repo" --json isDraft --jq .isDraft 2>/dev/null | grep -qx false; then
+            gh release download "$tag" --repo "$repo" --dir existing \
+              --pattern mois_all_original_photo_target_tiers_receipt.json
+            cmp existing/mois_all_original_photo_target_tiers_receipt.json \
+                all-targets/mois_all_original_photo_target_tiers_receipt.json
+            echo 'Immutable all-source photo candidate target register already published.'
+            exit 0
+          fi
+          if ! gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
+            gh release create "$tag" --repo "$repo" --target "$GITHUB_SHA" --draft \
+              --title 'MOIS all 93209351 original photo acquisition targets, once-only disjoint tiers' \
+              --notes 'Every photo ID from independently authenticated 2026-09-27 source, joined to its original observation day, geolocation, license and format. Same observation hash seed and 14 mutually exclusive cumulative probability tiers; no species/genus/observation count caps. Source metadata only; NO new image bytes, true flower petals, RGB labels or native/island inference. Native/introduced must be annotated non-destructively later; no target was deleted by broad botanical country status.'
+          fi
+          # A draft release is deliberately not made public until EVERY asset is present.
+          release_id=$(gh api "repos/$repo/releases/tags/$tag" --jq .id)
+          gh api --paginate "repos/$repo/releases/$release_id/assets?per_page=100" \
+            --jq '.[] | {name,digest}' > published_assets.jsonl
+          for file in all-targets/*.tar all-targets/group-??-receipt.json all-targets/mois_all_original_photo_target_tiers_receipt.json; do
+            name=${file##*/}
+            digest="sha256:$(sha256sum "$file" | cut -d' ' -f1)"
+            existing=$(jq -r --arg name "$name" \
+              'select(.name==$name) | .digest' published_assets.jsonl | head -1)
+            if [ -n "$existing" ]; then
+              test "$existing" = "$digest" || {
+                echo "Existing asset $name hash missing or mismatched; refusing to overwrite." >&2
+                exit 1
+              }
+            else
+              gh release upload "$tag" "$file" --repo "$repo"
+            fi
+          done
+          gh release edit "$tag" --repo "$repo" --draft=false
+          echo 'MOIS_COMPLETED_ALL_93209351_SOURCE_TARGET_TIERS_NOT_IMAGE_COLOURS'
