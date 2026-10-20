@@ -1,0 +1,96 @@
+name: MOIS recover completed all93m source target release without source reread
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_resume_signed_93m_target_release.py
+      - tests/test_mois_resume_signed_93m_target_release.py
+      - .github/workflows/mois-recover-signed-onepass93m-target-release.yml
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_resume_signed_93m_target_release.py
+      - tests/test_mois_resume_signed_93m_target_release.py
+      - .github/workflows/mois-recover-signed-onepass93m-target-release.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-full93m-target-release-recovery-existing-draft-id-417967155
+  cancel-in-progress: false
+jobs:
+  source-authentication-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test signed 241 assets, immutable SHA and fail-closed existing draft
+        run: |
+          set -euo pipefail
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q tests/test_mois_resume_signed_93m_target_release.py
+          python -m unittest discover -s tests -p 'test_mois_onepass_full93m_target_tiers.py' -v
+          python -m py_compile scripts/acquisition/mois_resume_signed_93m_target_release.py
+  publish-only-already-completed-original-93m-photo-targets:
+    needs: source-authentication-tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check exact existing draft release identity
+        run: |
+          set -euo pipefail
+          gh api repos/zuizui0223/mois/releases/417967155             --jq '[.id,.tag_name,.draft] | @tsv' > original_draft_identity.tsv
+          python - <<'PY'
+          row=open('original_draft_identity.tsv').read().strip().split('\t')
+          assert row[0]=='417967155'
+          assert row[1]=='mois-complete-93209351-original-photo-target-tiers-v1'
+          assert row[2] in ('true','false')
+          print('MOIS_PUBLISHED_OR_DRAFT_ORIGINAL_RELEASE_ID_AUTHENTICATED',row[2])
+          PY
+      - name: Reuse all 16 completed previous real 93m source-target artifacts, no repeated 93m scan
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 39363274412
+          repository: zuizui0223/mois
+          github-token: ${{ github.token }}
+          pattern: mois-original93m-target-source-group-*
+          path: signed-targets
+          merge-multiple: true
+      - name: Recover exact upstream original 93m source index checksum only
+        run: |
+          set -euo pipefail
+          mkdir -p original-index
+          gh release download mois-full-93209351-indexed-photo-observation-source-v1             --repo zuizui0223/mois --dir original-index --pattern manifest.json
+          test "$(find signed-targets -maxdepth 1 -name 'tier-*.tar' | wc -l)" -eq 224
+          test "$(find signed-targets -maxdepth 1 -name 'group-??-receipt.json' | wc -l)" -eq 16
+      - name: Reverify every signed source partition and archived source SHA before upload
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_onepass_full93m_target_tiers verify             --index-manifest original-index/manifest.json             --group-receipts signed-targets/group-??-receipt.json             --tier-archives signed-targets             --output signed-targets/mois_all_original_photo_target_tiers_receipt.json
+          python - <<'PY'
+          import json
+          f='signed-targets/mois_all_original_photo_target_tiers_receipt.json'
+          r=json.load(open(f))
+          assert r['exact_original_photo_IDs_in_all_disjoint_tiers']==93209351
+          assert len(r['published_tier_archive_SHA256'])==224
+          assert r['source_only_NO_photo_pixels_or_hue_measured']
+          assert r['native_vs_introduced_not_hard_filtered']
+          print('MOIS_93M_TIER_ARCHIVES_SOURCE_SHA_CHECKS_ALL_PASS')
+          PY
+      - name: Resume exact 241 asset uploads into existing draft by numeric Release ID; publish only after SHA complete
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_resume_signed_93m_target_release             --source signed-targets             --release-id 417967155
+          gh api repos/zuizui0223/mois/releases/417967155             --jq '[.tag_name,.draft,(.assets|length)] | @tsv'
