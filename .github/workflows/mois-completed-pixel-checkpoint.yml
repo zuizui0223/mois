@@ -1,0 +1,109 @@
+name: MOIS recover completed real pixels from active acquisition waves
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_completed_pixel_checkpoint.py
+      - tests/test_mois_completed_pixel_checkpoint.py
+      - .github/workflows/mois-completed-pixel-checkpoint.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_completed_pixel_checkpoint.py
+      - .github/workflows/mois-completed-pixel-checkpoint.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-sealed-pixel-checkpoint-no-image-acquisition
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m unittest discover -s tests -p 'test_mois_completed_pixel_checkpoint.py' -v
+          python -m py_compile scripts/acquisition/mois_completed_pixel_checkpoint.py
+  recover:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Reuse exact published baseline without reacquiring any images
+        run: |
+          set -euo pipefail
+          gh release download mois-genuine-FCP447500-plus93m-first18462-photo-ID-union-v1 \
+            --repo zuizui0223/mois --dir checkpoint-input/baseline \
+            --pattern mois_source_verified_FCP447500_and_93m_p0002_combined_unique_photo_ROIs.parquet \
+            --pattern mois_original_photo_RGB_FCP447500_plus_first93m_id_union_receipt.json
+      - name: Freeze available worker artifacts and recover only their stored data
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          from datetime import datetime,timezone
+          from pathlib import Path
+          specs=[
+              ('p0004',39353343403,'mois-93m-p0004-precolour-observation','mois-93m-p0004-RGB-group-'),
+              ('p0008',39371199127,'mois-93m-p0008-precolour-observation','mois-93m-p0008-RGB-group-'),
+              ('shadow',39369517433,'mois-tier03-shadow-b0-source','mois-tier03-shadow-b0-RGB-group-')]
+          for name,run,source,prefix in specs:
+              root=Path('checkpoint-input/waves')/name
+              (root/'workers').mkdir(parents=True)
+              command=['gh','api','--paginate',f'repos/zuizui0223/mois/actions/runs/{run}/artifacts?per_page=100','--jq','.artifacts[]']
+              text=subprocess.check_output(command,text=True)
+              decoder=json.JSONDecoder();artifacts=[]
+              while text.strip():
+                  text=text.lstrip();value,end=decoder.raw_decode(text);artifacts.append(value);text=text[end:]
+              selected=[a for a in artifacts if a['name'].startswith(prefix)]
+              assert len({a['name'] for a in selected})==len(selected),'Duplicate worker artifacts'
+              assert all(not a['expired'] for a in selected),'Stored pixel artifacts expired'
+              record={'source_run_id':run,'captured_utc':datetime.now(timezone.utc).isoformat(),
+                      'artifacts':[{'id':a['id'],'name':a['name'],'size_in_bytes':a['size_in_bytes'],
+                                    'digest':a.get('digest')} for a in selected]}
+              (root/'artifact_snapshot.json').write_text(json.dumps(record,indent=2,sort_keys=True)+'\n')
+              subprocess.run(['gh','run','download',str(run),'--repo','zuizui0223/mois','--name',source,'--dir',str(root/'source')],check=True)
+              for a in selected:
+                  subprocess.run(['gh','run','download',str(run),'--repo','zuizui0223/mois',
+                      '--name',a['name'],'--dir',str(root/'workers'/a['name'])],check=True)
+              print('MOIS_STORED_PIXEL_ARTIFACTS_RECOVERED',name,len(selected),flush=True)
+          PY
+      - name: Validate actual terminals and append only measured IDs to baseline projection
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_completed_pixel_checkpoint \
+            --inputs checkpoint-input --output sealed-checkpoint
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-actual-sealed-pixel-checkpoint-${{ github.run_id }}
+          path: sealed-checkpoint/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish immutable partial checkpoint without replacing complete-wave releases
+        run: |
+          set -euo pipefail
+          tag="mois-real-pixel-checkpoint-${GITHUB_RUN_ID}-v1"
+          gh release create "$tag" sealed-checkpoint/* --repo zuizui0223/mois \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "MOIS actual measured pixel checkpoint ${GITHUB_RUN_ID}" \
+            --notes 'Only completed original-image units recovered from stored p0004, p0008 and shadow artifacts. Byte-checked original source IDs, full-model method, terminal outcomes and prior 612483-photo union. Pending work is explicitly listed and is not counted as measured. Combined Parquet is a compact metadata/hue projection; full new measurements are retained separately and original baseline releases are unchanged. Partial computation completion is not an unbiased ecological or complete-probability cohort. No new image download, model inference, native filtering or raw image redistribution.'
