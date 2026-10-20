@@ -83,7 +83,7 @@ jobs:
           assert r['second_nested_actual_image_attempts']==18119
           assert r['all_unique_original_photo_attempts']==630602
           assert r['old_four_hue_classified']==295801
-          assert r['previous_genuine_four_hue_classified_ROIs'] if 'previous_genuine_four_hue_classified_ROIs' in r else True
+          assert r['total_four_hue_classified']==295801+r['new_four_hue_classified']
           assert r['old_original_image_petal_ROI_rows_immutable']
           assert r['new_source_photo_IDs_disjoint_from_all_old_FCP_and_MOIS']
           assert r['native_climate_pollination_models_not_run']
