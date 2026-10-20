@@ -1,0 +1,107 @@
+name: MOIS union FCP 447500 original pixels with 93m first 18462 measured photos
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_union_FCP447500_and_first93m18462_actual_photos.py
+      - tests/test_mois_union_FCP447500_and_first93m18462_actual_photos.py
+      - .github/workflows/mois-union-fcp447500-first93m18462-original-pixels.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_union_FCP447500_and_first93m18462_actual_photos.py
+      - .github/workflows/mois-union-fcp447500-first93m18462-original-pixels.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-genuine-original-photo-fcp447500-plus-p0002-93m-union-v1
+  cancel-in-progress: false
+jobs:
+  source-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test photographed original photo-ID union, hue provenance and technical unknowns
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_union_FCP447500_and_first93m18462_actual_photos.py
+          python -m py_compile scripts/acquisition/mois_union_FCP447500_and_first93m18462_actual_photos.py
+  actual-original-photo-union:
+    needs: source-contracts
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Restore actual signed full FCP original photo ID data and measured first p0002 93m source
+        run: |
+          set -euo pipefail
+          gh release download mois-reuse-complete-FCP447500-actual-original-pixels-on350399-v1 \
+            --repo zuizui0223/mois --dir data/fcp \
+            --pattern mois_actual350399_plus_FCP447500_photo_ID_deduplicated_original_hues.parquet \
+            --pattern mois_FCP447500_signed_original_photo_reuse_on350399_receipt.json
+          gh release download mois-genuine368861-original-photo-RGB-first93m-observation-sample-v1 \
+            --repo zuizui0223/mois --dir data/full93m \
+            --pattern mois368861_authentic_original_photo_ROI_source_union.parquet \
+            --pattern mois368861_original_real_photo_first93m_rgb_append_receipt.json
+      - name: Validate and union all original-photo pixels without redownloading source photos or running ecology
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_union_FCP447500_and_first93m18462_actual_photos \
+            --fcp-parquet data/fcp/mois_actual350399_plus_FCP447500_photo_ID_deduplicated_original_hues.parquet \
+            --fcp-receipt data/fcp/mois_FCP447500_signed_original_photo_reuse_on350399_receipt.json \
+            --first-parquet data/full93m/mois368861_authentic_original_photo_ROI_source_union.parquet \
+            --first-receipt data/full93m/mois368861_original_real_photo_first93m_rgb_append_receipt.json \
+            --output union
+          python - <<'PY'
+          import json
+          p='union/mois_original_photo_RGB_FCP447500_plus_first93m_id_union_receipt.json'
+          r=json.load(open(p))
+          assert r['preexisting_FCP350399_source_union_original_photo_attempts']==594081
+          assert r['first_full93m_p0002_actual_photo_attempts']==18462
+          assert (r['additional_original_photo_IDs_not_previously_in_FCP_or_MOIS']+
+                  r['first_full93m_p0002_shared_with_FCP_completed_pixel_source'])==18462
+          assert r['all_genuinely_attempted_unique_original_photo_IDs']==(
+                 594081+r['additional_original_photo_IDs_not_previously_in_FCP_or_MOIS'])
+          assert r['all_old_FCP_and_MOIS_photo_pixels_preserved_immutable']
+          assert not r['new_native_status_or_environmental_ecology_analyses_run']
+          assert not r['original_licensed_photo_images_downloaded_for_this_union']
+          print('MOIS_FIRST_FULL93M_AND_ALL_FCP_MEASURED_PIXELS_UNIQUE_PHOTO_ID_SOURCE_CONFIRMED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-actual-original-photo-all-FCP447500-plus-first-full93m18k
+          path: union/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish one frozen complete original photo pixel union
+        run: |
+          set -euo pipefail
+          tag=mois-genuine-FCP447500-plus93m-first18462-photo-ID-union-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            gh release download "$tag" --repo zuizui0223/mois \
+              --pattern mois_original_photo_RGB_FCP447500_plus_first93m_id_union_receipt.json \
+              --dir existing
+            cmp existing/mois_original_photo_RGB_FCP447500_plus_first93m_id_union_receipt.json \
+                union/mois_original_photo_RGB_FCP447500_plus_first93m_id_union_receipt.json
+            echo 'Existing signed immutable source result unchanged.'
+          else
+            gh release create "$tag" union/* \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS ID-dedup original photo ROI pixels: FCP447500 plus actual 93m first18462' \
+              --notes 'Only original real photo ROI outcomes from existing signed 594081-photo FCP+MOIS union and source-signed 18462 genuinely measured p0002 original photos. Every photo ID unique; preserve old FCP/MOIS labels when the same original photo is present in both and report observed overlap disagreements and newly classifiable taxa. Technical failures and unknown hues never assigned chromatic, no raw copyrighted images redistributed. No new photo downloads or native, UV, pollinator, island, climate or ecological analysis. All 93209351 indexed source photo IDs are NOT themselves measured image colours.'
+          fi
