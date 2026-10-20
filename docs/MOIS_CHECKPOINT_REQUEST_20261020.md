@@ -94,3 +94,20 @@ Verified with full paginated GitHub Actions Jobs and matching stored worker arti
 This source-backed update requests exactly one **data-only** checkpoint of the newly sealed original-image terminals. Authenticate every completed source shard, original photo/observation ID and frozen ROI terminal method/checksum. Do not download or infer any new image. Do not count candidate image targets or queued unit numbers as measured hues. Original technical failures and ambiguous colours must remain unchanged.
 
 The source queues p0008, p0016 and p0032 continue to acquire photographs independently. This update does not modify or restart those jobs. The new release's verified photo and hue counts must be read from the production collector's immutable receipt.
+
+
+## New sealed fifth-wave units — 2026-10-20 evening
+
+The latest completed source-authenticated five-wave checkpoint [39413597007](https://github.com/zuizui0223/mois/releases/tag/mois-real-pixel-checkpoint-39413597007-v1) contains **667,011 uniquely attempted original photo IDs** (including acquisition errors) and **316,897 four-hue automatically classifiable original image outcomes**.
+
+The next paginated GitHub Actions source check finds these newly sealed original-image workers, compared with that immutable checkpoint:
+
+- p0004 source run 39353343403: 18/18 already completed, unchanged.
+- p0008 source run 39371199127: 24/36 completed groups, 4 running and 8 waiting; the preceding checkpoint used 23 groups.
+- p0016 source run 39374811084: 10/73 completed groups, 2 running and 61 waiting; unchanged from the preceding checkpoint.
+- p0032 source run 39401484641: 4/145 completed groups, 2 running and 139 waiting; the preceding checkpoint used 2 groups.
+- Independent 569-photo shadow comparison: complete, unchanged.
+
+**Do not assume that every group contains exactly 1024 classified original photos.** Trigger the already validated data-only five-wave recovery once. It must verify exact source-shard SHA, photo/observation IDs, original frozen ROI terminal hashes and true acquisition failures, then publish the new classified and unclassifiable counts. Neither download images nor rerun segmentation.
+
+This is a one-time source-provenance milestone of actual sealed worker outputs. The independent three-hour watcher remains enabled for subsequent new files, and the in-flight p0008/p0016/p0032 acquisition workers are not modified or cancelled.
