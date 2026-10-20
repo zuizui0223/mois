@@ -12,7 +12,9 @@ on:
       - scripts/acquisition/mois_checkpoint_fresh_artifact_gate.py
       - tests/test_mois_checkpoint_fresh_artifact_gate.py
   schedule:
-    - cron: '17 */3 * * *'
+    # One low-cost metadata check hourly, no new photo fetches unless a
+    # brand-new successful SHA-verified worker artifact has appeared.
+    - cron: '17 * * * *'
   workflow_dispatch:
 permissions:
   contents: read
