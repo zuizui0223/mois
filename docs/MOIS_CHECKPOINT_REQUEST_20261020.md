@@ -138,3 +138,19 @@ Exact previous released source-authenticated checkpoint: [39440233813](https://g
 New GitHub Actions RGB worker files have since been sealed: p0016 **17/73** (2 more), p0032 **10/145** (1 more), and separate tropical/southern geo05 **3/22** (1 more). The original workers stay active, no failed worker jobs observed. Main-branch event validation and source run IDs are frozen: p0004 39353343403, p0008 39371199127, p0016 39374811084, p0032 39401484641, geo05 39417990675, shadow 39369517433.
 
 **Action:** run the existing data-only six-arm checkpoint collector once. Reuse the exact SHA-authenticated original source observation/photo IDs and genuine frozen ROI-v4 terminal colours, not the photo candidate counts or inferred rose/white hues; do not reacquire pixels or redo the classifier. Preserve `source_arm` and original observation-level `selection_probability` in cumulative Parquet. The geographic enrichment arm remains separate from the probability sample. Publish immutable checkpoint counts only after terminal and SHA reconciliation passes. The watcher stays enabled to skip unchanged output on later checks.
+
+
+## 2026-10-21 additional completed p0016/p0032/geo05 original RGB
+
+The last immutable verified six-arm true original-photo RGB checkpoint is [39446764842](https://github.com/zuizui0223/mois/releases/tag/mois-real-pixel-checkpoint-39446764842-v1), with **699,290 distinct actually attempted original photo IDs** and **329,072 frozen four-hue classifications**. Two probability waves (p0004, p0008) are complete; the 93,209,351 upstream photo IDs remain source metadata, not colour pixels.
+
+New source-verified sealed worker artifacts from the live acquisition run IDs since that checkpoint:
+
+- p0016 original tier03 run 39374811084: **18/73 completed RGB groups**, 2 active, 53 queued, 0 failed; last checkpoint had 17 groups.
+- p0032 original tier04 run 39401484641: **11/145 completed RGB groups** (the first 100 GitHub Jobs response omits some matrix groups; full source plan has 145), 2 active, 132 queued, 0 failed; last checkpoint had 9 groups.
+- geo05 tropical/southern enrichment run 39417990675: **4/22 completed RGB groups**, 1 active, 17 queued, 0 failed; last checkpoint had 3 groups.
+- p0004 18/18 complete, p0008 36/36 complete, and the tier03 569-photo shadow are immutable and not to be reacquired.
+
+Trigger the unchanged **six-arm data-only** recovery once. Validate original source/photo/observation identity and full-resolution ROI terminal SHA/method signatures, then add only completed measurements to the 612,483-photo immutable baseline. Preserve all failed acquisitions/unknowns, original unmodified image hue labels, original `source_arm` and **per-original-observation `selection_probability`**, including differing geo05 regional rates. Never assume all 4 newly completed groups contain classifiable flowers. Do not rerun model inference or re-download original images.
+
+The geo05 arm is an independently selected geographic coverage-enrichment source, not a probability-complete globally representative species sample. It must remain separately labelled in any ecological analysis.
