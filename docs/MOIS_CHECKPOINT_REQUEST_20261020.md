@@ -36,3 +36,16 @@ New archived image-worker groups are available beyond that checkpoint:
 **Do not extrapolate a new classified count from group counts.** The existing collector must SHA-check and reconcile each original source photo / observation ID, byte-immutable model method and terminal outcome, then publish the exact newly classified and still-pending counts as an immutable checkpoint. Do not rerun colour inference, re-fetch images or add any low-resolution filter.
 
 This documentation update intentionally triggers the existing one-off data-only `main` checkpoint. It does not schedule a recurring task or change image-acquisition workers.
+
+## Further verified acquisition milestone — 2026-10-20, around 16:42 JST
+
+After the previous immutable [checkpoint 39385699414](https://github.com/zuizui0223/mois/releases/tag/mois-real-pixel-checkpoint-39385699414-v1) published 642,435 terminal photo IDs with 307,382 frozen automatic four-hue classifications, the following additional worker files reached terminal-success status:
+
+* p0004 39353343403: complete, all 18 of 18 archived; do NOT re-download or re-run
+* p0008 39371199127: 10 of 28 completed original-photo worker groups; four currently processing, zero failures
+* p0016 39374811084: 4 of 28 completed worker groups; two currently processing, zero failures
+* tier03 shadow 39369517433: 569 original-photo attempts, already complete and permanently source-deduplicated
+
+Use the pinned production collector on only the stored source SHA and actual image terminal receipts, without running image acquisition or colour inference. Publish an immutable intermediate checkpoint after verifying all newly completed units. The total new photo IDs and usable hue counts must come from exact original-photo terminal reconciliation, never assume one full group's pixels based on queued count.
+
+This source-documented milestone is a one-off re-capture request through the existing push-triggered, data-only checkpoint workflow. It does not add an automatic recurring task.
