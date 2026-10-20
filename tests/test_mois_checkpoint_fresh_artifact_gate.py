@@ -15,7 +15,7 @@ WAVES = {
     "p0032": 39401484641,
     "shadow": 39369517433,
 }
-def artifact(name, id, digest="sha256:abc"):
+def artifact(name, id, digest="sha256:"+"a"*64):
     return {"name":name, "id":id, "digest":digest, "size_in_bytes":1452}
 def snapshot(name, items):
     return {"source_run_id": WAVES[name], "artifacts": items}
@@ -41,7 +41,7 @@ class TestScheduledCheckpointGate(unittest.TestCase):
 
     def test_altered_old_worker_checksum_rejected_not_relabelled(self):
         old=prior();current=json.loads(json.dumps(old))
-        current["p0008"]["artifacts"][0]["digest"]="sha256:tampered"
+        current["p0008"]["artifacts"][0]["digest"]="sha256:"+"b"*64
         with self.assertRaisesRegex(ValueError,"changed|missing"):
             decide_checkpoint(old,current,WAVES)
 
