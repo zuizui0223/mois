@@ -63,6 +63,14 @@ class TestFourWaveRecovery(unittest.TestCase):
         literal='['+','.join(map(str,RUNS))+']'
         self.assertIn("contains(fromJSON('"+literal+"'), github.event.workflow_run.id)",gate)
 
+    def test_source_backed_milestone_push_can_refresh_checkpoint_without_inference(self):
+        s=self.workflow
+        self.assertIn("  push:\n    branches: [main]\n    paths:",s)
+        self.assertIn("      - docs/MOIS_CHECKPOINT_REQUEST_20261020.md",s)
+        self.assertIn("  workflow_dispatch:",s)
+        self.assertIn("      - name: Validate actual terminals and append only measured IDs to baseline projection",s)
+        self.assertNotIn("mois_full_index_real_original_photo_measure work",s)
+
     def test_synthetic_waiting_wave_is_not_measured_or_nonwhite(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);source=root/'source';workers=root/'workers'
