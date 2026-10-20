@@ -111,3 +111,13 @@ The next paginated GitHub Actions source check finds these newly sealed original
 **Do not assume that every group contains exactly 1024 classified original photos.** Trigger the already validated data-only five-wave recovery once. It must verify exact source-shard SHA, photo/observation IDs, original frozen ROI terminal hashes and true acquisition failures, then publish the new classified and unclassifiable counts. Neither download images nor rerun segmentation.
 
 This is a one-time source-provenance milestone of actual sealed worker outputs. The independent three-hour watcher remains enabled for subsequent new files, and the in-flight p0008/p0016/p0032 acquisition workers are not modified or cancelled.
+
+## Six-arm source-authenticated pixel recovery request, 20 October 2026
+
+Last confirmed immutable original photo checkpoint: [39418633371](https://github.com/zuizui0223/mois/releases/tag/mois-real-pixel-checkpoint-39418633371-v1), with **671,107 distinct original image terminal IDs** and **318,460 classifiable four-hue automated labels**. This snapshot already had p0004 18/18 sealed groups, p0008 24/36, p0016 11/73, p0032 4/145, and the full shadow 569-photo cohort; geo05 was at 0 sealed RGB groups.
+
+A fresh paginated GitHub Actions source check shows **p0008 27/36** sealed worker groups, **p0016 12/73**, **p0032 4/145**, **geo05 0/22**, with p0004 18/18 and shadow complete. There are no failed acquisition workers. In-progress original-image ROI workers continue independently. The new sealed p0008 and p0016 original terminal CSVs have not yet been included in the last publication.
+
+Trigger the preexisting **source-SHA-validated, data-only** six-arm recovery once via this authenticated main-branch milestone. The collector must check every original source CSV SHA, original photo ID/observation identity, image terminal receipt/ROI model signature, preserve technical unknowns and failed acquisitions, and exclude every still-pending source target from countable measured outcomes. Neither re-download original photos nor rerun flower-colour segmentation, and do not change the ongoing image workers. **Read new photo/hue totals only from the newly sealed checkpoint receipt**, not guessed from group sizes. The geo05 enrichment probability/design labels remain distinct from the random probability-arm estimand.
+
+The three-hour new-artifact watcher is also configured and will skip redundant checkpoints when no source-validated worker artifacts were added. This milestone merely advances the ongoing acquisition and verified integration.
