@@ -31,6 +31,34 @@ WORKER_COLUMNS = (
 OUT_SCHEMA = "mois_full_source_observation_sampling_cohort_v1"
 FCP_COUNT_SHA = "ef26c16252dd785f2d08bde3b18938c7624d73a54386fa3d3974dceb09ed97a9"
 
+# Fixed a priori: a SEPARATE latitude-enrichment arm, not the random sample.
+GEO_ENRICHMENT_SEED = "mois-original-observation-geographic-enrichment-v1"
+GEO_ENRICHMENT_RATES = {
+    "tropical": 0.5,
+    "south_extratropical": 0.25,
+    "north_extratropical": 1.0 / 64,
+    "unknown": 1.0 / 64,
+}
+
+
+def geographic_enrichment_band(latitude):
+    """Classify original latitude only; never infer nativeness or flowering."""
+    try:
+        lat = float(latitude)
+    except (TypeError, ValueError):
+        return "unknown"
+    if not math.isfinite(lat) or not -90 <= lat <= 90:
+        return "unknown"
+    if abs(lat) <= 23.44:
+        return "tropical"
+    return "south_extratropical" if lat < -23.44 else "north_extratropical"
+
+
+def geographic_enrichment_draw(observation_uuid):
+    require(bool(str(observation_uuid)), "Original observation ID required")
+    seed = (GEO_ENRICHMENT_SEED + "|" + str(observation_uuid)).encode("utf-8")
+    return int.from_bytes(hashlib.sha256(seed).digest()[:8], "big") / 2**64
+
 
 def observation_compute_bucket(uuid, n=64):
     require(1 <= n <= 1024, "Compute partition count is invalid")
@@ -71,7 +99,7 @@ def read_taxa(path,*,check_sha=True):
 def queue_tier(registry,group_receipts,targets,counts,prior,out,*,
                tier,compute_bucket,compute_bucket_count=64,batch_size=256,
                check_taxa_sha=True,expected_taxa=EXPECTED_TAXA,
-               expected_shards=EXPECTED_SHARDS):
+               expected_shards=EXPECTED_SHARDS,geographic_enrichment=False):
     """Build ROI-v4 source queue from one tier and one exhaustive compute bucket.
 
     This is an acquisition/processing batch, not a scientific sample. Do not
@@ -112,6 +140,10 @@ def queue_tier(registry,group_receipts,targets,counts,prior,out,*,
     require(source_group_total==full['new_target_counts_by_tier'][str(tier)],
             'Source tier count differs between full frame and grouped signed registry')
     selected=[]; unsupported=[]; skipped=0; tier_photo_total=0; bucket_photo_total=0
+    geo_excluded=0
+    geo_candidates={key:0 for key in GEO_ENRICHMENT_RATES}
+    geo_admitted={key:0 for key in GEO_ENRICHMENT_RATES}
+    observation_bands={}
     seen=set()
     for n in range(expected_shards):
         path=targets/f'tier-{tier:02d}'/f'part-{n:03d}.csv.gz'
@@ -134,6 +166,18 @@ def queue_tier(registry,group_receipts,targets,counts,prior,out,*,
                     continue
                 require(pid not in seen, 'Duplicate actual source photo ID within the compute bucket')
                 seen.add(pid);bucket_photo_total+=1
+                if geographic_enrichment:
+                    band=geographic_enrichment_band(row["latitude"])
+                    require(uuid not in observation_bands or observation_bands[uuid]==band,
+                            "Original observation's photos disagree on latitude band")
+                    observation_bands[uuid]=band
+                    geo_candidates[band]+=1
+                    if geographic_enrichment_draw(uuid)>=GEO_ENRICHMENT_RATES[band]:
+                        geo_excluded+=1
+                        continue
+                    geo_admitted[band]+=1
+                else:
+                    band=None
                 if pid in previous:
                     skipped+=1
                     continue
@@ -159,15 +203,21 @@ def queue_tier(registry,group_receipts,targets,counts,prior,out,*,
                     'photo_license':row['photo_license'],
                     'photo_url_large':f'https://inaturalist-open-data.s3.amazonaws.com/photos/{pid}/large.{ext}',
                     'image_filename':mid+'.jpg',
-                    'source_arm':f'global93m_onepass_target_tier_{tier:02d}',
-                    'selection_probability':str(TIER_ENDS[tier]),
+                    'source_arm':(f'global93m_geographic_enrichment_tier_{tier:02d}'
+                                  if geographic_enrichment else
+                                  f'global93m_onepass_target_tier_{tier:02d}'),
+                    'selection_probability':str(
+                        (TIER_ENDS[tier] -
+                         (0 if tier==0 else TIER_ENDS[tier-1])) *
+                        GEO_ENRICHMENT_RATES[band]
+                        if geographic_enrichment else TIER_ENDS[tier]),
                     'source_snapshot_date':'2026-09-27',
                     'shard':'',
                 })
             require(part_count==audited_parts[n]['counts_by_disjoint_tier'][str(tier)],
                     'Signed tier photo IDs were added or lost in source')
     require(tier_photo_total==source_group_total
-            and len(selected)+len(unsupported)+skipped==bucket_photo_total,
+            and len(selected)+len(unsupported)+skipped+geo_excluded==bucket_photo_total,
             'Onepass source tier compute bucket reconciliation failed')
     selected.sort(key=lambda d: hashlib.sha256(
         ('mois-prioritise-observation|'+d['photo_id']).encode()).digest())
@@ -194,7 +244,7 @@ def queue_tier(registry,group_receipts,targets,counts,prior,out,*,
         'source_target_registry_sha256':sha256(registry),
         'full_source_original_tier':tier,
         'source_tier_probability_lower_bound':0 if tier==0 else TIER_ENDS[tier-1],
-        'selection_probability':TIER_ENDS[tier],
+        'selection_probability':None if geographic_enrichment else TIER_ENDS[tier],
         'selection_unit':'observation_uuid',
         'compute_bucket':compute_bucket,
         'compute_bucket_count':compute_bucket_count,
@@ -221,6 +271,22 @@ def queue_tier(registry,group_receipts,targets,counts,prior,out,*,
         'native_photo_status_not_inferred_or_hard_filtered':True,
         'ecological_analysis_run':False,
     }
+    if geographic_enrichment:
+        report.update({
+            'geographic_sampling_design':'source_signed_observation_level_metadata_enrichment_v1',
+            'geographic_selection_observation_hash_seed':GEO_ENRICHMENT_SEED,
+            'geographic_selection_rates':dict(GEO_ENRICHMENT_RATES),
+            'geographic_selection_excluded_photo_candidates':geo_excluded,
+            'geographic_selection_candidates_by_band':geo_candidates,
+            'geographic_selection_admitted_photos_before_prior_dedup_by_band':geo_admitted,
+            'geographic_tier_source_width':TIER_ENDS[tier] -
+                                           (0 if tier==0 else TIER_ENDS[tier-1]),
+            'geographic_probabilities_are_heterogeneous_per_original_observation':True,
+            'geographic_enrichment_strictly_separate_from_complete_probability_arm':True,
+            'original_photo_and_observation_IDs_not_modified':True,
+            'individual_photo_native_status_not_inferred':True,
+            'nonselected_photos_remain_in_full_93m_target_registry':True,
+        })
     (out/'manifest.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
     print('MOIS_SOURCE_TIER_REUSE_ONLY_NEW_ORIGINAL_PHOTO_IDS',json.dumps({
         k:report[k] for k in ('full_source_original_tier','compute_bucket',
@@ -239,10 +305,13 @@ def main():
     p.add_argument('--tier',type=int,required=True)
     p.add_argument('--compute-bucket',type=int,required=True)
     p.add_argument('--compute-bucket-count',type=int,default=64)
+    p.add_argument('--geographic-enrichment',action='store_true',
+                   help='Separate fixed-probability latitude enrichment arm')
     a=p.parse_args()
     queue_tier(a.registry,a.group_receipt,a.targets,a.counts,a.previous,a.output,
                tier=a.tier,compute_bucket=a.compute_bucket,
-               compute_bucket_count=a.compute_bucket_count)
+               compute_bucket_count=a.compute_bucket_count,
+               geographic_enrichment=a.geographic_enrichment)
 
 
 if __name__=='__main__':main()
