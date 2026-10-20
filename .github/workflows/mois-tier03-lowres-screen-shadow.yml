@@ -1,0 +1,227 @@
+name: MOIS new tier03 pixels and lowres screen shadow without image exclusion
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_lowres_screen_shadow.py
+      - tests/test_mois_lowres_screen_shadow.py
+      - .github/workflows/mois-tier03-lowres-screen-shadow.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_lowres_screen_shadow.py
+      - .github/workflows/mois-tier03-lowres-screen-shadow.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-new-tier03-shadow-bucket0-of128-v1
+  cancel-in-progress: false
+jobs:
+  qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 Pillow==11.1.0 pytest==8.4.2
+          python -m pytest -q tests/test_mois_lowres_screen_shadow.py
+          python -m unittest discover -s tests -p 'test_mois_queue_from_full93m_target_tiers.py' -v
+          python -m py_compile scripts/acquisition/mois_lowres_screen_shadow.py
+  source:
+    needs: qa
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+      groups: ${{ steps.queue.outputs.groups }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Skip already published actual-pixel shadow study
+        id: gate
+        run: |
+          set -euo pipefail
+          if gh release view mois-tier03-actual-RGB-lowres-shadow-bucket0-v1 --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.gate.outputs.ready == 'true'
+        run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Restore only tier03 candidates and prior measured photo IDs
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release download mois-complete-93209351-original-photo-target-tiers-v1 \
+            --repo zuizui0223/mois --dir targets \
+            --pattern 'tier-03-group-*.tar' --pattern 'group-??-receipt.json' \
+            --pattern mois_all_original_photo_target_tiers_receipt.json
+          gh release download mois-genuine-FCP447500-plus93m-first18462-photo-ID-union-v1 \
+            --repo zuizui0223/mois --dir previous \
+            --pattern mois_source_verified_FCP447500_and_93m_p0002_combined_unique_photo_ROIs.parquet \
+            --pattern mois_original_photo_RGB_FCP447500_plus_first93m_id_union_receipt.json
+          gh run download 38749681793 --repo zuizui0223/fcp \
+            --name fcp-42111-real-source-photo-opportunity-counts-20260927-complete-not-colours --dir counts
+      - name: Freeze independent tier03 bucket before accessing any new image pixels
+        id: queue
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import glob,hashlib,json,os,subprocess,sys,tarfile
+          from pathlib import Path
+          import pandas as pd
+          def sha(p):
+              h=hashlib.sha256()
+              with Path(p).open('rb') as f:
+                  for b in iter(lambda:f.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          root=Path('targets')
+          full=root/'mois_all_original_photo_target_tiers_receipt.json'
+          r=json.load(full.open())
+          assert r['exact_original_photo_IDs_in_all_disjoint_tiers']==93209351
+          assert r['new_target_counts_by_tier']['3']==74883
+          archives=sorted(root.glob('tier-03-group-*.tar'))
+          assert len(archives)==16
+          Path('tier-input').mkdir()
+          for p in archives:
+              assert sha(p)==r['published_tier_archive_SHA256'][p.name]
+              with tarfile.open(p) as archive:archive.extractall('tier-input',filter='data')
+          old=Path('previous/mois_source_verified_FCP447500_and_93m_p0002_combined_unique_photo_ROIs.parquet')
+          a=json.load(open('previous/mois_original_photo_RGB_FCP447500_plus_first93m_id_union_receipt.json'))
+          assert a['all_genuinely_attempted_unique_original_photo_IDs']==612483
+          assert a['all_original_photo_four_hue_classified']==295801
+          assert sha(old)==a['completed_output_sha256'][old.name]
+          ids=pd.read_parquet(old,columns=['photo_id']).photo_id.astype(str)
+          assert len(ids)==612483 and ids.is_unique
+          Path('prior.csv').write_text('photo_id\n'+'\n'.join(ids)+'\n')
+          count=next(Path('counts').rglob('all_42111_species_photo_opportunity_counts.csv'))
+          cmd=[sys.executable,'-m','scripts.acquisition.mois_queue_from_full93m_target_tiers',
+              '--registry',str(full),'--targets','tier-input','--counts',str(count),
+              '--previous','prior.csv','--output','screen-source',
+              '--tier','3','--compute-bucket','0','--compute-bucket-count','128']
+          for p in sorted(root.glob('group-??-receipt.json')):cmd+=['--group-receipt',str(p)]
+          subprocess.run(cmd,check=True)
+          q=json.load(open('screen-source/manifest.json'))
+          assert q['full_source_original_tier']==3
+          assert q['source_tier_probability_lower_bound']==0.0008
+          assert q['selection_probability']==0.0016
+          assert q['source_tier_total_photo_candidates']==74883
+          assert q['new_photo_attempts_planned']>0
+          assert q['native_photo_status_not_inferred_or_hard_filtered']
+          # Pending p0004 and p0008 observations have scores BELOW 0.0008;
+          # tier03 therefore cannot duplicate their image downloads.
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write('groups='+json.dumps(q['group_ids'])+'\n')
+          print('MOIS_NEW_TIER03_SHADOW_ACTUAL_PIXEL_ATTEMPTS_PLANNED',q['new_photo_attempts_planned'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-tier03-shadow-b0-source
+          path: screen-source/
+          retention-days: 90
+          if-no-files-found: error
+  measure:
+    needs: source
+    if: needs.source.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        group: ${{ fromJSON(needs.source.outputs.groups) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-tier03-shadow-b0-source
+          path: source
+      - name: Load the same frozen baseline source, detector and segmenter
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Download each new photo once; full ROI plus shadow screen for EVERY acquired image
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-shadow-photo-rate"
+          python -m scripts.acquisition.mois_lowres_screen_shadow work \
+            --source source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --group '${{ matrix.group }}' --output measured
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-tier03-shadow-b0-RGB-group-${{ matrix.group }}
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+  collect:
+    needs: [source,measure]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-tier03-shadow-b0-source
+          path: source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-tier03-shadow-b0-RGB-group-*
+          path: workers
+      - name: Reconcile all true photo outcomes and screen misses by original hue
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_lowres_screen_shadow collect \
+            --source source --workers workers --output screen-result
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-tier03-actual-pixels-and-shadow-comparison
+          path: screen-result/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish genuine new pixels and shadow comparison, never raw images
+        run: |
+          set -euo pipefail
+          tag=mois-tier03-actual-RGB-lowres-shadow-bucket0-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            gh release download "$tag" --repo zuizui0223/mois --dir old --pattern receipt.json
+            cmp old/receipt.json screen-result/receipt.json
+          else
+            gh release create "$tag" screen-result/* --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS genuine tier03 RGB and 320px screen shadow: no images discarded' \
+              --notes 'New source-signed tier03, bucket 0 of 128 only, outside pending p0004/p0008 observations and previous 612483 photo IDs. Original full frozen ROI-v4 runs for every acquired image; extra in-memory 320px screen is observed AFTER baseline and never controls measurement. Reports false negatives relative to automated baseline by hue, not botanical ground truth. Projected ROI time savings are hypothetical, not observed production speedups. Preserve all unknowns and download failures. Future tier03 acquisition must deduplicate these actual measured photo IDs. No native hard filter or raw photographs redistributed.'
+          fi
