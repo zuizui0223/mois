@@ -74,3 +74,39 @@ def test_unknown_four_hue_cannot_be_falsely_set_classified():
     new.loc[1,"classified"]=True
     with pytest.raises(ValueError,match="Classifiability disagrees"):
         combine(old,new,expected_old=2,expected_new=2)
+
+def test_second_source_string_coordinates_and_climate_keep_old_numeric_and_parquet_roundtrip(tmp_path):
+    old, new = source()
+    old["latitude"] = pd.Series([37.0, 35.5], dtype="float64")
+    old["longitude"] = pd.Series([137.0, 129.5], dtype="float64")
+    old["wc_bio1"] = pd.Series([12.0, 11.5], dtype="float64")
+    old["soil_pH"] = pd.Series([6.0, 6.5], dtype="float64")
+    new["latitude"] = ["29.7127033333", ""]
+    new["longitude"] = ["128.123456789", "129.75"]
+    new["wc_bio1"] = ["18.7", ""]
+    new["soil_pH"] = ["", "5.25"]
+    frozen = old.copy(deep=True)
+    result, stats = combine(old, new, expected_old=2, expected_new=2)
+    assert old.equals(frozen), "Source-signed historical data must not be mutated by a union"
+    for col in ("latitude", "longitude", "wc_bio1", "soil_pH"):
+        assert pd.api.types.is_numeric_dtype(result[col]), col
+    assert result.latitude.iloc[2] == pytest.approx(29.7127033333)
+    assert pd.isna(result.latitude.iloc[3])
+    assert result.wc_bio1.iloc[2] == pytest.approx(18.7)
+    assert pd.isna(result.wc_bio1.iloc[3])
+    assert result.soil_pH.iloc[3] == pytest.approx(5.25)
+    assert result.photo_id.astype(str).tolist() == ["1", "2", "3", "4"]
+    assert stats["new_four_hue_classified"] == 1
+    output = tmp_path / "preserved_original_photo_sources.parquet"
+    result.to_parquet(output, index=False, compression="zstd")
+    loaded = pd.read_parquet(output)
+    assert loaded.photo_id.astype(str).tolist() == ["1", "2", "3", "4"]
+    assert loaded.latitude.iloc[2] == pytest.approx(29.7127033333)
+    assert pd.isna(loaded.latitude.iloc[3])
+
+
+def test_second_photo_non_numeric_metadata_cannot_be_silently_dropped():
+    old, new = source()
+    new.loc[0, "latitude"] = "invalid-coordinate"
+    with pytest.raises(ValueError, match="Non-numeric"):
+        combine(old, new, expected_old=2, expected_new=2)
