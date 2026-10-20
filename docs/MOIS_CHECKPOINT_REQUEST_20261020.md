@@ -49,3 +49,17 @@ After the previous immutable [checkpoint 39385699414](https://github.com/zuizui0
 Use the pinned production collector on only the stored source SHA and actual image terminal receipts, without running image acquisition or colour inference. Publish an immutable intermediate checkpoint after verifying all newly completed units. The total new photo IDs and usable hue counts must come from exact original-photo terminal reconciliation, never assume one full group's pixels based on queued count.
 
 This source-documented milestone is a one-off re-capture request through the existing push-triggered, data-only checkpoint workflow. It does not add an automatic recurring task.
+
+
+## Source-verified checkpoint request — 18:21 JST, 2026-10-20
+
+A fresh paginated GitHub Actions jobs read shows new completed **original pixel measurement** worker artifacts since checkpoint [39388432954](https://github.com/zuizui0223/mois/releases/tag/mois-real-pixel-checkpoint-39388432954-v1) (645,507 attempted photo IDs / 308,544 classifiable four-hue ROIs):
+
+- p0004 original source run 39353343403: 18/18 full measurement workers successfully sealed, already in baseline checkpoint.
+- p0008 new source run 39371199127: **16/36** sealed successful groups, 4 active, 16 waiting, **0 failures**; each completed group retains all original per-photo ROI outcomes.
+- p0016 new source run 39374811084: **6/73** sealed successful groups, 2 active, 65 waiting, **0 failures**.
+- Previous shadow pilot 39369517433: complete; its 569 original photo IDs are preserved and must not be counted twice.
+
+The previous snapshot only contained p0008 **10** groups and p0016 **4** groups. This source-backed request triggers one more **data-only** recovery on the main branch. It must checksum-reconcile original photo/observation/source-shard IDs, immutable classifier metadata and terminal CSVs; never download the photos again, run new colour inference, or impute missing image colours.
+
+**Outcome counts must be read from the new production recovery receipt, not inferred from these computational group counts.** Acquisition continues independently. The incremental snapshot is not a probability-complete sample or a global white-hue prevalence estimate.
