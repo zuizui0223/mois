@@ -42,8 +42,9 @@ def combine(old,new,*,expected_old=OLD_N,expected_new=NEW_N):
     require(old.white.eq(old.morph.eq("white")).all()
             and new.white.eq(new.morph.eq("white")).all(),
             "Unknown/source technically failed photographic ROIs are not white")
-    frozen=old.copy()
-    fresh=new.copy()
+    frozen=old.copy(deep=True)
+    old=old.copy(deep=True)  # Never add columns to the caller's source-signed historic frame.
+    fresh=new.copy(deep=True)
     fresh["arm"]="global93m_second_p0004"
     fresh["photo_colour_provenance"]="genuine_93m_second_nested_p0004_observation_RGB"
     fresh["source_original_fcp_morph"]=""
@@ -56,6 +57,31 @@ def combine(old,new,*,expected_old=OLD_N,expected_new=NEW_N):
     for col in fresh.columns:
         if col not in old:
             old[col]=pd.NA
+    # The SHA-authenticated old photo table stores environmental coordinates
+    # and climate fields as numeric values. The new per-photo CSV shard is read
+    # with dtype=str, so these numeric fields arrive as numeric-looking text.
+    # Make only those fields use the old numeric schema: Arrow must not silently
+    # coerce 29.7127033333 into an incompatible mixed float/string object.
+    # Neither old source row values nor source photo / observation IDs change.
+    for col in frozen.columns:
+        old_series = frozen[col]
+        if (col not in fresh or
+                not pd.api.types.is_numeric_dtype(old_series) or
+                pd.api.types.is_bool_dtype(old_series)):
+            continue
+        raw = fresh[col]
+        stripped = raw.astype("string").str.strip()
+        given = stripped.notna() & stripped.ne("")
+        parsed = pd.to_numeric(raw, errors="coerce")
+        require(not bool((given & parsed.isna()).any()),
+                "Non-numeric original source metadata in authenticated field: " + col)
+        if pd.api.types.is_integer_dtype(old_series):
+            nonmissing = parsed.dropna()
+            require(bool(nonmissing.mod(1).eq(0).all()),
+                    "Non-numeric fractional value in old integer metadata field: " + col)
+            fresh[col] = parsed.astype("Int64")
+        else:
+            fresh[col] = parsed.astype("float64")
     fresh=fresh[old.columns]
     out=pd.concat([old,fresh],ignore_index=True,sort=False)
     common=["photo_id","inat_taxon_id","species","observation_id",

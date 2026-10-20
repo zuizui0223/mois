@@ -1,5 +1,10 @@
 name: MOIS source-photo append genuine second p0004 18119 to 612483 original ROI results
 on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_append_first_second93m_probability_original_photos.py
+      - .github/workflows/mois-append-full93m-second-p0004-real-RGB.yml
   pull_request:
     paths:
       - scripts/acquisition/mois_append_first_second93m_probability_original_photos.py
@@ -36,6 +41,7 @@ jobs:
     if: >-
       github.event_name != 'pull_request' &&
       (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
        (github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
         github.event.workflow_run.head_branch == 'main'))
