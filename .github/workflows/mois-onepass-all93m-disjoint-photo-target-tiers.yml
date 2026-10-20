@@ -103,10 +103,10 @@ jobs:
           set -euo pipefail
           start=$(( ${{ matrix.group }} * 8 ))
           python -m scripts.acquisition.mois_onepass_full93m_target_tiers group \
-            --index original --output results --parts $(seq "$start" "$((start+7))")
+            --index original --output _mois93m_onepass_target_staging_20261020 --parts $(seq "$start" "$((start+7))")
           python - <<'PY'
           import json
-          d=json.load(open('results/receipt.json'))
+          d=json.load(open('_mois93m_onepass_target_staging_20261020/receipt.json'))
           assert len(d['parts'])==8
           assert sum(d['counts_by_disjoint_tier'].values())==d['original_photo_IDs_in_this_group']
           assert d['images_downloaded']==0 and d['colour_pixels_measured']==0
@@ -123,7 +123,7 @@ jobs:
             tier=$(printf '%02d' "$t")
             file="tier-${tier}-group-${group}.tar"
             tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner \
-              -C results/targets -cf "publish/${file}" "tier-${tier}"
+              -C _mois93m_onepass_target_staging_20261020/targets -cf "publish/${file}" "tier-${tier}"
             size=$(stat -c %s "publish/${file}")
             test "$size" -lt 1950000000
           done
@@ -131,7 +131,7 @@ jobs:
           import os,json,hashlib
           from pathlib import Path
           group=os.environ['GROUP']
-          doc=json.load(open('results/receipt.json'))
+          doc=json.load(open('_mois93m_onepass_target_staging_20261020/receipt.json'))
           doc['archive_sha256_by_tier']={
             p.name:hashlib.sha256(p.read_bytes()).hexdigest()
             for p in sorted(Path('publish').glob('tier-*.tar'))
