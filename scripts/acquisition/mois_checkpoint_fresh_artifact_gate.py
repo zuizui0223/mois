@@ -18,6 +18,7 @@ WAVES = {
     "shadow": 39369517433,
     "p0016": 39374811084,
     "p0032": 39401484641,
+    "geo05": 39417990675,
 }
 PREFIXES = {
     "p0004": "mois-93m-p0004-RGB-group-",
@@ -25,6 +26,7 @@ PREFIXES = {
     "shadow": "mois-tier03-shadow-b0-RGB-group-",
     "p0016": "mois-93m-p0016-RGB-group-",
     "p0032": "mois-93m-p0032-RGB-group-",
+    "geo05": "mois-93m-geo05-RGB-group-",
 }
 SHA = re.compile(r"sha256:[0-9a-f]{64}\Z")
 CHECKPOINT = re.compile(r"mois-real-pixel-checkpoint-([0-9]+)-v1\Z")
