@@ -165,4 +165,30 @@ class TestFullSourceQueue(unittest.TestCase):
         self.assertFalse(second["ecological_analysis_run"])
         self.assertTrue(second["all_unselected_source_photos_eligible_at_higher_probability"])
 
+
+    def test_third_p0008_nested_observation_queue_excludes_all_prior_original_pixels(self):
+        # A in p0004 and p0008, B newly admitted ONLY at p0008, C
+        # excluded from both. Already processed A photos must never be
+        # fetched again, even though A passes the larger hash threshold.
+        draw={"OBS-A":0.0003,"OBS-B":0.0006,"OBS-C":0.9}
+        previous=self.root/"complete_prior_RBG.csv"
+        previous.write_text("photo_id\n101\n102\n104\n")
+        with patch.object(q,"N_PHOTOS",4),patch.object(q,"N_TAXA",2), \
+             patch.object(q,"N_SHARDS",2), \
+             patch.object(q,"obs_draw",side_effect=lambda uuid:draw[uuid]):
+            source=q.prepare(self.root/"index",self.count,
+                [previous],self.root/"third_p0008",p=0.0008,batch_size=3)
+        self.assertEqual(source["full_frame_photo_ids"],4)
+        self.assertEqual(source["selection_probability"],0.0008)
+        self.assertEqual(source["sampled_photo_ids_before_prior_dedup"],3)
+        self.assertEqual(source["previously_measured_photo_ids_skipped"],2)
+        self.assertEqual(source["new_photo_attempts_planned"],1)
+        self.assertTrue(source["no_per_taxon_or_observation_photo_count_cap"])
+        self.assertFalse(source["colour_measured"])
+        with (self.root/"third_p0008"/"shards"/"shard-000.csv").open(newline="") as f:
+            selected=list(csv.DictReader(f))
+        self.assertEqual([z["photo_id"] for z in selected],["103"])
+        self.assertEqual(selected[0]["observation_id"],"OBS-B")
+        self.assertEqual(selected[0]["selection_probability"],"0.0008")
+
 if __name__=="__main__":unittest.main()
