@@ -1,14 +1,22 @@
+# Retain the historical workflow name for existing event references.
 name: MOIS third nested 93m observation RGB p0008 after second full integration
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/mois-full93m-third-nested-p0008-RGB.yml
+      - scripts/acquisition/mois_verify_parallel_photo_queues.py
   pull_request:
     paths:
       - scripts/acquisition/mois_full_index_observation_queue.py
       - scripts/acquisition/mois_full_index_real_original_photo_measure.py
+      - scripts/acquisition/mois_queue_from_full93m_target_tiers.py
+      - scripts/acquisition/mois_verify_parallel_photo_queues.py
       - tests/test_mois_full_index_observation_queue.py
       - tests/test_mois_full_index_real_photo_measure.py
       - tests/test_mois_p0008_workflow_contract.py
       - tests/test_mois_queue_from_full93m_target_tiers.py
-      - scripts/acquisition/mois_queue_from_full93m_target_tiers.py
+      - tests/test_mois_verify_parallel_photo_queues.py
       - .github/workflows/mois-full93m-third-nested-p0008-RGB.yml
   workflow_run:
     workflows:
@@ -18,7 +26,7 @@ on:
   workflow_dispatch:
     inputs:
       resume_run:
-        description: "Optional previous p0008 run to reuse already completed original image pixel units"
+        description: "Optional previous p0008 run with the same source queue, for completed unit reuse"
         required: false
         type: string
         default: ''
@@ -36,24 +44,24 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.12'
       - run: |
           set -euo pipefail
           python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
-          python -m unittest discover -s tests -p 'test_mois_full_index_observation_queue.py' -v
-          python -m unittest discover -s tests -p 'test_mois_full_index_real_photo_measure.py' -v
-          python -m unittest discover -s tests -p 'test_mois_p0008_workflow_contract.py' -v
-          python -m unittest discover -s tests -p 'test_mois_queue_from_full93m_target_tiers.py' -v
+          for test in test_mois_full_index_observation_queue.py test_mois_full_index_real_photo_measure.py test_mois_p0008_workflow_contract.py test_mois_queue_from_full93m_target_tiers.py test_mois_verify_parallel_photo_queues.py; do
+            python -m unittest discover -s tests -p "$test" -v
+          done
   freeze-source-queue:
     needs: test-source-and-real-ROI
     if: >-
       github.event_name != 'pull_request' &&
       (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
        (github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
         github.event.workflow_run.head_branch == 'main'))
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 35
     outputs:
       ready: ${{ steps.gate.outputs.ready }}
       groups: ${{ steps.queue.outputs.groups }}
@@ -64,111 +72,104 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - name: Start only after signed 630602 pixel FCP+first+second source
+          python-version: '3.12'
+      - name: Require completed target registry and actual prior pixels, not pending p0004 pixels
         id: gate
         run: |
           set -euo pipefail
           echo 'ready=false' >> "$GITHUB_OUTPUT"
-          for tag in mois-complete-93209351-original-photo-target-tiers-v1 mois-genuine630602-original-pixels-first-two-93m-waves-v1; do
-            if ! gh release view "$tag" --repo zuizui0223/mois --json isDraft --jq .isDraft 2>/dev/null | grep -qx false; then
-              echo "Waiting for exact authenticated Release: $tag"
-              exit 0
+          for tag in mois-complete-93209351-original-photo-target-tiers-v1 mois-genuine-FCP447500-plus93m-first18462-photo-ID-union-v1; do
+            if ! gh release view "$tag" --repo zuizui0223/mois --json isDraft --jq .isDraft | grep -qx false; then
+              echo "Required published source unavailable: $tag"
+              exit 1
             fi
           done
           if gh release view mois-full93m-observation-third-original-RGB-p0008-v1 --repo zuizui0223/mois >/dev/null 2>&1; then
-            echo 'Third nested p0008 source photo RGB already sealed; never re-infer same pixels.'
+            echo 'p0008 image outcomes already archived; never re-infer the same photos.'
             exit 0
           fi
           echo 'ready=true' >> "$GITHUB_OUTPUT"
-      - name: Install original photo/Parquet reader
-        if: steps.gate.outputs.ready == 'true'
+      - if: steps.gate.outputs.ready == 'true'
         run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
-      - name: Download only new p0008 tier-02 original-photo ID targets, not 93m rows
+      - name: Read only tier02, signed prior pixels, and exact active source reservations
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
-          mkdir -p tier-download tier-index counts old/final
           gh release download mois-complete-93209351-original-photo-target-tiers-v1 \
             --repo zuizui0223/mois --dir tier-download \
-            --pattern 'tier-02-group-*.tar' \
-            --pattern 'group-??-receipt.json' \
+            --pattern 'tier-02-group-*.tar' --pattern 'group-??-receipt.json' \
             --pattern mois_all_original_photo_target_tiers_receipt.json
-          test "$(find tier-download -maxdepth 1 -name 'tier-02-group-*.tar' | wc -l)" -eq 16
-          test "$(find tier-download -maxdepth 1 -name 'group-??-receipt.json' | wc -l)" -eq 16
-          for file in tier-download/tier-02-group-*.tar; do
-            tar -xf "$file" -C tier-index
-          done
-          test "$(find tier-index/tier-02 -name 'part-*.csv.gz' | wc -l)" -eq 128
-          gh run download 38749681793 --repo zuizui0223/fcp \
-            --name fcp-42111-real-source-photo-opportunity-counts-20260927-complete-not-colours \
-            --dir counts
-          countfile=$(find counts -name all_42111_species_photo_opportunity_counts.csv -print -quit)
-          echo 'ef26c16252dd785f2d08bde3b18938c7624d73a54386fa3d3974dceb09ed97a9  '"$countfile" | sha256sum -c -
-          gh release download mois-genuine630602-original-pixels-first-two-93m-waves-v1 \
+          gh release download mois-genuine-FCP447500-plus93m-first18462-photo-ID-union-v1 \
             --repo zuizui0223/mois --dir old/final \
-            --pattern mois_FCP_and_first_second_93m_actual_original_photo_ROIs.parquet \
-            --pattern mois_p0004_actual_photo_append_receipt.json
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib,json
-          root=Path('old/final')
-          doc=json.loads((root/'mois_p0004_actual_photo_append_receipt.json').read_text())
-          file=root/'mois_FCP_and_first_second_93m_actual_original_photo_ROIs.parquet'
-          h=hashlib.sha256()
-          with file.open('rb') as inp:
-              for buf in iter(lambda:inp.read(1<<20),b''):h.update(buf)
-          assert doc['schema']=='mois_FCP_and_full93m_second_p0004_real_original_photo_append_v1'
-          assert doc['all_unique_original_photo_attempts']==630602
-          assert doc['second_nested_actual_image_attempts']==18119
-          assert doc['old_four_hue_classified']==295801
-          assert doc['old_original_image_petal_ROI_rows_immutable']
-          assert doc['new_source_photo_IDs_disjoint_from_all_old_FCP_and_MOIS']
-          assert doc['native_climate_pollination_models_not_run']
-          assert h.hexdigest()==doc['output_sha256'][file.name]
-          print('MOIS_P0008_630602_PREVIOUS_GENUINE_RGB_IDS_SHA_VERIFIED')
-          PY
-      - name: Build p0008 only-new tier-02 real RGB ROI work queue with no taxon cap
+            --pattern mois_source_verified_FCP447500_and_93m_p0002_combined_unique_photo_ROIs.parquet \
+            --pattern mois_original_photo_RGB_FCP447500_plus_first93m_id_union_receipt.json
+          gh run download 38749681793 --repo zuizui0223/fcp \
+            --name fcp-42111-real-source-photo-opportunity-counts-20260927-complete-not-colours --dir counts
+          gh run download 39353343403 --repo zuizui0223/mois \
+            --name mois-93m-p0004-precolour-observation --dir active-p0004
+          gh run download 39369517433 --repo zuizui0223/mois \
+            --name mois-tier03-shadow-b0-source --dir active-shadow
+      - name: Freeze all new tier02 IDs after actual old-pixel deduplication
         id: queue
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json
-          import glob
-          import subprocess
-          import sys
+          import hashlib,json,os,subprocess,sys,tarfile
           from pathlib import Path
           import pandas as pd
-          existing=Path('old/final/mois_FCP_and_first_second_93m_actual_original_photo_ROIs.parquet')
-          old=pd.read_parquet(existing,columns=['photo_id'])
-          assert len(old)==630602 and old.photo_id.astype(str).is_unique
+          def sha(path):
+              h=hashlib.sha256()
+              with Path(path).open('rb') as f:
+                  for b in iter(lambda:f.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          registry=Path('tier-download/mois_all_original_photo_target_tiers_receipt.json')
+          full=json.loads(registry.read_text())
+          assert full['exact_original_photo_IDs_in_all_disjoint_tiers']==93209351
+          assert full['new_target_counts_by_tier']['2']==36583
+          archives=sorted(Path('tier-download').glob('tier-02-group-*.tar'))
+          assert len(archives)==16
+          Path('tier-index').mkdir()
+          for file in archives:
+              assert sha(file)==full['published_tier_archive_SHA256'][file.name]
+              with tarfile.open(file) as archive:archive.extractall('tier-index',filter='data')
+          root=Path('old/final')
+          doc=json.loads((root/'mois_original_photo_RGB_FCP447500_plus_first93m_id_union_receipt.json').read_text())
+          file=root/'mois_source_verified_FCP447500_and_93m_p0002_combined_unique_photo_ROIs.parquet'
+          assert doc['schema']=='mois_original_photo_ROI_FCP447500_plus_first_full93m_p0002_ID_union_v1'
+          assert doc['all_genuinely_attempted_unique_original_photo_IDs']==612483
+          assert doc['all_original_photo_four_hue_classified']==295801
+          assert doc['all_old_FCP_and_MOIS_photo_pixels_preserved_immutable']
+          assert doc['duplicate_source_photo_IDs_in_final_union']==0
+          assert sha(file)==doc['completed_output_sha256'][file.name]
+          old=pd.read_parquet(file,columns=['photo_id'])
+          assert len(old)==612483 and old.photo_id.astype(str).is_unique
           Path('prior.csv').write_text('photo_id\n'+'\n'.join(old.photo_id.astype(str))+'\n')
-          receipts=sorted(glob.glob('tier-download/group-??-receipt.json'))
-          assert len(receipts)==16,receipts
-          counts=next(Path('counts').rglob('all_42111_species_photo_opportunity_counts.csv'))
+          count=next(Path('counts').rglob('all_42111_species_photo_opportunity_counts.csv'))
+          receipts=sorted(Path('tier-download').glob('group-??-receipt.json'))
+          assert len(receipts)==16
           cmd=[sys.executable,'-m','scripts.acquisition.mois_queue_from_full93m_target_tiers',
-              '--registry','tier-download/mois_all_original_photo_target_tiers_receipt.json',
-              '--targets','tier-index','--counts',str(counts),
+              '--registry',str(registry),'--targets','tier-index','--counts',str(count),
               '--previous','prior.csv','--output','current',
               '--tier','2','--compute-bucket','0','--compute-bucket-count','1']
-          for receipt in receipts:cmd+=['--group-receipt',receipt]
+          for receipt in receipts:cmd+=['--group-receipt',str(receipt)]
           subprocess.run(cmd,check=True)
           d=json.load(open('current/manifest.json'))
-          assert d['schema']=='mois_full_source_observation_sampling_cohort_v1'
           assert d['full_frame_photo_ids']==93209351
-          assert d['full_source_original_tier']==2
           assert d['source_tier_total_photo_candidates']==36583
           assert d['source_tier_compute_bucket_total_photos']==36583
-          assert d['sampled_photo_ids_before_prior_dedup']==36583
+          assert d['source_tier_probability_lower_bound']==0.0004
           assert d['selection_probability']==0.0008
           assert d['new_photo_attempts_planned']>0
-          assert d['compute_bucket_is_exhaustive_processing_partition_not_statistical_inclusion_cap']
           assert d['new_photo_attempts_planned']+d['previously_measured_photo_ids_skipped']+d['selected_new_photos_unsupported_by_frozen_loader']==36583
-          assert d['all_unselected_source_photos_eligible_at_higher_probability']
-          print('MOIS_P0008_ONLY_NEW_DISJOINT_TIER2_PHOTOS_READY_NO_93M_RESCAN',d['new_photo_attempts_planned'])
-          with open(__import__('os').environ['GITHUB_OUTPUT'],'a') as out:
-              out.write('groups='+json.dumps(d['group_ids'])+'\n')
+          from scripts.acquisition.mois_verify_parallel_photo_queues import verify_disjoint
+          for name,expected in [('p0004',18119),('shadow',569)]:
+              proof=verify_disjoint('current','active-'+name)
+              assert proof['active_photo_targets']==expected
+              Path(f'current/parallel_{name}_receipt.json').write_text(json.dumps(proof,indent=2,sort_keys=True)+'\n')
+              print('MOIS_PARALLEL_REAL_PHOTO_QUEUES_DISJOINT',name,json.dumps(proof,sort_keys=True))
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:out.write('groups='+json.dumps(d['group_ids'])+'\n')
+          print('MOIS_P0008_NEW_PHOTO_ACQUISITION_WITHOUT_SERIAL_WAIT',d['new_photo_attempts_planned'])
           PY
       - uses: actions/upload-artifact@v4
         if: steps.gate.outputs.ready == 'true'
@@ -198,15 +199,15 @@ jobs:
           path: source
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - name: Reuse previous completed sealed units when explicitly resuming
+          python-version: '3.12'
+      - name: Reuse completed original pixel units when explicitly resuming
         run: |
           mkdir -p measured
           if [ -n "${{ inputs.resume_run || '' }}" ]; then
             gh run download "${{ inputs.resume_run || '' }}" --repo zuizui0223/mois \
               --name "mois-93m-p0008-RGB-group-${{ matrix.group }}" --dir measured
           fi
-      - name: Bootstrap the SAME frozen original YOLO11/EfficientSAM model only once per 4 photo units
+      - name: Restore the same frozen original YOLO11 and EfficientSAM ROI-v4
         run: |
           set -euo pipefail
           git init -q "$RUNNER_TEMP/fcp"
@@ -216,7 +217,7 @@ jobs:
           python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
           cd "$RUNNER_TEMP/fcp"
           bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
-      - name: Four source-signed original ROI batches with bounded paced photo prefetch, no repeated photos
+      - name: Acquire only disjoint new photos and measure all original ROI outcomes
         run: |
           set -euo pipefail
           export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
@@ -244,7 +245,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.12'
       - run: python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
       - uses: actions/download-artifact@v4
         with:
@@ -254,20 +255,20 @@ jobs:
         with:
           pattern: mois-93m-p0008-RGB-group-*
           path: actual_pixels
-          merge-multiple: false
-      - name: Reconcile EVERY photo-ID, all original model receipts and unknown hue outcomes
+      - name: Reconcile every completed actual pixel ID, keeping unknown outcomes separate
         run: |
           set -euo pipefail
           python -m scripts.acquisition.mois_full_index_real_original_photo_measure collect \
             --source source --workers actual_pixels --output genuine_photos
           cp source/manifest.json genuine_photos/source.json
+          cp source/parallel_*_receipt.json genuine_photos/
       - uses: actions/upload-artifact@v4
         with:
           name: mois-93m-p0008-observation-genuine-original-RGB
           path: genuine_photos/
           retention-days: 90
           if-no-files-found: error
-      - name: Archive only genuine photo/pixel outputs to immutable GitHub Release
+      - name: Publish measured outcomes only after complete source reconciliation
         run: |
           set -euo pipefail
           tag=mois-full93m-observation-third-original-RGB-p0008-v1
@@ -277,6 +278,6 @@ jobs:
           else
             gh release create "$tag" genuine_photos/*.json genuine_photos/*.parquet \
               --repo zuizui0223/mois --target "$GITHUB_SHA" \
-              --title 'MOIS genuinely measured original RGB photos from full 93m source' \
-              --notes '93,209,351 original source photo candidates retained in full. Third nested fixed 0.0008 observation-probability pre-colour cohort with every eligible selected-observation photo, source-matched photo IDs and FCP frozen ROI-v4. Previously unselected photo observations remain eligible for higher nested probability waves. Acquired unknowns and provider failures separate. Not a worldwide wild-flora census, nor 93m flower colours, pigment cost, or ecological analysis.'
+              --title 'MOIS genuine third-wave original RGB photos from disjoint tier02' \
+              --notes 'Only new photo IDs in observation-hash tier [0.0004,0.0008), with existing 612483 measured IDs excluded and explicit zero photo/observation overlap with pending p0004 and tier03 shadow queues. The full 93209351 target registry is metadata, not image colours. Same frozen ROI-v4, all unknowns/failures retained; no lowres exclusion or native hard filter. Complete tier02 only; not a full world-flora census. No raw licensed images redistributed.'
           fi
