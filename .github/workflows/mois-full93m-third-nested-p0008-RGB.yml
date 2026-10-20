@@ -6,6 +6,7 @@ on:
       - scripts/acquisition/mois_full_index_real_original_photo_measure.py
       - tests/test_mois_full_index_observation_queue.py
       - tests/test_mois_full_index_real_photo_measure.py
+      - tests/test_mois_p0008_workflow_contract.py
       - .github/workflows/mois-full93m-third-nested-p0008-RGB.yml
   workflow_run:
     workflows:
@@ -39,6 +40,7 @@ jobs:
           python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
           python -m unittest discover -s tests -p 'test_mois_full_index_observation_queue.py' -v
           python -m unittest discover -s tests -p 'test_mois_full_index_real_photo_measure.py' -v
+          python -m unittest discover -s tests -p 'test_mois_p0008_workflow_contract.py' -v
   freeze-source-queue:
     needs: test-source-and-real-ROI
     if: >-
@@ -72,7 +74,7 @@ jobs:
             fi
           done
           if gh release view mois-full93m-observation-third-original-RGB-p0008-v1 --repo zuizui0223/mois >/dev/null 2>&1; then
-            echo 'Second nested p0008 source photo RGB already sealed; never re-infer same pixels.'
+            echo 'Third nested p0008 source photo RGB already sealed; never re-infer same pixels.'
             exit 0
           fi
           echo 'ready=true' >> "$GITHUB_OUTPUT"
@@ -98,21 +100,24 @@ jobs:
           gh release download mois-genuine630602-original-pixels-first-two-93m-waves-v1 \
             --repo zuizui0223/mois --dir old/final \
             --pattern mois_FCP_and_first_second_93m_actual_original_photo_ROIs.parquet \
-            --pattern mois_p0008_actual_photo_append_receipt.json
+            --pattern mois_p0004_actual_photo_append_receipt.json
           python - <<'PY'
           from pathlib import Path
           import hashlib,json
           root=Path('old/final')
-          doc=json.loads((root/'mois_p0008_actual_photo_append_receipt.json').read_text())
+          doc=json.loads((root/'mois_p0004_actual_photo_append_receipt.json').read_text())
           file=root/'mois_FCP_and_first_second_93m_actual_original_photo_ROIs.parquet'
           h=hashlib.sha256()
           with file.open('rb') as inp:
               for buf in iter(lambda:inp.read(1<<20),b''):h.update(buf)
-          assert doc['schema']=='mois_FCP_and_full93m_second_p0008_real_original_photo_append_v1'
+          assert doc['schema']=='mois_FCP_and_full93m_second_p0004_real_original_photo_append_v1'
           assert doc['all_unique_original_photo_attempts']==630602
           assert doc['second_nested_actual_image_attempts']==18119
+          assert doc['old_four_hue_classified']==295801
           assert doc['old_original_image_petal_ROI_rows_immutable']
-          assert h.hexdigest()==doc['sha256_original_pixel_outputs'][file.name]
+          assert doc['new_source_photo_IDs_disjoint_from_all_old_FCP_and_MOIS']
+          assert doc['native_climate_pollination_models_not_run']
+          assert h.hexdigest()==doc['output_sha256'][file.name]
           print('MOIS_630602_GENUINE_ORIGINAL_SOURCE_PHOTOS_VERIFIED_FOR_P0008')
           PY
       - name: Create nested third p0008 observation-level source with no taxon cap
