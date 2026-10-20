@@ -13,12 +13,14 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT/'scripts/acquisition/mois_completed_pixel_checkpoint.py'
 WORKFLOW = ROOT/'.github/workflows/mois-completed-pixel-checkpoint.yml'
 P0016 = (39374811084, 73872, '16baf617396dd7b388debc65fd25eb8f9041f49ca5e6f78d0b3e2898f6dfeed5')
-RUNS = [39353343403, 39371199127, 39369517433, 39374811084]
+P0032 = (39401484641, 148071, '3628794fbb70f9e1515dabea6db731862265c0ad6c251732cfd9ab4df4badce8')
+RUNS = [39353343403, 39371199127, 39369517433, 39374811084, 39401484641]
 NAMES = [
     'MOIS second nested 93m observation RGB p0004 after first source',
     'MOIS third nested 93m observation RGB p0008 after second full integration',
     'MOIS new tier03 pixels and lowres screen shadow without image exclusion',
     'MOIS full remaining tier03 original RGB p0016 without lowres exclusion',
+    'MOIS fifth disjoint tier04 original RGB p0032 without lowres exclusion',
 ]
 
 class TestFourWaveRecovery(unittest.TestCase):
@@ -30,7 +32,8 @@ class TestFourWaveRecovery(unittest.TestCase):
 
     def test_new_wave_has_exact_source_manifest_and_real_planned_count(self):
         self.assertEqual(self.module.WAVES.get('p0016'), P0016)
-        self.assertEqual(set(self.module.WAVES), {'p0004','p0008','shadow','p0016'})
+        self.assertEqual(self.module.WAVES.get('p0032'), P0032)
+        self.assertEqual(set(self.module.WAVES), {'p0004','p0008','shadow','p0016','p0032'})
         self.assertEqual(self.module.WAVES['p0004'][0:2],(39353343403,18119))
         self.assertEqual(self.module.WAVES['p0008'][0:2],(39371199127,36375))
         self.assertEqual(self.module.WAVES['shadow'][0:2],(39369517433,569))
@@ -44,11 +47,14 @@ class TestFourWaveRecovery(unittest.TestCase):
                 if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='specs' for t in node.targets):
                     specs=ast.literal_eval(node.value)
         self.assertIsNotNone(specs)
-        self.assertEqual({s[0] for s in specs}, {'p0004','p0008','shadow','p0016'})
+        self.assertEqual({s[0] for s in specs}, {'p0004','p0008','shadow','p0016','p0032'})
         self.assertEqual({s[0]:s[1] for s in specs}, {k:v[0] for k,v in self.module.WAVES.items()})
         fourth=next(s for s in specs if s[0]=='p0016')
         self.assertEqual(fourth[2:4], ('mois-93m-p0016-precolour-observation','mois-93m-p0016-RGB-group-'))
+        fifth=next(s for s in specs if s[0]=='p0032')
+        self.assertEqual(fifth[2:4], ('mois-93m-p0032-precolour-observation','mois-93m-p0032-RGB-group-'))
         self.assertIn("'--paginate'",self.workflow)
+        self.assertIn('source_artifact_snapshots', SCRIPT.read_text(encoding='utf-8'))
 
     def test_only_pinned_main_runs_can_trigger_automatic_recovery(self):
         self.assertIn('  workflow_run:', self.workflow)
