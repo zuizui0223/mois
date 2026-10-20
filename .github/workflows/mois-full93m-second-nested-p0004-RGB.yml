@@ -10,6 +10,7 @@ on:
   workflow_run:
     workflows:
       - "MOIS first genuine RGB photos from the complete 93m source"
+      - "MOIS recover completed first 93m original RGB release"
     types: [completed]
   workflow_dispatch:
     inputs:
