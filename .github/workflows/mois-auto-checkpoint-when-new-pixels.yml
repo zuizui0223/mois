@@ -1,0 +1,114 @@
+name: MOIS checkpoint real RGB only when new sealed photo units arrive
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/mois-auto-checkpoint-when-new-pixels.yml
+      - scripts/acquisition/mois_checkpoint_fresh_artifact_gate.py
+      - tests/test_mois_checkpoint_fresh_artifact_gate.py
+  pull_request:
+    paths:
+      - .github/workflows/mois-auto-checkpoint-when-new-pixels.yml
+      - scripts/acquisition/mois_checkpoint_fresh_artifact_gate.py
+      - tests/test_mois_checkpoint_fresh_artifact_gate.py
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: mois-fresh-sealed-pixel-checkpoint-dispatch-gate
+  cancel-in-progress: false
+jobs:
+  qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify immutable snapshot comparisons and do-no-reinfer contract
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p test_mois_checkpoint_fresh_artifact_gate.py -v
+          python -m py_compile scripts/acquisition/mois_checkpoint_fresh_artifact_gate.py
+  check-and-dispatch:
+    needs: qa
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compare live signed RGB worker ZIPs with the last published checkpoint
+        id: gate
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          from scripts.acquisition.mois_checkpoint_fresh_artifact_gate import (
+              WAVES, PREFIXES, latest_checkpoint_tag, decide_checkpoint,
+          )
+          repo=os.environ['REPO']
+          def get_json(path):
+              return json.loads(subprocess.check_output(['gh','api',path],text=True))
+          all_releases=get_json(f'repos/{repo}/releases?per_page=100')
+          tag=latest_checkpoint_tag(all_releases)
+          previous=None
+          if tag is not None:
+              prior=Path('last-checkpoint')
+              prior.mkdir()
+              subprocess.run(['gh','release','download',tag,'--repo',repo,
+                  '--dir',str(prior),'--pattern','checkpoint_receipt.json'],check=True)
+              receipt=json.loads((prior/'checkpoint_receipt.json').read_text())
+              assert receipt['schema']=='mois_sealed_actual_pixel_checkpoint_v1'
+              assert receipt['image_downloads_or_colour_reinference_performed'] is False
+              previous=receipt['source_artifact_snapshots']
+          current={}
+          for wave,run in WAVES.items():
+              command=['gh','api','--paginate','--jq','.artifacts[]',
+                       f'repos/{repo}/actions/runs/{run}/artifacts?per_page=100']
+              body=subprocess.check_output(command,text=True)
+              decoder=json.JSONDecoder()
+              items=[]
+              while body.strip():
+                  body=body.lstrip()
+                  item,end=decoder.raw_decode(body)
+                  items.append(item)
+                  body=body[end:]
+              selected=[a for a in items if a['name'].startswith(PREFIXES[wave])]
+              assert all(not a['expired'] for a in selected), 'Original photo terminal artifact expired: '+wave
+              current[wave]=dict(source_run_id=run,artifacts=[
+                  {key:a[key] for key in ('id','name','digest','size_in_bytes')}
+                  for a in selected])
+          decision=decide_checkpoint(previous,current,WAVES)
+          Path('gate-decision.json').write_text(
+              json.dumps(dict(previous_checkpoint=tag,**decision),
+                         indent=2,sort_keys=True)+'\n')
+          # Avoid dispatching the same new worker assets while their existing
+          # data-only checkpoint is already queued or actively being published.
+          active=get_json(f'repos/{repo}/actions/workflows/mois-completed-pixel-checkpoint.yml/runs?branch=main&per_page=60')
+          in_flight=[x['id'] for x in active['workflow_runs'] if x['status'] in
+                     ('queued','in_progress','waiting','pending','requested')]
+          ready=decision['ready'] and not in_flight
+          print('MOIS_CHECKPOINT_NEW_ACTUAL_PIXEL_WORKERS',json.dumps(
+              {'last_published':tag,'new_workers':decision['new_artifacts_by_wave'],
+               'active_checkpoints':in_flight,'dispatch':ready},sort_keys=True))
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output:
+              output.write('ready='+('true' if ready else 'false')+'\n')
+          PY
+      - name: Dispatch unchanged source-verified data-only collector on real new work
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh workflow run mois-completed-pixel-checkpoint.yml --repo "$REPO" --ref main
+          echo 'MOIS_REQUESTED_DATA_ONLY_ORIGINAL_RGB_CHECKPOINT'
