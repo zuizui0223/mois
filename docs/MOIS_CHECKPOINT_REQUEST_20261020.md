@@ -63,3 +63,18 @@ A fresh paginated GitHub Actions jobs read shows new completed **original pixel 
 The previous snapshot only contained p0008 **10** groups and p0016 **4** groups. This source-backed request triggers one more **data-only** recovery on the main branch. It must checksum-reconcile original photo/observation/source-shard IDs, immutable classifier metadata and terminal CSVs; never download the photos again, run new colour inference, or impute missing image colours.
 
 **Outcome counts must be read from the new production recovery receipt, not inferred from these computational group counts.** Acquisition continues independently. The incremental snapshot is not a probability-complete sample or a global white-hue prevalence estimate.
+
+## Additional sealed-pixel recovery: 2026-10-20 afternoon, fifth-wave in progress
+
+The previous immutable [five-source checkpoint 39402230637](https://github.com/zuizui0223/mois/releases/tag/mois-real-pixel-checkpoint-39402230637-v1) was SHA/released with **654,723 attempted original photo IDs** and **312,152 four-hue classifiable photos**. It includes all 18 p0004 groups, 16 p0008 groups, 7 p0016 groups and all 569 shadow original-photo attempts; the new p0032 tier was still at zero **sealed** work units at that snapshot.
+
+New signed worker artifacts checked against the exact original acquisition runs:
+- p0004 39353343403: **18/18** fully complete, already published as original frozen true RGB and not to be downloaded again.
+- p0008 39371199127: **20/36** complete worker groups; 4 actively measuring, 12 queued, **no observed job failures**.
+- p0016 39374811084: **8/73** complete worker groups; 2 actively measuring, 63 queued, **no observed job failures**.
+- p0032 39401484641: fifth-wave source already verified as **148,071 new candidate originals from 83,835 observations**, zero worker groups yet sealed, 2 actively measuring, with no observed failures. GitHub Jobs pagination is mandatory; counts inferred from the first page (100 jobs) are incomplete when >100 matrix jobs exist.
+- tier03 569-image shadow validation already sealed; no false exclusion enabled.
+
+Invoke the existing code- and source-authenticated **data-only** recovery exactly once via this documentation push; publish a fresh immutable checkpoint only after original source photo IDs, terminal model method, SHA and full manifest counters agree. **Never infer a new classifiable-photo count from worker-group completion alone.** Preserve pending photos and technical unknowns rather than imputing hue, and do not re-download or re-infer originals.
+
+The already-launched p0008/p0016/p0032 workers are unchanged and remain active. This request is explicitly not another source-enumeration run, native-only photo filter, or periodic polling task.
