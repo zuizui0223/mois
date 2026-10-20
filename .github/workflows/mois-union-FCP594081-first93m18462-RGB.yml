@@ -1,0 +1,114 @@
+name: MOIS unite FCP594081 and genuine full93m first18462 photo ROIs by photo ID
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_union_FCP594081_first93m18462_real_original_photo_20261020.py
+      - tests/test_mois_union_FCP594081_first93m18462_real_original_photo_20261020.py
+      - .github/workflows/mois-union-FCP594081-first93m18462-RGB.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_union_FCP594081_first93m18462_real_original_photo_20261020.py
+      - .github/workflows/mois-union-FCP594081-first93m18462-RGB.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-source-photo-identity-FCP594081-p0002-real18462-v1
+  cancel-in-progress: false
+jobs:
+  source-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test photo ID overlap, strict old FCP source priority and genuine photo unknowns
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_union_FCP594081_first93m18462_real_original_photo_20261020.py
+          python -m py_compile scripts/acquisition/mois_union_FCP594081_first93m18462_real_original_photo_20261020.py
+  union-actual-pixels-only:
+    needs: source-contracts
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Download only two already completed and immutable original-photo ROI Releases
+        run: |
+          set -euo pipefail
+          gh release view mois-reuse-complete-FCP447500-actual-original-pixels-on350399-v1 \
+            --repo zuizui0223/mois --json isDraft --jq .isDraft | grep -qx false
+          gh release view mois-full93m-observation-baseline-original-RGB-p0002-v1 \
+            --repo zuizui0223/mois --json isDraft --jq .isDraft | grep -qx false
+          gh release download mois-reuse-complete-FCP447500-actual-original-pixels-on350399-v1 \
+            --repo zuizui0223/mois --dir old_FCP_MOIS \
+            --pattern mois_actual350399_plus_FCP447500_photo_ID_deduplicated_original_hues.parquet \
+            --pattern mois_FCP447500_signed_original_photo_reuse_on350399_receipt.json
+          gh release download mois-full93m-observation-baseline-original-RGB-p0002-v1 \
+            --repo zuizui0223/mois --dir new_full93m \
+            --pattern measured_photos.parquet --pattern receipt.json --pattern source.json
+      - name: Verify signed actual photo ROI source receipts then deduplicate ALL original IDs
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_union_FCP594081_first93m18462_real_original_photo_20261020 \
+            --fcp-parquet old_FCP_MOIS/mois_actual350399_plus_FCP447500_photo_ID_deduplicated_original_hues.parquet \
+            --fcp-receipt old_FCP_MOIS/mois_FCP447500_signed_original_photo_reuse_on350399_receipt.json \
+            --new-parquet new_full93m/measured_photos.parquet \
+            --new-receipt new_full93m/receipt.json \
+            --source-manifest new_full93m/source.json \
+            --output complete_photo_ID_union
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import pandas as pd
+          d=Path('complete_photo_ID_union')
+          r=json.loads((d/'mois_p0002_plus_FCP594081_actual_pixel_unioned_source_receipt.json').read_text())
+          assert r['preexisting_actual_photo_attempts_FCP_MOIS']==594081
+          assert r['new_first_full93m_observation_probability_photo_attempts']==18462
+          assert r['new_first93m_photo_IDs_already_in_FCP_MOIS']+r['new_photo_IDs_not_previously_measured_in_FCP_MOIS']==18462
+          assert 594081<=r['combined_unique_original_photo_attempts']<=612543
+          assert r['previous_FCP_MOIS_four_hue_classified']==288747
+          assert r['old_genuine_FCP_MOIS_colour_rows_untouched']
+          assert r['source_metadata_without_real_RGB_never_inferred']
+          assert r['no_native_species_or_environmental_modelling_performed']
+          ids=pd.read_parquet(d/'mois_original_p0002_plus_FCP594081_unique_actual_photo_ROIs.parquet',columns=['photo_id'])
+          assert len(ids)==r['combined_unique_original_photo_attempts'] and ids.photo_id.is_unique
+          print('MOIS_TRULY_NEW_PHOTOS_AFTER_FCP_ORIGINAL_PIXEL_ID_DEDUP',r['new_photo_IDs_not_previously_measured_in_FCP_MOIS'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-FCP594081-full93m-p0002-deduped-genuine-original-RGB-photos
+          path: complete_photo_ID_union/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish permanently expanded authentic original photo-image evidence
+        run: |
+          set -euo pipefail
+          tag=mois-actual-FCP594081-plus-full93m-first18462-photo-ID-union-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            mkdir -p already
+            gh release download "$tag" --repo zuizui0223/mois --dir already \
+              --pattern mois_p0002_plus_FCP594081_actual_pixel_unioned_source_receipt.json
+            cmp already/mois_p0002_plus_FCP594081_actual_pixel_unioned_source_receipt.json \
+                complete_photo_ID_union/mois_p0002_plus_FCP594081_actual_pixel_unioned_source_receipt.json
+            echo 'Previously published source photo/ROI result has identical original receipt.'
+          else
+            gh release create "$tag" complete_photo_ID_union/* \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS FCP594081 plus original full93m sampled true photo RGB union' \
+              --notes 'Only actually measured original iNaturalist photo image outcomes: MOIS original350399 + FCP full447500 genuinely measured images, photo-ID deduped to 594081, now plus signed new original-pixel full93m p0002 18462 image attempts after further original photo ID deduplication. The prior FCP+MOIS hues win without modification, any overlapping newly classified image rows are not double counted. Unknown technical ROI and source-arm differences preserved; no source metadata labelled as flowers, no botanically verified opening, WCVP native/introduced claims, abiotic/phylogeny or adaptation inference.'
+          fi
