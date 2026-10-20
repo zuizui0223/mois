@@ -130,6 +130,28 @@ class TestFullSourceQueue(unittest.TestCase):
         self.assertIsNone(q.frozen_original_extension("../large.jpg?format=PNG"))
 
 
+    def test_third_p0008_source_draw_adds_only_unmeasured_observations(self):
+        # A and B are already processed under nested p0002/p0004 or
+        # genuinely measured historical sources; only OBS-C enters p0008.
+        chance={"OBS-A":0.0001,"OBS-B":0.0003,"OBS-C":0.0006}
+        previous=self.root/"already_measured_through_p0004.csv"
+        previous.write_text("photo_id\n101\n102\n103\n")
+        with patch.object(q,"N_PHOTOS",4),patch.object(q,"N_TAXA",2), \
+             patch.object(q,"N_SHARDS",2), \
+             patch.object(q,"obs_draw",side_effect=lambda uuid:chance[uuid]):
+            third=q.prepare(self.root/"index",self.count,[previous],
+                self.root/"third_p0008",p=0.0008,batch_size=3)
+        self.assertEqual(third["sampled_photo_ids_before_prior_dedup"],4)
+        self.assertEqual(third["previously_measured_photo_ids_skipped"],3)
+        self.assertEqual(third["new_photo_attempts_planned"],1)
+        self.assertEqual(third["selected_new_photos_unsupported_by_frozen_loader"],0)
+        with (self.root/"third_p0008"/"shards"/"shard-000.csv").open(newline="") as stream:
+            remaining=list(csv.DictReader(stream))
+        self.assertEqual({r["photo_id"] for r in remaining},{"104"})
+        self.assertEqual(remaining[0]["selection_probability"],"0.0008")
+        self.assertFalse(third["colour_measured"])
+        self.assertTrue(third["all_unselected_source_photos_eligible_at_higher_probability"])
+
     def test_second_p0004_source_draw_adds_only_new_observations_not_first_pixels(self):
         # Frozen observation draw is nested: A in both p0002/p0004;
         # B enters only p0004; C in neither. Previous original photo IDs
