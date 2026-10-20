@@ -58,7 +58,7 @@ def test_duplicate_second_source_photo_ids_are_rejected():
 def test_second_source_must_exclude_every_earlier_real_image_photo_id():
     old,new=source()
     new.loc[0,"photo_id"]="1"
-    with pytest.raises(ValueError,match="Previously measured photo pixels"):
+    with pytest.raises(ValueError,match="previously genuinely measured original ID"):
         combine(old,new,expected_old=2,expected_new=2)
 
 
