@@ -7,6 +7,8 @@ on:
       - tests/test_mois_full_index_observation_queue.py
       - tests/test_mois_full_index_real_photo_measure.py
       - tests/test_mois_p0008_workflow_contract.py
+      - tests/test_mois_queue_from_full93m_target_tiers.py
+      - scripts/acquisition/mois_queue_from_full93m_target_tiers.py
       - .github/workflows/mois-full93m-third-nested-p0008-RGB.yml
   workflow_run:
     workflows:
@@ -41,6 +43,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_mois_full_index_observation_queue.py' -v
           python -m unittest discover -s tests -p 'test_mois_full_index_real_photo_measure.py' -v
           python -m unittest discover -s tests -p 'test_mois_p0008_workflow_contract.py' -v
+          python -m unittest discover -s tests -p 'test_mois_queue_from_full93m_target_tiers.py' -v
   freeze-source-queue:
     needs: test-source-and-real-ROI
     if: >-
@@ -67,7 +70,7 @@ jobs:
         run: |
           set -euo pipefail
           echo 'ready=false' >> "$GITHUB_OUTPUT"
-          for tag in mois-full-93209351-indexed-photo-observation-source-v1 mois-genuine630602-original-pixels-first-two-93m-waves-v1; do
+          for tag in mois-complete-93209351-original-photo-target-tiers-v1 mois-genuine630602-original-pixels-first-two-93m-waves-v1; do
             if ! gh release view "$tag" --repo zuizui0223/mois --json isDraft --jq .isDraft 2>/dev/null | grep -qx false; then
               echo "Waiting for exact authenticated Release: $tag"
               exit 0
@@ -81,20 +84,25 @@ jobs:
       - name: Install original photo/Parquet reader
         if: steps.gate.outputs.ready == 'true'
         run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
-      - name: Download signed 16 source-index archives once and verify all 128 photo + observation pairs
+      - name: Download only new p0008 tier-02 original-photo ID targets, not 93m rows
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
-          mkdir -p download index counts old
-          gh release download mois-full-93209351-indexed-photo-observation-source-v1 \
-            --repo zuizui0223/mois --dir download
-          (cd download && sha256sum -c SHA256SUMS.txt)
-          cp download/manifest.json index/manifest.json
-          for file in download/source-*.tar; do tar -xf "$file" -C index; done
-          test "$(find index/photos -name '*.csv.gz' | wc -l)" -eq 128
-          test "$(find index/observations -name '*.csv.gz' | wc -l)" -eq 128
+          mkdir -p tier-download tier-index counts old/final
+          gh release download mois-complete-93209351-original-photo-target-tiers-v1 \
+            --repo zuizui0223/mois --dir tier-download \
+            --pattern 'tier-02-group-*.tar' \
+            --pattern 'group-??-receipt.json' \
+            --pattern mois_all_original_photo_target_tiers_receipt.json
+          test "$(find tier-download -maxdepth 1 -name 'tier-02-group-*.tar' | wc -l)" -eq 16
+          test "$(find tier-download -maxdepth 1 -name 'group-??-receipt.json' | wc -l)" -eq 16
+          for file in tier-download/tier-02-group-*.tar; do
+            tar -xf "$file" -C tier-index
+          done
+          test "$(find tier-index/tier-02 -name 'part-*.csv.gz' | wc -l)" -eq 128
           gh run download 38749681793 --repo zuizui0223/fcp \
-            --name fcp-42111-real-source-photo-opportunity-counts-20260927-complete-not-colours --dir counts
+            --name fcp-42111-real-source-photo-opportunity-counts-20260927-complete-not-colours \
+            --dir counts
           countfile=$(find counts -name all_42111_species_photo_opportunity_counts.csv -print -quit)
           echo 'ef26c16252dd785f2d08bde3b18938c7624d73a54386fa3d3974dceb09ed97a9  '"$countfile" | sha256sum -c -
           gh release download mois-genuine630602-original-pixels-first-two-93m-waves-v1 \
@@ -118,46 +126,49 @@ jobs:
           assert doc['new_source_photo_IDs_disjoint_from_all_old_FCP_and_MOIS']
           assert doc['native_climate_pollination_models_not_run']
           assert h.hexdigest()==doc['output_sha256'][file.name]
-          print('MOIS_630602_GENUINE_ORIGINAL_SOURCE_PHOTOS_VERIFIED_FOR_P0008')
+          print('MOIS_P0008_630602_PREVIOUS_GENUINE_RGB_IDS_SHA_VERIFIED')
           PY
-      - name: Create nested third p0008 observation-level source with no taxon cap
+      - name: Build p0008 only-new tier-02 real RGB ROI work queue with no taxon cap
         id: queue
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
           python - <<'PY'
-          import pandas as pd
+          import json
+          import glob
+          import subprocess
+          import sys
           from pathlib import Path
-          f=sorted(Path('old').rglob('*.parquet'))
-          assert len(f)==1,f
-          photo=set()
-          for p in f:
-            d=pd.read_parquet(p,columns=['photo_id'])
-            assert d.photo_id.is_unique,p
-            photo.update(d.photo_id.astype(str))
-          assert len(photo)==630602,len(photo)
-          Path('prior.csv').write_text('photo_id\n'+'\n'.join(sorted(photo,key=int))+'\n')
-          print('MOIS_REUSE_ALREADY_MEASURED_SOURCE_PIXEL_IDS',len(photo))
-          PY
-          original=$(find counts -name all_42111_species_photo_opportunity_counts.csv -print -quit)
-          python -m scripts.acquisition.mois_full_index_observation_queue \
-            --index index --counts "$original" --previous prior.csv \
-            --output current --probability 0.0008
-          python - <<'PY'
-          import json,os
+          import pandas as pd
+          existing=Path('old/final/mois_FCP_and_first_second_93m_actual_original_photo_ROIs.parquet')
+          old=pd.read_parquet(existing,columns=['photo_id'])
+          assert len(old)==630602 and old.photo_id.astype(str).is_unique
+          Path('prior.csv').write_text('photo_id\n'+'\n'.join(old.photo_id.astype(str))+'\n')
+          receipts=sorted(glob.glob('tier-download/group-??-receipt.json'))
+          assert len(receipts)==16,receipts
+          counts=next(Path('counts').rglob('all_42111_species_photo_opportunity_counts.csv'))
+          cmd=[sys.executable,'-m','scripts.acquisition.mois_queue_from_full93m_target_tiers',
+              '--registry','tier-download/mois_all_original_photo_target_tiers_receipt.json',
+              '--targets','tier-index','--counts',str(counts),
+              '--previous','prior.csv','--output','current',
+              '--tier','2','--compute-bucket','0','--compute-bucket-count','1']
+          for receipt in receipts:cmd+=['--group-receipt',receipt]
+          subprocess.run(cmd,check=True)
           d=json.load(open('current/manifest.json'))
           assert d['schema']=='mois_full_source_observation_sampling_cohort_v1'
           assert d['full_frame_photo_ids']==93209351
+          assert d['full_source_original_tier']==2
+          assert d['source_tier_total_photo_candidates']==36583
+          assert d['source_tier_compute_bucket_total_photos']==36583
+          assert d['sampled_photo_ids_before_prior_dedup']==36583
           assert d['selection_probability']==0.0008
           assert d['new_photo_attempts_planned']>0
-          assert (d['new_photo_attempts_planned']+
-                  d['previously_measured_photo_ids_skipped']+
-                  d['selected_new_photos_unsupported_by_frozen_loader']==
-                  d['sampled_photo_ids_before_prior_dedup'])
+          assert d['compute_bucket_is_exhaustive_processing_partition_not_statistical_inclusion_cap']
+          assert d['new_photo_attempts_planned']+d['previously_measured_photo_ids_skipped']+d['selected_new_photos_unsupported_by_frozen_loader']==36583
           assert d['all_unselected_source_photos_eligible_at_higher_probability']
-          with open(os.environ['GITHUB_OUTPUT'],'a') as o:
-            o.write('groups='+json.dumps(d['group_ids'])+'\n')
-          print('MOIS_FULL_SOURCE_SAMPLE_ONLY_NO_NEW_FLOWER_HUES',d['new_photo_attempts_planned'])
+          print('MOIS_P0008_ONLY_NEW_DISJOINT_TIER2_PHOTOS_READY_NO_93M_RESCAN',d['new_photo_attempts_planned'])
+          with open(__import__('os').environ['GITHUB_OUTPUT'],'a') as out:
+              out.write('groups='+json.dumps(d['group_ids'])+'\n')
           PY
       - uses: actions/upload-artifact@v4
         if: steps.gate.outputs.ready == 'true'

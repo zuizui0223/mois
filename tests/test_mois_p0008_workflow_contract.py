@@ -36,9 +36,16 @@ class TestNestedP0008InputReceipt(unittest.TestCase):
         s = self.workflow
         self.assertIn(
             '"MOIS source-photo append genuine second p0004 18119 to 612483 original ROI results"', s)
-        self.assertIn("assert len(photo)==630602", s)
+        self.assertIn("assert len(old)==630602", s)
         self.assertIn("assert doc['old_four_hue_classified']==295801", s)
-        self.assertIn("--probability 0.0008", s)
+        self.assertIn("mois-complete-93209351-original-photo-target-tiers-v1",s)
+        self.assertIn("tier-02-group-*.tar",s)
+        self.assertIn("mois_queue_from_full93m_target_tiers",s)
+        self.assertIn("'--tier','2'",s)
+        self.assertIn("'--compute-bucket-count','1'",s)
+        self.assertIn("d['source_tier_total_photo_candidates']==36583",s)
+        self.assertIn("d['source_tier_compute_bucket_total_photos']==36583",s)
+        self.assertNotIn("gh release download mois-full-93209351-indexed-photo-observation-source-v1",s)
         self.assertIn("assert d['selection_probability']==0.0008", s)
         self.assertIn(
             "mois-full93m-observation-third-original-RGB-p0008-v1", s)
