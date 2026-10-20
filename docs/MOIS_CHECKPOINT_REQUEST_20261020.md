@@ -154,3 +154,14 @@ New source-verified sealed worker artifacts from the live acquisition run IDs si
 Trigger the unchanged **six-arm data-only** recovery once. Validate original source/photo/observation identity and full-resolution ROI terminal SHA/method signatures, then add only completed measurements to the 612,483-photo immutable baseline. Preserve all failed acquisitions/unknowns, original unmodified image hue labels, original `source_arm` and **per-original-observation `selection_probability`**, including differing geo05 regional rates. Never assume all 4 newly completed groups contain classifiable flowers. Do not rerun model inference or re-download original images.
 
 The geo05 arm is an independently selected geographic coverage-enrichment source, not a probability-complete globally representative species sample. It must remain separately labelled in any ecological analysis.
+
+
+## Newly sealed original image units after automated checkpoint 39513292880 — 2026-10-21
+
+Latest successful **automated** photo terminal release is [39513292880](https://github.com/zuizui0223/mois/releases/tag/mois-real-pixel-checkpoint-39513292880-v1), containing **737,178 unique true original-photo attempts** (including technical acquisition failures) and **343,249 genuine frozen automatic four-hue ROI classifications**. The locally inspected ZIP, `checkpoint_receipt.json`, and all output SHA256 hashes agree. Its exact signed worker snapshots included p0016 **31 groups**, p0032 **25 groups**, and geo05 **12 groups**; p0004 **18** and p0008 **36** groups are completed full source waves.
+
+A new complete-workflow GitHub Jobs/artifacts check shows **p0016 33 sealed groups**, **p0032 26 sealed groups**, and **geo05 13 sealed groups**, with 0 failed jobs. Thus additional *previously uncollected actual source-image terminal receipts* have arrived. Existing p0016, p0032 and geo05 full-resolution ROI worker jobs continue, with no attempt to restart or redownload their pictures.
+
+**Request exactly one independent data-only six-arm checkpoint**, using only the pinned original source and worker artifact SHA256/terminal receipts. Preserve the exact original photo and observation IDs, immutable four-hue labels, original observation-level selection probabilities, source-arm provenance and technical unknowns. The geo05 latitude-enrichment arm is distinct and cannot be pooled unweighted as if it had the global uniform probability design. Never count the 93,209,351 original metadata catalogue as 93m measured image colours.
+
+The checkpoint's new attempted/photo-hue counts must be computed from authenticated original terminal rows, *never projected from workers or photo targets*. Do not cancel, duplicate or adjust the active acquisition waves. The hourly conditional watcher remains operational for future worker completions.
