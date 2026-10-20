@@ -1,0 +1,103 @@
+name: MOIS complete third-wave actual RGB season latitude coverage
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_p0008_real_photo_coverage.py
+      - tests/test_mois_p0008_real_photo_coverage.py
+      - .github/workflows/mois-p0008-complete-photo-coverage.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/analysis/mois_p0008_real_photo_coverage.py
+      - .github/workflows/mois-p0008-complete-photo-coverage.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-complete-p0008-original-RGB-latitude-season-coverage
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate photo ID grain, unknown hues, source arm and observation weights
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p 'test_mois_p0008_real_photo_coverage.py' -v
+          python -m py_compile scripts/analysis/mois_p0008_real_photo_coverage.py
+  complete-third-wave-coverage:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install only Parquet reader, not the original image model
+        run: |
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Reuse signed full p0008 ORIGINAL measured-photo release, zero image HTTP
+        run: |
+          set -euo pipefail
+          tag=mois-full93m-observation-third-original-RGB-p0008-v1
+          gh release view "$tag" --repo zuizui0223/mois --json isDraft --jq .isDraft | grep -qx false
+          gh release download "$tag" --repo zuizui0223/mois --dir originals \
+            --pattern measured_photos.parquet \
+            --pattern receipt.json \
+            --pattern source.json
+      - name: Check SHA and quantify real original photo latitude, month, taxon and missingness
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_p0008_real_photo_coverage \
+            --photos originals/measured_photos.parquet \
+            --receipt originals/receipt.json \
+            --source originals/source.json \
+            --output verified-photo-coverage
+          python - <<'PY'
+          import json
+          r=json.load(open('verified-photo-coverage/p0008_real_photo_coverage_receipt.json'))
+          assert r['complete_photo_attempts']==36375
+          assert r['overall']['classified_four_hue']==13874
+          assert r['overall']['acquisition_failed']==44
+          assert r['overall']['acquired_unclassifiable']==22457
+          assert not r['original_photo_pixels_reacquired_or_reclassified']
+          assert not r['globally_representative_white_fraction_claimed']
+          print('MOIS_COMPLETE_P0008_REAL_PHOTO_COVERAGE_CONFIRMED',
+                r['distinct_observations'],
+                r['taxon_ids_with_classified_photos'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-complete-third-original-p0008-real-photo-coverage-${{ github.run_id }}
+          path: verified-photo-coverage/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Preserve immutable source-audited real-photo coverage files
+        run: |
+          set -euo pipefail
+          tag=mois-complete-p0008-original-photo-latitude-season-coverage-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            gh release download "$tag" --repo zuizui0223/mois --dir existing \
+              --pattern p0008_real_photo_coverage_receipt.json
+            cmp existing/p0008_real_photo_coverage_receipt.json \
+                verified-photo-coverage/p0008_real_photo_coverage_receipt.json
+          else
+            gh release create "$tag" verified-photo-coverage/* \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS genuine complete 36375 third-wave original photos: latitude, months and actual ROI missingness' \
+              --notes 'Source-SHA verified 36375 genuine frozen original photo RGB outcomes, not global white-flora prevalence. Includes original taxon, observation and photo dependence; actual classification failure/unknowns; latitude and original observation month strata. No newly downloaded photographs, image inference, botanical anthesis certification or native-only filtering. All measurements are reused immutably.'
+          fi
