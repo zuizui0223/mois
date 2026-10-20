@@ -54,7 +54,7 @@ class TestScheduledCheckpointGate(unittest.TestCase):
     def test_invalid_source_run_and_duplicate_artifact_rejected(self):
         old=prior();current=json.loads(json.dumps(old))
         current["p0032"]["source_run_id"]=18
-        with self.assertRaisesRegex(ValueError,"source run"):
+        with self.assertRaisesRegex(ValueError,"Source run"):
             decide_checkpoint(old,current,WAVES)
         current=prior()
         current["p0032"]["artifacts"].append(current["p0032"]["artifacts"][0])
