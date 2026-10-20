@@ -1,0 +1,117 @@
+name: MOIS union source-signed p0004 real RGB with existing FCP and p0002 originals
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_append_p0004_actual_original_ROIs.py
+      - tests/test_mois_append_p0004_actual_original_ROIs.py
+      - .github/workflows/mois-append-p0004-FCP-p0002-actual-RGB-union.yml
+  workflow_run:
+    workflows:
+      - "MOIS second nested 93m observation RGB p0004 after first source"
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-original-FCP447500-p0002-p0004-real-photo-ID-union
+  cancel-in-progress: false
+jobs:
+  test-original-pixel-identity-and-unknowns:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_append_p0004_actual_original_ROIs.py
+          python -m py_compile scripts/acquisition/mois_append_p0004_actual_original_ROIs.py
+  seal-only-genuinely-measured-photo-ROIs:
+    needs: test-original-pixel-identity-and-unknowns
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
+        github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install genuine photo-only Parquet dependencies
+        run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Reuse SHA-signed existing 612483 FCP+p0002 original-photo RGB union
+        run: |
+          set -euo pipefail
+          gh release download mois-genuine-FCP447500-plus93m-first18462-photo-ID-union-v1 \
+            --repo zuizui0223/mois --dir old \
+            --pattern mois_source_verified_FCP447500_and_93m_p0002_combined_unique_photo_ROIs.parquet \
+            --pattern mois_original_photo_RGB_FCP447500_plus_first93m_id_union_receipt.json
+      - name: Require actual p0004 image ROI Parquet and original frozen p0002 method
+        run: |
+          set -euo pipefail
+          gh release view mois-full93m-observation-second-original-RGB-p0004-v1 \
+            --repo zuizui0223/mois --json isDraft --jq .isDraft | grep -qx false
+          gh release download mois-full93m-observation-second-original-RGB-p0004-v1 \
+            --repo zuizui0223/mois --dir second \
+            --pattern measured_photos.parquet --pattern receipt.json --pattern source.json
+          gh release download mois-full93m-observation-baseline-original-RGB-p0002-v1 \
+            --repo zuizui0223/mois --dir first --pattern receipt.json
+      - name: Verify every source SHA and append real new four-hue ROIs
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_append_p0004_actual_original_ROIs \
+            --old-parquet old/mois_source_verified_FCP447500_and_93m_p0002_combined_unique_photo_ROIs.parquet \
+            --old-receipt old/mois_original_photo_RGB_FCP447500_plus_first93m_id_union_receipt.json \
+            --new-parquet second/measured_photos.parquet \
+            --new-receipt second/receipt.json \
+            --new-source second/source.json \
+            --first-receipt first/receipt.json \
+            --output sealed
+          python - <<'PY'
+          import json
+          p='sealed/mois_FCP447500_plus93m_p0004_source_signed_pixel_union_receipt.json'
+          r=json.load(open(p))
+          assert r['prior_unique_actual_original_photo_IDs']==612483
+          assert r['p0004_new_unique_actual_original_photo_IDs']==18119
+          assert r['combined_unique_actual_original_photo_IDs']==630602
+          assert r['prior_actual_four_hue_classified']==295801
+          assert r['overlap_with_previously_processed_original_photo_IDs']==0
+          assert r['all_prior_original_ROI_labels_preserved']
+          assert r['unknown_p0004_RGB_ROIs_not_assumed_chromatic']
+          assert r['no_original_image_download_or_new_colour_inference_in_union']
+          assert r['no_native_island_climate_pollinator_or_ecological_analysis_run']
+          print('MOIS_P0004_630602_DISTINCT_REAL_IMAGE_ROI_UNION_CONFIRMED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-FCP-p0002-p0004-genuine-630602-original-photo-RGB-ROIs
+          path: sealed/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish only source-authenticated unique original photo pixels
+        run: |
+          set -euo pipefail
+          tag=mois-genuine-FCP447500-plus93m-p0004-photo-ID-union-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            gh release download "$tag" --repo zuizui0223/mois --dir existing \
+              --pattern mois_FCP447500_plus93m_p0004_source_signed_pixel_union_receipt.json
+            cmp existing/mois_FCP447500_plus93m_p0004_source_signed_pixel_union_receipt.json \
+                sealed/mois_FCP447500_plus93m_p0004_source_signed_pixel_union_receipt.json
+            echo 'Already published original photo pixel identity and source receipt unchanged.'
+          else
+            gh release create "$tag" sealed/* --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS 630602 distinct original source photo RGB attempts through p0004' \
+              --notes 'Byte-verified immutable earlier 612483 genuine original photos plus 18119 newly acquired p0004 original-image ROI attempts from the authenticated 93209351 full photo index. Exact photo-ID dedup, old hue unchanged, source and image SHA signed; unknowns remain unknown. Image-pixel release includes no copyrighted original photo images, no new image inference in union and no biological native/climate/phenology/ecological test.'
+          fi
