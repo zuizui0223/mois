@@ -113,7 +113,8 @@ def collect_wave(source,workers,method):
         'source_manifest_sha256':sha(source/'manifest.json'),'completed_unit_audit':audits}
 
 PROJECTION=('photo_id','measurement_id','observation_id','inat_taxon_id','species',
-    'observed_on','latitude','longitude','positional_accuracy','morph','measurement_status','image_sha256')
+    'observed_on','latitude','longitude','positional_accuracy','selection_probability',
+    'morph','measurement_status','image_sha256')
 
 def union_projection(old,new):
     import pandas as pd
@@ -123,6 +124,25 @@ def union_projection(old,new):
     require(not set(old.photo_id.astype(str)) & set(new.photo_id.astype(str)), 'Measured photo overlap')
     require(old.classified.eq(old.morph.isin(HUES)).all() and old.white.eq(old.morph.eq('white')).all(),
             'Baseline original hue flags changed')
+    # The geographic-enrichment arm uses region-specific observation propensity.
+    # A scalar rate for the entire cohort would be false. Preserve the
+    # original per-photo source value (even if its pixels are unclassifiable)
+    # rather than silently dropping the information from the merged projection.
+    if 'selection_probability' in new:
+        original_prob=new['selection_probability'].fillna('').astype(str).str.strip()
+        numeric_prob=pd.to_numeric(original_prob,errors='coerce')
+        require(bool(numeric_prob.notna().all() and
+                     numeric_prob.gt(0).all() and numeric_prob.le(1).all()),
+                'Invalid or missing original observation selection probability')
+        if 'observation_id' in new:
+            obs_probs=pd.DataFrame({
+                'wave':new['checkpoint_wave'].values,
+                'observation':new['observation_id'].values,
+                'probability':numeric_prob.values,
+            })
+            require(bool(obs_probs.groupby(['wave','observation'],dropna=False)
+                         .probability.nunique().le(1).all()),
+                    'Inconsistent selection probability for an original observation')
     frames=[]
     for frame,is_old in ((old,True),(new,False)):
         d=pd.DataFrame(index=frame.index)

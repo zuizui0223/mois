@@ -97,4 +97,52 @@ class TestCheckpoint(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'hue'):
             self.m.union_projection(old,pd.DataFrame(fresh))
 
+    def test_combined_projection_preserves_geographic_selection_probability_and_arm(self):
+        import pandas as pd
+        old=pd.DataFrame([dict(photo_id='90',morph='white',classified=True,white=True,
+            arm='original_legacy',observation_id='old_obs',
+            measurement_status='classified_four_state_morph')])
+        fresh,_=self.collect()
+        for index,row in enumerate(fresh):
+            row['checkpoint_wave']='geo05'
+            row['source_arm']='global93m_geographic_enrichment_tier_05'
+            row['selection_probability']=('0.0016','0.0008')[index]
+        frozen=old.copy(deep=True)
+        union,counts=self.m.union_projection(old,pd.DataFrame(fresh))
+        self.assertTrue(old.equals(frozen))
+        self.assertEqual(union.photo_id.tolist(),['90','1','2'])
+        self.assertEqual(union.selection_probability.tolist(),['','0.0016','0.0008'])
+        self.assertEqual(union.source_arm.tolist(),[
+            'original_legacy','global93m_geographic_enrichment_tier_05',
+            'global93m_geographic_enrichment_tier_05'])
+        self.assertEqual(union.checkpoint_wave.tolist(),['baseline','geo05','geo05'])
+        self.assertEqual(union.morph.tolist(),['white','white','mixed_uncertain'])
+        self.assertEqual(counts['combined_four_hue_classified'],2)
+
+    def test_unparseable_or_nonpositive_new_probability_cannot_enter_combined_checkpoint(self):
+        import pandas as pd
+        old=pd.DataFrame([dict(photo_id='90',morph='white',classified=True,white=True,
+            arm='historical',observation_id='old_obs')])
+        for invalid in ('', 'not-a-number', 'NaN', '0', '-0.1','1.2'):
+            fresh,_=self.collect()
+            for row in fresh:
+                row['checkpoint_wave']='geo05'
+                row['selection_probability']='0.0008'
+            fresh[0]['selection_probability']=invalid
+            with self.subTest(invalid=invalid):
+                with self.assertRaisesRegex(ValueError, 'selection probability'):
+                    self.m.union_projection(old,pd.DataFrame(fresh))
+
+    def test_same_observation_cannot_have_two_inclusion_probabilities(self):
+        import pandas as pd
+        old=pd.DataFrame([dict(photo_id='90',morph='white',classified=True,white=True,
+            arm='historical',observation_id='old_obs')])
+        fresh,_=self.collect()
+        for index,row in enumerate(fresh):
+            row['checkpoint_wave']='geo05'
+            row['observation_id']='same_observation'
+            row['selection_probability']=('0.0016','0.0008')[index]
+        with self.assertRaisesRegex(ValueError,'selection probability'):
+            self.m.union_projection(old,pd.DataFrame(fresh))
+
 if __name__=='__main__':unittest.main()
