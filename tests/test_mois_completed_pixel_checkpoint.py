@@ -73,4 +73,28 @@ class TestCheckpoint(unittest.TestCase):
         self.assertEqual(union.photo_id.tolist(),['90','1','2']);self.assertEqual(union.morph.tolist(),['white','white','mixed_uncertain']);self.assertEqual(union.classified.tolist(),[True,True,False]);self.assertEqual(report['new_actual_four_hue_classified'],1);self.assertEqual(report['combined_unique_photo_attempts'],3)
         fresh[0]['photo_id']='90'
         with self.assertRaisesRegex(ValueError,'overlap'):self.m.union_projection(old,pd.DataFrame(fresh))
+    def test_legacy_unclassified_labels_preserved_without_inventing_hues(self):
+        import pandas as pd
+        old=pd.DataFrame([dict(photo_id=str(90+i),morph=label,classified=False,white=False,
+            observation_id='legacy'+str(i),inat_taxon_id='5',species='Old plant',arm='legacy',
+            measurement_status='not_evaluable',technical_failure=False)
+            for i,label in enumerate(('', 'legacy_roi_unknown'))])
+        fresh,_=self.collect()
+        for r in fresh:r['checkpoint_wave']='p0004'
+        union,report=self.m.union_projection(old,pd.DataFrame(fresh))
+        self.assertEqual(union.morph.iloc[:2].tolist(),['','legacy_roi_unknown'])
+        self.assertFalse(union.classified.iloc[:2].any())
+        self.assertFalse(union.white.iloc[:2].any())
+        self.assertEqual(report['combined_four_hue_classified'],1)
+
+    def test_new_noncanonical_unknown_is_still_rejected(self):
+        import pandas as pd
+        old=pd.DataFrame([dict(photo_id='90',morph='white',classified=True,white=True,
+                              arm='legacy',measurement_status='classified_four_state_morph')])
+        fresh,_=self.collect()
+        for r in fresh:r['checkpoint_wave']='p0004'
+        fresh[1]['morph']='new_unknown_unsupported'
+        with self.assertRaisesRegex(ValueError,'hue'):
+            self.m.union_projection(old,pd.DataFrame(fresh))
+
 if __name__=='__main__':unittest.main()
