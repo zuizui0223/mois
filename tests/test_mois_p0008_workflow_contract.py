@@ -36,7 +36,7 @@ class TestNestedP0008InputReceipt(unittest.TestCase):
         s = self.workflow
         self.assertIn(
             '"MOIS source-photo append genuine second p0004 18119 to 612483 original ROI results"', s)
-        self.assertIn("assert len(photo)==630602", s)
+        self.assertIn("assert len(old)==630602", s)
         self.assertIn("assert doc['old_four_hue_classified']==295801", s)
         self.assertIn("mois-complete-93209351-original-photo-target-tiers-v1",s)
         self.assertIn("tier-02-group-*.tar",s)
