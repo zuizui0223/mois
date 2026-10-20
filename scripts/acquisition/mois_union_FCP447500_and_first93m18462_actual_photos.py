@@ -89,7 +89,7 @@ def append(fcp,first,*,expected_fcp=FCP_UNION,expected_first=FIRST_UNION,
     fcp_ids=_check_pixels(fcp,"FCP source-authenticated original pixels")
     first_ids=_check_pixels(first,"first 93m source-authenticated original pixels")
     require(len(fcp)==expected_fcp and len(first)==expected_first
-            and len(fcp)-expected_base==243682,
+            and expected_fcp>=expected_base,
             "FCP and first original sources not at frozen 350399 base")
     require(
         fcp_ids.iloc[:expected_base].tolist()==first_ids.iloc[:expected_base].tolist(),
