@@ -126,7 +126,10 @@ def union_projection(old,new):
         for col in PROJECTION:
             d[col]=frame[col].fillna('').astype(str) if col in frame else ''
         require(d.photo_id.str.fullmatch(r'\d+').all(),'Invalid actual original photo ID')
-        require(d.morph.isin((*HUES,'mixed_uncertain')).all(),'Unknown source hue state')
+        # SHA-verified legacy sources have other original unclassified labels.
+        # Preserve them verbatim; only NEW ROI-v4 rows use the five-state schema.
+        if not is_old:
+            require(d.morph.isin((*HUES,'mixed_uncertain')).all(),'Unknown source hue state')
         d['classified']=d.morph.isin(HUES);d['white']=d.morph.eq('white')
         d['technical_failure']=frame['technical_failure'].astype(bool) if is_old and 'technical_failure' in frame else d.measurement_status.eq('image_acquisition_failed')
         d['source_arm']=frame['arm'].fillna('').astype(str) if is_old else frame.get('source_arm',pd.Series('',index=frame.index)).fillna('').astype(str)
