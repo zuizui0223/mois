@@ -1,0 +1,110 @@
+name: MOIS recover completed first 93m original RGB release
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_recover_first93m_original_RGB_artifact_20261020.py
+      - tests/test_mois_recover_first93m_original_RGB_artifact_20261020.py
+      - .github/workflows/mois-first93m-recover-p0002-completed-RGB.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_recover_first93m_original_RGB_artifact_20261020.py
+      - tests/test_mois_recover_first93m_original_RGB_artifact_20261020.py
+      - .github/workflows/mois-first93m-recover-p0002-completed-RGB.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-full93m-first18462-original-photo-RGB-release-recovery
+  cancel-in-progress: false
+jobs:
+  recovery-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test signed completed photo source and immutable repair boundaries
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_recover_first93m_original_RGB_artifact_20261020.py
+          python -m py_compile scripts/acquisition/mois_recover_first93m_original_RGB_artifact_20261020.py
+  recover-previously-measured-real-RGB:
+    needs: recovery-contracts
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Verify original GitHub run and 19 genuinely completed ROI workers
+        run: |
+          set -euo pipefail
+          gh api 'repos/zuizui0223/mois/actions/runs/39232152549' > original_run.json
+          gh api 'repos/zuizui0223/mois/actions/runs/39232152549/jobs?per_page=100' > original_jobs.json
+          python - <<'PY'
+          import json
+          run=json.load(open('original_run.json'))
+          jobs=json.load(open('original_jobs.json'))['jobs']
+          assert run['id']==39232152549
+          assert run['head_sha']=='95ff0248947c73b17cd2ff6fc5a5e6f47c038831'
+          assert run['conclusion']=='failure' and run['status']=='completed'
+          assert len([j for j in jobs if j['name'].startswith('measure-original-RGB (') and j['conclusion']=='success'])==19
+          assert len([j for j in jobs if j['name'].startswith('measure-original-RGB (')])==19
+          assert any(j['name']=='persist-authenticated-RGB' and j['conclusion']=='failure' for j in jobs)
+          print('MOIS_FIRST_FULL93M_ALL_19_GENUINE_PHOTO_WORKERS_SUCCEEDED_ONLY_RELEASE_SHELL_FAILED')
+          PY
+      - name: Reuse only finished 18462-photo artifact, NEVER run original-photo downloader
+        run: |
+          set -euo pipefail
+          mkdir -p original_completed_photos
+          gh run download 39232152549 \
+            --repo zuizui0223/mois \
+            --name mois-93m-observation-baseline-genuine-original-RGB \
+            --dir original_completed_photos
+          test -s original_completed_photos/measured_photos.parquet
+          test -s original_completed_photos/receipt.json
+          test -s original_completed_photos/source.json
+          python -m scripts.acquisition.mois_recover_first93m_original_RGB_artifact_20261020 \
+            --jobs original_jobs.json \
+            --measured original_completed_photos/measured_photos.parquet \
+            --receipt original_completed_photos/receipt.json \
+            --source original_completed_photos/source.json \
+            --report original_completed_photos/recovery_original_worker_audit.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-recovered-18462-actual-photo-ROIs-with-original-source-receipts
+          path: original_completed_photos/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish unmodified original measured photo Parquet via immutable GitHub Release
+        run: |
+          set -euo pipefail
+          tag=mois-full93m-observation-baseline-original-RGB-p0002-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            mkdir -p old_release
+            gh release download "$tag" --repo zuizui0223/mois --dir old_release \
+              --pattern measured_photos.parquet --pattern receipt.json --pattern source.json
+            cmp old_release/receipt.json original_completed_photos/receipt.json
+            cmp old_release/source.json original_completed_photos/source.json
+            cmp old_release/measured_photos.parquet original_completed_photos/measured_photos.parquet
+            echo 'EXISTING_P0002_RELEASE_MATCHED_BIT_FOR_BIT'
+          else
+            gh release create "$tag" original_completed_photos/* \
+              --repo zuizui0223/mois \
+              --target 95ff0248947c73b17cd2ff6fc5a5e6f47c038831 \
+              --title 'MOIS first 18462 genuinely measured original photo RGB outcomes from full 93m source' \
+              --notes 'Recovered WITHOUT new image downloads from successful 19/19 original ROI measurement worker groups of run #39232152549. The previous workflow failed ONLY at release publication due to missing shell fi. All original photo IDs, observed dates, frozen FCP YOLO11+EfficientSAM ROI-v4 classifiable hues/unknowns and source SHA receipts kept byte-identical. 18462 attempted, 18436 downloaded, 7082 classified four-hue, 11354 acquired-unclassifiable, 26 acquisition failures; 71 prior photo IDs excluded and 93209351 original source candidate IDs remain accessible for nested p increases. Not an evolutionary phenotype or natural blooming census. No WCVP/native analysis.'
+          fi
+          gh release view "$tag" --repo zuizui0223/mois --json tagName,isDraft,url \
+            --jq '{tagName:.tagName,isDraft:.isDraft,url:.url}'

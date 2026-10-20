@@ -10,6 +10,7 @@ on:
   workflow_run:
     workflows:
       - "MOIS first genuine RGB photos from the complete 93m source"
+      - "MOIS recover completed first 93m original RGB release"
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -107,6 +108,25 @@ jobs:
           gh release download mois-full93m-observation-baseline-original-RGB-p0002-v1 \
             --repo zuizui0223/mois --dir old/first93m \
             --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-reuse-complete-FCP447500-actual-original-pixels-on350399-v1 \
+            --repo zuizui0223/mois --dir old/FCP447500reused \
+            --pattern mois_actual350399_plus_FCP447500_photo_ID_deduplicated_original_hues.parquet \
+            --pattern mois_FCP447500_signed_original_photo_reuse_on350399_receipt.json
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          p=Path('old/FCP447500reused')
+          f='mois_actual350399_plus_FCP447500_photo_ID_deduplicated_original_hues.parquet'
+          r=json.loads((p/'mois_FCP447500_signed_original_photo_reuse_on350399_receipt.json').read_text())
+          h=hashlib.sha256((p/f).read_bytes()).hexdigest()
+          assert r['schema']=='mois_import_source_signed_FCP447500_true_original_ROIs_on350399_v1'
+          assert r['full_original_FCP_real_photo_attempts']==447500
+          assert r['union_total_genuinely_original_photo_IDs']==594081
+          assert r['output_SHA256'][f]==h
+          assert r['no_original_images_downloaded_or_redistributed']
+          assert r['old_source_image_ROI_results_preserved']
+          print('MOIS_P0004_FCP_594081_ALREADY_MEASURED_PHOTO_IDS_SOURCE_SHA_VERIFIED')
+          PY
           python - <<'PY'
           from pathlib import Path
           import json,hashlib
@@ -127,13 +147,15 @@ jobs:
           import pandas as pd
           from pathlib import Path
           f=sorted(Path('old').rglob('*.parquet'))
-          assert len(f)==6,f
+          assert len(f)==7,f
           photo=set()
           for p in f:
             d=pd.read_parquet(p,columns=['photo_id'])
             assert d.photo_id.is_unique,p
             photo.update(d.photo_id.astype(str))
-          assert len(photo)==368861
+          assert 594081<=len(photo)<=612543,(
+              'Existing FCP union+first genuine RGB cohort not photo ID aligned',
+              len(photo))
           Path('prior.csv').write_text('photo_id\n'+'\n'.join(sorted(photo,key=int))+'\n')
           print('MOIS_REUSE_ALREADY_MEASURED_SOURCE_PIXEL_IDS',len(photo))
           PY
@@ -266,3 +288,4 @@ jobs:
               --repo zuizui0223/mois --target "$GITHUB_SHA" \
               --title 'MOIS genuinely measured original RGB photos from full 93m source' \
               --notes '93,209,351 original source photo candidates retained in full. Second nested fixed 0.0004 observation-probability pre-colour cohort with every eligible selected-observation photo, source-matched photo IDs and FCP frozen ROI-v4. Previously unselected photo observations remain eligible for higher nested probability waves. Acquired unknowns and provider failures separate. Not a worldwide wild-flora census, nor 93m flower colours, pigment cost, or ecological analysis.'
+          fi
