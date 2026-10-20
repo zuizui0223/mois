@@ -78,3 +78,19 @@ New signed worker artifacts checked against the exact original acquisition runs:
 Invoke the existing code- and source-authenticated **data-only** recovery exactly once via this documentation push; publish a fresh immutable checkpoint only after original source photo IDs, terminal model method, SHA and full manifest counters agree. **Never infer a new classifiable-photo count from worker-group completion alone.** Preserve pending photos and technical unknowns rather than imputing hue, and do not re-download or re-infer originals.
 
 The already-launched p0008/p0016/p0032 workers are unchanged and remain active. This request is explicitly not another source-enumeration run, native-only photo filter, or periodic polling task.
+
+## New sealed-image checkpoint request — 2026-10-20, about 20:13 JST
+
+The latest published five-wave real-pixel checkpoint is [39407388840](https://github.com/zuizui0223/mois/releases/tag/mois-real-pixel-checkpoint-39407388840-v1), containing **660,867 unique terminal photo attempts / 314,517 frozen machine-classified hues**. The signed acquisition workers have newly completed source photo groups since that snapshot.
+
+Verified with full paginated GitHub Actions Jobs and matching stored worker artifacts:
+
+- p0004 original source run 39353343403: **18/18** complete (already in published checkpoint).
+- p0008 original source run 39371199127: **23/36** complete, four workers active, nine queued, zero failed; three more complete groups compared with the preceding checkpoint.
+- p0016 original source run 39374811084: **10/73** complete, two workers active, 61 queued, zero failed; two more complete groups.
+- p0032 original source run 39401484641: **2/145** complete, two workers active, 141 queued, zero failed; one more complete group.
+- The 569-photo independent low-resolution shadow cohort is complete and already incorporated; automatic 320px exclusion remains disabled.
+
+This source-backed update requests exactly one **data-only** checkpoint of the newly sealed original-image terminals. Authenticate every completed source shard, original photo/observation ID and frozen ROI terminal method/checksum. Do not download or infer any new image. Do not count candidate image targets or queued unit numbers as measured hues. Original technical failures and ambiguous colours must remain unchanged.
+
+The source queues p0008, p0016 and p0032 continue to acquire photographs independently. This update does not modify or restart those jobs. The new release's verified photo and hue counts must be read from the production collector's immutable receipt.
