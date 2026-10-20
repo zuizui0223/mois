@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 
 from scripts.acquisition.mois_checkpoint_fresh_artifact_gate import (
     decide_checkpoint, latest_checkpoint_tag, validate_snapshots,
+    WAVES as PINNED_WAVES, PREFIXES as PINNED_PREFIXES,
 )
 
 WAVES = {
@@ -13,6 +14,7 @@ WAVES = {
     "p0008": 39371199127,
     "p0016": 39374811084,
     "p0032": 39401484641,
+    "geo05": 39417990675,
     "shadow": 39369517433,
 }
 def artifact(name, id, digest="sha256:"+"a"*64):
@@ -24,6 +26,12 @@ def prior():
             for i,w in enumerate(WAVES)}
 
 class TestScheduledCheckpointGate(unittest.TestCase):
+    def test_geographic_arm_source_and_artifact_prefix_are_pinned(self):
+        self.assertEqual(PINNED_WAVES, WAVES)
+        self.assertEqual(PINNED_PREFIXES["geo05"], "mois-93m-geo05-RGB-group-")
+        self.assertEqual(PINNED_WAVES["geo05"], 39417990675)
+
+
     def test_no_new_complete_artifact_no_release_or_dispatch(self):
         old = prior()
         self.assertEqual(decide_checkpoint(old, old, WAVES)["new_worker_artifacts"], 0)
