@@ -1,0 +1,111 @@
+name: MOIS verified new tier06 real-photo cold-vs-warm ROI benchmark
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_warm_roi_real_original_photo_parity.py
+      - .github/workflows/mois-warm-tier06-real-original-parity.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_warm_roi_real_original_photo_parity.py
+      - .github/workflows/mois-warm-tier06-real-original-parity.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-source-tier06-16photo-technical-warm-parity-v1
+  cancel-in-progress: false
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile non-mutating original-photo parity benchmark
+        run: |
+          python -m py_compile \
+            scripts/acquisition/mois_warm_roi_real_original_photo_parity.py \
+            scripts/acquisition/mois_warm_original_roi.py
+  original-real-photo-parity:
+    needs: static
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Avoid repeat acquisition for already published technical benchmark
+        id: check
+        run: |
+          set -euo pipefail
+          if gh release view mois-93m-tier06-16-new-original-photo-warm-parity-v1 --repo "$REPO" >/dev/null 2>&1; then
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Restore exactly the original frozen FCP method and CPU weights
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          (cd "$RUNNER_TEMP/fcp" && bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam")
+      - name: Download ONLY previously SHA-signed tier06 source metadata and prior original photo-ID ledger
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release download mois-complete-93209351-original-photo-target-tiers-v1 \
+            --repo "$REPO" --dir source \
+            --pattern 'tier-06-group-00.tar' \
+            --pattern 'group-00-receipt.json' \
+            --pattern 'mois_all_original_photo_target_tiers_receipt.json'
+          gh release download mois-real-pixel-checkpoint-39593981452-v1 \
+            --repo "$REPO" --dir prior \
+            --pattern 'checkpoint_receipt.json' \
+            --pattern 'combined_actual_photo_checkpoint.parquet'
+      - name: Download 16 NEW originals once; compare byte-identical cold/warm frozen evaluator
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-tier06-technical-source-photo-provider-rate"
+          python -m scripts.acquisition.mois_warm_roi_real_original_photo_parity \
+            --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --registry source/mois_all_original_photo_target_tiers_receipt.json \
+            --group-receipt source/group-00-receipt.json \
+            --archive source/tier-06-group-00.tar \
+            --previous-parquet prior/combined_actual_photo_checkpoint.parquet \
+            --previous-receipt prior/checkpoint_receipt.json \
+            --output tier06-warm-benchmark
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.check.outputs.ready == 'true'
+        with:
+          name: mois-real-tier06-new-original-photo-warm-parity
+          path: tier06-warm-benchmark/
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Persist genuine technical source ID reservation and outcome parity receipt only
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release create mois-93m-tier06-16-new-original-photo-warm-parity-v1 \
+            tier06-warm-benchmark/*.json tier06-warm-benchmark/*.csv \
+            --repo "$REPO" --target "$GITHUB_SHA" \
+            --title 'MOIS technical validation: 16 new tier06 original photos cold vs warm frozen FCP' \
+            --notes 'Separate strictly technical 16-original-photo performance/parity cohort from new observation-disjoint tier06 source, only original-image bytes downloaded once. Exact SHA-signed source frame and previous photo-ID exclusion; original frozen FCP detector/ONNX and palette; fully compared output, no modified colour labels. The stored attempted original photo/observation IDs MUST be excluded from repeated image downloading in any later tier06 acquisition. This is not a new global flora-white estimate, nor a production ROI throughput claim. Raw copyrighted photos are not redistributed.'
