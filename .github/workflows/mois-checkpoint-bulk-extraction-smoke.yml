@@ -1,0 +1,58 @@
+name: MOIS exact original-photo worker artifact multi-download smoke
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/mois-checkpoint-bulk-extraction-smoke.yml
+  pull_request:
+    paths:
+      - .github/workflows/mois-checkpoint-bulk-extraction-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Fetch two exact SHA-sealed original RGB worker groups in one CLI invocation
+        run: |
+          set -euo pipefail
+          gh run download 39353343403 --repo zuizui0223/mois \
+            --name mois-93m-p0004-RGB-group-0 \
+            --name mois-93m-p0004-RGB-group-1 \
+            --dir verified-original-ROI-archives
+      - name: Check multi-archive extraction layout, original IDs and receipt SHA
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('verified-original-ROI-archives')
+          expected={
+              'mois-93m-p0004-RGB-group-0':set(range(0,4)),
+              'mois-93m-p0004-RGB-group-1':set(range(4,8)),
+          }
+          actual={p.name for p in root.iterdir() if p.is_dir()}
+          assert actual==set(expected), 'Not the exact two frozen original-worker artifacts'
+          sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
+          total_photos=0
+          for name,units in expected.items():
+              folder=root/name
+              receipts=list(folder.rglob('receipt.json'))
+              found={int(p.parent.name.split('_')[1]) for p in receipts
+                     if p.parent.name.startswith('shard_')}
+              assert found==units,(name,found)
+              for receipt_path in receipts:
+                  if not receipt_path.parent.name.startswith('shard_'):continue
+                  record=json.loads(receipt_path.read_text())
+                  assert record['attempted']>0
+                  assert sha(receipt_path.parent/'photos.csv')==record['photos_sha256']
+                  total_photos+=record['attempted']
+          assert total_photos==2048,('Original source count drifted',total_photos)
+          print('MOIS_VERIFIED_TWO_GROUP_EXACT_BATCH_DOWNLOAD',
+                json.dumps({'groups':sorted(expected),'sha_verified_photo_attempts':total_photos}))
+          PY
