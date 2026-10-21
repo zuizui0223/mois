@@ -44,9 +44,78 @@ jobs:
           python -m unittest discover -s tests -p 'test_mois_completed_pixel_checkpoint.py' -v
           python -m unittest discover -s tests -p 'test_mois_checkpoint_four_wave_wiring.py' -v
           python -m py_compile scripts/acquisition/mois_completed_pixel_checkpoint.py
-  recover:
+  freshness:
     needs: tests
     if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        contains(fromJSON('[39353343403,39371199127,39369517433,39374811084,39401484641,39417990675]'), github.event.workflow_run.id)))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      ready: ${{ steps.compare.outputs.ready }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare newly sealed RGB worker assets against latest immutable checkpoint
+        id: compare
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os,subprocess
+          from pathlib import Path
+          from scripts.acquisition.mois_checkpoint_fresh_artifact_gate import (
+              WAVES,PREFIXES,latest_checkpoint_tag,decide_checkpoint)
+          repo='zuizui0223/mois'
+          def gh_json(url):
+              return json.loads(subprocess.check_output(
+                  ['gh','api',url],text=True))
+          tag=latest_checkpoint_tag(gh_json(f'repos/{repo}/releases?per_page=100'))
+          previous=None
+          if tag is not None:
+              Path('previous-checkpoint').mkdir()
+              subprocess.run([
+                  'gh','release','download',tag,'--repo',repo,
+                  '--dir','previous-checkpoint','--pattern','checkpoint_receipt.json'
+              ],check=True)
+              receipt=json.loads(Path('previous-checkpoint/checkpoint_receipt.json').read_text())
+              assert receipt['schema']=='mois_sealed_actual_pixel_checkpoint_v1'
+              assert receipt['image_downloads_or_colour_reinference_performed'] is False
+              previous=receipt['source_artifact_snapshots']
+          current={}
+          for wave,run in WAVES.items():
+              output=subprocess.check_output([
+                  'gh','api','--paginate','--jq','.artifacts[]',
+                  f'repos/{repo}/actions/runs/{run}/artifacts?per_page=100'
+              ],text=True)
+              decoder=json.JSONDecoder()
+              artifacts=[]
+              while output.strip():
+                  output=output.lstrip()
+                  item,end=decoder.raw_decode(output)
+                  artifacts.append(item)
+                  output=output[end:]
+              matches=[a for a in artifacts if a['name'].startswith(PREFIXES[wave])]
+              assert all(not a['expired'] for a in matches), 'Expired genuine photo pixels: '+wave
+              current[wave]=dict(source_run_id=run,artifacts=[
+                  {k:a[k] for k in ('id','name','digest','size_in_bytes')}
+                  for a in matches])
+          decision=decide_checkpoint(previous,current,WAVES)
+          print('MOIS_SOURCE_SIGNED_CHECKPOINT_FRESHNESS',
+                json.dumps({'previous_tag':tag,**decision},sort_keys=True),flush=True)
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output:
+              output.write('ready='+('true' if decision['ready'] else 'false')+'\n')
+          PY
+  recover:
+    needs: [tests, freshness]
+    if: >-
+      needs.freshness.outputs.ready == 'true' &&
       github.event_name != 'pull_request' &&
       (github.event_name != 'workflow_run' ||
        (github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
