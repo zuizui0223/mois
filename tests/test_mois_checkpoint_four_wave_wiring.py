@@ -82,6 +82,20 @@ class TestFourWaveRecovery(unittest.TestCase):
         self.assertIn("      - name: Validate actual terminals and append only measured IDs to baseline projection",s)
         self.assertNotIn("mois_full_index_real_original_photo_measure work",s)
 
+    def test_recovery_job_skips_if_no_new_sealed_photo_artifacts(self):
+        workflow=self.workflow
+        self.assertIn('  freshness:',workflow)
+        self.assertIn('    needs: [tests, freshness]',workflow)
+        gate=workflow.split('  recover:',1)[1].split('    runs-on:',1)[0]
+        self.assertIn("needs.freshness.outputs.ready == 'true'",gate)
+        self.assertIn('from scripts.acquisition.mois_checkpoint_fresh_artifact_gate import',workflow)
+        self.assertIn('latest_checkpoint_tag',workflow)
+        self.assertIn('decide_checkpoint(previous,current,WAVES)',workflow)
+        self.assertIn("output.write('ready='+('true' if decision['ready'] else 'false')+'\\n')",workflow)
+        self.assertIn('gh release download',workflow)
+        # No photo HTTP / inference is used to decide whether a checkpoint is needed.
+        self.assertNotIn('mois_full_index_real_original_photo_measure work',workflow)
+
     def test_synthetic_waiting_wave_is_not_measured_or_nonwhite(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);source=root/'source';workers=root/'workers'
