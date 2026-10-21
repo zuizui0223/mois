@@ -1,0 +1,30 @@
+name: MOIS 93m stage-2 probability queue safety
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_93m_stage2_probability_queue.py
+      - tests/test_mois_93m_stage2_probability_queue.py
+      - docs/MOIS_93M_SCALE_EFFICIENCY_STAGE_POLICY_20261021.md
+      - .github/workflows/mois-93m-stage2-probability-queue.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_93m_stage2_probability_queue.py
+      - tests/test_mois_93m_stage2_probability_queue.py
+      - .github/workflows/mois-93m-stage2-probability-queue.yml
+permissions:
+  contents: read
+jobs:
+  validate-source-allocation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate synthetic source ID and botanical-review gates
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/acquisition/mois_93m_stage2_probability_queue.py
+          python -m unittest discover -s tests -p 'test_mois_93m_stage2_probability_queue.py' -v
