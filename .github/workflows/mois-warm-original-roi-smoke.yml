@@ -4,12 +4,14 @@ on:
     paths:
       - scripts/acquisition/mois_warm_original_roi.py
       - tests/test_mois_warm_original_roi.py
+      - scripts/acquisition/mois_warm_roi_synthetic_parity.py
       - .github/workflows/mois-warm-original-roi-smoke.yml
   push:
     branches: [main]
     paths:
       - scripts/acquisition/mois_warm_original_roi.py
       - tests/test_mois_warm_original_roi.py
+      - scripts/acquisition/mois_warm_roi_synthetic_parity.py
       - .github/workflows/mois-warm-original-roi-smoke.yml
 permissions:
   contents: read
@@ -26,5 +28,43 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install -q pandas==2.2.3 numpy==2.1.3
-          python -m py_compile scripts/acquisition/mois_warm_original_roi.py
+          python -m py_compile scripts/acquisition/mois_warm_original_roi.py scripts/acquisition/mois_warm_roi_synthetic_parity.py
           python -m unittest discover -s tests -p test_mois_warm_original_roi.py -v
+
+  original-fcp-synthetic-cold-warm-parity:
+    if: github.event_name == 'push'
+    needs: frozen-identity-no-photo-download
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore EXACT archived FCP frozen source and CPU weights
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          (
+            cd "$RUNNER_TEMP/fcp"
+            bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+          )
+      - name: Run SAME original source twice cold vs twice with one warm estimator
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          python -m scripts.acquisition.mois_warm_roi_synthetic_parity \
+            --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" --output frozen-synthetic-parity
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-frozen-roi-v4-cold-warm-synthetic-parity
+          path: frozen-synthetic-parity/warm_frozen_synthetic_parity_receipt.json
+          retention-days: 30
+          if-no-files-found: warn
