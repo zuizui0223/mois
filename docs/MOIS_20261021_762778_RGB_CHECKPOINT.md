@@ -37,7 +37,7 @@ Across the new source arms beyond the historical 612,483 terminal-photo baseline
 
 ## Descriptive photo outcomes, not world-flora estimates
 
-Of the **353,039** machine-classifiable photo ROIs, automatic hue labels are: **white 168,346**, **yellow-orange 111,586**, **red-pink 36,935**, **blue-purple 36,172** (the source dataset itself must control any updates to these counts). These labels describe the selected photographs and the frozen model's admitted ROIs only. They are **not** the proportion of native flowering plant species with white corollas, nor independent open-flower botanical verification.
+Of the **353,039** machine-classifiable photo ROIs, automatic hue labels are: **white 168,711**, **yellow-orange 111,818**, **red-pink 36,915**, **blue-purple 35,595**, re-summed directly from the checkpoint's authentic CSV. These labels describe the selected photographs and the frozen model's admitted ROIs only. They are **not** the proportion of native flowering plant species with white corollas, nor independent open-flower botanical verification.
 
 The regionally enriched geo05 arm has **17,408 original-photo attempts**, **6,107 four-hue ROI outcomes** and original `selection_probability` values that vary by observation and latitude. It must not be pooled unweighted with the distinct, nested observation-hash probability source arms. Original photo observation IDs can have multiple photographs; hierarchical, flora/taxon, geographic, season and missingness adjustments are necessary before ecological inference.
 
