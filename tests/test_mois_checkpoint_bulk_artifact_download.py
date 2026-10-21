@@ -16,7 +16,7 @@ WORKFLOW=(Path(__file__).resolve().parents[1]/
 class BulkDownloadContract(unittest.TestCase):
     def setUp(self):
         raw=WORKFLOW.read_text(encoding="utf-8")
-        blocks=re.findall(r"python - <<'PY'\\n(.*?)\\n\\s+PY(?:\\n|$)",raw,re.S)
+        blocks=re.findall(r"python - <<'PY'\n(.*?)\n\s+PY(?:\n|$)",raw,re.S)
         self.source=next(textwrap.dedent(x) for x in blocks
                          if "MOIS_STORED_PIXEL_ARTIFACTS_RECOVERED" in x)
         self.code=ast.parse(self.source)
