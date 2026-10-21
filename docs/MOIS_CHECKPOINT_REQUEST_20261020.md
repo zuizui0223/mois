@@ -165,3 +165,16 @@ A new complete-workflow GitHub Jobs/artifacts check shows **p0016 33 sealed grou
 **Request exactly one independent data-only six-arm checkpoint**, using only the pinned original source and worker artifact SHA256/terminal receipts. Preserve the exact original photo and observation IDs, immutable four-hue labels, original observation-level selection probabilities, source-arm provenance and technical unknowns. The geo05 latitude-enrichment arm is distinct and cannot be pooled unweighted as if it had the global uniform probability design. Never count the 93,209,351 original metadata catalogue as 93m measured image colours.
 
 The checkpoint's new attempted/photo-hue counts must be computed from authenticated original terminal rows, *never projected from workers or photo targets*. Do not cancel, duplicate or adjust the active acquisition waves. The hourly conditional watcher remains operational for future worker completions.
+
+## Verified sealed-pixel refresh — 2026-10-21 10:32 JST
+
+The immutable latest independently checked [checkpoint 39518136040](https://github.com/zuizui0223/mois/releases/tag/mois-real-pixel-checkpoint-39518136040-v1) was produced with **742,298 distinct genuine original-image terminal photo IDs** and **345,238 original full ROI-v4 four-hue classifiable photographs**. Its signed six-wave photo counts are: original baseline 612,483; full p0004 18,119; full p0008 36,375; p0016 33,792 (33 sealed groups); p0032 27,648 (27 sealed groups); geo05 13,312 (13 sealed groups); original shadow 569. The verified JSON receipt and ZIP digests match published assets. Candidate photo targets are not counted as measured images.
+
+After this publication, the exact original workers produced further sealed RGB terminal artifacts in their pinned GitHub Actions acquisition runs, with no failed worker jobs at this check:
+
+- p0016 source run 39374811084: **35/73** sealed successful source-colour worker groups (2 new; 2 actively running).
+- p0032 source run 39401484641: **29/145** sealed groups (2 new; 2 actively running).
+- separate tropical/southern geo05 source run 39417990675: **14/22** sealed groups (1 new; 1 actively running).
+- Full p0004 18/18 and full p0008 36/36 are already measured and released; 569-photo lowres shadow validation is also complete.
+
+Perform exactly one source-SHA authenticated **data-only** six-arm checkpoint on `main`, collecting only genuine sealed photo/ROI terminal files and deduplicating by original photo ID. Preserve original per-observation `selection_probability`, original source arm, acquisition failures and non-classifiable ROI outcomes, and keep the independently enriched geo05 arm distinct from the uniform observation-hash probability arm. Do **not** redownload photos, rerun frozen YOLO11/EfficientSAM colour model, reinterpret the original 93,209,351 source-photo targets as classified results, or extrapolate measured counts from completed computational groups. Publish only the exact real attempted-photo and hue counts that pass terminal/source/manifest SHA verification. Existing image-acquisition workers remain untouched. The hourly watcher is separately configured to skip checkpoints with no new signed worker files.
