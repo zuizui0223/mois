@@ -1,0 +1,30 @@
+name: MOIS warm frozen original ROI isolated test
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_warm_original_roi.py
+      - tests/test_mois_warm_original_roi.py
+      - .github/workflows/mois-warm-original-roi-smoke.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_warm_original_roi.py
+      - tests/test_mois_warm_original_roi.py
+      - .github/workflows/mois-warm-original-roi-smoke.yml
+permissions:
+  contents: read
+jobs:
+  frozen-identity-no-photo-download:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test repeated unmodified main and SHA-pinned estimator reuse
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m py_compile scripts/acquisition/mois_warm_original_roi.py
+          python -m unittest discover -s tests -p test_mois_warm_original_roi.py -v
