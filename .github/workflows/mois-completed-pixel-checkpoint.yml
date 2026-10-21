@@ -175,9 +175,22 @@ jobs:
                                     'digest':a.get('digest')} for a in selected]}
               (root/'artifact_snapshot.json').write_text(json.dumps(record,indent=2,sort_keys=True)+'\n')
               subprocess.run(['gh','run','download',str(run),'--repo','zuizui0223/mois','--name',source,'--dir',str(root/'source')],check=True)
-              for a in selected:
-                  subprocess.run(['gh','run','download',str(run),'--repo','zuizui0223/mois',
-                      '--name',a['name'],'--dir',str(root/'workers'/a['name'])],check=True)
+              # GitHub CLI accepts repeated --name flags in a single download.
+              # Explicit names keep the frozen artifact snapshot race-free.
+              if selected:
+                  download_args=['gh','run','download',str(run),'--repo','zuizui0223/mois',
+                                 '--dir',str(root/'workers')]
+                  for a in selected:
+                      download_args.extend(['--name',a['name']])
+                  subprocess.run(download_args,check=True)
+                  # Multiple selected artifacts are extracted into directories
+                  # named after each artifact. Require an exact inventory.
+                  # When only one is selected, CLI extracts directly under
+                  # workers/, and the collector verifies every original unit.
+                  if len(selected)>1:
+                      expected_names={a['name'] for a in selected}
+                      actual_names={p.name for p in (root/'workers').iterdir() if p.is_dir()}
+                      assert actual_names==expected_names,'Worker artifact directories differ from frozen SHA snapshot'
               print('MOIS_STORED_PIXEL_ARTIFACTS_RECOVERED',name,len(selected),flush=True)
           PY
       - name: Validate actual terminals and append only measured IDs to baseline projection
