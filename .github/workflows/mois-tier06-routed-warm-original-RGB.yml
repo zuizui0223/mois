@@ -138,7 +138,8 @@ jobs:
             gh release download "$tag" --repo "$REPO" --dir old --pattern manifest.json
             cmp old/manifest.json current/manifest.json
           else
-            gh release create "$tag" current/manifest.json current/unsupported_selected_original_photo_formats.jsonl current/shards/*.csv \
+            tar -cf tier06-first64-precolour-source-shards.tar -C current .
+            gh release create "$tag" current/manifest.json tier06-first64-precolour-source-shards.tar \
               --repo "$REPO" --target "$GITHUB_SHA" \
               --title 'MOIS precolour tier06 routed original source first64/512 buckets' \
               --notes 'Source-only original photo/observation identities and all original source SHA verified; distinct from 839472 previous pixels and technical tier06 photos. Tier06 group00 is taxon-partition restricted and the first64/512 source compute buckets are NOT full global probability coverage. No pixels opened, no precolour native status filtering, no morphological labels inferred.'
