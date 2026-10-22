@@ -119,7 +119,7 @@ jobs:
           assert m['not_probability_complete_global_source']
           assert m['native_photo_status_not_inferred_or_hard_filtered'] and not m['colour_measured']
           assert len(m['group_ids'])<=12
-          with open(os.environ['GITHUB_OUTPUT'],'a) as out:out.write('groups='+json.dumps(m['group_ids'])+'\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:out.write('groups='+json.dumps(m['group_ids'])+'\n')
           print('MOIS_NEW_SOURCE_PHOTOS_QUEUED_FROM_SIGNED_ROUTED_TIER06',m['new_photo_attempts_planned'])
           PY
       - uses: actions/upload-artifact@v4
