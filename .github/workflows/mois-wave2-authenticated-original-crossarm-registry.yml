@@ -129,7 +129,6 @@ jobs:
             gh release download "$tag" --repo "$REPO" --dir "wave2/group$group" \
               --pattern original_photo_ROIs.parquet \
               --pattern original_photo_group_receipt.json \
-              --pattern original_photo_group_hue_counts.csv \
               --pattern group_original_photo_hue_counts.csv \
               --pattern original_photo_source_coverage.json
           done
