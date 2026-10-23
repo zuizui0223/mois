@@ -17,9 +17,9 @@ import re
 
 HUES = ("white", "yellow_orange", "red_pink", "blue_purple")
 INDEX_SCHEMA = "mois_original_pixel_immutable_cross_arm_group_registry_v1"
-PINNED_MAIN_RUN = 39884380759
-MAIN_COUNT = 885552
-MAIN_HUES = 400102
+MIN_PINNED_MAIN_RUN = 39884380759
+MIN_MAIN_COUNT = 885552
+MIN_MAIN_HUES = 400102
 FIRST_TIER_COUNT = 4138
 FIRST_TIER_HUES = 1573
 BROAD_RUN = 39880330611
@@ -61,7 +61,7 @@ def inspect_photo_ids(path, columns=("photo_id", "observation_id")):
 
 def register(main_parquet, main_receipt, old_parquet, old_receipt,
              source_manifest, completed_groups, output,
-             *, expected_main=(MAIN_COUNT, MAIN_HUES),
+             *, expected_main=None, main_run=MIN_PINNED_MAIN_RUN,
              expected_old=(FIRST_TIER_COUNT, FIRST_TIER_HUES),
              expected_source_sha=BROAD_SOURCE_SHA,
              expected_broad_total=BROAD_PLANNED):
@@ -70,6 +70,16 @@ def register(main_parquet, main_receipt, old_parquet, old_receipt,
     output = Path(output)
     require(not output.exists(), "Immutable cross-arm original image index already exists")
     main = load_json(main_receipt)
+    require(type(main_run) is int and main_run >= MIN_PINNED_MAIN_RUN,
+            "Genuine original-photo checkpoint GitHub run ID is missing or predates baseline")
+    if expected_main is None:
+        attempts = main.get("combined_unique_photo_attempts")
+        hues = main.get("combined_four_hue_classified")
+        require(type(attempts) is int and type(hues) is int
+                and attempts >= MIN_MAIN_COUNT
+                and MIN_MAIN_HUES <= hues <= attempts,
+                "Latest signed original-photo checkpoint cannot regress or invent hue counts")
+        expected_main = (attempts, hues)
     old = load_json(old_receipt)
     source = load_json(source_manifest)
     require(main.get("schema") == "mois_sealed_actual_pixel_checkpoint_v1"
@@ -205,7 +215,7 @@ def register(main_parquet, main_receipt, old_parquet, old_receipt,
         "schema":INDEX_SCHEMA,
         "source_registry_photo_opportunities_not_measured":93209351,
         "original_broad_source_manifest_sha256":sha(source_manifest),
-        "main_checkpoint_run":PINNED_MAIN_RUN,
+        "main_checkpoint_run":main_run,
         "main_checkpoint_photo_attempts":expected_main[0],
         "main_checkpoint_four_hue_classified":expected_main[1],
         "main_checkpoint_parquet_sha256":sha(main_parquet),
@@ -259,9 +269,10 @@ def main():
                   "source-manifest", "output"):
         p.add_argument("--"+label, type=Path, required=True)
     p.add_argument("--group", type=Path, action="append", required=True)
+    p.add_argument("--main-run", type=int, required=True)
     a=p.parse_args()
     register(a.main_parquet,a.main_receipt,a.old_parquet,a.old_receipt,
-             a.source_manifest,a.group,a.output)
+             a.source_manifest,a.group,a.output,main_run=a.main_run)
 
 
 if __name__=="__main__":
