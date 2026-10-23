@@ -133,9 +133,11 @@ def validate(prior_registry, source_manifest,
         f=folder/"original_photo_ROIs.parquet"
         receipt_hashes=a.get("saved_file_sha256",{})
         cov=folder/"original_photo_source_coverage.json"
+        hue_file=folder/"group_original_photo_hue_counts.csv"
         require(sha(f)==receipt_hashes.get(f.name)
-                and sha(cov)==receipt_hashes.get(cov.name),
-                "Original wave2 photo/coverage payload byte SHA changed")
+                and sha(cov)==receipt_hashes.get(cov.name)
+                and sha(hue_file)==receipt_hashes.get(hue_file.name),
+                "Original wave2 photo/hue-count/coverage payload byte SHA changed")
         coverage=json.loads(cov.read_text(encoding="utf-8"))
         require(coverage.get("schema")==
                   "mois_wave2_real_photo_source_taxonomy_time_latitude_coverage_v1"
@@ -162,6 +164,8 @@ def validate(prior_registry, source_manifest,
         require(len(tab)==a.get("distinct_genuinely_completed_photo_ids")
                 and int(labelled.sum())==a.get("four_hue_model_classified")
                 and len(set(obs))==a.get("distinct_original_observation_ids")
+                and all(int(a["hue_counts"][h])==int((tab.morph==h).sum())
+                        for h in (*HUES,"mixed_uncertain"))
                 and int(coverage["original_photo_attempts"])==len(tab)
                 and int(coverage["distinct_nominal_inat_taxon_ids_four_hue"])==
                     tab.loc[labelled,"inat_taxon_id"].fillna("").astype(str).replace("",pd.NA).dropna().nunique(),
@@ -183,6 +187,7 @@ def validate(prior_registry, source_manifest,
             "group_source_SHA256":sha(r_path),
             "group_photo_Parquet_SHA256":sha(f),
             "group_coverage_SHA256":sha(cov),
+            "group_hue_count_CSV_SHA256":sha(hue_file),
             "original_source_photo_units":units,
         })
     require(counts["photo_attempts"]<=expected_new
