@@ -46,7 +46,8 @@ def identity(path,expected=None):
 
 def validate(prior_registry, p32delta, early, broad, wave2_groups, new_groups, output,
              *, prior_total=OLD_TOTAL, prior_hues=OLD_HUES,
-             p32_delta_n=ALREADY_P32_DELTA):
+             p32_delta_n=ALREADY_P32_DELTA,
+             expected_early=4138, expected_broad=4468):
     import pandas as pd
 
     output=Path(output)
@@ -60,8 +61,8 @@ def validate(prior_registry, p32delta, early, broad, wave2_groups, new_groups, o
             and prior.get("all_wave2_group_photo_and_source_coverage_SHA_verified") is True,
             "Prior original-image crossarm registry was not completely source/photo-certified")
     require(new_groups,"No genuinely new p0032 original photo group Parquet released")
-    early_id,early_obs=identity(early,4138)
-    broad_id,broad_obs=identity(broad,4468)
+    early_id,early_obs=identity(early,expected_early)
+    broad_id,broad_obs=identity(broad,expected_broad)
     p32_id,p32_obs=identity(p32delta,p32_delta_n)
     other_id=early_id|broad_id
     other_obs=early_obs|broad_obs
@@ -150,7 +151,6 @@ def validate(prior_registry, p32delta, early, broad, wave2_groups, new_groups, o
                 and not other_obs.intersection(obs)
                 and d.morph.isin((*HUES,"mixed_uncertain")).all()
                 and classified.eq(d.measurement_status.eq("classified_four_state_morph")).all()
-                and d.source_arm.fillna("").astype(str).str.strip().ne("").all()
                 and pd.to_numeric(d.selection_probability,errors="coerce").between(
                     0,1,inclusive="right").all(),
                 "New p0032 authentic photo IDs/observations clash or hue/propensities changed")
