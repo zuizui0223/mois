@@ -1,0 +1,180 @@
+name: MOIS append only NEW p0032 original RGB groups after signed batch001
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_append_p0032_postcheckpoint_source_worker.py
+      - tests/test_mois_append_p0032_postcheckpoint_source_worker.py
+      - .github/workflows/mois-p0032-future-original-groups-append-only.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_append_p0032_postcheckpoint_source_worker.py
+      - tests/test_mois_append_p0032_postcheckpoint_source_worker.py
+      - .github/workflows/mois-p0032-future-original-groups-append-only.yml
+  workflow_dispatch:
+  schedule:
+    - cron: '31 * * * *'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-p0032-postdelta-original-worker-133to144-SHA-append-only-v1
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify source identity, genuine photo outcomes, old worker ZIP immutability and shell syntax
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m unittest discover -s tests -p test_mois_append_p0032_postcheckpoint_source_worker.py -v
+          python -m py_compile scripts/acquisition/mois_append_p0032_postcheckpoint_source_worker.py
+          python - <<'PY'
+          import subprocess,yaml
+          d=yaml.safe_load(open('.github/workflows/mois-p0032-future-original-groups-append-only.yml'))
+          n=0
+          for job in d['jobs'].values():
+              for step in job['steps']:
+                  if 'run' in step:
+                      r=subprocess.run(['bash','-n'],input=step['run'],text=True,capture_output=True)
+                      assert r.returncode==0,(step.get('name'),r.stderr)
+                      n+=1
+          assert n>=4
+          print('MOIS_P0032_NEXT_WORKERS_ALL_SHELL_STEPS_VALID',n)
+          PY
+  seal-only-previously-unpublished-original-pixel-workers:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      ORIGINAL_RUN: '39401484641'
+      DELTA_TAG: mois-p0032-genuine-original-RGB-delta-main39889436140-batch001-v1
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Inspect only NEW original RGB groups after the signed 133 old group artifact ZIPs
+        id: gate
+        run: |
+          set -euo pipefail
+          echo 'ready=false' >> "$GITHUB_OUTPUT"
+          gh release download "$DELTA_TAG" --repo "$REPO" --dir old-evidence \
+            --pattern p0032_frozen_artifact_snapshot.json
+          gh api --paginate --jq '.artifacts[]' \
+            "repos/$REPO/actions/runs/$ORIGINAL_RUN/artifacts?per_page=100" \
+            > live-p0032-artifacts.jsonl
+          python - <<'PY'
+          from pathlib import Path
+          import json,os,subprocess
+          from scripts.acquisition.mois_append_p0032_postcheckpoint_source_worker import (
+              RUN,verify_frozen_original_artifacts)
+          text=Path('live-p0032-artifacts.jsonl').read_text()
+          decoder=json.JSONDecoder();assets=[]
+          while text.strip():
+              text=text.lstrip();obj,end=decoder.raw_decode(text);text=text[end:]
+              if obj['name'].startswith('mois-93m-p0032-RGB-group-'):
+                  assets.append({k:obj[k] for k in (
+                      'id','name','digest','size_in_bytes','expired')})
+          current={"source_run_id":RUN,"artifacts":assets}
+          Path('live_p0032_verified_source_artifact_snapshot.json').write_text(
+              json.dumps(current,indent=2,sort_keys=True)+'\n')
+          analysis=verify_frozen_original_artifacts(
+              'old-evidence/p0032_frozen_artifact_snapshot.json',
+              'live_p0032_verified_source_artifact_snapshot.json')
+          new=[]
+          for group in analysis['new_completed_original_photo_work_groups']:
+              tag=f'mois-p0032-original-RGB-append-group-{group}-v1'
+              published=subprocess.run(
+                  ['gh','release','view',tag,'--repo',os.environ['REPO']],
+                  stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+              if not published:new.append(group)
+          assert all(133<=int(x)<145 for x in new)
+          Path('new-original-worker-groups.json').write_text(json.dumps(new)+'\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('ready='+('true' if new else 'false')+'\n')
+          print('MOIS_P0032_ONLY_NEW_UNPUBLISHED_ORIGINAL_GROUPS',
+                json.dumps({'sealed_group_artifacts':len(assets),'new_group_ids':new,
+                            'historical_worker_artifacts_to_redownload':0},
+                           sort_keys=True),flush=True)
+          PY
+      - name: Fetch the ONE frozen 148071-photo p0032 original source manifest only, not 133 older worker groups
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          gh run download "$ORIGINAL_RUN" --repo "$REPO" \
+            --name mois-93m-p0032-precolour-observation --dir source
+          echo '3628794fbb70f9e1515dabea6db731862265c0ad6c251732cfd9ab4df4badce8  source/manifest.json' | sha256sum -c -
+      - name: Recover and append independently sealed original photo Parquet for EACH new group only
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          from pathlib import Path
+          from scripts.acquisition.mois_append_p0032_postcheckpoint_source_worker import (
+              sha,seal,verify_frozen_original_artifacts)
+          groups=json.loads(Path('new-original-worker-groups.json').read_text())
+          live=json.loads(Path('live_p0032_verified_source_artifact_snapshot.json').read_text())
+          old='old-evidence/p0032_frozen_artifact_snapshot.json'
+          verify_frozen_original_artifacts(old,'live_p0032_verified_source_artifact_snapshot.json')
+          artifacts={x['name']:x for x in live['artifacts']}
+          assert groups and len(groups)==len(set(groups))
+          for group in groups:
+              key=f'mois-93m-p0032-RGB-group-{group}'
+              archive=artifacts[key]
+              folder=Path('worker-data')/f'group{group}'
+              subprocess.run([
+                  'gh','run','download','39401484641','--repo','zuizui0223/mois',
+                  '--name',key,'--dir',str(folder)
+              ],check=True)
+              result=Path('sealed')/f'group{group}'
+              receipt=seal('source',folder,group,result)
+              evidence=result/'original_worker_artifact_zip_identity.json'
+              evidence.write_text(json.dumps({
+                  'source_run':39401484641,
+                  'original_p0032_group':group,
+                  'artifact_id':archive['id'],
+                  'artifact_name':archive['name'],
+                  'artifact_zip_sha256':archive['digest'],
+                  'original_source_SHA256':receipt['source_manifest_sha256'],
+                  'original_terminal_group_receipt_SHA256':sha(result/'p0032_original_group_receipt.json'),
+              },indent=2,sort_keys=True)+'\n')
+              tag=f'mois-p0032-original-RGB-append-group-{group}-v1'
+              subprocess.run([
+                  'gh','release','create',tag,
+                  str(result/'original_photo_ROIs.parquet'),
+                  str(result/'original_photo_hue_counts.csv'),
+                  str(result/'p0032_original_group_receipt.json'),
+                  str(evidence),
+                  '--repo','zuizui0223/mois','--target',
+                  subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+                  '--title',f'MOIS genuine frozen original p0032 ROI work group {group}',
+                  '--notes','Only genuinely new original source photo/observation identities from the previously unseen signed p0032 group. Every original image SHA, frozen FCP ROI-v4 method, source receipt and pixel terminal audited. No raw image re-download or hue re-inference here; source arm is not probability complete for global flora prevalence.'
+              ],check=True)
+              print('MOIS_P0032_POSTDELTA_ORIGINAL_PIXEL_GROUP_PUBLISHED',group,
+                    receipt['original_true_photo_attempts'],
+                    receipt['original_FCP_roi_four_hue_classified'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-new-p0032-postdelta-original-photo-sealed-group-parquets
+          path: sealed/
+          retention-days: 90
+          if-no-files-found: warn
