@@ -111,9 +111,9 @@ class VerifiedFullOriginalColourRelease(unittest.TestCase):
             "broad_sealed_groups":groups,
         }))
 
-    def run_recovery(self):
+    def run_recovery(self, group_files=None):
         return release.validate_collector_against_append_groups(
-            self.finished,self.manifest,self.groups,self.crossarm,
+            self.finished,self.manifest,self.groups if group_files is None else group_files,self.crossarm,
             source_sha=sha(self.manifest),
             expected_original=10,expected_classified=5,
             expected_acq_failed=1,expected_unknown=4,expected_groups=5,
@@ -163,11 +163,7 @@ class VerifiedFullOriginalColourRelease(unittest.TestCase):
 
     def test_one_missing_worker_group_is_not_accepted_as_full_study(self):
         with self.assertRaisesRegex(ValueError,"Not every original model worker"):
-            release.validate_collector_against_append_groups(
-                self.finished,self.manifest,self.groups[:4],self.crossarm,
-                source_sha=sha(self.manifest),expected_original=10,
-                expected_classified=5,expected_acq_failed=1,
-                expected_unknown=4,expected_groups=5)
+            self.run_recovery(group_files=self.groups[:4])
 
     def test_original_acquisition_failed_not_petal_colour(self):
         f=self.finished/"measured_photos.parquet"
