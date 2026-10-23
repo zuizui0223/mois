@@ -180,5 +180,36 @@ class SignedCrossArmOriginalLedgerTests(unittest.TestCase):
             self.run_audit()
 
 
+    def test_latest_signed_main_counts_are_read_from_receipt_not_a_stale_constant(self):
+        from unittest.mock import patch
+        with patch.object(ledger, "MIN_MAIN_COUNT", 4), \
+             patch.object(ledger, "MIN_MAIN_HUES", 2):
+            result = ledger.register(
+                self.main, self.main_receipt, self.old, self.old_receipt,
+                self.source, self.groups, self.output,
+                expected_main=None,
+                main_run=39889436140,
+                expected_old=(2,1),
+                expected_source_sha=ledger.sha(self.source),
+                expected_broad_total=4,
+            )
+        self.assertEqual(result["main_checkpoint_run"],39889436140)
+        self.assertEqual(result["main_checkpoint_photo_attempts"],4)
+        self.assertEqual(result["main_checkpoint_four_hue_classified"],2)
+        self.assertEqual(result["original_photo_attempts_distinct_across_all_verified_arms"],10)
+
+    def test_latest_signed_main_regression_is_rejected_before_reading_old_photos(self):
+        with self.assertRaisesRegex(ValueError,"cannot regress"):
+            ledger.register(
+                self.main,self.main_receipt,self.old,self.old_receipt,
+                self.source,self.groups,self.output,
+                expected_main=None,
+                main_run=39889436140,
+                expected_old=(2,1),
+                expected_source_sha=ledger.sha(self.source),
+                expected_broad_total=4,
+            )
+        self.assertFalse(self.output.exists())
+
 if __name__ == "__main__":
     unittest.main()
