@@ -1,0 +1,146 @@
+name: MOIS recover completed broad 4468 original ROI pixels data-only
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_finish_broad_4468_original_image_release.py
+      - tests/test_mois_finish_broad_4468_original_image_release.py
+      - .github/workflows/mois-finished-broad4468-dataonly-release.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_finish_broad_4468_original_image_release.py
+      - tests/test_mois_finish_broad_4468_original_image_release.py
+      - .github/workflows/mois-finished-broad4468-dataonly-release.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-original-all16-broad4468-frozen-ROI-pixels-no-redownload-v1
+  cancel-in-progress: false
+jobs:
+  test-original-method-and-photo-identity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit-test exact original photo/unknown/morph provenance and workflow shell syntax
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 pyarrow==19.0.1 numpy==2.1.3 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_finish_broad_4468_original_image_release.py
+          python -m unittest discover -s tests -p test_mois_finish_broad_4468_original_image_release.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          from pathlib import Path
+          p=Path('.github/workflows/mois-finished-broad4468-dataonly-release.yml')
+          data=yaml.safe_load(p.read_text())
+          tested=0
+          for job in data['jobs'].values():
+              for step in job['steps']:
+                  if 'run' in step:
+                      probe=subprocess.run(['bash','-n'],input=step['run'],
+                                           text=True,capture_output=True)
+                      assert probe.returncode==0,(step.get('name'),probe.stderr)
+                      tested+=1
+          assert tested>=5
+          print('MOIS_BROAD4468_DATAONLY_RECOVERY_ALL_SHELL_STEPS_VALID',tested)
+          PY
+  authenticate-and-publish:
+    needs: test-original-method-and-photo-identity
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      ORIGINAL_RUN: '39880330611'
+      SOURCE_TAG: mois-tier06-all16-first4bucket-broad-warm-original-RGB-source-v1
+      CROSS_ARM_TAG: mois-original-RGB-cross-arm-append-index-main39889436140-groups-0-1-2-3-4-v1
+      RELEASE_TAG: mois-tier06-all16-first4bucket-broad-warm-original-RGB-v1
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Skip already archived real original photo release, require all 5 prior photo-workers sealed
+        id: before
+        run: |
+          set -euo pipefail
+          echo 'ready=false' >> "$GITHUB_OUTPUT"
+          if gh release view "$RELEASE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'Signed broad 4468 original pixel release already exists.'
+            exit 0
+          fi
+          gh api "repos/$REPO/actions/runs/$ORIGINAL_RUN/jobs?per_page=100" \
+            --jq '[.jobs[] | select(.name | startswith("measure (")) | select(.conclusion=="success")] | length' \
+            | grep -qx 5
+          gh release view "$SOURCE_TAG" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          gh release view "$CROSS_ARM_TAG" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+      - name: Retrieve only already archived full 4468 source-authenticated original-photo ROI results
+        if: steps.before.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 pyarrow==19.0.1 numpy==2.1.3
+          gh run download "$ORIGINAL_RUN" --repo "$REPO" \
+            --name mois-tier06-all16-broad-authenticated-original-RGB --dir finished
+          gh release download "$SOURCE_TAG" --repo "$REPO" --dir source --pattern manifest.json
+          echo '3e28ced8de85709ea4854cd3291aa00f56e98306b60a4c273c5c7bb47b68c858  source/manifest.json' | sha256sum -c -
+          gh release download "$CROSS_ARM_TAG" --repo "$REPO" --dir cross-arm \
+            --pattern verified_append_photo_registry.json
+          for group in 0 1 2 3 4; do
+            tag="mois-tier06-all16-broad-original-RGB-append-group-$group-v1"
+            gh release download "$tag" --repo "$REPO" --dir "groups/group$group" \
+              --pattern original_photo_ROIs.parquet \
+              --pattern original_photo_group_receipt.json \
+              --pattern group_original_photo_hue_counts.csv
+          done
+      - name: Verify photo-by-photo full frozen ROI results equal all five independently sealed groups
+        if: steps.before.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_finish_broad_4468_original_image_release \
+            --finished finished --source source/manifest.json \
+            --cross-arm cross-arm/verified_append_photo_registry.json \
+            --group groups/group0 --group groups/group1 --group groups/group2 \
+            --group groups/group3 --group groups/group4 \
+            --output verified
+          test -s verified/complete_original_photo_release_evidence.json
+          test -s verified/source_taxa_season_latitude_coverage.json
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.before.outputs.ready == 'true'
+        with:
+          name: mois-complete-broad4468-authentic-original-hues-and-descriptive-coverage
+          path: |
+            finished/
+            verified/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish immutable original photo pixel/colour Parquet and QA with zero downloads
+        if: steps.before.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$RELEASE_TAG" --repo "$REPO" --dir old \
+              --pattern complete_original_photo_release_evidence.json
+            cmp old/complete_original_photo_release_evidence.json verified/complete_original_photo_release_evidence.json
+          else
+            gh release create "$RELEASE_TAG" \
+              finished/measured_photos.parquet \
+              finished/receipt.json finished/source.json \
+              finished/tier06_terminal_source_validation.json \
+              verified/complete_original_photo_release_evidence.json \
+              verified/source_taxa_season_latitude_coverage.json \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS completed 4468 genuine broad tier06 original images / 1760 frozen four-hue ROIs' \
+              --notes 'DATA ONLY: original completed source/photo/observation/FCP ROI-v4 source SHA, 4468 actual new photo terminals, 1760 four-hue classifications, 7 original photo fetch failures and 2701 acquired-but-unclassifiable images. The original image pixels were downloaded and inferred earlier in run 39880330611; this publication does NOT refetch images, run YOLO/EfficientSAM or recompute historical photo outcomes. This full-photo table was independently checked row-by-row against FIVE immutable original-worker photo Parquet archives, immutable source manifest and cross-arm 896206-photo zero-overlap receipt. Descriptive observed-month/latitude/taxon coverage does NOT prove individual photo flowering or native plant status. This is a compute-partial and arm-specific result, not an unbiased worldwide white-flower frequency.'
+          fi
