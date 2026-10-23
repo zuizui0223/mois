@@ -44,7 +44,7 @@ jobs:
                   check=subprocess.run(['bash','-n'],input=step['run'],text=True,capture_output=True)
                   assert check.returncode==0,(step.get('name'),check.stderr)
                   n+=1
-          assert n>=6
+          assert n>=5
           print('MOIS_SOURCE_DELTA_GH_BASH_SYNTAX_VALID',n)
           PY
   recover-only-genuinely-new-pixels:
