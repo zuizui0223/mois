@@ -1,0 +1,101 @@
+name: MOIS route all remaining signed tier06 original source groups once
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_singlepass_signed_tier_bucket_router.py
+      - tests/test_mois_singlepass_signed_tier_bucket_router.py
+      - .github/workflows/mois-tier06-all16-signed-source-routing.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_singlepass_signed_tier_bucket_router.py
+      - tests/test_mois_singlepass_signed_tier_bucket_router.py
+      - .github/workflows/mois-tier06-all16-signed-source-routing.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-tier06-all16-once-routed-photo-metadata-v1
+  cancel-in-progress: false
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify source-only routing, early errors, SHA and gzip reopens
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/acquisition/mois_singlepass_signed_tier_bucket_router.py
+          python -m unittest discover -s tests -p test_mois_singlepass_signed_tier_bucket_router.py -v
+  route-all-remaining-groups:
+    if: github.event_name != 'pull_request'
+    needs: unit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: ['01','02','03','04','05','06','07','08','09','10','11','12','13','14','15']
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GROUP: ${{ matrix.group }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip already published identical signed metadata route
+        id: freeze
+        run: |
+          set -euo pipefail
+          if gh release view mois-signed-tier06-group${{ matrix.group }}-512-compute-buckets-v1 --repo zuizui0223/mois >/dev/null 2>&1; then
+            echo ready=false >> "$GITHUB_OUTPUT"
+          else
+            echo ready=true >> "$GITHUB_OUTPUT"
+          fi
+      - name: Download only target tier06 group${{ matrix.group }}, never 93m full photo index
+        if: steps.freeze.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release download mois-complete-93209351-original-photo-target-tiers-v1 \
+            --repo zuizui0223/mois --dir signed-source \
+            --pattern tier-06-group-${{ matrix.group }}.tar \
+            --pattern group-${{ matrix.group }}-receipt.json \
+            --pattern mois_all_original_photo_target_tiers_receipt.json
+      - uses: actions/setup-python@v5
+        if: steps.freeze.outputs.ready == 'true'
+        with:
+          python-version: "3.12"
+      - name: Route immutable original source IDs once into 512 stable observation buckets
+        if: steps.freeze.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_singlepass_signed_tier_bucket_router \
+            --registry signed-source/mois_all_original_photo_target_tiers_receipt.json \
+            --receipt signed-source/group-${{ matrix.group }}-receipt.json \
+            --archive signed-source/tier-06-group-${{ matrix.group }}.tar \
+            --bucket-count 512 --max-open 32 \
+            --output routed
+          tar -cf tier06-group${{ matrix.group }}-512-source-buckets.tar -C routed .
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.freeze.outputs.ready == 'true'
+        with:
+          name: mois-tier06-group-${{ matrix.group }}-signed-source-512-buckets
+          path: |
+            routed/routing_receipt.json
+            tier06-group${{ matrix.group }}-512-source-buckets.tar
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish immutable source-only routing archive, no photo pixels or hues
+        if: steps.freeze.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release create mois-signed-tier06-group${{ matrix.group }}-512-compute-buckets-v1 \
+            routed/routing_receipt.json tier06-group${{ matrix.group }}-512-source-buckets.tar \
+            --repo zuizui0223/mois --target "$GITHUB_SHA" \
+            --title 'MOIS signed 93m tier06 group${{ matrix.group }} routed once to 512 processing buckets' \
+            --notes 'All original photo/observation metadata from signed tier06 group${{ matrix.group }}, byte-matched to immutable 93,209,351-photo target registry. Original observation-hash bucket processing partitions preserve every source photo ID, uncertain date, unsupported format and nativeness metadata; no source census cap, hard native filtering, image downloading, ROI inference, or classification. These source buckets are metadata only, NOT finished pixel measurements and NOT a probability-complete tier06 scientific estimate.'
