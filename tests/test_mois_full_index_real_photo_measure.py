@@ -80,4 +80,58 @@ class TestFullSourceRealRGB(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"SHA"):
             m.input_rows(self.plan,0)
 
+
+    def test_signed_routed_tier06_old_source_recovery_without_new_image_inference(self):
+        self.manifest.pop("previously_measured_photo_ids_skipped")
+        self.manifest.update({
+            "source_tier":6,"source_group":0,"compute_bucket_count":512,
+            "admitted_bucket_count":64,"not_probability_complete_global_source":True,
+            "previous_source_photo_IDs_not_redownloaded":True,
+            "selected_bucket_photo_IDs_before_dedup":10,
+            "selected_new_photos_unsupported_by_frozen_loader":0,
+            "prior_and_technical_excluded_source_photo_IDs":{
+                "prior_actual_photo_or_observation":3,
+                "prior_technical_photo_or_observation":2},
+        })
+        (self.plan/"manifest.json").write_text(json.dumps(self.manifest))
+        folder=self.root/"measured"
+        m.measure_group(self.plan,0,self.root/"runtime",self.root/"sam",
+                        folder,runner=self.fake_runner)
+        def forbidden(*args,**kwargs):
+            raise AssertionError("Collector unexpectedly ran original pixel inference")
+        # Production recovery only consumes already signed unit files.
+        data=m.collect(self.plan,folder,self.root/"final")
+        self.assertEqual((data["attempted"],data["classifiable"]),(5,5))
+        self.assertEqual(data["matching_prior_measured_photos_reused"],3)
+        self.assertEqual(data["prior_photo_or_observation_source_rows_excluded"],3)
+        self.assertEqual(data["independent_technical_photo_or_observation_rows_excluded"],2)
+        self.assertEqual(data["source_deduplication_reporting_grain"],
+                         "prior_original_photo_or_observation")
+        self.assertTrue(data["source_precolour_photo_dispositions_reconciled"])
+        self.assertTrue(pd.read_parquet(self.root/"final"/"measured_photos.parquet").photo_id.is_unique)
+
+    def test_unknown_or_inconsistent_routed_prior_source_fails_closed(self):
+        self.manifest.pop("previously_measured_photo_ids_skipped")
+        self.manifest.update({
+            "source_tier":6,"source_group":0,"compute_bucket_count":512,
+            "admitted_bucket_count":64,"not_probability_complete_global_source":True,
+            "previous_source_photo_IDs_not_redownloaded":True,
+            "selected_bucket_photo_IDs_before_dedup":100,
+            "selected_new_photos_unsupported_by_frozen_loader":0,
+            "prior_and_technical_excluded_source_photo_IDs":{
+                "prior_actual_photo_or_observation":3,
+                "prior_technical_photo_or_observation":2},
+        })
+        with self.assertRaisesRegex(ValueError,"precolour prior/technical"):
+            m.source_prior_dedup_receipt(self.manifest)
+        self.manifest["selected_bucket_photo_IDs_before_dedup"]=10
+        self.manifest["source_group"]=5
+        with self.assertRaisesRegex(ValueError,"Unknown source metadata layout"):
+            m.source_prior_dedup_receipt(self.manifest)
+
+    def test_legacy_prior_photo_skip_contract_is_unchanged(self):
+        s=m.source_prior_dedup_receipt(self.manifest)
+        self.assertEqual(s["matching_prior_measured_photos_reused"],0)
+        self.assertEqual(s["source_deduplication_reporting_grain"],"prior_original_photo_id")
+
 if __name__=="__main__":unittest.main()
