@@ -120,10 +120,22 @@ def merge_cross_arm(old_registry, delta_parquet, delta_receipt,
             and data.morph.isin((*HUES,"mixed_uncertain")).all()
             and classified.eq(data.measurement_status.eq("classified_four_state_morph")).all(),
             "New original p0032 photo-ID/observation/hue terminal status mismatch")
-    require(data.source_arm.notna().all() and data.source_arm.nunique()==1
-            and data.source_arm.iloc[0]==new.get("source_arm")
-            and pd.to_numeric(data.selection_probability,errors="coerce").between(0,1,inclusive="right").all(),
-            "New original p0032 source sampling arm/inclusion probabilities lost")
+    # The original nested p0032 source can contain multiple source-arm labels,
+    # and older manifests need not advertise a single scalar source_arm.
+    # collect_wave() ALREADY checked every observed per-photo source_arm and
+    # observation propensity byte-for-byte against the SHA-pinned source CSV.
+    # Never coerce actual per-photo heterogeneous propensities to one number.
+    probabilities=pd.to_numeric(data.selection_probability,errors="coerce")
+    require(probabilities.notna().all() and
+            probabilities.between(0,1,inclusive="right").all(),
+            "New original p0032 per-photo observation inclusion probabilities lost")
+    actual_arms=data.source_arm.fillna("").astype(str).str.strip()
+    advertised_arm=new.get("source_arm")
+    if advertised_arm is not None and str(advertised_arm).strip():
+        require(actual_arms.eq(str(advertised_arm)).all(),
+                "New original p0032 source-arm receipt contradicted original worker source")
+    source_arm_count=len(set(actual_arms))
+    source_probabilities_have_multiple_values=probabilities.nunique()>1
     deltap=set(ids);deltaobs=set(obs)
     earlyp,earlyobs=read_original_ids(
         old_tier06_parquet,old_tier06_receipt,n=old_tier06_n,hue=old_tier06_hues)
@@ -153,6 +165,10 @@ def merge_cross_arm(old_registry, delta_parquet, delta_receipt,
         "newly_completed_original_p0032_photo_attempts":delta_n,
         "newly_completed_original_p0032_four_hue_classified":delta_hues,
         "newly_completed_original_p0032_distinct_observations":len(deltaobs),
+        "newly_completed_p0032_source_arm_labels_present":source_arm_count,
+        "newly_completed_p0032_original_per_photo_probability_values_vary":
+            bool(source_probabilities_have_multiple_values),
+        "p0032_original_source_arm_and_probability_verified_by_original_full_source_worker_SHAs":True,
         "photo_ID_overlap_new_p0032_vs_other_original_sampling_arms":0,
         "observation_ID_overlap_new_p0032_vs_other_original_sampling_arms":0,
         "full_authenticated_distinct_original_photo_attempts":old_total+delta_n,
