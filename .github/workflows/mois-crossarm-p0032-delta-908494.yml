@@ -62,7 +62,7 @@ jobs:
       NEW_DELTA: mois-p0032-genuine-original-RGB-delta-main39889436140-batch001-v1
     steps:
       - uses: actions/checkout@v4
-      - name: Release idempotence: never rewrite a previously signed real-photo source registry
+      - name: Release idempotence - never rewrite a previously signed real-photo source registry
         id: check
         run: |
           set -euo pipefail
