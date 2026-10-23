@@ -1,0 +1,175 @@
+name: MOIS cross-arm original ROI ledger for new p0032 completed worker groups
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_crossarm_p0032_future_original_photo_delta.py
+      - tests/test_mois_crossarm_p0032_future_original_photo_delta.py
+      - .github/workflows/mois-p0032-postdelta-crossarm-original-ROI.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_crossarm_p0032_future_original_photo_delta.py
+      - tests/test_mois_crossarm_p0032_future_original_photo_delta.py
+      - .github/workflows/mois-p0032-postdelta-crossarm-original-ROI.yml
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - MOIS append only NEW p0032 original RGB groups after signed batch001
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '41 * * * *'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-p0032-postdelta-full-photo-crossarm-ledger-from-groups133to144
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regression-test genuine original photo/observation SHA, source arms and job shell syntax
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m unittest discover -s tests -p test_mois_crossarm_p0032_future_original_photo_delta.py -v
+          python -m py_compile scripts/acquisition/mois_crossarm_p0032_future_original_photo_delta.py
+          python - <<'PY'
+          import yaml,subprocess
+          d=yaml.safe_load(open('.github/workflows/mois-p0032-postdelta-crossarm-original-ROI.yml'))
+          n=0
+          for job in d['jobs'].values():
+              for step in job['steps']:
+                  if 'run' not in step: continue
+                  p=subprocess.run(['bash','-n'],input=step['run'],text=True,capture_output=True)
+                  assert p.returncode==0,(step.get('name'),p.stderr)
+                  n+=1
+          assert n>=5
+          print('MOIS_P0032_CROSSARM_NEW_ORIGINAL_PIXEL_BASH_SYNTAX_OK',n)
+          PY
+  reconcile:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OLD_CROSS_ARM: mois-original-RGB-crossarm-908494-plus-tier06-wave2-groups-0-1-v1
+      OLD_P0032_DELTA: mois-p0032-genuine-original-RGB-delta-main39889436140-batch001-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Identify only genuine published new p0032 workers and skip immutable duplicate snapshot
+        id: gate
+        run: |
+          set -euo pipefail
+          groups=''
+          for group in 133 134 135 136 137 138 139 140 141 142 143 144; do
+            tag="mois-p0032-original-RGB-append-group-$group-v1"
+            if gh release view "$tag" --repo "$REPO" >/dev/null 2>&1; then
+              groups="$groups $group"
+            fi
+          done
+          groups=$(echo "$groups" | xargs)
+          if [ -z "$groups" ]; then
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo 'No newly completed original p0032 worker groups.'
+            exit 0
+          fi
+          suffix=$(echo "$groups" | tr ' ' '-')
+          tag="mois-original-RGB-crossarm-910542-plus-postp0032-groups-$suffix-v1"
+          if gh release view "$tag" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo 'Exact current original photo groups already included in immutable crossarm ledger.'
+            exit 0
+          fi
+          gh release view "$OLD_CROSS_ARM" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+          echo "groups=$groups" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "MOIS new photo-only original p0032 groups $groups"
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Retrieve only previously SHA-audited small source-arm photo ID Parquets and new p0032 original groups
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          GROUPS: ${{ steps.gate.outputs.groups }}
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          gh release download "$OLD_CROSS_ARM" --repo "$REPO" --dir prior \
+            --pattern verified_wave2_original_photo_crossarm.json
+          gh release download "$OLD_P0032_DELTA" --repo "$REPO" --dir delta \
+            --pattern new_p0032_original_photo_ROIs.parquet
+          gh release download mois-tier06-group00-first64bucket-warm-original-RGB-v1 \
+            --repo "$REPO" --dir early --pattern measured_photos.parquet
+          gh release download mois-tier06-all16-first4bucket-broad-warm-original-RGB-v1 \
+            --repo "$REPO" --dir broad --pattern measured_photos.parquet
+          for group in 0 1; do
+            tag="mois-tier06-all16-buckets004to011-original-RGB-append-group-$group-v1"
+            gh release download "$tag" --repo "$REPO" --dir "wave2/group$group" \
+              --pattern original_photo_ROIs.parquet \
+              --pattern original_photo_group_receipt.json
+          done
+          for group in $GROUPS; do
+            tag="mois-p0032-original-RGB-append-group-$group-v1"
+            gh release download "$tag" --repo "$REPO" --dir "p0032/group$group" \
+              --pattern original_photo_ROIs.parquet \
+              --pattern original_photo_hue_counts.csv \
+              --pattern p0032_original_group_receipt.json \
+              --pattern original_worker_artifact_zip_identity.json
+          done
+      - name: Verify prior source-photo ID exclusions, all new independent observations and original FCP pixel receipts
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          GROUPS: ${{ steps.gate.outputs.groups }}
+        run: |
+          set -euo pipefail
+          set --
+          for group in 0 1; do
+            set -- "$@" --wave2 "wave2/group$group"
+          done
+          for group in $GROUPS; do
+            set -- "$@" --new-p32 "p0032/group$group"
+          done
+          python -m scripts.acquisition.mois_crossarm_p0032_future_original_photo_delta \
+            --prior-registry prior/verified_wave2_original_photo_crossarm.json \
+            --p32delta delta/new_p0032_original_photo_ROIs.parquet \
+            --early early/measured_photos.parquet \
+            --broad broad/measured_photos.parquet \
+            "$@" --output full_original_source_photo_crossarm_with_postp0032.json
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-postp0032-genuine-original-photo-source-sha-crossarm
+          path: full_original_source_photo_crossarm_with_postp0032.json
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish immutable verified original photo and four-hue crossarm new-group total
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          TAG: ${{ steps.gate.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$TAG" --repo "$REPO" --dir old \
+              --pattern full_original_source_photo_crossarm_with_postp0032.json
+            cmp old/full_original_source_photo_crossarm_with_postp0032.json \
+              full_original_source_photo_crossarm_with_postp0032.json
+          else
+            gh release create "$TAG" full_original_source_photo_crossarm_with_postp0032.json \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS new genuine source-verified original p0032 ROI photos after 910542 crossarm baseline' \
+              --notes 'Adds only independently SHA-verified newly completed original p0032 work group photo terminal Parquets to signed 910542 attempted genuine original photo /409768 automatic four-hue baseline, excludes any original photo/observation already classified in independent tier06 group00, first4 all16 and new wave2 original-photo source arms and old p0032 full 12288-photo delta. Previously 133 original p0032 group worker ZIP digests immutable, no old full-photo checkpoint rewrite, image acquisition, repeated YOLO+EfficientSAM inference, botanically validated wild/anthesis assertion, or unweighted global white-flower prevalence inference.'
+          fi
