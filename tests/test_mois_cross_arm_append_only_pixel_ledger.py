@@ -130,7 +130,10 @@ class SignedCrossArmOriginalLedgerTests(unittest.TestCase):
             self.run_audit()
         self.assertFalse(self.output.exists())
 
-    def test_same_observation_other_photo_in_second_group_fails(self):
+    def test_same_original_observation_across_two_compute_groups_is_legitimate(self):
+        # Source grouping is a 4*256-PHOTO scheduling boundary, not a partition
+        # of observation IDs. Same original observation with two DIFFERENT
+        # photo IDs may straddle the boundary of two completed work groups.
         path=self.groups[1]/"original_photo_ROIs.parquet"
         data=pd.read_parquet(path)
         data.loc[0,"observation_id"]="broad-0"
@@ -139,9 +142,25 @@ class SignedCrossArmOriginalLedgerTests(unittest.TestCase):
         record=json.loads(receipt.read_text())
         record["saved_file_sha256"][path.name]=ledger.sha(path)
         receipt.write_text(json.dumps(record))
-        with self.assertRaisesRegex(ValueError,"reused in source arms"):
+        out=self.run_audit()
+        self.assertEqual(out["same_broad_arm_observations_spanning_original_compute_groups"],1)
+        self.assertEqual(out["broad_arm_distinct_original_observations"],3)
+        self.assertEqual(out["original_photo_attempts_distinct_across_all_verified_arms"],10)
+        self.assertEqual(out["original_photo_or_observation_ID_cross_arm_overlap"],0)
+
+    def test_same_observation_reused_from_historical_source_arm_is_rejected(self):
+        path=self.groups[1]/"original_photo_ROIs.parquet"
+        data=pd.read_parquet(path)
+        data.loc[0,"observation_id"]="old-a"
+        data.to_parquet(path,index=False)
+        receipt=self.groups[1]/"original_photo_group_receipt.json"
+        record=json.loads(receipt.read_text())
+        record["saved_file_sha256"][path.name]=ledger.sha(path)
+        receipt.write_text(json.dumps(record))
+        with self.assertRaisesRegex(ValueError,"historical source-arm observation reused"):
             self.run_audit()
         self.assertFalse(self.output.exists())
+
 
     def test_group_reused_twice_is_not_double_counted(self):
         with self.assertRaisesRegex(ValueError,"work units missing or duplicated"):
