@@ -1,0 +1,174 @@
+name: MOIS wave2 new authentic original photo cross-arm SHA registry
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_crossarm_tier06_wave2_new_original_ROI_ledger.py
+      - tests/test_mois_crossarm_tier06_wave2_new_original_ROI_ledger.py
+      - .github/workflows/mois-wave2-authenticated-original-crossarm-registry.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_crossarm_tier06_wave2_new_original_ROI_ledger.py
+      - tests/test_mois_crossarm_tier06_wave2_new_original_ROI_ledger.py
+      - .github/workflows/mois-wave2-authenticated-original-crossarm-registry.yml
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - MOIS second tier06 buckets4to11 append-only original RGB partitions
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '39 * * * *'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-tier06-new-wave2-original-photo-crossarm-source-SHA-groups
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify original-photo crossarm count, SHA, observation, hue and bash syntax tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_crossarm_tier06_wave2_new_original_ROI_ledger.py
+          python -m unittest discover -s tests -p test_mois_crossarm_tier06_wave2_new_original_ROI_ledger.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          from pathlib import Path
+          d=yaml.safe_load(Path('.github/workflows/mois-wave2-authenticated-original-crossarm-registry.yml').read_text())
+          n=0
+          for job in d['jobs'].values():
+              for step in job['steps']:
+                  if 'run' in step:
+                      t=subprocess.run(['bash','-n'],input=step['run'],text=True,capture_output=True)
+                      assert t.returncode==0,(step.get('name'),t.stderr)
+                      n+=1
+          assert n>=5
+          print('MOIS_WAVE2_CROSSARM_REAL_ORIGINAL_SOURCE_BASH_VERIFIED',n)
+          PY
+  cross-arm-original-photos:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      ORIGINAL_SOURCE: mois-tier06-all16-buckets004to011-broad-warm-original-RGB-source-v1
+      PRIOR_CROSS_ARM: mois-original-RGB-crossarm-main39889436140-plus-p0032delta-batch001-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select only newly certified real original photo groups, not queued worker tasks
+        id: gate
+        run: |
+          set -euo pipefail
+          groups=''
+          for i in 0 1 2 3 4 5 6 7 8; do
+            tag="mois-tier06-all16-buckets004to011-original-RGB-append-group-$i-v1"
+            if gh release view "$tag" --repo "$REPO" >/dev/null 2>&1; then
+              groups="$groups $i"
+            fi
+          done
+          groups=$(echo "$groups" | xargs)
+          if [ -z "$groups" ]; then
+            echo ready=false >> "$GITHUB_OUTPUT"
+            echo 'No genuine sealed new-photo worker results yet.'
+            exit 0
+          fi
+          suffix=$(echo "$groups" | tr ' ' '-')
+          tag="mois-original-RGB-crossarm-908494-plus-tier06-wave2-groups-$suffix-v1"
+          if gh release view "$tag" --repo "$REPO" >/dev/null 2>&1; then
+            echo ready=false >> "$GITHUB_OUTPUT"
+            echo 'This exact completed-worker-set original photo crossarm receipt already exists.'
+            exit 0
+          fi
+          gh release view "$PRIOR_CROSS_ARM" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          gh release view "$ORIGINAL_SOURCE" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          echo ready=true >> "$GITHUB_OUTPUT"
+          echo "groups=$groups" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "MOIS source-certified wave2 photo worker groups $groups"
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Download only signed small previous tier06 original-photo Parquets, p0032 delta, and new worker groups
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          GROUPS: ${{ steps.gate.outputs.groups }}
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          gh release download "$PRIOR_CROSS_ARM" --repo "$REPO" --dir prior \
+            --pattern full_crossarm_new_p0032_photo_ledger.json
+          gh release download "$ORIGINAL_SOURCE" --repo "$REPO" --dir source \
+            --pattern manifest.json
+          echo '57592ce9f12c8abb0adb7ce2fda8252044ca9204caf295dbac73ecbf76a01516  source/manifest.json' | sha256sum -c -
+          gh release download mois-tier06-group00-first64bucket-warm-original-RGB-v1 \
+            --repo "$REPO" --dir early \
+            --pattern measured_photos.parquet
+          gh release download mois-tier06-all16-first4bucket-broad-warm-original-RGB-v1 \
+            --repo "$REPO" --dir broad \
+            --pattern measured_photos.parquet
+          gh release download mois-p0032-genuine-original-RGB-delta-main39889436140-batch001-v1 \
+            --repo "$REPO" --dir p0032 \
+            --pattern new_p0032_original_photo_ROIs.parquet
+          for group in $GROUPS; do
+            tag="mois-tier06-all16-buckets004to011-original-RGB-append-group-$group-v1"
+            gh release download "$tag" --repo "$REPO" --dir "wave2/group$group" \
+              --pattern original_photo_ROIs.parquet \
+              --pattern original_photo_group_receipt.json \
+              --pattern group_original_photo_hue_counts.csv \
+              --pattern original_photo_source_coverage.json
+          done
+      - name: Check every new original photo and observation against prior independent sampling source arms
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          GROUPS: ${{ steps.gate.outputs.groups }}
+        run: |
+          set -euo pipefail
+          set --
+          for group in $GROUPS; do
+            set -- "$@" --group "wave2/group$group"
+          done
+          python -m scripts.acquisition.mois_crossarm_tier06_wave2_new_original_ROI_ledger \
+            --prior-registry prior/full_crossarm_new_p0032_photo_ledger.json \
+            --source-manifest source/manifest.json \
+            --early-parquet early/measured_photos.parquet \
+            --broad-parquet broad/measured_photos.parquet \
+            --p0032-delta-parquet p0032/new_p0032_original_photo_ROIs.parquet \
+            "$@" --output verified_wave2_original_photo_crossarm.json
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-original-wave2-source-and-observation-SHA-crossarm
+          path: verified_wave2_original_photo_crossarm.json
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish immutable original-photo SHA ledger only if distinct new wave2 data were validated
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          TAG: ${{ steps.gate.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$TAG" --repo "$REPO" --dir old \
+              --pattern verified_wave2_original_photo_crossarm.json
+            cmp old/verified_wave2_original_photo_crossarm.json verified_wave2_original_photo_crossarm.json
+          else
+            gh release create "$TAG" verified_wave2_original_photo_crossarm.json \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title "MOIS signed original photo ROI crossarm plus new wave2 complete groups" \
+              --notes 'Only genuinely source/pixel/terminal SHA-verified photo outcomes from still-computing tier06 wave2 groups are added to previously audited 908494 distinct originals. Directly checked every new photo ID and independent observation ID against the two prior tier06 original-photo arms and the full source-signed p0032 delta, with prior six-arm previous-photo exclusion locked BEFORE selecting wave2. No historical ~0.9m Parquet rewrite and no raw photo downloads or hue re-inferences. These are original automatic ROI four-hue labels, not independently validated native/wild flowers, not probability-complete global species-level white prevalence.'
+          fi
