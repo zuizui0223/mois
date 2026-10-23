@@ -143,12 +143,64 @@ def measure_group(source,group,runtime,sam,out,*,runner=None,loader=None):
             done.append(summary)
     return done
 
+
+def source_prior_dedup_receipt(info):
+    """Reconcile old photo-ID-only and new photo/observation dedup metadata.
+
+    No historical photo is reread or counted as newly classified. The routed
+    tier06 source froze a union of previous-photo / previous-observation
+    exclusions and independent technical benchmark exclusions before pixels.
+    Only *that* known signed input layout is permitted as a compatibility path.
+    """
+    existing=info.get("previously_measured_photo_ids_skipped")
+    if existing is not None:
+        require(type(existing) is int and existing>=0,
+                "Invalid original photo-ID skip count in source manifest")
+        return {
+            "matching_prior_measured_photos_reused":existing,
+            "source_deduplication_reporting_grain":"prior_original_photo_id",
+        }
+    require(info.get("schema")==SCHEMA and info.get("source_tier")==6
+            and info.get("source_group")==0
+            and info.get("compute_bucket_count")==512
+            and info.get("admitted_bucket_count")==64
+            and info.get("not_probability_complete_global_source") is True
+            and info.get("previous_source_photo_IDs_not_redownloaded") is True,
+            "Unknown source metadata layout: cannot fabricate prior photo dedup counts")
+    exclusions=info.get("prior_and_technical_excluded_source_photo_IDs")
+    require(isinstance(exclusions,dict)
+            and set(exclusions)<={
+                "prior_actual_photo_or_observation",
+                "prior_technical_photo_or_observation",
+                "unsupported_loader_format"}
+            and all(type(x) is int and x>=0 for x in exclusions.values()),
+            "Invalid original source photo/observation exclusion inventory")
+    prior=exclusions.get("prior_actual_photo_or_observation",0)
+    technical=exclusions.get("prior_technical_photo_or_observation",0)
+    unsupported=exclusions.get("unsupported_loader_format",0)
+    require(unsupported==info.get("selected_new_photos_unsupported_by_frozen_loader")
+            and info.get("selected_bucket_photo_IDs_before_dedup")==
+                    info.get("new_photo_attempts_planned")+sum(exclusions.values()),
+            "Routed source precolour prior/technical/unsupported count mismatch")
+    return {
+        # Original field retained for backward-compatible consumers; these
+        # candidate rows can be observation-level exclusions as well as exact
+        # previous-photo matches. Preserve the precise grain below.
+        "matching_prior_measured_photos_reused":prior,
+        "source_deduplication_reporting_grain":"prior_original_photo_or_observation",
+        "prior_photo_or_observation_source_rows_excluded":prior,
+        "independent_technical_photo_or_observation_rows_excluded":technical,
+        "unsupported_original_image_formats_excluded":unsupported,
+        "source_precolour_photo_dispositions_reconciled":True,
+    }
+
 def collect(source,workers,out):
     source=Path(source);workers=Path(workers);out=Path(out)
     require(not out.exists() or not any(out.iterdir()),
             "Refuse to replace signed RGB source result")
     info=plan(source)
     require(info["schema"]==SCHEMA,"Invalid complete-source cohort")
+    skip_summary=source_prior_dedup_receipt(info)
     frames=[];receipts=[]
     for index in info["worker_ids"]:
         names=list(workers.rglob(f"shard_{index:03d}/receipt.json"))
@@ -182,7 +234,7 @@ def collect(source,workers,out):
         "observation_level_selection_probability":info["selection_probability"],
         "source_plan_sha256":sha(source/"manifest.json"),
         "measured_photo_parquet_sha256":sha(out/"measured_photos.parquet"),
-        "matching_prior_measured_photos_reused":info["previously_measured_photo_ids_skipped"],
+        **skip_summary,
         "frozen_original_ROI_method":receipts[0]["method"],
         "technical_unknowns_not_assumed_nonwhite":True,
         "ecological_analysis_run":False,
