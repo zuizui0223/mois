@@ -134,6 +134,33 @@ class SignedRealPhotoCrossarmDeltaTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"not authenticated"):
             self.run_audit()
 
+    def test_authentic_original_p0032_multi_source_arms_per_photo_are_retained(self):
+        # Original source columns were already SHA checked by the frozen FCP
+        # source collector. Some nested original cohorts have no scalar arm
+        # metadata and can carry multiple source-arm/per-photo probabilities.
+        d=pd.read_parquet(self.new)
+        d.loc[1,"source_arm"]="another-p0032-stratum"
+        d.loc[1,"selection_probability"]=0.0005
+        d.to_parquet(self.new,index=False)
+        receipt=json.loads(self.newreceipt.read_text())
+        receipt["source_arm"]=None
+        receipt["immutable_output_sha256"][self.new.name]=sha(self.new)
+        self.newreceipt.write_text(json.dumps(receipt))
+        out=self.run_audit()
+        self.assertEqual(out["newly_completed_p0032_source_arm_labels_present"],2)
+        self.assertTrue(out["newly_completed_p0032_original_per_photo_probability_values_vary"])
+        self.assertTrue(out["p0032_original_source_arm_and_probability_verified_by_original_full_source_worker_SHAs"])
+        self.assertEqual(out["full_authenticated_distinct_original_photo_attempts"],15)
+
+    def test_explicit_scalar_source_arm_cannot_contradict_original_photo_rows(self):
+        d=pd.read_parquet(self.new)
+        d.loc[1,"source_arm"]="other-incompatible-source"
+        d.to_parquet(self.new,index=False)
+        self.updated_delta_receipt()
+        with self.assertRaisesRegex(ValueError,"source-arm receipt contradicted"):
+            self.run_audit()
+        self.assertFalse(self.out.exists())
+
     def test_refuse_overwrite_signed_crossarm_snapshot(self):
         self.run_audit()
         with self.assertRaisesRegex(ValueError,"cannot be rewritten"):
