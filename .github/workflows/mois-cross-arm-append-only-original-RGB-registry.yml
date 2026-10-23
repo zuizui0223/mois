@@ -1,0 +1,158 @@
+name: MOIS SHA-verified append-only original photo cross-arm registry
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_cross_arm_append_only_pixel_ledger.py
+      - tests/test_mois_cross_arm_append_only_pixel_ledger.py
+      - .github/workflows/mois-cross-arm-append-only-original-RGB-registry.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_cross_arm_append_only_pixel_ledger.py
+      - tests/test_mois_cross_arm_append_only_pixel_ledger.py
+      - .github/workflows/mois-cross-arm-append-only-original-RGB-registry.yml
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - MOIS append-only sealed original RGB partitions from broad tier06 workers
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '19 */4 * * *'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-original-photo-SHA-cross-arm-append-only-union-v1
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Audit source identity, all unknowns, duplicate observation protections and shell
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_cross_arm_append_only_pixel_ledger.py
+          python -m unittest discover -s tests -p test_mois_cross_arm_append_only_pixel_ledger.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          d=yaml.safe_load(open('.github/workflows/mois-cross-arm-append-only-original-RGB-registry.yml'))
+          steps=[step['run'] for job in d['jobs'].values() for step in job['steps'] if 'run' in step]
+          assert len(steps)>=5
+          for item in steps:
+              p=subprocess.run(['bash','-n'],input=item,text=True,capture_output=True)
+              assert p.returncode==0,p.stderr
+          print('MOIS_CROSS_ARM_PASSED_ALL_SHELL_STEPS',len(steps))
+          PY
+  register:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect only newly published real-photo original groups
+        id: gate
+        run: |
+          set -euo pipefail
+          groups=''
+          for group in 0 1 2 3 4; do
+            tag="mois-tier06-all16-broad-original-RGB-append-group-$group-v1"
+            if gh release view "$tag" --repo "$REPO" >/dev/null 2>&1; then
+              groups="$groups $group"
+            fi
+          done
+          groups=$(echo "$groups" | xargs)
+          if [ -z "$groups" ]; then
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          suffix=$(echo "$groups" | tr ' ' '-')
+          tag="mois-original-RGB-cross-arm-append-index-groups-$suffix-v1"
+          if gh release view "$tag" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+          echo "groups=$groups" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "MOIS new original image groups $groups"
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Download signed prior photo IDs and completed appended Parquets only
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          GROUPS: ${{ steps.gate.outputs.groups }}
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          gh release download mois-real-pixel-checkpoint-39884380759-v1 \
+            --repo "$REPO" --dir main \
+            --pattern checkpoint_receipt.json --pattern combined_actual_photo_checkpoint.parquet
+          gh release download mois-tier06-group00-first64bucket-warm-original-RGB-v1 \
+            --repo "$REPO" --dir prior-tier06 \
+            --pattern receipt.json --pattern measured_photos.parquet
+          gh release download mois-tier06-all16-first4bucket-broad-warm-original-RGB-source-v1 \
+            --repo "$REPO" --dir source --pattern manifest.json
+          echo '3e28ced8de85709ea4854cd3291aa00f56e98306b60a4c273c5c7bb47b68c858  source/manifest.json' | sha256sum -c -
+          for group in $GROUPS; do
+            tag="mois-tier06-all16-broad-original-RGB-append-group-$group-v1"
+            gh release download "$tag" --repo "$REPO" --dir "append/group$group" \
+              --pattern original_photo_group_receipt.json \
+              --pattern original_photo_ROIs.parquet \
+              --pattern group_original_photo_hue_counts.csv
+          done
+      - name: Exact photo and observation cross-arm identity, hue and SHA audit
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          GROUPS: ${{ steps.gate.outputs.groups }}
+        run: |
+          set -euo pipefail
+          set --
+          for group in $GROUPS; do
+            set -- "$@" --group "append/group$group"
+          done
+          python -m scripts.acquisition.mois_cross_arm_append_only_pixel_ledger \
+            --main-parquet main/combined_actual_photo_checkpoint.parquet \
+            --main-receipt main/checkpoint_receipt.json \
+            --old-parquet prior-tier06/measured_photos.parquet \
+            --old-receipt prior-tier06/receipt.json \
+            --source-manifest source/manifest.json \
+            "$@" --output verified_append_photo_registry.json
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-original-cross-arm-append-only-SHA-registry
+          path: verified_append_photo_registry.json
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish only proven photo+observation-disjoint incremental registry
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          TAG: ${{ steps.gate.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$TAG" --repo "$REPO" --dir old \
+              --pattern verified_append_photo_registry.json
+            cmp old/verified_append_photo_registry.json verified_append_photo_registry.json
+          else
+            gh release create "$TAG" verified_append_photo_registry.json \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS SHA-verified unique original photo and observation cross-arm ledger' \
+              --notes 'Original photo and observation IDs from authentic frozen FCP ROI-v4 source arms reconciled with SHA checks, without image redownload or existing full-historical photo Parquet rewrite. Compute-partial unbalanced source arms are not an unbiased global white-flower estimate and botanical flowering stage is unverified.'
+          fi
