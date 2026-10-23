@@ -109,7 +109,7 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
-          gh release download mois-real-pixel-checkpoint-39889436140-v1 \
+          gh release download mois-real-pixel-checkpoint-39918209309-v1 \
             --repo "$REPO" --dir main-prior \
             --pattern checkpoint_receipt.json \
             --pattern combined_actual_photo_checkpoint.parquet
@@ -179,7 +179,7 @@ jobs:
             gh release create "$tag" current/manifest.json tier06-buckets004to011-precolour-source-shards.tar \
               --repo "$REPO" --target "$GITHUB_SHA" \
               --title 'MOIS precolour second tier06 original source buckets4..11/512 across all 16 taxon groups' \
-              --notes 'Source-only original photo/observation identities and all original source SHA verified; distinct from 887600 previous six-arm pixels, 4138 old group00 and 4468 first broad photos plus the independent technical holdout. Tier06 group00 is taxon-partition restricted and buckets4..11/512 are a new photo-disjoint source cohort, NOT full global probability coverage. No pixels opened, no precolour native status filtering, no morphological labels inferred.'
+              --notes 'Source-only original photo/observation identities and all original source SHA verified; distinct from 897840 previous six-arm pixels, 4138 old group00 and 4468 first broad photos plus the independent technical holdout. Tier06 group00 is taxon-partition restricted and buckets4..11/512 are a new photo-disjoint source cohort, NOT full global probability coverage. No pixels opened, no precolour native status filtering, no morphological labels inferred.'
           fi
   measure:
     needs: source
