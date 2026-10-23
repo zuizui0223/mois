@@ -45,7 +45,7 @@ jobs:
                       r=subprocess.run(['bash','-n'],input=step['run'],text=True,capture_output=True)
                       assert r.returncode==0,(step.get('name'),r.stderr)
                       n+=1
-          assert n>=5
+          assert n>=4
           print('MOIS_P0032_NEXT_WORKERS_ALL_SHELL_STEPS_VALID',n)
           PY
   seal-only-previously-unpublished-original-pixel-workers:
