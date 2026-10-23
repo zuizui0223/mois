@@ -1,0 +1,130 @@
+name: MOIS authenticated original RGB cross-arm union plus fresh p0032 delta
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_crossarm_new_p0032_signed_delta_ledger.py
+      - tests/test_mois_crossarm_new_p0032_signed_delta_ledger.py
+      - .github/workflows/mois-crossarm-p0032-delta-908494.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_crossarm_new_p0032_signed_delta_ledger.py
+      - tests/test_mois_crossarm_new_p0032_signed_delta_ledger.py
+      - .github/workflows/mois-crossarm-p0032-delta-908494.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-908494-genuine-original-photo-crossarm-delta-source-sha-v1
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify source-probability, frozen original hue, observation disjointness and all shell syntax
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m unittest discover -s tests -p test_mois_crossarm_new_p0032_signed_delta_ledger.py -v
+          python -m py_compile scripts/acquisition/mois_crossarm_new_p0032_signed_delta_ledger.py
+          python - <<'PY'
+          import subprocess,yaml
+          data=yaml.safe_load(open('.github/workflows/mois-crossarm-p0032-delta-908494.yml'))
+          n=0
+          for job in data['jobs'].values():
+              for step in job['steps']:
+                  if 'run' in step:
+                      p=subprocess.run(['bash','-n'],input=step['run'],text=True,capture_output=True)
+                      assert p.returncode==0,(step.get('name'),p.stderr)
+                      n+=1
+          assert n>=4
+          print('MOIS_P0032_CROSSARM_DELTA_SHELL_SYNTAX_VALID',n)
+          PY
+  reconcile-genuine-original-photos:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      RELEASE_TAG: mois-original-RGB-crossarm-main39889436140-plus-p0032delta-batch001-v1
+      OLD_CROSS_ARM: mois-original-RGB-cross-arm-append-index-main39889436140-groups-0-1-2-3-4-v1
+      NEW_DELTA: mois-p0032-genuine-original-RGB-delta-main39889436140-batch001-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Release idempotence: never rewrite a previously signed real-photo source registry
+        id: check
+        run: |
+          set -euo pipefail
+          echo 'ready=false' >> "$GITHUB_OUTPUT"
+          if gh release view "$RELEASE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'Complete immutable p0032 cross-arm delta already verified and published.'
+            exit 0
+          fi
+          gh release view "$OLD_CROSS_ARM" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          gh release view "$NEW_DELTA" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Download ONLY signed recent 12288-photo delta and two small old tier06 source-arm identity Parquets
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          gh release download "$OLD_CROSS_ARM" --repo "$REPO" --dir historical \
+            --pattern verified_append_photo_registry.json
+          gh release download "$NEW_DELTA" --repo "$REPO" --dir p0032-delta \
+            --pattern new_p0032_original_photo_ROIs.parquet \
+            --pattern p0032_signed_incremental_original_photo_receipt.json
+          gh release download mois-tier06-group00-first64bucket-warm-original-RGB-v1 \
+            --repo "$REPO" --dir early06 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-tier06-all16-first4bucket-broad-warm-original-RGB-v1 \
+            --repo "$REPO" --dir broad06 \
+            --pattern measured_photos.parquet --pattern receipt.json
+      - name: Verify true original photo and observation IDs remain disjoint across old and new source arms
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_crossarm_new_p0032_signed_delta_ledger \
+            --old-registry historical/verified_append_photo_registry.json \
+            --delta-parquet p0032-delta/new_p0032_original_photo_ROIs.parquet \
+            --delta-receipt p0032-delta/p0032_signed_incremental_original_photo_receipt.json \
+            --old-tier06-parquet early06/measured_photos.parquet \
+            --old-tier06-receipt early06/receipt.json \
+            --broad-parquet broad06/measured_photos.parquet \
+            --broad-receipt broad06/receipt.json \
+            --output full_crossarm_new_p0032_photo_ledger.json
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.check.outputs.ready == 'true'
+        with:
+          name: mois-authenticated-full-crossarm-photo-ID-source-ledger-plus-p0032delta
+          path: full_crossarm_new_p0032_photo_ledger.json
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish immutable exact actual original photo/hue totals, without a worldwide white-flower claim
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$RELEASE_TAG" --repo "$REPO" --dir old \
+              --pattern full_crossarm_new_p0032_photo_ledger.json
+            cmp old/full_crossarm_new_p0032_photo_ledger.json full_crossarm_new_p0032_photo_ledger.json
+          else
+            gh release create "$RELEASE_TAG" full_crossarm_new_p0032_photo_ledger.json \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS genuine original photo ROI 908494 attempted; 408997 four-hue classified' \
+              --notes 'Only true original photographed/pixel-level outcomes are included: previous 896206 separate-arm photo IDs plus exactly 12288 newly verified p0032 original RGB terminal IDs. Photo and observation ID nonoverlap across the distinct tier06 probability arms and original p0032 delta verified against immutable SHA receipts. No S3 original image download, ROI re-inference, historical archive reload, or older main 887600-row Parquet rewrite. Mixed and partly complete acquisition source arms cannot estimate unweighted global white flower prevalence or confirm native/wild flowering stages.'
+          fi
