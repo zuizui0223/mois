@@ -108,6 +108,13 @@ def register(main_parquet, main_receipt, old_parquet, old_receipt,
     photo_ids.update(old_ids)
     observations.update(old_obs)
 
+    # Observation IDs can legitimately span four-photo-unit compute group boundaries
+    # INSIDE this one broad source arm. Distinct photo IDs are nevertheless mandatory.
+    # Reject observation reuse ACROSS different sampling source arms, not across
+    # an arbitrary file-scheduling boundary within the same original source.
+    historical_observations = set(observations)
+    broad_observations = set()
+    repeated_observations_across_compute_groups = 0
     group_results = []
     used_units = set()
     for group_dir in completed_groups:
@@ -143,8 +150,9 @@ def register(main_parquet, main_receipt, old_parquet, old_receipt,
         cols = ["photo_id", "observation_id", "morph", "measurement_status",
                 "source_arm", "selection_probability"]
         table, ids, obs = inspect_photo_ids(parquet_path, cols)
-        require(not photo_ids.intersection(ids) and not observations.intersection(obs),
-                "Original photo or original observation reused in source arms")
+        require(not photo_ids.intersection(ids)
+                and not historical_observations.intersection(obs),
+                "Original photo duplicated across compute groups or historical source-arm observation reused")
         require(len(table) == receipt.get("distinct_genuinely_completed_photo_ids")
                 and len(obs) == receipt.get("distinct_original_observation_ids")
                 and table.observation_id.notna().all(),
@@ -168,6 +176,8 @@ def register(main_parquet, main_receipt, old_parquet, old_receipt,
                 and receipt.get("hue_counts", {}).get("mixed_uncertain")
                    == int((~known).sum()),
                 "Original photo acquire/unknown/disposition counts disagree")
+        repeated_observations_across_compute_groups += len(broad_observations.intersection(obs))
+        broad_observations.update(obs)
         photo_ids.update(ids)
         observations.update(obs)
         group_results.append({
@@ -212,6 +222,10 @@ def register(main_parquet, main_receipt, old_parquet, old_receipt,
             expected_main[1]+expected_old[1]+new_classified,
         "distinct_original_observation_ids_across_all_arms":len(observations),
         "original_photo_or_observation_ID_cross_arm_overlap":0,
+        "same_broad_arm_observations_spanning_original_compute_groups":
+            repeated_observations_across_compute_groups,
+        "broad_arm_distinct_original_observations":len(broad_observations),
+        "same_source_arm_observation_reuse_across_compute_groups_is_legal":True,
         "all_original_photo_per_partition_SHA_receipts_verified":True,
         "original_FCP_roi_v4_model_attestations_reused_without_new_inference":True,
         "original_photo_images_fetched_by_this_registry":0,
