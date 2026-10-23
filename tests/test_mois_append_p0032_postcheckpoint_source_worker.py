@@ -111,7 +111,7 @@ class OriginalP0032WorkerTests(unittest.TestCase):
         photos = pd.read_parquet(file)
         self.assertEqual(set(photos["morph"]), {"white", "mixed_uncertain"})
         self.assertEqual(set(photos["photo_id"]), {"1234500", "1234501"})
-        self.assertEqual(len(receipt["original_work_units"]), 1)
+        self.assertEqual(len(receipt["original_completed_source_units"]), 1)
 
     def test_previously_sealed_partition_cannot_be_overwritten(self):
         self.seal()
