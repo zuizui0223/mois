@@ -37,6 +37,7 @@ jobs:
           python -m pip install -q pandas==2.2.3 pyarrow==19.0.1 numpy==2.1.3
           python -m py_compile scripts/acquisition/mois_tier06_all16_second8_broad_warm_photo_queue.py
           python -m unittest discover -s tests -p test_mois_tier06_all16_second8_broad_warm_photo_queue.py -v
+          python -m scripts.acquisition.mois_tier06_all16_second8_broad_warm_photo_queue --help | grep -F -- '--broad-previous-parquet'
           python -m unittest discover -s tests -p test_mois_warm_original_roi.py -v
           python -m pip install -q PyYAML==6.0.2
           python - <<'PY'
@@ -132,7 +133,7 @@ jobs:
           set -euo pipefail
           names=$(find counts -name all_42111_species_photo_opportunity_counts.csv -print -quit)
           test -n "$names"
-          python -m scripts.acquisition.mois_tier06_all16_broad_warm_photo_queue \
+          python -m scripts.acquisition.mois_tier06_all16_second8_broad_warm_photo_queue \
             --registry metadata/mois_all_original_photo_target_tiers_receipt.json \
             --routed routed \
             --main-parquet main-prior/combined_actual_photo_checkpoint.parquet \
