@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+import math
+import re
 import csv
 import json
 import os
@@ -27,6 +29,71 @@ ORIGINAL_SOURCE_SHA = "57592ce9f12c8abb0adb7ce2fda8252044ca9204caf295dbac73ecbf7
 ORIGINAL_RUN = 39919846830
 EXPECTED_SOURCE_ATTEMPTS = 8765
 EXPECTED_UPSTREAM_PHOTOS = 93_209_351
+
+
+
+def recorded_month(value):
+    """A recorded observation month is NOT a verified flowering month."""
+    text = str(value or "").strip()
+    m = re.fullmatch(r"([12]\d{3})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])", text)
+    return m.group(1) + "-" + m.group(2) if m else "unknown"
+
+
+def latitude_band(value):
+    """Geographic description only, not a native/wild status assertion."""
+    try:
+        v = float(value)
+    except (ValueError, TypeError):
+        return "unknown"
+    if not math.isfinite(v) or not -90 <= v <= 90:
+        return "unknown"
+    if -23.44 <= v <= 23.44:
+        return "tropical"
+    return "south_extratropical" if v < -23.44 else "north_extratropical"
+
+
+def original_photo_source_coverage(rows):
+    """Source-authenticated descriptive photo, taxon, date and latitude QA."""
+    months = Counter()
+    latitudes = Counter()
+    taxa_attempted, taxa_classified = set(), set()
+    labelled_observations = set()
+    taxa_by_month = {}
+    for row in rows:
+        morph = row["morph"]
+        source_taxon = str(row.get("inat_taxon_id") or "").strip()
+        obs = str(row["observation_id"])
+        is_classified = morph in HUES
+        months[(recorded_month(row.get("observed_on")), morph)] += 1
+        latitudes[(latitude_band(row.get("latitude")), morph)] += 1
+        if source_taxon:
+            taxa_attempted.add(source_taxon)
+        if is_classified:
+            labelled_observations.add(obs)
+            if source_taxon:
+                taxa_classified.add(source_taxon)
+                taxa_by_month.setdefault(recorded_month(row.get("observed_on")), set()).add(source_taxon)
+    return {
+        "schema": "mois_wave2_real_photo_source_taxonomy_time_latitude_coverage_v1",
+        "original_photo_attempts": len(rows),
+        "distinct_nominal_inat_taxon_ids_attempted": len(taxa_attempted),
+        "distinct_nominal_inat_taxon_ids_four_hue": len(taxa_classified),
+        "distinct_original_observations_four_hue": len(labelled_observations),
+        "recorded_observation_month_by_ROI_state": {
+            f"{month}|{hue}": n for (month, hue), n in sorted(months.items())
+        },
+        "latitude_band_by_ROI_state": {
+            f"{band}|{hue}": n for (band, hue), n in sorted(latitudes.items())
+        },
+        "distinct_nominal_taxon_ids_with_four_hue_by_recorded_month": {
+            month: len(taxa) for month, taxa in sorted(taxa_by_month.items())
+        },
+        "source_taxon_ids_are_not_species_validated": True,
+        "individual_photo_open_flowers_independently_verified": False,
+        "individual_native_wild_status_independently_verified": False,
+        "technical_unclassified_images_are_not_other_petal_hues": True,
+        "source_arm_partial_probability_not_global_flora_prevalence": True,
+    }
 
 
 def seal(source, workers, group, output, *,
@@ -99,6 +166,14 @@ def seal(source, workers, group, output, *,
         table = table.sort_values("photo_id", key=lambda s: s.map(int)).reset_index(drop=True)
         data_path = temp / "original_photo_ROIs.parquet"
         table.to_parquet(data_path, index=False, compression="zstd")
+        coverage = original_photo_source_coverage(data)
+        require(coverage["original_photo_attempts"] == len(data)
+                and sum(coverage["recorded_observation_month_by_ROI_state"].values()) == len(data)
+                and sum(coverage["latitude_band_by_ROI_state"].values()) == len(data),
+                "Original photo taxonomy/season/latitude source QA lost observations")
+        coverage_file = temp / "original_photo_source_coverage.json"
+        coverage_file.write_text(json.dumps(coverage, indent=2, sort_keys=True) + "\n",
+                                 encoding="utf-8")
         by_hue = Counter(row["morph"] for row in data)
         hue_path = temp / "group_original_photo_hue_counts.csv"
         with hue_path.open("w", newline="", encoding="utf-8") as f:
@@ -121,6 +196,8 @@ def seal(source, workers, group, output, *,
             "acquisition_failed": audit["acquisition_failed"],
             "acquired_but_unclassifiable": audit["unclassifiable_acquired"],
             "hue_counts": {hue: by_hue[hue] for hue in (*HUES, "mixed_uncertain")},
+            "original_source_taxon_IDs_four_hue": coverage["distinct_nominal_inat_taxon_ids_four_hue"],
+            "original_source_date_latitude_coverage_separately_QA_verified": True,
             "selection_probability_retained_for_each_original_photo": True,
             "frozen_original_FCP_model_and_output_verified": True,
             "all_source_photo_and_original_terminal_SHA_verified": True,
@@ -132,6 +209,7 @@ def seal(source, workers, group, output, *,
             "saved_file_sha256": {
                 data_path.name: sha(data_path),
                 hue_path.name: sha(hue_path),
+                coverage_file.name: sha(coverage_file),
             },
         }
         (temp / "original_photo_group_receipt.json").write_text(
