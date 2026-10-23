@@ -52,8 +52,9 @@ class OriginalP0032WorkerTests(unittest.TestCase):
             "work_units": 1,
             "worker_ids": [0],
             "group_ids": list(range(145)),
+            "colour_measured": False,
             "photo_shard_sha256": {"0": m.sha(source_file)},
-            "selection_probability": 0.0064 * 4 / 512,
+            "selection_probability": 0.0032,
         }
         (self.source / "manifest.json").write_text(json.dumps(manifest))
         terminal = []
@@ -119,7 +120,7 @@ class OriginalP0032WorkerTests(unittest.TestCase):
             self.seal()
 
     def test_unknown_group_source_or_sha_cannot_be_sealed(self):
-        with self.assertRaisesRegex(ValueError, "source SHA"):
+        with self.assertRaisesRegex(ValueError, "manifest SHA mismatch"):
             with patch.object(m,"BEGIN_GROUP",0):
                 m.seal(self.source, self.worker, 0, self.output,
                        expected_sha="0" * 64, expected_attempts=2)
