@@ -1,0 +1,171 @@
+name: MOIS p0032 only-new original ROI photo SHA delta no historical worker rereads
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_p0032_delta_only_sealed_real_pixels.py
+      - tests/test_mois_p0032_delta_only_sealed_real_pixels.py
+      - .github/workflows/mois-p0032-pixel-delta-only.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_p0032_delta_only_sealed_real_pixels.py
+      - tests/test_mois_p0032_delta_only_sealed_real_pixels.py
+      - .github/workflows/mois-p0032-pixel-delta-only.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-p0032-only-new-original-pixel-shards-from-39889436140
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate new-only original photo IDs, frozen artifact hashes, unknowns and all bash steps
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_p0032_delta_only_sealed_real_pixels.py
+          python -m unittest discover -s tests -p test_mois_p0032_delta_only_sealed_real_pixels.py -v
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess,yaml
+          doc=yaml.safe_load(Path('.github/workflows/mois-p0032-pixel-delta-only.yml').read_text())
+          n=0
+          for job in doc['jobs'].values():
+              for step in job['steps']:
+                  if 'run' not in step:continue
+                  check=subprocess.run(['bash','-n'],input=step['run'],text=True,capture_output=True)
+                  assert check.returncode==0,(step.get('name'),check.stderr)
+                  n+=1
+          assert n>=6
+          print('MOIS_SOURCE_DELTA_GH_BASH_SYNTAX_VALID',n)
+          PY
+  recover-only-genuinely-new-pixels:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      ORIGINAL_RUN: '39401484641'
+      BASELINE_TAG: mois-real-pixel-checkpoint-39889436140-v1
+      RELEASE_TAG: mois-p0032-genuine-original-RGB-delta-main39889436140-batch001-v1
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Refuse duplicate recovery and freeze ONLY new SHA-identical original worker ZIPs
+        id: gate
+        run: |
+          set -euo pipefail
+          echo 'ready=false' >> "$GITHUB_OUTPUT"
+          if gh release view "$RELEASE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'Already sealed these original-photo delta workers.'
+            exit 0
+          fi
+          mkdir -p old-checkpoint
+          gh release download "$BASELINE_TAG" --repo "$REPO" --dir old-checkpoint \
+            --pattern checkpoint_receipt.json
+          gh api --paginate --jq '.artifacts[]' \
+            "repos/$REPO/actions/runs/$ORIGINAL_RUN/artifacts?per_page=100" \
+            > p0032-live-artifact-records.jsonl
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from scripts.acquisition.mois_p0032_delta_only_sealed_real_pixels import (
+              ARTIFACT_PREFIX,SOURCE_RUN,fingerprinted_diff)
+          decoder=json.JSONDecoder()
+          text=Path('p0032-live-artifact-records.jsonl').read_text()
+          assets=[]
+          while text.strip():
+              text=text.lstrip()
+              obj,end=decoder.raw_decode(text)
+              text=text[end:]
+              if obj['name'].startswith(ARTIFACT_PREFIX):
+                  assets.append({k:obj[k] for k in (
+                      'id','name','digest','size_in_bytes','expired')})
+          frozen=dict(source_run_id=SOURCE_RUN,artifacts=assets)
+          old,new=fingerprinted_diff('old-checkpoint/checkpoint_receipt.json',frozen)
+          assert 1<=len(new)<=25,'Unexpected original photo group delta; audit wave separately'
+          Path('p0032_frozen_artifact_snapshot.json').write_text(
+              json.dumps(frozen,indent=2,sort_keys=True)+'\n')
+          Path('p0032_new_group_artifact_names.json').write_text(
+              json.dumps([x['name'] for x in new],indent=2)+'\n')
+          print('MOIS_P0032_GENUINE_ONLY_NEW_SHA_GROUPS',
+                json.dumps(dict(baseline=len(old['source_artifact_snapshots']['p0032']['artifacts']),
+                                new=len(new),groups=[x['name'] for x in new]),sort_keys=True))
+          PY
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+      - name: Download prior immutable original-photo ID ledger, frozen precolour source and new group ZIPs ONLY
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          gh release download "$BASELINE_TAG" --repo "$REPO" --dir prior \
+            --pattern combined_actual_photo_checkpoint.parquet \
+            --pattern checkpoint_receipt.json
+          cmp old-checkpoint/checkpoint_receipt.json prior/checkpoint_receipt.json
+          gh run download "$ORIGINAL_RUN" --repo "$REPO" \
+            --name mois-93m-p0032-precolour-observation --dir source
+          python - <<'PY'
+          import json,subprocess
+          from pathlib import Path
+          artifacts=json.loads(Path('p0032_new_group_artifact_names.json').read_text())
+          assert artifacts and len(set(artifacts))==len(artifacts)
+          args=['gh','run','download','39401484641','--repo','zuizui0223/mois',
+                '--dir','workers']
+          for name in artifacts:
+              args.extend(['--name',name])
+          subprocess.run(args,check=True)
+          if len(artifacts)>1:
+              actual={d.name for d in Path('workers').iterdir() if d.is_dir()}
+              assert actual==set(artifacts),'Original downloaded group receipts do not match signed snapshot'
+          print('MOIS_DOWNLOAD_ONLY_NEW_P0032_ORIGINAL_RGB_WORKER_ARCHIVES',len(artifacts))
+          PY
+      - name: Verify newly sealed actual original-photo pixels and previous photo ID nonoverlap
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_p0032_delta_only_sealed_real_pixels \
+            --prior-parquet prior/combined_actual_photo_checkpoint.parquet \
+            --prior-receipt prior/checkpoint_receipt.json \
+            --source source --workers workers \
+            --frozen-artifacts p0032_frozen_artifact_snapshot.json \
+            --output real-delta
+          cp p0032_frozen_artifact_snapshot.json real-delta/
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-p0032-authentic-new-only-original-RGB-pixel-delta
+          path: real-delta/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish only genuine new completed p0032 original pixels as an immutable append-only release
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$RELEASE_TAG" --repo "$REPO" --dir old \
+              --pattern p0032_signed_incremental_original_photo_receipt.json
+            cmp old/p0032_signed_incremental_original_photo_receipt.json \
+              real-delta/p0032_signed_incremental_original_photo_receipt.json
+          else
+            gh release create "$RELEASE_TAG" real-delta/*.json real-delta/*.parquet real-delta/*.csv \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS real original photo p0032 incremental ROI delta after checkpoint39889436140' \
+              --notes 'Only *NEW*, independently source/ZIP/terminal SHA-verified p0032 completed original-photo worker groups that were absent from the previous 887600-photo source checkpoint. Historic p0004/p0008/p0016/geo05/shadow worker ZIPs are NOT redownloaded, all old pixel rows are preserved without rewriting their Parquet. Frozen original FCP ROI-v4 method and hue/technical-missing statuses retained, original photo IDs must be disjoint from prior 887600. This is a separate append-only signed new-pixel delta, not the full checkpoint and not an unbiased worldwide flowering-photo prevalence.'
+          fi
