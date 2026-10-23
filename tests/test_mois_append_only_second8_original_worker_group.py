@@ -35,6 +35,8 @@ class AppendOnlySecondEightOriginalTests(unittest.TestCase):
                 "observer_id": "observer",
                 "source_arm": "global93m_tier06_all16_buckets004to011_broad_warm_R2",
                 "selection_probability": format(0.0064 * 4 / 512, ".17g"),
+                "observed_on": "2025-06-18" if i == 0 else "2025-12-21",
+                "latitude": "37.2" if i == 0 else "-15.1",
                 "shard": "0",
             })
         def csv_write(file, rows):
@@ -122,6 +124,32 @@ class AppendOnlySecondEightOriginalTests(unittest.TestCase):
         self.assertEqual(set(photos["morph"]), {"white", "mixed_uncertain"})
         self.assertEqual(set(photos["photo_id"]), {"1234500", "1234501"})
         self.assertEqual(len(receipt["original_work_units"]), 1)
+        coverage_file = self.output / "original_photo_source_coverage.json"
+        self.assertEqual(receipt["saved_file_sha256"][coverage_file.name], m.sha(coverage_file))
+        coverage = json.loads(coverage_file.read_text())
+        self.assertEqual(coverage["original_photo_attempts"], 2)
+        self.assertEqual(coverage["distinct_nominal_inat_taxon_ids_four_hue"], 1)
+        self.assertEqual(coverage["distinct_original_observations_four_hue"], 1)
+        self.assertEqual(coverage["recorded_observation_month_by_ROI_state"]["2025-06|white"], 1)
+        self.assertEqual(coverage["latitude_band_by_ROI_state"]["tropical|mixed_uncertain"], 1)
+        self.assertFalse(coverage["individual_photo_open_flowers_independently_verified"])
+
+
+    def test_missing_month_invalid_latitude_are_unknown_not_missing_colour(self):
+        rows=[
+            {"photo_id":"9","observation_id":"A","inat_taxon_id":"1",
+             "morph":"white","observed_on":"", "latitude":"nan"},
+            {"photo_id":"10","observation_id":"B","inat_taxon_id":"2",
+             "morph":"mixed_uncertain","observed_on":"2025-22-15", "latitude":"120"},
+        ]
+        d=m.original_photo_source_coverage(rows)
+        self.assertEqual(d["original_photo_attempts"],2)
+        self.assertEqual(d["recorded_observation_month_by_ROI_state"]["unknown|white"],1)
+        self.assertEqual(d["recorded_observation_month_by_ROI_state"]["unknown|mixed_uncertain"],1)
+        self.assertEqual(d["latitude_band_by_ROI_state"]["unknown|white"],1)
+        self.assertEqual(d["latitude_band_by_ROI_state"]["unknown|mixed_uncertain"],1)
+        self.assertEqual(d["distinct_nominal_inat_taxon_ids_four_hue"],1)
+        self.assertFalse(d["individual_native_wild_status_independently_verified"])
 
     def test_previously_sealed_partition_cannot_be_overwritten(self):
         self.seal()
