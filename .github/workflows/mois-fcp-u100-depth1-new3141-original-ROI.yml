@@ -15,6 +15,8 @@ on:
   workflow_run:
     workflows:
       - MOIS new 93m balanced onephoto ROI-v4 warm 8-runner acquisition
+      # Last original photo ROI group release can finish after the K1 matrix.
+      - MOIS FCP K1 immediately append completed source-verified original ROI groups
     types: [completed]
     branches: [main]
   schedule:
@@ -27,6 +29,15 @@ concurrency:
   cancel-in-progress: false
 jobs:
   frozen-source-probability-tests:
+    # Heavy PyArrow/ROI source tests run for PR/push, or after ALL K1
+    # original image outputs have actually been SHA-sealed. Idle scheduled
+    # and post-append checks do not reinstall model-analysis dependencies.
+    needs: original-source-only
+    if: >-
+      always() &&
+      (github.event_name == 'pull_request' || github.event_name == 'push' ||
+       (needs.original-source-only.result == 'success' &&
+        needs.original-source-only.outputs.ready == 'true'))
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -51,8 +62,13 @@ jobs:
           print('MOIS_FCP_FULL93M_U100_3141_ALL_BASH_STEPS_VALID',len(scripts))
           PY
   original-source-only:
-    needs: frozen-source-probability-tests
-    if: github.event_name != 'pull_request'
+    # First perform the cheap signed K1 completion and 75-release metadata gate.
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
+        github.event.workflow_run.head_branch == 'main'))
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     outputs:
@@ -183,8 +199,11 @@ jobs:
           retention-days: 90
           if-no-files-found: error
   true-original-image-ROI:
-    needs: original-source-only
-    if: github.event_name != 'pull_request' && needs.original-source-only.outputs.ready == 'true'
+    needs: [original-source-only, frozen-source-probability-tests]
+    if: >-
+      github.event_name != 'pull_request' &&
+      needs.original-source-only.outputs.ready == 'true' &&
+      needs.frozen-source-probability-tests.result == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 210
     # Runs only AFTER all 75 parent K1 original-image groups succeeded.
@@ -232,8 +251,12 @@ jobs:
           retention-days: 90
           if-no-files-found: warn
   seal-new-photo-FCP-taxon-coverage:
-    needs: [original-source-only,true-original-image-ROI]
-    if: github.event_name != 'pull_request' && needs.original-source-only.outputs.ready == 'true'
+    needs: [original-source-only, frozen-source-probability-tests, true-original-image-ROI]
+    if: >-
+      github.event_name != 'pull_request' &&
+      needs.original-source-only.outputs.ready == 'true' &&
+      needs.frozen-source-probability-tests.result == 'success' &&
+      needs.true-original-image-ROI.result == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     permissions:
