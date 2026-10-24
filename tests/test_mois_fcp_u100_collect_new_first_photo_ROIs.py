@@ -120,7 +120,8 @@ class OriginalFCPPrefixOnePhotoTests(unittest.TestCase):
         self.assertEqual(len(df),2)
 
     def test_wrong_original_FCP_photo_sampling_probability_is_rejected(self):
-        d=list(csv.DictReader(self.photos.open(newline="")))
+        with self.photos.open(newline="") as stream:
+            d=list(csv.DictReader(stream))
         d[0]["selection_probability"]="0.1"
         self.csv_write(self.photos,d)
         rec=json.loads(self.receipt.read_text())
@@ -131,7 +132,8 @@ class OriginalFCPPrefixOnePhotoTests(unittest.TestCase):
         self.assertFalse(self.output.exists())
 
     def test_two_photo_IDs_for_same_fcp_taxon_fail(self):
-        d=list(csv.DictReader(self.photos.open(newline="")))
+        with self.photos.open(newline="") as stream:
+            d=list(csv.DictReader(stream))
         d[1]["inat_taxon_id"]="1"
         self.csv_write(self.photos,d)
         rec=json.loads(self.receipt.read_text())
@@ -152,11 +154,12 @@ class OriginalFCPPrefixOnePhotoTests(unittest.TestCase):
 
     def test_fcp_source_manifest_tampering_fails(self):
         self.manifest.write_text("{}")
-        with self.assertRaisesRegex(ValueError,"Precolour FCP first-photo actual work manifest"):
+        with self.assertRaisesRegex(ValueError,"FCP first-photo source not the pinned"):
             self.run_collect()
 
     def test_frozen_photo_prefix_probability_1_over_N_M_gate(self):
-        d=list(csv.DictReader(self.prefix.open(newline="")))
+        with self.prefix.open(newline="") as stream:
+            d=list(csv.DictReader(stream))
         d[0]["depth1_joint_original_photo_inclusion_probability"]="0.1"
         self.csv_write(self.prefix,d)
         with self.assertRaisesRegex(ValueError,"1/N/M changed"):
