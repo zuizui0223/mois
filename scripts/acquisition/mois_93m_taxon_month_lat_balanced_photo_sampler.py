@@ -143,7 +143,7 @@ def import_photo(db, row):
     require(cursor.rowcount == 1, "Conflicting source metadata for original observation")
 
 
-def load_signed_group(db, root, group, *, pinned=PINNED):
+def load_signed_group(db, root, group, *, pinned=PINNED, expected_full=EXPECTED_PHOTOS):
     """Verify all 512 original source-bucket bytes before counting any photos."""
     number = f"{group:02d}"
     receipt_path = Path(root) / f"group{number}" / "routing_receipt.json"
@@ -157,7 +157,7 @@ def load_signed_group(db, root, group, *, pinned=PINNED):
             and r.get("source_tier") == SOURCE_TIER
             and r.get("source_group") == group
             and r.get("compute_bucket_count") == 512
-            and r.get("full_original_source_photo_IDs") == EXPECTED_PHOTOS
+            and r.get("full_original_source_photo_IDs") == expected_full
             and r.get("native_status_not_hard_filtered") is True
             and r.get("images_downloaded") == 0
             and r.get("flower_pixels_inferred") == 0
@@ -283,7 +283,7 @@ def select_candidates(db, taxon_names, k, max_candidates):
             "phase2_observation_inclusion_probability":format(q_obs, ".17g"),
             "conditional_single_photo_probability":format(q_photo, ".17g"),
             "joint_photo_selection_probability":format(joint, ".17g"),
-            "source_arm":SOURCE_ARM,
+            "source_arm":f"mois_global93m_tier06_taxon_month_lat_probability_onephoto_K{k}_v1",
             "photo_source_disposition":"supported" if ext else "unsupported_original_extension",
             "photo_url_large": (
                 f"https://inaturalist-open-data.s3.amazonaws.com/photos/{pid}/large.{ext}"
@@ -336,7 +336,7 @@ def plan(registry, route, taxa_file, output, *, k=1,
             create_database(db)
             groups=[]
             for group in range(SOURCE_GROUPS):
-                groups.append(load_signed_group(db,route,group,pinned=pinned))
+                groups.append(load_signed_group(db,route,group,pinned=pinned,expected_full=expected_photos))
                 db.commit()
             photo_total=sum(x["original_photos"] for x in groups)
             require(photo_total==expected_tier,
@@ -393,14 +393,20 @@ def plan(registry, route, taxa_file, output, *, k=1,
                         "photo_license":row["photo_license"],
                         "photo_url_large":row["photo_url_large"],
                         "image_filename":mid+".jpg",
-                        "source_arm":SOURCE_ARM,
+                        "source_arm":f"mois_global93m_tier06_taxon_month_lat_probability_onephoto_K{k}_v1",
                         "selection_probability":row["joint_photo_selection_probability"],
                         "source_snapshot_date":"2026-09-27","shard":str(unit),
                     })
             sha_by_unit[str(unit)]=sha256(file)
         work_units=len(sha_by_unit)
         summary={
-            "schema":SCHEMA,
+            "schema": "mois_full_source_observation_sampling_cohort_v1",
+            "sampling_schema": SCHEMA,
+            "colour_measured": False,
+            "full_frame_photo_ids": expected_photos,
+            "new_photo_attempts_planned": len(supported),
+            "selection_probability": None,
+            "selection_probability_is_per_photo_in_signed_shards": True,
             "all_upstream_original_photo_IDs":expected_photos,
             "original_named_plant_taxa":expected_taxa,
             "source_original_tier":SOURCE_TIER,
@@ -432,7 +438,7 @@ def plan(registry, route, taxa_file, output, *, k=1,
             "worker_ids":list(range(work_units)),
             "original_model_batch_size":original_batch_size,
             "units_per_group":4,
-            "source_arm":SOURCE_ARM,
+            "source_arm":f"mois_global93m_tier06_taxon_month_lat_probability_onephoto_K{k}_v1",
             "source_sample_decided_without_photo_pixels":True,
             "all_source_observations_have_strictly_positive_phase2_probability":True,
             "all_photo_ids_have_strictly_positive_conditional_photo_selection_probability":True,
@@ -446,8 +452,9 @@ def plan(registry, route, taxa_file, output, *, k=1,
             "missing_image_ROI_nonresponse_must_be_adjusted_separately":True,
             "same_source_arm_photos_cannot_be_naively_pooled_with_other_designs":True,
         }
-        (temp/"sampling_receipt.json").write_text(
-            json.dumps(summary,indent=2,sort_keys=True)+"\n",encoding="utf-8")
+        payload=json.dumps(summary,indent=2,sort_keys=True)+"\n"
+        (temp/"sampling_receipt.json").write_text(payload,encoding="utf-8")
+        (temp/"manifest.json").write_text(payload,encoding="utf-8")
         # The SQLite source photo/observation index is a temporary calculation
         # aid: outputs already conserve every source photo count and strata.
         (temp/"source_observation_multiplicity.sqlite").unlink(missing_ok=True)
