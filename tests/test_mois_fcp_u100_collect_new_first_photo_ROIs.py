@@ -255,6 +255,28 @@ class OriginalFCPPrefixOnePhotoTests(unittest.TestCase):
         self.assertIn("needs.true-original-image-ROI.result == 'success'",seal["if"])
         self.assertIn("needs.frozen-source-probability-tests.result == 'success'",seal["if"])
 
+    def test_expensive_FCP_image_workers_require_independent_3141_source_preflight(self):
+        import yaml
+        workflow=Path(__file__).resolve().parents[1]/".github/workflows"/(
+            "mois-fcp-u100-depth1-new3141-original-ROI.yml")
+        jobs=yaml.safe_load(workflow.read_text(encoding="utf-8"))["jobs"]
+        source_gate=next(step["run"] for step in jobs["original-source-only"]["steps"]
+                         if step.get("id")=="gate")
+        self.assertIn("PREFLIGHT_TAG: mois-FCP-U100-20242-taxa-only3141-photo-K1-disjoint-preflight-v1",
+                      workflow.read_text(encoding="utf-8"))
+        self.assertIn("7920cdefb4dd1f5a35def3cdf3fb3c1d19e86e87d4f8db8dab08645e37542eef",
+                      source_gate)
+        self.assertIn("MOIS_FCP_U100_3141_K1_DISJOINT_SOURCE_SAFETY_PREFLIGHT_SHA_REUSED",
+                      source_gate)
+        self.assertIn("never_before_measured_FCP_U100_original_photo_ROI_target_IDs",source_gate)
+        self.assertIn("new_original_photos_overlap_with_K1",source_gate)
+        self.assertIn("all_photo_inclusion_probabilities_individually_source_checked",source_gate)
+        self.assertTrue(source_gate.index('test "$sealed" -eq 75') <
+                        source_gate.index('gh release download "$PREFLIGHT_TAG"') <
+                        source_gate.index('echo ready=true >> "$GITHUB_OUTPUT"'))
+        self.assertIn("needs.frozen-source-probability-tests.result == 'success'",
+                      jobs["true-original-image-ROI"]["if"])
+
     def test_already_published_outcome_is_immutable(self):
         self.run_collect()
         with self.assertRaisesRegex(ValueError,"must not be overwritten"):
