@@ -1,0 +1,166 @@
+name: MOIS full93m balanced original-photo observation probability source K1
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_93m_taxon_month_lat_balanced_photo_sampler.py
+      - tests/test_mois_93m_taxon_month_lat_balanced_photo_sampler.py
+      - .github/workflows/mois-93m-balanced-onephoto-source-only.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_93m_taxon_month_lat_balanced_photo_sampler.py
+      - tests/test_mois_93m_taxon_month_lat_balanced_photo_sampler.py
+      - .github/workflows/mois-93m-balanced-onephoto-source-only.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-93m-full-tier06-metadata-only-balanced-K1-source-v1
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert original photo design probabilities and immutability before any photo fetch
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/acquisition/mois_93m_taxon_month_lat_balanced_photo_sampler.py
+          python -m unittest discover -s tests -p test_mois_93m_taxon_month_lat_balanced_photo_sampler.py -v
+          python -m pip install -q PyYAML==6.0.2
+          python - <<'PY'
+          import yaml,subprocess
+          d=yaml.safe_load(open('.github/workflows/mois-93m-balanced-onephoto-source-only.yml'))
+          commands=[s['run'] for j in d['jobs'].values() for s in j['steps'] if 'run' in s]
+          assert len(commands)>=5
+          for shell in commands:
+              p=subprocess.run(['bash','-n'],input=shell,text=True,capture_output=True)
+              assert p.returncode==0,p.stderr
+          print('MOIS_BALANCED_ORIGINAL_PHOTO_ALL_SOURCE_ONLY_SHELL_SYNTAX_VALID',len(commands))
+          PY
+  signed-597070-original-source-sampling:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_TAG: mois-complete-93209351-original-photo-target-tiers-v1
+      RESULT_TAG: mois-full93m-tier06-original-taxon-month-lat-onephoto-K1-probability-v1
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Source SHA gate - skip already completed reproducible sampling cohort
+        id: gate
+        run: |
+          set -euo pipefail
+          echo ready=false >> "$GITHUB_OUTPUT"
+          if gh release view "$RESULT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'Immutable full-tier stratified observation/photo source already published.'
+            exit 0
+          fi
+          gh release view "$SOURCE_TAG" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          echo ready=true >> "$GITHUB_OUTPUT"
+      - name: Read only pre-existing all16 signed original-photo metadata source groups, no original photo bytes
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release download "$SOURCE_TAG" --repo "$REPO" --dir original-source \
+            --pattern mois_all_original_photo_target_tiers_receipt.json
+          for group in $(seq -w 0 15); do
+            tag="mois-signed-tier06-group$group-512-compute-buckets-v1"
+            gh release download "$tag" --repo "$REPO" --dir "routed/group$group" \
+              --pattern routing_receipt.json \
+              --pattern "tier06-group$group-512-source-buckets.tar"
+          done
+          gh run download 38749681793 --repo zuizui0223/fcp \
+            --name fcp-42111-real-source-photo-opportunity-counts-20260927-complete-not-colours \
+            --dir original-taxa
+      - name: Retain all 597070 original photos as source; extract one observation and one original photo with known positive probability
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          taxa=$(find original-taxa -name all_42111_species_photo_opportunity_counts.csv -print -quit)
+          test -n "$taxa"
+          python -m scripts.acquisition.mois_93m_taxon_month_lat_balanced_photo_sampler \
+            --registry original-source/mois_all_original_photo_target_tiers_receipt.json \
+            --route routed --taxa-file "$taxa" --k 1 \
+            --max-candidates 120000 --output balanced
+      - name: Independent signed metadata receipt, source accounting and nested probability conservation
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import csv,hashlib,json
+          base=Path('balanced')
+          a=json.loads((base/'sampling_receipt.json').read_text())
+          b=json.loads((base/'manifest.json').read_text())
+          assert a==b
+          assert a['sampling_schema']=='mois_93m_tier06_taxon_month_lat_stratified_onephoto_v1'
+          assert a['schema']=='mois_full_source_observation_sampling_cohort_v1'
+          assert a['all_upstream_original_photo_IDs']==93209351
+          assert a['original_named_plant_taxa']==42111
+          assert a['original_tier06_source_photo_IDs_accounted']==597070
+          assert a['sampled_per_stratum_K']==1
+          assert a['sampled_distinct_original_observations']==a['original_tier06_taxon_month_latitude_strata']
+          assert 0<a['supported_photo_attempt_targets']<=120000
+          assert a['selection_probability'] is None and not a['colour_measured']
+          assert a['no_original_image_downloads'] and a['no_ROI_colour_inference']
+          ids=set();observations=set();supported=0
+          with (base/'selected_observation_photo_probability_sample.csv').open(newline='') as f:
+              for row in csv.DictReader(f):
+                  pid,uuid=row['photo_id'],row['observation_id']
+                  assert pid not in ids and uuid not in observations
+                  ids.add(pid);observations.add(uuid)
+                  m=int(row['photos_in_original_observation'])
+                  n=int(row['observations_in_original_source_stratum'])
+                  p=float(row['joint_photo_selection_probability'])
+                  assert 0<p<=0.0064 and abs(p/(0.0064/m/n)-1)<1e-12
+                  supported+=row['photo_source_disposition']=='supported'
+          assert len(ids)==a['sampled_distinct_original_observations']
+          assert supported==a['supported_photo_attempt_targets']
+          for u,digest in a['photo_shard_sha256'].items():
+              path=base/'shards'/f'shard-{int(u):03d}.csv'
+              assert hashlib.sha256(path.read_bytes()).hexdigest()==digest
+          print('MOIS_FULL_TIER06_BALANCED_ORIGINAL_PHOTO_REDUCTION_MEASURED',
+                json.dumps(dict(source_photo_ids=597070,
+                                source_observations=a['original_tier06_source_observations'],
+                                source_taxon_month_lat_strata=a['original_tier06_taxon_month_latitude_strata'],
+                                independently_selected_photo_observations=len(ids),
+                                original_roi_targets=supported,
+                                saved_roi_attempt_factor=round(597070/supported,3)),
+                           sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-full-tier06-93m-probability-balanced-original-photo-source-K1
+          path: balanced/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish 93m-source probabilities and frozen 256-photo target shards ONLY; no ROI inferencing
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          tar -cf balanced-original-photo-source-shards.tar -C balanced shards/
+          gh release create "$RESULT_TAG" \
+            balanced/manifest.json balanced/sampling_receipt.json \
+            balanced/selected_observation_photo_probability_sample.csv \
+            balanced/unsupported_original_photo_source_outcomes.csv \
+            balanced-original-photo-source-shards.tar \
+            --repo "$REPO" --target "$GITHUB_SHA" \
+            --title 'MOIS full93m source tier06 balanced original photo taxon-month-latitude K1' \
+            --notes 'Source-only probabilistic sampling design, no photo pixels or new flower hue measurements. All 597070 original photo IDs retained in signed tier06 source from 93209351 global upstream photo opportunities and 42111 nominal plant taxa. One uniformly ranked original photograph per observation, then one independently ranked observation per nominal taxon ID x recorded month x latitude band, with strictly positive nested phase1/source, phase2/stratum and one-photo/observation probabilities. Unsupported formats remain technical unknowns with nonzero design probability. Selected frozen FCP 256-photo source shards are NOT launched until deduplication against all actually measured photo and observation IDs. No native hard filtering; recorded observation month not verified flowering stage. Missing-ROI and taxonomic/observational bias need separate analysis, and source arms must not be naively pooled for global white-flower estimates.'
