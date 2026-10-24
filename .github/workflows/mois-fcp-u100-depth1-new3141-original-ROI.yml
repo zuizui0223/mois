@@ -95,7 +95,7 @@ jobs:
           import re
           from pathlib import Path
           expression=re.compile(
-              r'mois-full93m-balanced-onephoto-K1-original-RGB-append-group-(\\d+)-v1\\Z')
+              r'mois-full93m-balanced-onephoto-K1-original-RGB-append-group-(\d+)-v1\Z')
           groups=set()
           for line in Path('k1-immutable-published-tags.txt').read_text().splitlines():
               tag=line.strip()
