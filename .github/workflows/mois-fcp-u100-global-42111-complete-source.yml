@@ -1,0 +1,153 @@
+name: MOIS FCP full93m exact U100 source globally complete 42111 nominal taxa
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_u100_full93m_global_eligibility_ledger.py
+      - tests/test_mois_fcp_u100_full93m_global_eligibility_ledger.py
+      - .github/workflows/mois-fcp-u100-global-42111-complete-source.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_u100_full93m_global_eligibility_ledger.py
+      - tests/test_mois_fcp_u100_full93m_global_eligibility_ledger.py
+      - .github/workflows/mois-fcp-u100-global-42111-complete-source.yml
+  workflow_run:
+    workflows:
+      - MOIS FCP-U100 full 93m top100 independent-photo-source 14-tier pipeline
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '44 */3 * * *'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-fcp-u100-global42111-original-photo-source-summary-idempotent
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prove full16 signature reconciliation, photo-count conservation and shell syntax
+        run: |
+          set -euo pipefail
+          python -m pip install -q ruff==0.14.2 PyYAML==6.0.2
+          ruff check --select F821 scripts/acquisition/mois_fcp_u100_full93m_global_eligibility_ledger.py
+          python -m unittest discover -s tests -p test_mois_fcp_u100_full93m_global_eligibility_ledger.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          d=yaml.safe_load(open('.github/workflows/mois-fcp-u100-global-42111-complete-source.yml'))
+          blocks=[step['run'] for job in d['jobs'].values() for step in job['steps'] if 'run' in step]
+          assert len(blocks)>=5
+          for source in blocks:
+              r=subprocess.run(['bash','-n'],input=source,capture_output=True,text=True)
+              assert r.returncode==0,r.stderr
+          print('MOIS_GLOBAL93M_FCP_U100_ALL_BASH_SYNTAX_VALID',len(blocks))
+          PY
+  actual-42111-original-taxon-source-coverage:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      RELEASE_TAG: mois-full-93209351-FCP-U100-complete-42111-original-photo-source-v1
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require ALL 16 distinct original 14-tier source groups, skip already published complete result
+        id: gate
+        run: |
+          set -euo pipefail
+          echo ready=false >> "$GITHUB_OUTPUT"
+          if gh release view "$RELEASE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'Already SHA-published exact 42111-taxonomic original-photo FCP source frame.'
+            exit 0
+          fi
+          complete=0
+          for group in $(seq -w 0 15); do
+            tag="mois-global93m-FCP-U100-14tier-original-source-group$group-v1"
+            if gh release view "$tag" --repo "$REPO" --json isDraft --jq .isDraft 2>/dev/null | grep -qx false; then
+              complete=$((complete+1))
+            fi
+          done
+          if [ "$complete" -ne 16 ]; then
+            echo "Only $complete/16 original source metadata groups published; no globally complete census yet."
+            exit 0
+          fi
+          echo ready=true >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Retrieve ONLY 16 signed FCP original source availability CSVs/receipts (no 93m re-enumeration)
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          for group in $(seq -w 0 15); do
+            tag="mois-global93m-FCP-U100-14tier-original-source-group$group-v1"
+            gh release download "$tag" --repo "$REPO" --dir "group$group" \
+              --pattern fcp_U100_full93m_group_source_receipt.json \
+              --pattern fcp_original100_complete_nominal_taxa_source_eligibility.csv
+          done
+      - name: Prove exactly 93209351 original photo IDs and all 42111 taxon source eligibility counts
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_fcp_u100_full93m_global_eligibility_ledger \
+            --group-dir group00 group01 group02 group03 group04 group05 group06 group07 \
+                        group08 group09 group10 group11 group12 group13 group14 group15 \
+            --output complete
+          python - <<'PY'
+          from pathlib import Path
+          import csv,json
+          r=json.loads(Path('complete/fcp_U100_all42111_nominal_taxa_full93m_source_receipt.json').read_text())
+          assert r['schema']=='mois_all_42111_taxa_FCP_U100_full_93209351_source_eligibility_v1'
+          assert r['source_all_original_photo_metadata_IDs']==93209351
+          assert r['all_source_nominal_taxon_IDs']==42111
+          assert r['source_original_photo_IDs_reconciled']==93209351
+          assert len(r['group_original_photo_SHA_proof'])==16
+          assert 0<r['source_FCP_style_exact100_photo_observation_taxa']<=42111
+          assert r['source_FCP_style_exact100_observation_photo_targets']==100*r['source_FCP_style_exact100_photo_observation_taxa']
+          assert r['photo_ROI_pixels_opened_or_reinferred']==0
+          with open('complete/full42111_nominal_taxa_original_U100_source_eligibility.csv',newline='') as f:
+              rows=list(csv.DictReader(f))
+          assert len(rows)==42111
+          assert sum(int(z['full_93m_original_photo_count']) for z in rows)==93209351
+          assert sum(int(z['FCP_U100_source_eligible']=='true') for z in rows)==r['source_FCP_style_exact100_photo_observation_taxa']
+          print('MOIS_FULL93M_FCP_U100_COMPLETE_REAL_SOURCE_CENSUS',
+                json.dumps(dict(source_original_photo_IDs=93209351,
+                                source_nominal_taxa=42111,
+                                exact_U100_original_photo_eligible_taxa=r['source_FCP_style_exact100_photo_observation_taxa'],
+                                original_photo_U100_opportunities=r['source_FCP_style_exact100_observation_photo_targets'],
+                                source_original_distinct_observations=r['source_original_distinct_observations'],
+                                prospective_roi_inference_this_job=0),
+                           sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-full93m-FCP-U100-complete-42111-source-only-eligibility
+          path: complete/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish immutable, all-42111-taxon FCP100 real original photo SOURCE selection inventory
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_TAG" \
+            complete/fcp_U100_all42111_nominal_taxa_full93m_source_receipt.json \
+            complete/full42111_nominal_taxa_original_U100_source_eligibility.csv \
+            --repo "$REPO" --target "$GITHUB_SHA" \
+            --title 'MOIS full 93209351 metadata FCP-U100 exact100 independent observation per taxon complete' \
+            --notes 'ALL 93209351 photo-ID METADATA opportunities, 42111 nominal plant taxa, 14 SHA-signed disjoint original observation-hash source tiers x 16 disjoint taxon-modulo group receipts checked. This metadata-only FCP-style U100 roster explicitly retains exact100 source-eligible and <100/zero observation source taxa. The 100 eligible photo opportunities per source taxon have independent original observation IDs and conditional photo inclusion probabilities, but cannot be interpreted as 100 confirmed blooming petals or globally representative white-flower frequencies. Existing genuine FCP 447500 and MOIS ~0.9m original ROI-v4 outcomes MUST be reused/photo-deduplicated before any new image inference. Both existing broad taxon-month-lat sample and these FCP species-depth opportunities remain separate acquisition/analysis designs. This source-only release opened ZERO original images and inferred ZERO flower colours.'
