@@ -58,13 +58,13 @@ jobs:
           import json, os, subprocess
           from pathlib import Path
           from scripts.acquisition.mois_checkpoint_fresh_artifact_gate import (
-              WAVES, PREFIXES, latest_checkpoint_tag, decide_checkpoint,
+              WAVES, PREFIXES, latest_checkpoint_tag_from_gh, decide_checkpoint,
           )
           repo=os.environ['REPO']
           def get_json(path):
               return json.loads(subprocess.check_output(['gh','api',path],text=True))
-          all_releases=get_json(f'repos/{repo}/releases?per_page=100')
-          tag=latest_checkpoint_tag(all_releases)
+          # Never mistake a full first page of worker releases for missing history.
+          tag=latest_checkpoint_tag_from_gh(repo)
           previous=None
           if tag is not None:
               prior=Path('last-checkpoint')
