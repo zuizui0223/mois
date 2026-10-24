@@ -62,7 +62,7 @@ def seal(source, workers, group, output, *,
             and plan.get("full_frame_photo_ids")==93209351
             and plan.get("source_precolour_balanced_manifest_SHA256")==PARENT_SOURCE_SHA
             and plan.get("new_photo_attempts_planned")==expected_new
-            and plan.get("sampled_distinct_original_observations")==expected_selected
+            and plan.get("all_balanced_selected_original_observations")==expected_selected
             and plan.get("reused_original_photo_ids")==expected_reused
             and plan.get("original_photo_source_probabilities_unchanged_by_prior_pixel_reuse") is True
             and plan.get("images_downloaded_by_this_source_bridge")==0
