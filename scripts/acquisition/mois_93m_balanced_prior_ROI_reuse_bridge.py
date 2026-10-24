@@ -24,6 +24,7 @@ import csv
 import hashlib
 import json
 import math
+import re
 from pathlib import Path
 import shutil
 import tempfile
@@ -77,6 +78,39 @@ LEGACY_OBSERVATION_MISSING=frozenset(("", "nan", "none", "null", "na", "n/a"))
 def prior_observation_unknown(value):
     """Only a genuinely missing legacy UUID may be backfilled from signed 93m source."""
     return str(value).strip().lower() in LEGACY_OBSERVATION_MISSING
+
+
+SIGNED_UUID_FORMAT = re.compile(
+    r"^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$"
+)
+
+
+def old_numeric_vs_signed_UUID_reference(old_observation, signed_observation):
+    """Evidence of *two identifier types*, not an independently verified crosswalk.
+
+    An original iNaturalist photo ID is unique in the source-SQLite primary
+    key. The previous photo's numeric observation identifier cannot equal the
+    authentic signed observation UUID, even when referring to the SAME photo.
+    Reuse the existing PHOTO ROI by exact photo ID, but never claim these
+    distinct observation identifiers establish an independent biological unit.
+    """
+    old=str(old_observation).strip()
+    newer=str(signed_observation).strip()
+    return (bool(old) and old.isdecimal()
+            and SIGNED_UUID_FORMAT.fullmatch(newer) is not None)
+
+
+def prior_source_observation_relation(old_observation, signed_observation):
+    """Only exact UUID, genuinely missing, or diagnosed numeric vs UUID."""
+    if old_observation==signed_observation:
+        return "exact_observation_ID_match"
+    if prior_observation_unknown(old_observation):
+        return "missing_legacy_ID_recovered_from_signed_photo_source"
+    if old_numeric_vs_signed_UUID_reference(old_observation,signed_observation):
+        return "old_numeric_ID_vs_signed_UUID_same_photo_ID_unverified_crosswalk"
+    raise ValueError(
+        "Reused genuine photo ID has conflicting original observation UUID"
+    )
 
 
 def prior_original_photo_index(sources, expected_counts):
@@ -300,10 +334,11 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
                     continue
                 if pid in prior_ids:
                     arm, old_obs, old_hue, old_status, old_sha=prior_ids[pid]
-                    require(prior_observation_unknown(old_obs) or old_obs==obs,
-                            "Reused genuine photo ID has conflicting original observation UUID")
-                    if prior_observation_unknown(old_obs):
+                    relation=prior_source_observation_relation(old_obs,obs)
+                    if relation=="missing_legacy_ID_recovered_from_signed_photo_source":
                         counts["reused_photo_legacy_observation_unresolved"]+=1
+                    if relation=="old_numeric_ID_vs_signed_UUID_same_photo_ID_unverified_crosswalk":
+                        counts["reused_photo_prior_numeric_observation_UUID_alias"]+=1
                     reused.append({
                         "photo_id":pid,"observation_id":obs,
                         "source_arm":SOURCE_ARM,
@@ -311,6 +346,10 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
                         "prior_measured_arm":arm,
                         "prior_observation_id_missing_in_legacy_source":
                             str(prior_observation_unknown(old_obs)).lower(),
+                        "prior_old_observation_ID_reference":old_obs,
+                        "observation_ID_crosswalk_relation":relation,
+                        "same_photo_ID_does_not_prove_independent_observation_crosswalk":
+                            "true",
                         "prior_automatic_ROI_morph":old_hue,
                         "prior_ROI_status":old_status,
                         "prior_original_image_SHA256":old_sha,
@@ -386,6 +425,9 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
         columns=("photo_id","observation_id","source_arm",
                  "balanced_joint_photo_probability","prior_measured_arm",
                  "prior_observation_id_missing_in_legacy_source",
+                 "prior_old_observation_ID_reference",
+                 "observation_ID_crosswalk_relation",
+                 "same_photo_ID_does_not_prove_independent_observation_crosswalk",
                  "prior_automatic_ROI_morph","prior_ROI_status",
                  "prior_original_image_SHA256",
                  "prior_photo_ROI_provenance_conflict")
@@ -425,6 +467,9 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
             "reused_original_photo_ids":len(reused),
             "reused_photo_legacy_observation_unresolved":
                 counts["reused_photo_legacy_observation_unresolved"],
+            "reused_photo_prior_numeric_observation_UUID_alias":
+                counts["reused_photo_prior_numeric_observation_UUID_alias"],
+            "same_photo_ID_prior_numeric_observation_alias_not_a_validated_global_UUID_crosswalk":True,
             "missing_legacy_observation_backfilled_only_from_signed_93m_source":True,
             "reused_exact_photo_results_SHA256":sha256(reused_file),
             "previously_measured_original_observations_with_different_sample_photo":
