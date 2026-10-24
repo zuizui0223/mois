@@ -48,6 +48,30 @@ SOURCE_SCHEMA="mois_93m_tier06_taxon_month_lat_stratified_onephoto_v1"
 HUES=("white","yellow_orange","red_pink","blue_purple")
 
 
+LEGACY_UNCLASSIFIED_MORPH_TOKENS=frozenset(("", "nan", "none", "null", "na", "n/a"))
+
+def canonical_prior_original_ROI_hue(morph, status):
+    """Preserve legacy unclassified ROI *as unknown*, never invent a petal hue.
+
+    Old original-photo checkpoint projections retain historical attempted IDs
+    even if their earlier method had no valid four-hue measurement, in which
+    case morph can be blank/NA. This is technical nonresponse, not white.
+    All four-hue successes must still have an explicit four-hue class.
+    """
+    value=str(morph).strip()
+    original_status=str(status).strip()
+    if value in (*HUES,"mixed_uncertain"):
+        require(not (value=="mixed_uncertain" and
+                     original_status=="classified_four_state_morph"),
+                "Classified original photo has an uncertain ROI hue")
+        return value,False
+    require(value.lower() in LEGACY_UNCLASSIFIED_MORPH_TOKENS and
+            original_status!="classified_four_state_morph",
+            "Unknown prior image colour may not be interpreted as a classified petal")
+    return "mixed_uncertain",True
+
+
+
 def prior_original_photo_index(sources, expected_counts):
     """Source-SHA audit historical arms, and reuse each original photo ID only ONCE.
 
@@ -95,10 +119,13 @@ def prior_original_photo_index(sources, expected_counts):
         this_arm_duplicates=0
         this_arm_conflicts=0
         this_arm_obs_overlaps=0
+        this_arm_legacy_unknown=0
         for record in frame.itertuples(index=False,name=None):
-            pid,obs,morph,status,image_sha=map(str,record)
-            require(morph in (*HUES,"mixed_uncertain"),
-                    "Prior original ROI morph not in signed four-hue/uncertain vocabulary")
+            pid,obs,raw_morph,status,image_sha=map(str,record)
+            morph,legacy_unclassified=canonical_prior_original_ROI_hue(raw_morph,status)
+            if legacy_unclassified:
+                this_arm_legacy_unknown+=1
+                overlap["old_source_technical_unknown_without_four_hue"]+=1
             known=morph in HUES
             if status:
                 require(known==(status=="classified_four_state_morph"),
@@ -165,6 +192,7 @@ def prior_original_photo_index(sources, expected_counts):
             "source_arm":arm,
             "original_photo_attempts":n,
             "four_hue_classified":hues,
+            "historical_legacy_blank_ROI_technical_unknown":this_arm_legacy_unknown,
             "photo_parquet_SHA256":sha256(path),
             "receipt_SHA256":sha256(receipt),
             "original_photo_IDs_already_in_other_historical_arm":this_arm_duplicates,
