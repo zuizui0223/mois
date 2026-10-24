@@ -1,0 +1,166 @@
+name: MOIS FCP U100 original 93m photo source capacity no image downloads
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_u100_source_from_93m_tier06.py
+      - tests/test_mois_fcp_u100_source_from_93m_tier06.py
+      - .github/workflows/mois-fcp-u100-source-tier06-only.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_u100_source_from_93m_tier06.py
+      - tests/test_mois_fcp_u100_source_from_93m_tier06.py
+      - .github/workflows/mois-fcp-u100-source-tier06-only.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-FCP-100-distinct-observation-photo-tier06-source-v1
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check FCP100 distinct observations, 40 photo gate and shell commands
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/acquisition/mois_fcp_u100_source_from_93m_tier06.py
+          python -m unittest discover -s tests -p test_mois_fcp_u100_source_from_93m_tier06.py -v
+          python -m pip install -q PyYAML==6.0.2
+          python - <<'PY'
+          import yaml,subprocess
+          data=yaml.safe_load(open('.github/workflows/mois-fcp-u100-source-tier06-only.yml'))
+          shells=[s['run'] for job in data['jobs'].values() for s in job['steps'] if 'run' in s]
+          assert len(shells)>=5
+          for x in shells:
+              p=subprocess.run(['bash','-n'],input=x,text=True,capture_output=True)
+              assert p.returncode==0,p.stderr
+          print('MOIS_FCP_U100_SHELL_STEPS_PASS',len(shells))
+          PY
+  real-source:
+    if: github.event_name != 'pull_request'
+    needs: tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      RESULT: mois-fcp-style-U100-tier06-93m-original-photo-source-only-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Skip previously released immutable original-photo U100 source
+        id: gate
+        run: |
+          set -euo pipefail
+          echo ready=false >> "$GITHUB_OUTPUT"
+          if gh release view "$RESULT" --repo "$REPO" >/dev/null 2>&1; then exit 0; fi
+          gh release view mois-complete-93209351-original-photo-target-tiers-v1 \
+            --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          echo ready=true >> "$GITHUB_OUTPUT"
+      - name: Get 16 SHA-routed metadata-only source chunks and pinned FCP species names
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release download mois-complete-93209351-original-photo-target-tiers-v1 \
+            --repo "$REPO" --dir original-source \
+            --pattern mois_all_original_photo_target_tiers_receipt.json
+          for number in $(seq -w 0 15); do
+            tag="mois-signed-tier06-group$number-512-compute-buckets-v1"
+            gh release download "$tag" --repo "$REPO" --dir "routed/group$number" \
+              --pattern routing_receipt.json \
+              --pattern "tier06-group$number-512-source-buckets.tar"
+          done
+          gh run download 38749681793 --repo zuizui0223/fcp \
+            --name fcp-42111-real-source-photo-opportunity-counts-20260927-complete-not-colours \
+            --dir fcp-species
+      - name: Build exact one-hundred distinct original photo-observations per eligible taxon source
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          counts=$(find fcp-species -name all_42111_species_photo_opportunity_counts.csv -print -quit)
+          test -n "$counts"
+          python -m scripts.acquisition.mois_fcp_u100_source_from_93m_tier06 \
+            --registry original-source/mois_all_original_photo_target_tiers_receipt.json \
+            --routed routed --taxa "$counts" --output fcp-u100
+      - name: Audit all genuine original photo IDs, eligible species and exact FCP100 source support
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv,json,hashlib
+          from pathlib import Path
+          root=Path('fcp-u100')
+          receipt=json.loads((root/'fcp_U100_source_only_receipt.json').read_text())
+          assert receipt['schema']=='mois_fcp_style_exact100_original_observations_per_taxon_tier06_source_v1'
+          assert receipt['full_93m_original_photo_source_ids']==93209351
+          assert receipt['full_original_nominal_taxa']==42111
+          assert receipt['source_tier_original_photo_ids']==597070
+          assert receipt['source_tier_distinct_original_observations']==337194
+          assert len(receipt['source_group_SHA_receipts'])==16
+          assert receipt['original_ROI_photo_pixels_downloaded']==0
+          assert receipt['original_four_hue_image_ROIs_inferred']==0
+          alltaxa=list(csv.DictReader((root/'all_nominal_taxa_FCP_U100_source_eligibility.csv').open(newline='')))
+          selected=list(csv.DictReader((root/'exact_100_original_photo_per_eligible_taxon.csv').open(newline='')))
+          assert len(alltaxa)==42111
+          eligible={x['inat_taxon_id'] for x in alltaxa if x['fcp_U100_source_eligible']=='true'}
+          assert len(eligible)==receipt['FCP_U100_original_source_eligible_taxa']
+          assert len(selected)==100*len(eligible)==receipt['FCP_U100_exact100_source_photo_opportunities']
+          assert len({x['photo_id'] for x in selected})==len(selected)
+          assert len({x['observation_id'] for x in selected})==len(selected)
+          for row in selected:
+              n=int(row['original_observations_in_taxon_tier06'])
+              m=int(row['photos_attached_to_original_observation'])
+              assert n>=100 and m>=1
+              assert abs(float(row['conditional_photo_inclusion_probability_in_tier06'])/(100/n/m)-1)<1e-12
+              assert abs(float(row['nominal_source_tier_plus_photo_probability'])/(0.0064*100/n/m)-1)<1e-12
+          assert sum(int(x['original_observations_in_tier06']) for x in alltaxa)==337194
+          assert sum(int(x['original_photo_ids_in_tier06']) for x in alltaxa)==597070
+          for unit,digest in receipt['source_original_photo_shard_SHA256'].items():
+              f=root/'shards'/('shard-%03d.csv'%int(unit))
+              assert hashlib.sha256(f.read_bytes()).hexdigest()==digest
+          print('MOIS_FCP_U100_REAL_SOURCE_CAPACITY',json.dumps({
+              'full_93m_source_photo_ids':93209351,
+              'tier06_source_photo_ids':597070,
+              'nominal_taxa':42111,'FCP_U100_eligible_taxa':len(eligible),
+              'FCP_100_source_photo_targets':len(selected),
+              'under100_or_no_observations':42111-len(eligible),
+              'new_photos_classified_by_this_metadata_job':0,
+          },sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-FCP-U100-exact-original-photo-observations-real-source-only
+          path: |
+            fcp-u100/fcp_U100_source_only_receipt.json
+            fcp-u100/all_nominal_taxa_FCP_U100_source_eligibility.csv
+            fcp-u100/exact_100_original_photo_per_eligible_taxon.csv
+            fcp-u100/selected_photo_unsupported_loader_as_unknown.csv
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Release byte-audited source-only U100 assignments, not flower-colour measurements
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          tar -cf fcp-u100-original-unmeasured-256shards.tar -C fcp-u100 shards/
+          gh release create "$RESULT" \
+            fcp-u100/fcp_U100_source_only_receipt.json \
+            fcp-u100/all_nominal_taxa_FCP_U100_source_eligibility.csv \
+            fcp-u100/exact_100_original_photo_per_eligible_taxon.csv \
+            fcp-u100/selected_photo_unsupported_loader_as_unknown.csv \
+            fcp-u100-original-unmeasured-256shards.tar \
+            --repo "$REPO" --target "$GITHUB_SHA" \
+            --title 'MOIS FCP-style U100 100 independent original-photo observations per source taxon' \
+            --notes 'SHA-authenticated 93209351 original-photo metadata source, all 42111 nominal taxa, tier06 597070 original-photo records. For each taxon with >=100 distinct original source observations, choose precisely 100 observations without viewing colour and one original photo each, with signed joint conditional selection probabilities; taxa with fewer than 100 or no observations remain in full eligibility file for future disjoint-tier replenishment. FCP frozen original ROI-v4 model can be reused, but source-only here: zero original images fetched, zero hue outcomes, and no independent FCP H9 anthesis annotation on these MOIS photos. Do not compare or combine worldwide flower-white frequency using this high-abundance-conditional U100 cohort alone. Future image work requires exact photo+observation dedup versus already measured FCP/MOIS original frames, no re-inference of old photos.'
