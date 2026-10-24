@@ -106,7 +106,7 @@ class TestScheduledCheckpointGate(unittest.TestCase):
             self.assertIn("per_page=100", cmd[-1])
             # The real gh CLI prints each selected release as a JSON object,
             # not one JSON array that can safely be truncated to page 1.
-            return "\\n".join(json.dumps(x, indent=2) for x in responses)
+            return "\n".join(json.dumps(x, indent=2) for x in responses)
 
         self.assertEqual(
             latest_checkpoint_tag_from_gh("zuizui0223/mois", simulated_gh_call),
@@ -114,7 +114,7 @@ class TestScheduledCheckpointGate(unittest.TestCase):
 
     def test_paginated_release_lookup_fails_closed_without_baseline(self):
         def no_checkpoints(cmd, *, text):
-            return "\\n".join(json.dumps(
+            return "\n".join(json.dumps(
                 {"tag_name": f"other-{i}", "draft": False,
                  "published_at": "2026-10-24T08:00:00Z"})
                 for i in range(135))
