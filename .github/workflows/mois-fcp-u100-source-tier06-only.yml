@@ -31,6 +31,8 @@ jobs:
         run: |
           set -euo pipefail
           python -m py_compile scripts/acquisition/mois_fcp_u100_source_from_93m_tier06.py
+          python -m pip install -q ruff==0.14.2
+          ruff check --select F821 scripts/acquisition/mois_fcp_u100_source_from_93m_tier06.py
           python -m unittest discover -s tests -p test_mois_fcp_u100_source_from_93m_tier06.py -v
           python -m pip install -q PyYAML==6.0.2
           python - <<'PY'
