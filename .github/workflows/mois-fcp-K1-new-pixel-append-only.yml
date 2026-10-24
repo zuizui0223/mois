@@ -19,7 +19,7 @@ on:
     branches: [main]
   schedule:
     # Poll completed original workers every 20 min; data-only, no image fetch or ROI rerun.
-    - cron: '9,29,49 * * * *'
+    - cron: '9,19,29,39,49,59 * * * *'
 permissions:
   contents: read
   actions: read
@@ -83,6 +83,13 @@ jobs:
               if name.startswith('mois-balanced-onephoto-K1-real-RGB-group-'):
                   assert name not in by_name,'Duplicated source-photo original worker result'
                   by_name[name]=item
+          # One paginated metadata read replaces up to 75 network calls.
+          # A newly published release after this snapshot remains idempotent:
+          # seal compares the immutable receipt before creating it.
+          existing_tags=set(subprocess.check_output(
+              ['gh','api','--paginate','--jq','.[] | .tag_name',
+               f'repos/{os.environ["REPO"]}/releases?per_page=100'],
+              text=True).splitlines())
           allready=[]
           for group in range(75):
               name=f'mois-balanced-onephoto-K1-real-RGB-group-{group}'
@@ -90,10 +97,7 @@ jobs:
                   continue
               assert by_name[name]['expired'] is False,'Original ROI source artifact expired'
               tag=f'mois-full93m-balanced-onephoto-K1-original-RGB-append-group-{group}-v1'
-              exists=subprocess.run(
-                  ['gh','release','view',tag,'--repo',os.environ['REPO']],
-                  stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
-              if not exists:allready.append(group)
+              if tag not in existing_tags:allready.append(group)
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
               out.write('ready='+('true' if allready else 'false')+'\n')
               out.write('groups='+json.dumps(allready)+'\n')
