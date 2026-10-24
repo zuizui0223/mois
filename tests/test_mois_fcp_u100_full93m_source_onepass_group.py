@@ -168,7 +168,7 @@ class FullOriginal93mFCPHundredSourceTests(unittest.TestCase):
             if x["observation_id"]==self.technical_unknown_photo:
                 self.assertEqual(x["photo_source_disposition"],"unsupported_original_extension")
         self.assertEqual(r["source_taxa_eligibility_breakdown"]["at_least_100_observations"],1)
-        self.assertEqual(r["original_four_hue_image_ROIs_inferred"],0)
+        self.assertTrue(r["no_original_ROI_or_hue_inferences"])
         self.assertEqual(r["no_original_image_downloads"],True)
 
     def test_source_roster_remembers_under100_and_zero_taxa_without_fabricating_100photos(self):
@@ -200,7 +200,7 @@ class FullOriginal93mFCPHundredSourceTests(unittest.TestCase):
 
     def test_group_without_consistent_taxon_part_ownership_rejected(self):
         bad=dict(self.rows[0][2])
-        bad["inat_taxon_id"]="129"
+        bad["inat_taxon_id"]="136"
         import sqlite3
         with sqlite3.connect(":memory:") as db:
             m.source.create_database(db)
