@@ -124,7 +124,8 @@ class TrueFrozenK1GroupTests(unittest.TestCase):
         self.assertFalse(self.output.exists())
 
     def test_no_scalar_photo_sampling_probability_allowed(self):
-        data=list(csv.DictReader(self.photos.open(newline="")))
+        with self.photos.open(newline="") as f:
+            data=list(csv.DictReader(f))
         data[1]["selection_probability"]="0"
         self.csv_write(self.photos,data)
         r=json.loads(self.receipt.read_text())
@@ -161,7 +162,8 @@ class TrueFrozenK1GroupTests(unittest.TestCase):
         self.assertIn("needs.inspect.outputs.ready == 'true'",jobs["seal"]["if"])
         self.assertEqual(jobs["seal"]["strategy"]["max-parallel"],4)
         self.assertFalse(jobs["seal"]["strategy"]["fail-fast"])
-        self.assertIn("gh api --paginate",wf.read_text(encoding="utf-8"))
+        self.assertIn("'gh','api','--paginate'", wf.read_text(encoding="utf-8"))
+        self.assertIn("releases?per_page=100", wf.read_text(encoding="utf-8"))
 
     def test_sealing_is_immutable(self):
         self.seal()
