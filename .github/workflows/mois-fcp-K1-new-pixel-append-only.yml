@@ -18,7 +18,7 @@ on:
     types: [completed]
     branches: [main]
   schedule:
-    # Poll completed original workers every 10 min; data-only, no image fetch or ROI rerun.
+    # Poll original worker completions every 10 min; idle checks cost only metadata.
     - cron: '9,19,29,39,49,59 * * * *'
 permissions:
   contents: read
@@ -28,6 +28,14 @@ concurrency:
   cancel-in-progress: false
 jobs:
   test:
+    # Idle ten-minute polls perform metadata inspection only; no Python setup.
+    # PR/push always run regression tests, and no live pixel group is sealed
+    # without a passing test from the SAME workflow run.
+    needs: inspect
+    if: >-
+      always() &&
+      (github.event_name == 'pull_request' || github.event_name == 'push' ||
+       (needs.inspect.result == 'success' && needs.inspect.outputs.ready == 'true'))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -53,7 +61,7 @@ jobs:
           print('MOIS_FCP_K1_GENUINE_ROI_COMPLETE_SHELL_BLOCKS_VERIFIED',len(all_steps))
           PY
   inspect:
-    needs: test
+    # Metadata-only source/artifact availability gate runs before heavyweight CI.
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -108,8 +116,11 @@ jobs:
                             'original_images_to_reacquire':0},sort_keys=True))
           PY
   seal:
-    needs: inspect
-    if: needs.inspect.outputs.ready == 'true'
+    needs: [inspect, test]
+    if: >-
+      github.event_name != 'pull_request' &&
+      needs.inspect.outputs.ready == 'true' &&
+      needs.test.result == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
