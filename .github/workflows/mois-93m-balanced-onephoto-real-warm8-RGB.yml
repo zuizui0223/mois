@@ -138,6 +138,8 @@ jobs:
                  'c0ba3a316a336816065590540e75034bd8c2b9b7362034163673702103c44977'
           assert data['images_downloaded_by_this_source_bridge']==0
           assert data['original_photo_source_probabilities_unchanged_by_prior_pixel_reuse']
+          assert data['previously_counted_photo_ID_duplicates_are_NOT_new_inferences']
+          assert data['per_photo_conflicting_old_hues_preserved_as_technical_unknown']
           assert 1000<=data['new_photo_attempts_planned']<=80035
           assert len(data['group_ids'])<=80
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
@@ -167,6 +169,8 @@ jobs:
           else
             gh release create "$SOURCE_TAG" \
               source/manifest.json source/already_measured_original_photo_reuse.csv \
+              source/prior_original_photo_crossarm_overlap.csv \
+              source/prior_original_photo_ROI_conflicts.csv \
               balanced-new-original-photo-shards.tar \
               --repo "$REPO" --target "$GITHUB_SHA" \
               --title 'MOIS genuine original 93m balanced K1 new-photo-only frozen ROI work roster' \
