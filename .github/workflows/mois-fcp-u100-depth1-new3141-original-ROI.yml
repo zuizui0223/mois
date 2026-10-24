@@ -79,6 +79,7 @@ jobs:
       REPO: zuizui0223/mois
       K1_RUN: '40066261878'
       ORIGINAL_SOURCE_TAG: mois-full93m-FCP-U100-prefix1-photo-reuse-and-inflight-K1-source-v1
+      PREFLIGHT_TAG: mois-FCP-U100-20242-taxa-only3141-photo-K1-disjoint-preflight-v1
       FINISHED_TAG: mois-full93m-FCP-U100-depth1-only3141-new-original-RGB-v1
     steps:
       - uses: actions/checkout@v4
@@ -134,6 +135,28 @@ jobs:
           test "$sealed" -eq 75
           gh release view "$ORIGINAL_SOURCE_TAG" --repo "$REPO" \
             --json isDraft --jq .isDraft | grep -qx false
+          # The 3141 original images were independently audited BEFORE K1
+          # completion against all 20242 taxa and all 76753 new K1 photo IDs.
+          # Fail closed on any change; do not launch new image-model workers.
+          gh release download "$PREFLIGHT_TAG" --repo "$REPO" --dir audited-preflight \
+            --pattern fcp_u100_3141_photo_only_source_preflight_receipt.json
+          echo '7920cdefb4dd1f5a35def3cdf3fb3c1d19e86e87d4f8db8dab08645e37542eef  audited-preflight/fcp_u100_3141_photo_only_source_preflight_receipt.json' | sha256sum -c -
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          receipt=json.loads(Path('audited-preflight/fcp_u100_3141_photo_only_source_preflight_receipt.json').read_text())
+          assert receipt['schema']=='mois_source_only_20242_FCP_U100_prefix1_3141_new_K1_disjoint_preflight_v1'
+          assert receipt['eligible_nominal_FCP_U100_source_taxa']==20242
+          assert receipt['already_measured_old_photo_IDs_to_reuse_NOT_RECOMPUTED']==15483
+          assert receipt['already_running_K1_new_photo_IDs_to_reuse_NOT_RECOMPUTED']==1618
+          assert receipt['never_before_measured_FCP_U100_original_photo_ROI_target_IDs']==3141
+          assert receipt['new_original_photos_overlap_with_K1']==0
+          assert len(receipt['signed_13_original_work_unit_audit'])==13
+          assert receipt['all_photo_inclusion_probabilities_individually_source_checked'] is True
+          assert receipt['new_original_image_bytes_downloaded_here']==0
+          assert receipt['flower_colour_models_run_here']==0
+          print('MOIS_FCP_U100_3141_K1_DISJOINT_SOURCE_SAFETY_PREFLIGHT_SHA_REUSED')
+          PY
           echo ready=true >> "$GITHUB_OUTPUT"
           echo 'groups=[0,1,2,3]' >> "$GITHUB_OUTPUT"
           echo 'MOIS_FCP_U100_ALL_K1_ORIGINAL_WORKERS_COMPLETE_FIRST3141_CAN_START'
