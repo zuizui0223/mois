@@ -285,6 +285,47 @@ class BalancingExistingOriginalPixelsTests(unittest.TestCase):
             self.bridge()
         self.assertFalse(self.output.exists())
 
+    def test_exact_same_photo_numeric_legacy_id_vs_source_UUID_is_namespace_only(self):
+        self.assertTrue(bridge.exact_photo_observation_compatible(
+            "123456789", "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"))
+        self.assertFalse(bridge.exact_photo_observation_compatible(
+            "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            "11111111-2222-3333-4444-555555555555"))
+        self.assertFalse(bridge.exact_photo_observation_compatible(
+            "numeric-but-not-numeric", "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"))
+        self.assertFalse(bridge.exact_photo_observation_compatible(
+            "123456789", "different-original-observation"))
+
+    def test_real_genuine_photo_numeric_old_observation_id_never_refetched(self):
+        # Test the strict exact-photo-ID bridge with a valid UUID source rather
+        # than the original synthetic "obsA" placeholder.
+        original="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        current=list(csv.DictReader(self.source.open(newline="")))
+        current[0]["observation_id"]=original
+        with self.source.open("w",newline="") as w:
+            writer=csv.DictWriter(w,fieldnames=list(current[0]),
+                                  lineterminator="\n")
+            writer.writeheader();writer.writerows(current)
+        manifest=json.loads(self.manifest.read_text())
+        manifest["original_source_sample_full_table_SHA256"]=sha(self.source)
+        self.manifest.write_text(json.dumps(manifest))
+        prior=self.priors[0][1]
+        df=pd.read_parquet(prior)
+        df.loc[0,"observation_id"]="987654321"
+        df.to_parquet(prior,index=False)
+        receipt=self.priors[0][2]
+        info=json.loads(receipt.read_text())
+        info["output_sha256"][prior.name]=sha(prior)
+        receipt.write_text(json.dumps(info))
+        result=self.bridge()
+        self.assertEqual(result["reused_original_photo_ids"],1)
+        self.assertEqual(result["new_photo_attempts_planned"],2)
+        self.assertFalse(result["colour_measured"])
+        with (self.output/"already_measured_original_photo_reuse.csv").open(newline="") as stream:
+            rows=list(csv.DictReader(stream))
+        self.assertEqual(rows[0]["observation_id"],original)
+        self.assertEqual(rows[0]["prior_automatic_ROI_morph"],"white")
+
     def test_unchanged_selected_photo_probability_is_mandatory(self):
         d=list(self.rows)
         d[1]=dict(d[1],joint_photo_selection_probability="0.5")
