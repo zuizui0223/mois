@@ -1,0 +1,142 @@
+name: MOIS preflight all FCP U100 3141 new original image source IDs before K1 finishes
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_u100_depth1_preflight.py
+      - tests/test_mois_fcp_u100_depth1_preflight.py
+      - .github/workflows/mois-fcp-u100-depth1-preflight-only.yml
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_u100_depth1_preflight.py
+      - tests/test_mois_fcp_u100_depth1_preflight.py
+      - .github/workflows/mois-fcp-u100-depth1-preflight-only.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-FCP-20242-taxa-3141-new-only-K1-overlap-independent-preflight
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate photo-ID/observation/sha probability source preflight without models
+        run: |
+          set -euo pipefail
+          python -m pip install -q PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_fcp_u100_depth1_preflight.py
+          python -m unittest discover -s tests -p test_mois_fcp_u100_depth1_preflight.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          from pathlib import Path
+          d=yaml.safe_load(Path('.github/workflows/mois-fcp-u100-depth1-preflight-only.yml').read_text())
+          blocks=[step['run'] for job in d['jobs'].values()
+                  for step in job['steps'] if 'run' in step]
+          assert len(blocks)>=4
+          for block in blocks:
+              p=subprocess.run(['bash','-n'],input=block,text=True,capture_output=True)
+              assert p.returncode==0,p.stderr
+          print('MOIS_FCP_U100_3141_SOURCE_ONLY_PREFLIGHT_BASH_PASS',len(blocks))
+          PY
+  audit-pinned-original-photo-source-now:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OUTPUT_TAG: mois-FCP-U100-20242-taxa-only3141-photo-K1-disjoint-preflight-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Avoid re-reading large immutable FCP source after already published
+        id: gate
+        run: |
+          set -euo pipefail
+          if gh release view "$OUTPUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo ready=false >> "$GITHUB_OUTPUT"
+            echo 'Frozen 3141 precolour original-photo ID/probability preflight already SHA-published.'
+          else
+            echo ready=true >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Download SOURCE-ONLY 3141 files and 20242 original FCP photo decisions
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release download mois-full93m-FCP-U100-prefix1-photo-reuse-and-inflight-K1-source-v1 \
+            --repo "$REPO" --dir source --pattern manifest.json \
+            --pattern all_FCP_U100_prefix1_photo_source_dispositions.csv \
+            --pattern next-FCP-U100-first-photo-ROI-source-shards.tar
+          echo 'fe49344241fbc051eebbbcbc8eb627a040198dc2b3ee56c89401876b58d28a6a  source/manifest.json' | sha256sum -c -
+          echo 'dacf3a8df021bac2de9f6f02fa779b246e71e544be4e473296f90ad19f66e63f  source/all_FCP_U100_prefix1_photo_source_dispositions.csv' | sha256sum -c -
+          echo '48b31262c20db2501889106f8ea12c650fd875cf85ed1570c10f8bdc986747a6  source/next-FCP-U100-first-photo-ROI-source-shards.tar' | sha256sum -c -
+          gh release download mois-full93m-FCP-U100-progressive-prefix1-20242-taxa-original-source-v1 \
+            --repo "$REPO" --dir prefix --pattern FCP_20242_taxa_prefix1_original_photo_candidates.csv
+          echo '0403905f04d2def07d3f2e0caee28728a54923ef187f1fc2c63318857012b713  prefix/FCP_20242_taxa_prefix1_original_photo_candidates.csv' | sha256sum -c -
+          gh release download mois-original-K1-76753-photo-ID-disjoint-from-929138-historical-v1 \
+            --repo "$REPO" --dir k1 \
+            --pattern K1_original_source_disjointness_certificate.json \
+            --pattern K1_all_original_new_photo_source_IDs.csv.gz
+          echo '47fe5775475f7346cd6f331c928bfe20d3217152a45124481eee0c76726c692d  k1/K1_original_source_disjointness_certificate.json' | sha256sum -c -
+          echo 'b620e56cc8386670d183f7a7a74f707cd22de5ccdbb55c1dace2c4a9617a0386  k1/K1_all_original_new_photo_source_IDs.csv.gz' | sha256sum -c -
+          # Pinned tar SHA is authenticated above; independently enforce
+          # 13 ordinary CSV packet paths before extraction to source/.
+          python - <<'PY'
+          import tarfile
+          from pathlib import Path
+          path=Path('source/next-FCP-U100-first-photo-ROI-source-shards.tar')
+          with tarfile.open(path,'r:') as tar:
+              files=[x for x in tar.getmembers() if x.isfile()]
+              expected={f'shards/shard-{i:03d}.csv' for i in range(13)}
+              assert {x.name.lstrip('./') for x in files}==expected, 'Unexpected signed FCP source tar entries'
+              assert all(x.size>0 for x in files), 'Empty original FCP photo shard'
+              tar.extractall(path='source',filter='data')
+          print('MOIS_FCP_ALL_13_SIGNED_PRECOLOUR_IMAGE_SOURCE_CSVS_EXTRACTED',len(files))
+          PY
+      - name: Prove no FCP new photo was already measured or in the live K1 source
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_fcp_u100_depth1_preflight \
+            --source source \
+            --prefix prefix/FCP_20242_taxa_prefix1_original_photo_candidates.csv \
+            --dispositions source/all_FCP_U100_prefix1_photo_source_dispositions.csv \
+            --k1-certificate k1/K1_original_source_disjointness_certificate.json \
+            --k1-roster k1/K1_all_original_new_photo_source_IDs.csv.gz \
+            --output audited-source
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-original-only-FCP-U100-3141-photo-K1-no-duplicate-preflight
+          path: audited-source/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish immutable source-only proof; do NOT download original photo pixels
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if gh release view "$OUTPUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$OUTPUT_TAG" --repo "$REPO" --dir previous \
+              --pattern fcp_u100_3141_photo_only_source_preflight_receipt.json
+            cmp previous/fcp_u100_3141_photo_only_source_preflight_receipt.json \
+                audited-source/fcp_u100_3141_photo_only_source_preflight_receipt.json
+          else
+            gh release create "$OUTPUT_TAG" \
+              audited-source/fcp_u100_3141_photo_only_source_preflight_receipt.json \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS 3141 never-measured FCP U100 originals ready after K1 - source-only preflight' \
+              --notes 'Actual precolour 93m-source FCP U100 first-photo metadata only. Independently checked all 20242 eligible nominal taxon/photo/observation IDs, 15483 old photo-ID reuse, 1618 K1 source photo-ID/UUID matches, 3141 genuinely new images not previously measured or K1-reserved, 1/N/M design probabilities, 13 byte-SHA-pinned image-work CSV shards and original source manifest. No original images downloaded, ROI colour inferred, historical 929138 Parquet reread, flower-stage or wild/native individual verified. The separate model workflow must wait until K1 75/75 model workers and 75/75 sealed image terminals finish.'
