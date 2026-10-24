@@ -149,7 +149,7 @@ class HistoricalAndK1PhotoIDUnionTests(unittest.TestCase):
         self.assertFalse(self.output.exists())
         self.make_files()
         with patch.object(m,"PRIOR_COUNTS",self.old_counts):
-            with self.assertRaisesRegex(ValueError,"not all actually finished"):
+            with self.assertRaisesRegex(ValueError,"Not all actually finished"):
                 m.merge_verified(self.old,self.old_obs,[],self.prior_overlap,
                                  self.cumulative,[],self.output,expected_prior=1)
 
