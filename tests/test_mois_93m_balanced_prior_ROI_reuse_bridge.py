@@ -194,6 +194,59 @@ class BalancingExistingOriginalPixelsTests(unittest.TestCase):
         self.assertEqual(reused[0]["prior_ROI_status"],"conflicting_prior_ROI_evidence")
         self.assertEqual(reused[0]["prior_photo_ROI_provenance_conflict"],"true")
 
+    def set_legacy_blank_prior_ROI(self, *, status=""):
+        # Historical projection has a terminal original photo ID but no
+        # eligible ROI-v4 four-hue inference. It must remain NONCLASSIFIABLE.
+        p=self.priors[0][1]
+        old=pd.read_parquet(p)
+        old.loc[1,"morph"]=""
+        old.loc[1,"measurement_status"]=status
+        old.loc[1,"image_sha256"]=""
+        old.to_parquet(p,index=False)
+        receipt=self.priors[0][2]
+        prior=json.loads(receipt.read_text())
+        prior["output_sha256"][p.name]=sha(p)
+        receipt.write_text(json.dumps(prior))
+
+    def test_legacy_original_checkpoint_blank_morph_is_unknown_not_white(self):
+        self.set_legacy_blank_prior_ROI()
+        result=self.bridge()
+        self.assertEqual(result["prior_original_pixel_arms"][0]["four_hue_classified"],1)
+        self.assertEqual(
+            result["prior_original_pixel_arms"][0][
+                "historical_legacy_blank_ROI_technical_unknown"],1)
+        self.assertEqual(
+            result["prior_original_crossarm_photo_overlap"][
+                "old_source_technical_unknown_without_four_hue"],1)
+        self.assertEqual(result["new_photo_attempts_planned"],2)
+        self.assertFalse(result["colour_measured"])
+        # A blank source projection cannot silently turn into an original
+        # image classified as a white or coloured flowering petal.
+        self.assertEqual(
+            bridge.canonical_prior_original_ROI_hue("", "")[0],
+            "mixed_uncertain")
+
+    def test_classified_morph_may_not_be_blank_in_existing_pixel_receipts(self):
+        self.set_legacy_blank_prior_ROI(status="classified_four_state_morph")
+        with self.assertRaisesRegex(ValueError,
+                                    "may not be interpreted as a classified petal"):
+            self.bridge()
+        self.assertFalse(self.output.exists())
+
+    def test_unrecognized_historical_photo_colour_fails_closed(self):
+        p=self.priors[0][1]
+        frame=pd.read_parquet(p)
+        frame.loc[1,"morph"]="green"
+        frame.to_parquet(p,index=False)
+        prior=self.priors[0][2]
+        report=json.loads(prior.read_text())
+        report["output_sha256"][p.name]=sha(p)
+        prior.write_text(json.dumps(report))
+        with self.assertRaisesRegex(ValueError,
+                                    "Unknown prior image colour"):
+            self.bridge()
+        self.assertFalse(self.output.exists())
+
     def test_unchanged_selected_photo_probability_is_mandatory(self):
         d=list(self.rows)
         d[1]=dict(d[1],joint_photo_selection_probability="0.5")
