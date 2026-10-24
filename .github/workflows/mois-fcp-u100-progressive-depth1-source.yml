@@ -1,0 +1,274 @@
+name: MOIS FCP global93m U100 progressive depth1 original source
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_u100_progressive_depth1_photo_source.py
+      - tests/test_mois_fcp_u100_progressive_depth1_photo_source.py
+      - .github/workflows/mois-fcp-u100-progressive-depth1-source.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_u100_progressive_depth1_photo_source.py
+      - tests/test_mois_fcp_u100_progressive_depth1_photo_source.py
+      - .github/workflows/mois-fcp-u100-progressive-depth1-source.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-full93m-fcp-u100-prefix1-all20242-source-only
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prove original FCP photo U100 to prefix1 ratio, SHA source and shell syntax
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/acquisition/mois_fcp_u100_progressive_depth1_photo_source.py
+          python -m unittest discover -s tests -p test_mois_fcp_u100_progressive_depth1_photo_source.py -v
+          python -m pip install -q PyYAML==6.0.2
+          python - <<'PY'
+          import subprocess,yaml
+          d=yaml.safe_load(open('.github/workflows/mois-fcp-u100-progressive-depth1-source.yml'))
+          checks=0
+          for job in d['jobs'].values():
+              for step in job['steps']:
+                  if 'run' not in step:
+                      continue
+                  p=subprocess.run(['bash','-n'],input=step['run'],capture_output=True,text=True)
+                  assert p.returncode==0,(step.get('name'),p.stderr)
+                  checks+=1
+          assert checks>=5
+          print('MOIS_FCP_U100_FIRST_ORIGINAL_PHOTO_SHA_BASH_STEPS_VERIFIED',checks)
+          PY
+  source-group:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      GROUP: ${{ matrix.group }}
+      GLOBAL_TAG: mois-full-93209351-FCP-U100-complete-42111-original-photo-source-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Gate against rewriting a previously frozen source-photo group
+        id: gate
+        run: |
+          set -euo pipefail
+          printf -v NUM '%02d' "$GROUP"
+          tag="mois-full93m-FCP-U100-prefix1-original-source-group$NUM-v1"
+          echo ready=false >> "$GITHUB_OUTPUT"
+          if gh release view "$tag" --repo "$REPO" >/dev/null 2>&1; then
+            echo "Original source group $NUM already sealed"
+            exit 0
+          fi
+          gh release view "$GLOBAL_TAG" --repo "$REPO" \
+            --json isDraft --jq .isDraft | grep -qx false
+          echo ready=true >> "$GITHUB_OUTPUT"
+      - name: Load only the globally SHA-certified source taxon group top100 CSV; no images
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          printf -v NUM '%02d' "$GROUP"
+          parent="mois-global93m-FCP-U100-14tier-original-source-group$NUM-v1"
+          gh release download "$GLOBAL_TAG" --repo "$REPO" --dir census \
+            --pattern fcp_U100_all42111_nominal_taxa_full93m_source_receipt.json
+          for attempt in 1 2 3; do
+            if gh release download "$parent" --repo "$REPO" --dir parent \
+              --pattern fcp_U100_full93m_group_source_receipt.json \
+              --pattern exact_100_full93m_original_photo_observation_candidates.csv; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo 'Source-CSV download failed; no original image has been fetched.' >&2
+              exit 1
+            fi
+            sleep "$((attempt*2))"
+          done
+      - name: Freeze per-taxon minimum globally sampled observation/photo with exact 1 over N over M probability
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_fcp_u100_progressive_depth1_photo_source \
+            --source-csv parent/exact_100_full93m_original_photo_observation_candidates.csv \
+            --group-receipt parent/fcp_U100_full93m_group_source_receipt.json \
+            --global-receipt census/fcp_U100_all42111_nominal_taxa_full93m_source_receipt.json \
+            --group "$GROUP" --output stage1
+          python - <<'PY'
+          import csv,json,os,hashlib
+          from pathlib import Path
+          path=Path('stage1')
+          r=json.loads((path/'FCP_U100_prefix1_group_source_receipt.json').read_text())
+          assert r['original_taxon_modulo_source_group']==int(os.environ['GROUP'])
+          assert r['global_full93m_photo_ID_opportunities']==93209351
+          assert r['global_FCP_U100_source_eligible_taxa']==20242
+          assert r['U100_original_source_candidates_accounted']==100*r['depth1_original_photo_observations_selected']
+          assert r['original_images_downloaded']==r['original_colour_inferences_executed']==0
+          candidate=path/'FCP_U100_prefix1_original_photo_per_taxon.csv'
+          ids=set();taxa=set();count=0
+          with candidate.open(newline='') as f:
+              for z in csv.DictReader(f):
+                  assert z['photo_id'] not in ids and z['inat_taxon_id'] not in taxa
+                  ids.add(z['photo_id']);taxa.add(z['inat_taxon_id']);count+=1
+                  n=int(z['full_93m_distinct_original_observations_of_taxon'])
+                  m=int(z['photos_in_original_observation'])
+                  p=float(z['depth1_joint_original_photo_inclusion_probability'])
+                  pp=float(z['parent_U100_joint_original_photo_inclusion_probability'])
+                  assert abs(p*n*m-1)<1e-12 and abs(pp/p-100)<1e-10
+          assert count==r['depth1_original_photo_observations_selected']
+          assert hashlib.sha256(candidate.read_bytes()).hexdigest()==r['depth1_original_photo_candidate_SHA256']
+          print('MOIS_GLOBAL_FCP_U100_FIRST_REAL_SOURCE_PHOTO_BY_TAXON',
+                json.dumps(dict(group=r['original_taxon_modulo_source_group'],
+                                taxa=count,unsupported=r['depth1_unsupported_original_image_formats_unknown']),
+                           sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-FCP-U100-global93m-prefix1-source-group-${{ matrix.group }}
+          path: stage1/
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Publish immutable FCP source-first photo and original probability receipts, no new colours
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          printf -v NUM '%02d' "$GROUP"
+          tag="mois-full93m-FCP-U100-prefix1-original-source-group$NUM-v1"
+          gh release create "$tag" stage1/FCP_U100_prefix1_group_source_receipt.json \
+            stage1/FCP_U100_prefix1_original_photo_per_taxon.csv \
+            --repo "$REPO" --target "$GITHUB_SHA" \
+            --title "MOIS genuine full93m FCP U100 first observation photo for taxon source group $NUM" \
+            --notes 'Only existing signed original-photo metadata from global 93209351-ID source. U100-eligible nominal source taxa have exactly one independent original observation and one original photo chosen by existing global hash rank, with prefix photo probability 1/N_taxon/M_photo_per_observation. Every taxon with fewer than 100 observations stays documented in the full 42111 taxon source. No photo pixels fetched, ROI inferred, native or blooming petals confirmed. These source IDs must be checked against all existing FCP/MOIS image ROIs and the already running balanced K1 source before any new original pixels are scheduled.'
+  whole-source:
+    needs: [test,source-group]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      GLOBAL_TAG: mois-full-93209351-FCP-U100-complete-42111-original-photo-source-v1
+      RESULT_TAG: mois-full93m-FCP-U100-progressive-prefix1-20242-taxa-original-source-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download only sixteen tiny one-photo-per-eligible-taxon source rosters
+        run: |
+          set -euo pipefail
+          gh release download "$GLOBAL_TAG" --repo "$REPO" --dir census \
+            --pattern fcp_U100_all42111_nominal_taxa_full93m_source_receipt.json
+          for number in $(seq -w 0 15); do
+            tag="mois-full93m-FCP-U100-prefix1-original-source-group$number-v1"
+            gh release download "$tag" --repo "$REPO" --dir "groups/group$number" \
+              --pattern FCP_U100_prefix1_original_photo_per_taxon.csv \
+              --pattern FCP_U100_prefix1_group_source_receipt.json
+          done
+      - name: Preserve all FCP 42111 taxa and reconcile exactly 20242 independent first photos
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,csv,hashlib
+          from pathlib import Path
+          census=Path('census/fcp_U100_all42111_nominal_taxa_full93m_source_receipt.json')
+          global_r=json.loads(census.read_text())
+          assert global_r['source_all_original_photo_metadata_IDs']==93209351
+          assert global_r['all_source_nominal_taxon_IDs']==42111
+          assert global_r['source_FCP_style_exact100_photo_observation_taxa']==20242
+          taxa,ids,obs=set(),set(),set()
+          rows=[];groups=[];noteligible=0;unsupported=0
+          for n in range(16):
+              folder=Path('groups')/f'group{n:02d}'
+              cfile=folder/'FCP_U100_prefix1_original_photo_per_taxon.csv'
+              rfile=folder/'FCP_U100_prefix1_group_source_receipt.json'
+              r=json.loads(rfile.read_text())
+              assert r['original_taxon_modulo_source_group']==n
+              assert hashlib.sha256(cfile.read_bytes()).hexdigest()==r['depth1_original_photo_candidate_SHA256']
+              with cfile.open(newline='') as f:local=list(csv.DictReader(f))
+              assert len(local)==r['depth1_original_photo_observations_selected']
+              for x in local:
+                  assert x['inat_taxon_id'] not in taxa
+                  assert x['photo_id'] not in ids and x['observation_id'] not in obs
+                  taxa.add(x['inat_taxon_id']);ids.add(x['photo_id']);obs.add(x['observation_id'])
+              rows.extend(local)
+              groups.append(dict(group=n,photos=len(local),
+                  manifest_sha256=hashlib.sha256(rfile.read_bytes()).hexdigest(),
+                  candidate_sha256=hashlib.sha256(cfile.read_bytes()).hexdigest()))
+              noteligible+=r['source_taxa_below100_observations_retained_in_42111_census']
+              unsupported+=r['depth1_unsupported_original_image_formats_unknown']
+          assert len(taxa)==len(ids)==len(obs)==20242
+          assert noteligible==42111-20242
+          assert sum(x['photos'] for x in groups)==20242
+          out=Path('combined')
+          out.mkdir()
+          csvfile=out/'FCP_20242_taxa_prefix1_original_photo_candidates.csv'
+          rows.sort(key=lambda x:int(x['inat_taxon_id']))
+          with csvfile.open('w',newline='') as f:
+              writer=csv.DictWriter(f,fieldnames=list(rows[0]),lineterminator='\n')
+              writer.writeheader();writer.writerows(rows)
+          record=dict(
+              schema='mois_full93m_fcp_U100_prefix1_complete_20242_nominal_taxa_v1',
+              full_93m_original_photo_id_opportunities=93209351,
+              source_nominal_taxon_IDs=42111,
+              taxa_eligible_for_100_distinct_original_observations=20242,
+              first_original_photo_candidates=20242,
+              source_ineligible_taxa_retained_in_original_registry=noteligible,
+              stage1_photo_loader_unsupported_original_extension=unsupported,
+              future_nested_FCP_depths=[1,5,20,100],
+              original_photo_inclusion_probability='1/N_taxon/M_original_photos_per_observation, conditional on 100-obs source eligibility',
+              source_group_SHA_receipts=groups,
+              global_FCP_U100_source_receipt_SHA256=hashlib.sha256(census.read_bytes()).hexdigest(),
+              selected_original_photo_candidates_SHA256=hashlib.sha256(csvfile.read_bytes()).hexdigest(),
+              prior_real_FCP_MOIS_photo_and_active_balanced_K1_dedup_still_REQUIRED=True,
+              new_original_images_downloaded=0,
+              new_colour_ROI_inferences=0,
+              botanical_native_wild_anthesis_independently_verified=False,
+              globally_representative_photo_white_fraction_estimated=False)
+          (out/'FCP_20242_taxa_prefix1_original_photo_receipt.json').write_text(
+              json.dumps(record,indent=2,sort_keys=True)+'\n')
+          print('MOIS_GLOBAL_FIRST_ORIGINAL_FCP_U100_PREFIX_COMPLETE',
+                json.dumps(dict(taxa=len(taxa),source_93m=93209351,
+                                selected_original_photo_ids=len(ids),
+                                ineligible_source_taxa=noteligible),sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-full93m-FCP-U100-progressive-prefix1-source
+          path: combined/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish immutable 20242 original photo candidates, no redundant ROI inference
+        run: |
+          set -euo pipefail
+          if gh release view "$RESULT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'Already released identical immutable global FCP original photo stage.'
+            exit 0
+          fi
+          gh release create "$RESULT_TAG" \
+            combined/FCP_20242_taxa_prefix1_original_photo_candidates.csv \
+            combined/FCP_20242_taxa_prefix1_original_photo_receipt.json \
+            --repo "$REPO" --target "$GITHUB_SHA" \
+            --title 'MOIS full93m FCP progressive first independent original photo for 20242 taxa' \
+            --notes 'First prefix source from globally signed FCP U100 original photo observation ranks for all 93209351 iNaturalist candidate photo IDs. Exactly one source-authenticated original photo and independent observation per 20242 nominal U100-eligible taxa, joint photo inclusion probability 1/N_taxon/M_photos_per_observation, and all other 21869 sparse/ineligible nominal taxa preserved in the 42111-taxon global opportunity roster and complementary seasonal probability arms. Future per-taxon progression depths 5/20/100 must reuse the first original ROI and all already measured photo IDs. NO image bytes, flower colours, independently confirmed flowering or wild/native taxonomy here. Do not run further ROI jobs until active balanced K1 source and historical FCP/MOIS original photo IDs have been reconciled.'
