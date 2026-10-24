@@ -164,6 +164,9 @@ class TrueFrozenK1GroupTests(unittest.TestCase):
         self.assertFalse(jobs["seal"]["strategy"]["fail-fast"])
         self.assertIn("'gh','api','--paginate'", wf.read_text(encoding="utf-8"))
         self.assertIn("releases?per_page=100", wf.read_text(encoding="utf-8"))
+        self.assertIn("Unexpected signed K1 original worker group",wf.read_text(encoding="utf-8"))
+        self.assertIn("Invalid original-worker ZIP SHA",wf.read_text(encoding="utf-8"))
+        self.assertIn("Empty original ROI evidence",wf.read_text(encoding="utf-8"))
 
     def test_sealing_is_immutable(self):
         self.seal()
