@@ -1,0 +1,185 @@
+name: MOIS FCP K1 immediately append completed source-verified original ROI groups
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_k1_append_completed_original_photo_group.py
+      - tests/test_mois_fcp_k1_append_completed_original_photo_group.py
+      - .github/workflows/mois-fcp-K1-new-pixel-append-only.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_k1_append_completed_original_photo_group.py
+      - tests/test_mois_fcp_k1_append_completed_original_photo_group.py
+      - .github/workflows/mois-fcp-K1-new-pixel-append-only.yml
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - MOIS new 93m balanced onephoto ROI-v4 warm 8-runner acquisition
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '29 * * * *'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-fcp-80035-K1-original-new-photo-warm-immediate-append-only
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check K1 original photo SHA, conditional probabilities, technical unknowns and shell syntax
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_fcp_k1_append_completed_original_photo_group.py
+          python -m unittest discover -s tests -p test_mois_fcp_k1_append_completed_original_photo_group.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          from pathlib import Path
+          d=yaml.safe_load(Path('.github/workflows/mois-fcp-K1-new-pixel-append-only.yml').read_text())
+          all_steps=[s['run'] for j in d['jobs'].values() for s in j['steps'] if 'run' in s]
+          assert len(all_steps)>=5
+          for command in all_steps:
+              r=subprocess.run(['bash','-n'],input=command,text=True,capture_output=True)
+              assert r.returncode==0,r.stderr
+          print('MOIS_FCP_K1_GENUINE_ROI_COMPLETE_SHELL_BLOCKS_VERIFIED',len(all_steps))
+          PY
+  inspect:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      ready: ${{ steps.scan.outputs.ready }}
+      groups: ${{ steps.scan.outputs.groups }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      ORIGINAL_K1_RUN: '40066261878'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect successful original photo ROI jobs, omit all pending ones
+        id: scan
+        run: |
+          set -euo pipefail
+          gh api "repos/$REPO/actions/runs/$ORIGINAL_K1_RUN/jobs?per_page=100" > original-k1-jobs.json
+          gh api "repos/$REPO/actions/runs/$ORIGINAL_K1_RUN/artifacts?per_page=100" > original-k1-artifacts.json
+          python - <<'PY'
+          import json,os,subprocess
+          jobs=json.load(open('original-k1-jobs.json'))['jobs']
+          artifacts=json.load(open('original-k1-artifacts.json'))['artifacts']
+          good={x['name'] for x in jobs if x['conclusion']=='success'}
+          by_name={}
+          for item in artifacts:
+              name=item['name']
+              if name.startswith('mois-balanced-onephoto-K1-real-RGB-group-'):
+                  assert name not in by_name,'Duplicated source-photo original worker result'
+                  by_name[name]=item
+          allready=[]
+          for group in range(75):
+              name=f'mois-balanced-onephoto-K1-real-RGB-group-{group}'
+              if f'warm-original-ROI ({group})' not in good or name not in by_name:
+                  continue
+              assert by_name[name]['expired'] is False,'Original ROI source artifact expired'
+              tag=f'mois-full93m-balanced-onephoto-K1-original-RGB-append-group-{group}-v1'
+              exists=subprocess.run(
+                  ['gh','release','view',tag,'--repo',os.environ['REPO']],
+                  stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+              if not exists:allready.append(group)
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:
+              out.write('ready='+('true' if allready else 'false')+'\n')
+              out.write('groups='+json.dumps(allready)+'\n')
+          print('MOIS_FCP_K1_NEWLY_COMPLETED_TRUE_PHOTO_WORK_GROUPS',
+                json.dumps({'original_run':int(os.environ['ORIGINAL_K1_RUN']),
+                            'already_successful_original_group_results':len(by_name),
+                            'new_groups_needing_append':allready,
+                            'original_images_to_reacquire':0},sort_keys=True))
+          PY
+  seal:
+    needs: inspect
+    if: needs.inspect.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: ${{ fromJSON(needs.inspect.outputs.groups) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      ORIGINAL_K1_RUN: '40066261878'
+      GROUP: ${{ matrix.group }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download only one genuine finished FCP K1 model-worker ZIP and the immutable source roster
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          gh run download "$ORIGINAL_K1_RUN" --repo "$REPO" \
+            --name mois-full93m-balanced-onephoto-K1-new-precolour-original-ROI-source \
+            --dir source
+          echo '4da66dc0d34f440269c2202f95b0f39ad369531fd625676e8ec69df4ae939f1c  source/manifest.json' | sha256sum -c -
+          gh run download "$ORIGINAL_K1_RUN" --repo "$REPO" \
+            --name "mois-balanced-onephoto-K1-real-RGB-group-$GROUP" \
+            --dir sealed-original-worker
+      - name: Verify original photo pixels, per-photo inclusion probabilities and actual warm CPU timing
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_fcp_k1_append_completed_original_photo_group \
+            --source source --workers sealed-original-worker --group "$GROUP" \
+            --output append
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          x=json.loads(Path('append/original_K1_group_receipt.json').read_text())
+          assert x['original_worker_group']==int(os.environ['GROUP'])
+          assert 0<x['actual_new_original_photo_attempts']<=1024
+          assert x['actual_automatic_four_hue_ROI_classifications']>=0
+          assert x['image_downloads_OR_ROI_reinferences_in_this_sealer']==0
+          assert x['source_inclusion_probability_retained_at_each_photo']
+          assert x['frozen_original_FCP_roi_v4_source_method_attested']
+          print('MOIS_FCP_K1_ALREADY_COMPLETED_GENUINE_PHOTO_ROI_SIGNED',
+                x['original_worker_group'],x['actual_new_original_photo_attempts'],
+                x['actual_automatic_four_hue_ROI_classifications'],
+                round(x['original_full_roi_wall_seconds'],2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-fcp-K1-original-photo-append-group-${{ matrix.group }}
+          path: append/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish only this completed real K1 ROI group as immutable original-photo evidence
+        env:
+          TAG: mois-full93m-balanced-onephoto-K1-original-RGB-append-group-${{ matrix.group }}-v1
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$TAG" --repo "$REPO" --dir old \
+              --pattern original_K1_group_receipt.json
+            cmp old/original_K1_group_receipt.json append/original_K1_group_receipt.json
+          else
+            gh release create "$TAG" \
+              append/original_K1_group_receipt.json \
+              append/original_photo_ROIs.parquet \
+              append/original_photo_hue_counts.csv \
+              append/original_photo_source_coverage.json \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title "MOIS frozen FCP K1 original image ROI true completed group $GROUP" \
+              --notes 'Completed original photographic pixels only, independently SHA checked from one signed 40066261878 model worker. True per-original-photo nested tier/observation/photo inclusion probability retained (heterogeneous); missing/failed full-resolution YOLO11+EfficientSAM FCP ROI-v4 results remain unknown, no original photo fetch or re-inference by this append-only action. Previous 3280 ROI photos are only reusable historical results, not counted as newly measured. The world 93209351-ID candidate photo metadata frame remains intact; these few worker-photo rows do not estimate unweighted global wild/native white-flower prevalence.'
+          fi
