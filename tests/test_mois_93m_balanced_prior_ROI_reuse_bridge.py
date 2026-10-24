@@ -120,6 +120,8 @@ class BalancingExistingOriginalPixelsTests(unittest.TestCase):
         self.assertFalse(r["colour_measured"])
         self.assertTrue(r["original_photo_source_probabilities_unchanged_by_prior_pixel_reuse"])
         self.assertEqual(len(r["prior_original_pixel_arms"]),4)
+        self.assertEqual(r["prior_original_crossarm_photo_overlap"]["unique_old_photo_IDs"],5)
+        self.assertEqual(r["prior_original_crossarm_photo_overlap"]["signed_arm_photo_rows"],5)
         with (self.output/"shards/shard-000.csv").open(newline="") as f:
             kept=list(csv.DictReader(f))
         self.assertEqual(tuple(kept[0].keys()),WORKER_COLUMNS)
@@ -136,18 +138,61 @@ class BalancingExistingOriginalPixelsTests(unittest.TestCase):
         self.assertEqual(old[0]["photo_id"],"1")
         self.assertEqual(old[0]["prior_automatic_ROI_morph"],"white")
 
-    def test_old_sealed_cross_arm_photo_overlap_is_refused(self):
+    def change_prior_to_shared_photo(self, *, new_obs="obsA", new_hue="white",
+                                     image_sha="d"*64):
         path=self.priors[1][1]
-        d=pd.read_parquet(path)
-        d.loc[0,"photo_id"]="1"
-        d.to_parquet(path,index=False)
+        table=pd.read_parquet(path)
+        table.loc[0,"photo_id"]="1"
+        table.loc[0,"observation_id"]=new_obs
+        table.loc[0,"morph"]=new_hue
+        table.loc[0,"measurement_status"]="classified_four_state_morph"
+        table.loc[0,"image_sha256"]=image_sha
+        table.to_parquet(path,index=False)
         receipt=self.priors[1][2]
-        r=json.loads(receipt.read_text())
-        r["measured_photo_parquet_sha256"]=sha(path)
-        receipt.write_text(json.dumps(r))
-        with self.assertRaisesRegex(ValueError,"Overlapping original photo"):
+        d=json.loads(receipt.read_text())
+        d["measured_photo_parquet_sha256"]=sha(path)
+        receipt.write_text(json.dumps(d))
+
+    def test_historical_exact_same_photo_and_observation_is_reused_once(self):
+        self.change_prior_to_shared_photo()
+        d=self.bridge()
+        self.assertEqual(d["prior_original_crossarm_photo_overlap"][
+            "old_cross_arm_exact_duplicate_photo_rows"],1)
+        self.assertEqual(d["prior_original_crossarm_photo_overlap"][
+            "old_cross_arm_same_photo_evidence_conflicts"] if
+            "old_cross_arm_same_photo_evidence_conflicts" in
+            d["prior_original_crossarm_photo_overlap"] else 0,0)
+        self.assertEqual(d["reused_original_photo_ids"],1)
+        self.assertEqual(d["new_photo_attempts_planned"],2)
+        file=self.output/"prior_original_photo_crossarm_overlap.csv"
+        self.assertEqual(d["prior_original_crossarm_overlap_rows_SHA256"],sha(file))
+        with file.open(newline="") as f:
+            rows=list(csv.DictReader(f))
+        self.assertEqual(rows[0]["photo_id"],"1")
+        self.assertEqual(rows[0]["first_source_arm"],"main")
+        self.assertEqual(rows[0]["additional_source_arm"],"prior_group00")
+        self.assertEqual(rows[0]["evidence_conflict"],"false")
+
+    def test_same_original_photo_with_different_observation_fails_closed(self):
+        self.change_prior_to_shared_photo(new_obs="obsC")
+        with self.assertRaisesRegex(ValueError,
+                                    "Conflicting original observation UUID"):
             self.bridge()
         self.assertFalse(self.output.exists())
+
+    def test_contradictory_prior_photo_colour_not_reused_as_white_flower(self):
+        self.change_prior_to_shared_photo(new_hue="red_pink")
+        data=self.bridge()
+        self.assertEqual(data["prior_original_crossarm_photo_overlap"][
+            "old_cross_arm_same_photo_evidence_conflicts"],1)
+        self.assertEqual(data["selected_reused_photos_with_conflicting_prior_ROI_status"],1)
+        conflict=self.output/"prior_original_photo_ROI_conflicts.csv"
+        self.assertEqual(data["prior_original_crossarm_conflict_rows_SHA256"],sha(conflict))
+        with (self.output/"already_measured_original_photo_reuse.csv").open(newline="") as f:
+            reused=list(csv.DictReader(f))
+        self.assertEqual(reused[0]["prior_automatic_ROI_morph"],"mixed_uncertain")
+        self.assertEqual(reused[0]["prior_ROI_status"],"conflicting_prior_ROI_evidence")
+        self.assertEqual(reused[0]["prior_photo_ROI_provenance_conflict"],"true")
 
     def test_unchanged_selected_photo_probability_is_mandatory(self):
         d=list(self.rows)
