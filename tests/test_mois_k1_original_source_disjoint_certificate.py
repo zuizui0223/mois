@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest import mock
 
 from scripts.acquisition import mois_k1_original_source_disjoint_certificate as m
 from scripts.acquisition.mois_completed_pixel_checkpoint import sha
@@ -57,7 +58,7 @@ class TestEntireK1PrecolourOriginalIDExclusion(unittest.TestCase):
         self.manifest.write_text(json.dumps(doc),encoding="utf-8")
 
     def certify(self,where=None,**kwargs):
-        with unittest.mock.patch.object(m,"GROUPS",1),unittest.mock.patch.object(m,"UNITS",1):
+        with mock.patch.object(m,"GROUPS",1),mock.patch.object(m,"UNITS",1):
             return m.certify_source(self.source,self.old,self.old_obs,[],
                 where or self.out,expected_old=1,expected_hues=1,
                 expected_new=2,expected_sha=sha(self.manifest),**kwargs)
