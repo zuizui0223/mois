@@ -72,6 +72,13 @@ def canonical_prior_original_ROI_hue(morph, status):
 
 
 
+LEGACY_OBSERVATION_MISSING=frozenset(("", "nan", "none", "null", "na", "n/a"))
+
+def prior_observation_unknown(value):
+    """Only a genuinely missing legacy UUID may be backfilled from signed 93m source."""
+    return str(value).strip().lower() in LEGACY_OBSERVATION_MISSING
+
+
 def prior_original_photo_index(sources, expected_counts):
     """Source-SHA audit historical arms, and reuse each original photo ID only ONCE.
 
@@ -92,7 +99,6 @@ def prior_original_photo_index(sources, expected_counts):
     duplicate_photo_records=[]
     conflict_records=[]
     overlap=Counter()
-    missing_observation_values={"", "nan", "None", "null"}
     for arm,path,receipt in sources:
         require(arm in PRIOR_SOURCE_KEYS and arm not in {x["source_arm"] for x in source_info},
                 "Unknown or duplicated previously signed original-photo source arm")
@@ -130,7 +136,7 @@ def prior_original_photo_index(sources, expected_counts):
             if status:
                 require(known==(status=="classified_four_state_morph"),
                         "Prior technical unknown falsely recorded as petal hue")
-            if obs not in missing_observation_values:
+            if not prior_observation_unknown(obs):
                 previous_observation=obs_to_arm.get(obs)
                 if previous_observation is None:
                     obs_to_arm[obs]=(arm,pid)
@@ -142,8 +148,8 @@ def prior_original_photo_index(sources, expected_counts):
                 old_arm,old_obs,old_morph,old_status,old_sha=previous
                 overlap["old_cross_arm_exact_duplicate_photo_rows"]+=1
                 this_arm_duplicates+=1
-                require(old_obs in missing_observation_values
-                        or obs in missing_observation_values
+                require(prior_observation_unknown(old_obs)
+                        or prior_observation_unknown(obs)
                         or old_obs==obs,
                         "Conflicting original observation UUID for the SAME photo ID across historical sources")
                 reason=[]
@@ -294,13 +300,17 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
                     continue
                 if pid in prior_ids:
                     arm, old_obs, old_hue, old_status, old_sha=prior_ids[pid]
-                    require(not old_obs or old_obs==obs,
+                    require(prior_observation_unknown(old_obs) or old_obs==obs,
                             "Reused genuine photo ID has conflicting original observation UUID")
+                    if prior_observation_unknown(old_obs):
+                        counts["reused_photo_legacy_observation_unresolved"]+=1
                     reused.append({
                         "photo_id":pid,"observation_id":obs,
                         "source_arm":SOURCE_ARM,
                         "balanced_joint_photo_probability":row["joint_photo_selection_probability"],
                         "prior_measured_arm":arm,
+                        "prior_observation_id_missing_in_legacy_source":
+                            str(prior_observation_unknown(old_obs)).lower(),
                         "prior_automatic_ROI_morph":old_hue,
                         "prior_ROI_status":old_status,
                         "prior_original_image_SHA256":old_sha,
@@ -375,6 +385,7 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
         reused_file=stage/"already_measured_original_photo_reuse.csv"
         columns=("photo_id","observation_id","source_arm",
                  "balanced_joint_photo_probability","prior_measured_arm",
+                 "prior_observation_id_missing_in_legacy_source",
                  "prior_automatic_ROI_morph","prior_ROI_status",
                  "prior_original_image_SHA256",
                  "prior_photo_ROI_provenance_conflict")
@@ -412,6 +423,9 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
                 counts["selected_reused_photo_has_conflicting_prior_ROI_evidence"],
             "per_photo_conflicting_old_hues_preserved_as_technical_unknown":True,
             "reused_original_photo_ids":len(reused),
+            "reused_photo_legacy_observation_unresolved":
+                counts["reused_photo_legacy_observation_unresolved"],
+            "missing_legacy_observation_backfilled_only_from_signed_93m_source":True,
             "reused_exact_photo_results_SHA256":sha256(reused_file),
             "previously_measured_original_observations_with_different_sample_photo":
                 counts["fresh_photo_observation_already_measured_other_image"],
