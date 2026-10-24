@@ -156,9 +156,12 @@ jobs:
     if: github.event_name != 'pull_request' && needs.original-source-only.outputs.ready == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 210
+    # Runs only AFTER all 75 parent K1 original-image groups succeeded.
+    # Four independent 3141-photo work groups can therefore run once in
+    # parallel, at lower provider concurrency than the completed 8-worker K1.
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 4
       matrix:
         group: ${{ fromJSON(needs.original-source-only.outputs.groups) }}
     env:
