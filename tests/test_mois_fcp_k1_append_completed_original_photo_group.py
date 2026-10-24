@@ -160,7 +160,7 @@ class TrueFrozenK1GroupTests(unittest.TestCase):
         self.assertEqual(jobs["seal"]["needs"],["inspect","test"])
         self.assertIn("needs.test.result == 'success'",jobs["seal"]["if"])
         self.assertIn("needs.inspect.outputs.ready == 'true'",jobs["seal"]["if"])
-        self.assertEqual(jobs["seal"]["strategy"]["max-parallel"],4)
+        self.assertEqual(jobs["seal"]["strategy"]["max-parallel"],6)
         self.assertFalse(jobs["seal"]["strategy"]["fail-fast"])
         self.assertIn("'gh','api','--paginate'", wf.read_text(encoding="utf-8"))
         self.assertIn("releases?per_page=100", wf.read_text(encoding="utf-8"))
