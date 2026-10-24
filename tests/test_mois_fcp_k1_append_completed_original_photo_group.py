@@ -145,6 +145,24 @@ class TrueFrozenK1GroupTests(unittest.TestCase):
             m.seal(self.source,self.worker,0,self.output,source_sha="0"*64,
                    expected_new=2,expected_selected=3,expected_reused=1)
 
+    def test_k1_idle_poll_skips_heavy_ci_but_live_originals_require_it(self):
+        import yaml
+        wf=(Path(__file__).resolve().parents[1]/".github/workflows"/
+            "mois-fcp-K1-new-pixel-append-only.yml")
+        jobs=yaml.safe_load(wf.read_text(encoding="utf-8"))["jobs"]
+        self.assertNotIn("needs",jobs["inspect"])
+        self.assertEqual(jobs["test"]["needs"],"inspect")
+        self.assertIn("always()",jobs["test"]["if"])
+        self.assertIn("github.event_name == 'pull_request'",jobs["test"]["if"])
+        self.assertIn("github.event_name == 'push'",jobs["test"]["if"])
+        self.assertIn("needs.inspect.outputs.ready == 'true'",jobs["test"]["if"])
+        self.assertEqual(jobs["seal"]["needs"],["inspect","test"])
+        self.assertIn("needs.test.result == 'success'",jobs["seal"]["if"])
+        self.assertIn("needs.inspect.outputs.ready == 'true'",jobs["seal"]["if"])
+        self.assertEqual(jobs["seal"]["strategy"]["max-parallel"],4)
+        self.assertFalse(jobs["seal"]["strategy"]["fail-fast"])
+        self.assertIn("gh api --paginate",wf.read_text(encoding="utf-8"))
+
     def test_sealing_is_immutable(self):
         self.seal()
         with self.assertRaisesRegex(ValueError,"overwrite"):
