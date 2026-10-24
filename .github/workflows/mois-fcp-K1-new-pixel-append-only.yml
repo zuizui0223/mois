@@ -18,7 +18,8 @@ on:
     types: [completed]
     branches: [main]
   schedule:
-    - cron: '29 * * * *'
+    # Poll completed original workers every 20 min; data-only, no image fetch or ROI rerun.
+    - cron: '9,29,49 * * * *'
 permissions:
   contents: read
   actions: read
