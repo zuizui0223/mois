@@ -171,6 +171,28 @@ class TrueFrozenK1GroupTests(unittest.TestCase):
         self.assertIn('artifact["size_in_bytes"]>0',gate)
         self.assertIn("signed_cumulative_archive_groups",wf.read_text(encoding="utf-8"))
 
+    def test_remote_group_release_is_complete_SHA_authenticated_and_retryable(self):
+        import yaml
+        wf=(Path(__file__).resolve().parents[1]/".github/workflows"/
+            "mois-fcp-K1-new-pixel-append-only.yml")
+        jobs=yaml.safe_load(wf.read_text(encoding="utf-8"))["jobs"]
+        steps=[step["run"] for step in jobs["seal"]["steps"]
+               if "run" in step and "MOIS_K1_REMOTE_ALL_FOUR_ASSETS_BYTE_SHA_VERIFIED" in step["run"]]
+        self.assertEqual(len(steps),1)
+        code=steps[0]
+        self.assertIn("for attempt in 1 2 3; do",code)
+        self.assertIn('if [ "$attempt" -eq 3 ]; then',code)
+        self.assertIn("signed-published-original-release.json",code)
+        self.assertIn("Incomplete/extra K1 immutable original photo ROI assets",code)
+        self.assertIn("asset['digest']==digest",code)
+        self.assertIn("asset['size']==original.stat().st_size",code)
+        self.assertIn("original_photo_ROIs.parquet",code)
+        self.assertIn("original_K1_group_receipt.json",code)
+        self.assertIn("original_photo_hue_counts.csv",code)
+        self.assertIn("original_photo_source_coverage.json",code)
+        self.assertNotIn("--clobber",code)
+        self.assertNotIn("image_loader(",code)
+
     def test_sealing_is_immutable(self):
         self.seal()
         with self.assertRaisesRegex(ValueError,"overwrite"):
