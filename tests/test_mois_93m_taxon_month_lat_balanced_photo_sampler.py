@@ -152,7 +152,7 @@ class BalancedSignedOriginalPhotoSampleTests(unittest.TestCase):
         from_earlier={"1","2","3","4","5","6","7","8","9"}
         self.assertTrue(set(r["photo_id"] for r in rows)<=from_earlier)
         self.assertTrue(summary["all_source_observations_have_strictly_positive_phase2_probability"])
-        self.assertFalse(summary["no_botanical_anthesis_or_individual_wild_native_validation"])
+        self.assertTrue(summary["no_botanical_anthesis_or_individual_wild_native_validation"])
         self.assertEqual(summary["source_sample_decided_without_photo_pixels"],True)
         self.assertEqual(summary["source_sampling_schema"] if "source_sampling_schema" in summary else
                          summary["sampling_schema"],s.SCHEMA)
