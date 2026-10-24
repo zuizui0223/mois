@@ -79,6 +79,22 @@ def prior_observation_unknown(value):
     return str(value).strip().lower() in LEGACY_OBSERVATION_MISSING
 
 
+def exact_photo_observation_compatible(old, source):
+    """Compatibility is ONLY for the exact SAME immutable iNaturalist photo ID.
+
+    Old main ROI projections sometimes carry numeric iNaturalist observation
+    identifiers while the signed 93m parent source supplies its UUID. The
+    photo ID is the join key, so numeric-vs-UUID is a field-namespace
+    difference, not permission to match any *different* photo or observation.
+    Distinct genuine UUID-vs-UUID values must still fail closed.
+    """
+    raw_old, raw_source = str(old).strip(), str(source).strip()
+    if prior_observation_unknown(raw_old) or raw_old == raw_source:
+        return True
+    from scripts.acquisition.mois_diagnose_prior_photo_uuid_crosswalk import field_type
+    return field_type(raw_old) == "numeric" and field_type(raw_source) == "uuid"
+
+
 def prior_original_photo_index(sources, expected_counts):
     """Source-SHA audit historical arms, and reuse each original photo ID only ONCE.
 
@@ -148,10 +164,9 @@ def prior_original_photo_index(sources, expected_counts):
                 old_arm,old_obs,old_morph,old_status,old_sha=previous
                 overlap["old_cross_arm_exact_duplicate_photo_rows"]+=1
                 this_arm_duplicates+=1
-                require(prior_observation_unknown(old_obs)
-                        or prior_observation_unknown(obs)
-                        or old_obs==obs,
-                        "Conflicting original observation UUID for the SAME photo ID across historical sources")
+                require(exact_photo_observation_compatible(old_obs,obs)
+                        or exact_photo_observation_compatible(obs,old_obs),
+                        "Conflicting genuine original observation UUID for the SAME photo ID across historical sources")
                 reason=[]
                 if old_morph!=morph:
                     reason.append("four_hue_or_unknown_morph_disagreement")
@@ -188,6 +203,9 @@ def prior_original_photo_index(sources, expected_counts):
                     "photo_id":pid,"first_source_arm":old_arm,
                     "additional_source_arm":arm,
                     "same_observation_id":str(old_obs==obs).lower(),
+                    "numeric_legacy_observation_crosswalk_for_exact_photo":str(
+                        old_obs!=obs and (exact_photo_observation_compatible(old_obs,obs) or
+                                         exact_photo_observation_compatible(obs,old_obs))).lower(),
                     "evidence_conflict":str(bool(reason)).lower(),
                 })
             else:
@@ -300,10 +318,12 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
                     continue
                 if pid in prior_ids:
                     arm, old_obs, old_hue, old_status, old_sha=prior_ids[pid]
-                    require(prior_observation_unknown(old_obs) or old_obs==obs,
-                            "Reused genuine photo ID has conflicting original observation UUID")
+                    require(exact_photo_observation_compatible(old_obs,obs),
+                            "Reused genuine photo ID has conflicting source UUID, not a numeric legacy ID")
                     if prior_observation_unknown(old_obs):
                         counts["reused_photo_legacy_observation_unresolved"]+=1
+                    if old_obs!=obs and exact_photo_observation_compatible(old_obs,obs):
+                        counts["reused_exact_photo_numeric_to_UUID_crosswalk"]+=1
                     reused.append({
                         "photo_id":pid,"observation_id":obs,
                         "source_arm":SOURCE_ARM,
