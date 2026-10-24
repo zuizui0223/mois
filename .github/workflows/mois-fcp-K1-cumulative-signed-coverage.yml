@@ -1,0 +1,178 @@
+name: MOIS FCP K1 signed cumulative true original photo progress
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_k1_cumulative_receipts.py
+      - tests/test_mois_fcp_k1_cumulative_receipts.py
+      - .github/workflows/mois-fcp-K1-cumulative-signed-coverage.yml
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_k1_cumulative_receipts.py
+      - tests/test_mois_fcp_k1_cumulative_receipts.py
+      - .github/workflows/mois-fcp-K1-cumulative-signed-coverage.yml
+  workflow_run:
+    workflows:
+      - MOIS FCP K1 immediately append completed source-verified original ROI groups
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '16 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-K1-cumulative-only-authenticated-completed-original-photo-receipts
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate original group partition, immutable receipts, unknowns and collector shell syntax
+        run: |
+          set -euo pipefail
+          python -m pip install -q PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_fcp_k1_cumulative_receipts.py
+          python -m unittest discover -s tests -p test_mois_fcp_k1_cumulative_receipts.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          spec=yaml.safe_load(open('.github/workflows/mois-fcp-K1-cumulative-signed-coverage.yml'))
+          scripts=[s['run'] for job in spec['jobs'].values() for s in job['steps'] if 'run' in s]
+          assert len(scripts)>=5
+          for code in scripts:
+              p=subprocess.run(['bash','-n'],input=code,capture_output=True,text=True)
+              assert p.returncode==0,p.stderr
+          print('MOIS_K1_CUMULATIVE_DATA_ONLY_SHELL_STEPS_PASS',len(scripts))
+          PY
+  publish-completed-original-group-ledger:
+    needs: tests
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
+        github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enumerate immutable signed K1 group releases across ALL GitHub release pages
+        id: inventory
+        run: |
+          set -euo pipefail
+          gh api --paginate --jq '.[] | .tag_name' "repos/$REPO/releases?per_page=100" > all-release-tags.txt
+          python - <<'PY'
+          import json,os,re
+          from pathlib import Path
+          prefix='mois-full93m-balanced-onephoto-K1-original-RGB-append-group-'
+          pattern=re.compile(re.escape(prefix)+r'([0-9]+)-v1\Z')
+          found={}
+          for line in Path('all-release-tags.txt').read_text().splitlines():
+              m=pattern.fullmatch(line.strip())
+              if not m:continue
+              group=int(m.group(1))
+              assert 0<=group<75 and group not in found, 'Duplicated signed K1 release/group identity'
+              found[group]=line.strip()
+          entries=[{'group':group,'tag':found[group]} for group in sorted(found)]
+          Path('sealed-group-releases.json').write_text(json.dumps(entries,indent=2)+'\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output:
+              output.write('ready='+str(bool(entries)).lower()+'\n')
+          print('MOIS_K1_REAL_ORIGINAL_PHOTO_SIGNED_RELEASE_INVENTORY',
+                json.dumps({'sealed_completed_groups':list(sorted(found)),
+                            'source_images_downloaded':0},sort_keys=True))
+          PY
+      - uses: actions/setup-python@v5
+        if: steps.inventory.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Download only tiny already-published SHA-signed K1 JSON receipts, not photographs
+        if: steps.inventory.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os,subprocess
+          from concurrent.futures import ThreadPoolExecutor
+          from pathlib import Path
+          groups=json.loads(Path('sealed-group-releases.json').read_text())
+          repo=os.environ['REPO']
+          def fetch(one):
+              group,tag=one['group'],one['tag']
+              dest=Path('signed-group-receipts')/f'group{group:02d}'
+              dest.mkdir(parents=True,exist_ok=False)
+              cmd=['gh','release','download',tag,'--repo',repo,'--dir',str(dest),
+                   '--pattern','original_K1_group_receipt.json']
+              subprocess.run(cmd,check=True,capture_output=True,text=True)
+              file=dest/'original_K1_group_receipt.json'
+              assert file.is_file() and file.stat().st_size>0, 'Signed K1 JSON receipt missing'
+              return str(file)
+          with ThreadPoolExecutor(max_workers=4) as pool:
+              results=list(pool.map(fetch,groups))
+          Path('signed-group-receipt-paths.json').write_text(json.dumps(results,indent=2)+'\n')
+          print('MOIS_K1_FROZEN_ORIGINAL_PHOTO_RECEIPTS_FETCHED',len(results),
+                'new_original_image_downloads=0',flush=True)
+          PY
+      - name: Independently reconcile original full-resolution model/group photo classifications
+        if: steps.inventory.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.acquisition.mois_fcp_k1_cumulative_receipts import aggregate
+          receipts=[Path(x) for x in json.loads(Path('signed-group-receipt-paths.json').read_text())]
+          report=aggregate(receipts,Path('ledger'))
+          print('MOIS_CUMULATIVE_K1_CHECKED',report['completed_and_SHA_sealed_original_worker_groups'],
+                report['completed_real_new_original_photo_attempts'],
+                report['completed_automatic_four_hue_classifications'],
+                flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.inventory.outputs.ready == 'true'
+        with:
+          name: mois-genuine-K1-completed-original-photo-cumulative-ledger-${{ github.run_id }}
+          path: ledger/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish idempotent versioned source-audited cumulative K1 progress, never global white prevalence
+        if: steps.inventory.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path('ledger/k1_cumulative_original_ROI_receipt.json').read_text())
+          name=('mois-K1-genuine-completed-original-ROI-'+
+                str(d['completed_and_SHA_sealed_original_worker_groups'])+'groups-'+
+                d['source_original_group_receipt_aggregate_SHA256'][:16]+'-v1')
+          with open(os.environ['GITHUB_ENV'],'a') as stream:
+              stream.write('OUTPUT_TAG='+name+'\n')
+          print('MOIS_CUMULATIVE_ORIGINAL_PIXEL_SHA_VERSIONED_RELEASE',name)
+          PY
+          if gh release view "$OUTPUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$OUTPUT_TAG" --repo "$REPO" --dir prior \
+              --pattern k1_cumulative_original_ROI_receipt.json \
+              --pattern k1_finished_original_group_counts.csv
+            cmp prior/k1_cumulative_original_ROI_receipt.json ledger/k1_cumulative_original_ROI_receipt.json
+            cmp prior/k1_finished_original_group_counts.csv ledger/k1_finished_original_group_counts.csv
+            echo 'K1 original-pixel cumulative photo receipt SHA unchanged. No new release.'
+          else
+            gh release create "$OUTPUT_TAG" \
+              ledger/k1_cumulative_original_ROI_receipt.json \
+              ledger/k1_finished_original_group_counts.csv \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS genuine K1 completed original-photo measurements and technical unknowns' \
+              --notes 'Automatically enumerated and SHA-audited immutable FCP-K1 93m-source completed original photo ROI group receipts only. Records real image-attempt and automatic 4-hue/technical unknown counts, per-photo probability preservation, frozen model timings and disjoint original K1 work units. No new photo download, image inference, global historical photo-ID merge, independently validated wild/native blooming petals, or unweighted worldwide white-flower prevalence.'
+          fi
