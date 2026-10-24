@@ -171,6 +171,7 @@ jobs:
               --repo "$REPO" --target "$GITHUB_SHA" \
               --title 'MOIS genuine original 93m balanced K1 new-photo-only frozen ROI work roster' \
               --notes 'All 80035 independent original-photo sampling strata and exact nonzero per-photo inclusion probabilities came from a full 597070-ID signed tier06 metadata frame. This source-only bridge independently SHA-validated the latest six-arm original photo checkpoint plus three prior independently source-audited tier06 original photo arms, reused exact original photo IDs without another image fetch and kept previously observed other-photo observations in the randomized sample to avoid altering source inclusion probabilities. All native/anthesis/photo-quality assumptions remain unvalidated. This release contains NO newly inferred pixels; immutable source only. Original FCP ROI-v4 source shards and their hashes are frozen for the large scale parallel worker run.'
+          fi
   warm-original-ROI:
     needs: original-only-source
     if: github.event_name != 'pull_request' && needs.original-only-source.outputs.ready == 'true'
