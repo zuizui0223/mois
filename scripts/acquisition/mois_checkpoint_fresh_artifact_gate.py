@@ -48,6 +48,41 @@ def latest_checkpoint_tag(releases):
     return max(relevant)[2] if relevant else None
 
 
+
+def latest_checkpoint_tag_from_gh(repo, check_output=None):
+    """Find the last published real-pixel checkpoint across *all* release pages.
+
+    GitHub's first 100 releases now contain source/worker releases only, so a
+    one-page scan can silently turn an incremental checkpoint into a redundant
+    multi-hundred-thousand-photo baseline reconstruction.  Retain publication
+    timestamps and fail closed when an existing immutable baseline is missing.
+    This function only reads release metadata; it never downloads images.
+    """
+    import subprocess
+    require(isinstance(repo, str) and repo.count("/") == 1,
+            "Expected owner/repository for signed MOIS checkpoint lookup")
+    if check_output is None:
+        check_output = subprocess.check_output
+    output = check_output(
+        ["gh", "api", "--paginate", "--jq",
+         ".[] | {tag_name: .tag_name, draft: .draft, published_at: .published_at}",
+         f"repos/{repo}/releases?per_page=100"],
+        text=True,
+    )
+    decoder = json.JSONDecoder()
+    releases = []
+    while output.strip():
+        output = output.lstrip()
+        item, end = decoder.raw_decode(output)
+        require(isinstance(item, dict),
+                "Expected per-release JSON records from paginated gh api")
+        releases.append(item)
+        output = output[end:]
+    tag = latest_checkpoint_tag(releases)
+    require(tag is not None, "No immutable real-pixel checkpoint found in all release pages")
+    return tag
+
+
 def validate_snapshots(snapshots, runs=WAVES):
     """Fail closed on altered artifact identities and unknown acquisition waves."""
     require(isinstance(snapshots, dict) and set(snapshots) == set(runs),
