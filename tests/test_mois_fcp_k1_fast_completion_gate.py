@@ -69,6 +69,33 @@ class FastOriginalPhotoGroupArchiverTests(unittest.TestCase):
         self.assertEqual(pending,[3])
         self.assertEqual(looked,[2,3])
 
+    def test_large_delta_archived_release_checks_are_bounded_and_deterministic(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from unittest.mock import patch
+        done=set(range(62))
+        old=set(range(50))
+        requested=[]
+        def exists(g):
+            requested.append(g)
+            return g in (50,54,60)
+        recorded={}
+        true_factory=ThreadPoolExecutor
+        def bounded_pool(*args,**kwargs):
+            recorded["max_workers"]=kwargs.get("max_workers")
+            return true_factory(*args,**kwargs)
+        with patch.object(__import__("concurrent.futures",fromlist=["ThreadPoolExecutor"]),
+                          "ThreadPoolExecutor",side_effect=bounded_pool):
+            ready=m.groups_needing_archive(done,old,exists)
+        self.assertEqual(recorded["max_workers"],6)
+        self.assertEqual(set(requested),set(range(50,62)))
+        self.assertEqual(ready,[51,52,53,55,56,57,58,59,61])
+        self.assertEqual(ready,sorted(ready))
+
+    def test_many_original_release_checks_fail_closed_on_invalid_result(self):
+        with self.assertRaisesRegex(ValueError,"verified boolean"):
+            m.groups_needing_archive(set(range(7)),set(range(2)),
+                lambda g: None if g==4 else False)
+
     def test_no_snapshot_fallback_checks_complete_tag_inventory(self):
         j,a=inventory()
         done=m.successful_finished_groups(j,a)
