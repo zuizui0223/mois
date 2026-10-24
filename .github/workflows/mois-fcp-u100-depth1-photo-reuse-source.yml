@@ -1,0 +1,192 @@
+name: MOIS FCP U100 first-photo historical ROI and active K1 source reuse
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_u100_depth1_prior_k1_reuse_queue.py
+      - tests/test_mois_fcp_u100_depth1_prior_k1_reuse_queue.py
+      - .github/workflows/mois-fcp-u100-depth1-photo-reuse-source.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_u100_depth1_prior_k1_reuse_queue.py
+      - tests/test_mois_fcp_u100_depth1_prior_k1_reuse_queue.py
+      - .github/workflows/mois-fcp-u100-depth1-photo-reuse-source.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-first-20242-FCP-original-photo-after-K1-reservation-source-v1
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prove exact-photo old ROI reuse, active K1 double-fetch guard and all shell syntax
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 pyarrow==19.0.1 numpy==2.1.3 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_fcp_u100_depth1_prior_k1_reuse_queue.py
+          python -m unittest discover -s tests -p test_mois_fcp_u100_depth1_prior_k1_reuse_queue.py -v
+          python - <<'PY'
+          import yaml,subprocess
+          p='.github/workflows/mois-fcp-u100-depth1-photo-reuse-source.yml'
+          d=yaml.safe_load(open(p))
+          count=0
+          for job in d['jobs'].values():
+              for step in job['steps']:
+                  if 'run' not in step:continue
+                  result=subprocess.run(['bash','-n'],input=step['run'],
+                                        capture_output=True,text=True)
+                  assert result.returncode==0,(step.get('name'),result.stderr)
+                  count+=1
+          assert count>=5
+          print('MOIS_FCP_FIRST1_PRIOR_PHOTO_AND_ACTIVE_K1_REUSE_BASH_CHECK',count)
+          PY
+  freeze-only-never-used-original-photo-IDs:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PREFIX_TAG: mois-full93m-FCP-U100-progressive-prefix1-20242-taxa-original-source-v1
+      BALANCED_K1_TAG: mois-full93m-tier06-original-taxon-month-lat-onephoto-K1-probability-v1
+      RESULT_TAG: mois-full93m-FCP-U100-prefix1-photo-reuse-and-inflight-K1-source-v1
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Preserve exactly one frozen FCP original-photo source decision per taxon
+        id: gate
+        run: |
+          set -euo pipefail
+          echo ready=false >> "$GITHUB_OUTPUT"
+          if gh release view "$RESULT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'Already froze old-photo and active K1 source reuse. No new image downloads.'
+            exit 0
+          fi
+          gh release view "$PREFIX_TAG" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          gh release view "$BALANCED_K1_TAG" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          echo ready=true >> "$GITHUB_OUTPUT"
+      - name: Recover ONLY immutable signed FCP first-photo candidates, old 929138 original ROIs and in-flight K1 source
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 pyarrow==19.0.1 numpy==2.1.3
+          gh release download "$PREFIX_TAG" --repo "$REPO" --dir first \
+            --pattern FCP_20242_taxa_prefix1_original_photo_candidates.csv \
+            --pattern FCP_20242_taxa_prefix1_original_photo_receipt.json
+          gh release download "$BALANCED_K1_TAG" --repo "$REPO" --dir k1 \
+            --pattern manifest.json \
+            --pattern selected_observation_photo_probability_sample.csv
+          gh release download mois-real-pixel-checkpoint-39969920310-v1 \
+            --repo "$REPO" --dir old-main \
+            --pattern checkpoint_receipt.json \
+            --pattern combined_actual_photo_checkpoint.parquet
+          gh release download mois-tier06-group00-first64bucket-warm-original-RGB-v1 \
+            --repo "$REPO" --dir old-group00 \
+            --pattern receipt.json \
+            --pattern measured_photos.parquet
+          gh release download mois-tier06-all16-first4bucket-broad-warm-original-RGB-v1 \
+            --repo "$REPO" --dir old-R1 \
+            --pattern receipt.json \
+            --pattern measured_photos.parquet
+          gh release download mois-tier06-all16-buckets004to011-broad-warm-original-RGB-v1 \
+            --repo "$REPO" --dir old-R2 \
+            --pattern receipt.json \
+            --pattern measured_photos.parquet
+          gh release download mois-93m-tier06-16-new-original-photo-warm-parity-v1 \
+            --repo "$REPO" --dir technical \
+            --pattern technical_original_photo_id_reservations.csv
+      - name: Calculate exact old-photo ROI reuse and frozen active-K1 reservations before scheduling FCP source photo work
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_fcp_u100_depth1_prior_k1_reuse_queue \
+            --prefix-csv first/FCP_20242_taxa_prefix1_original_photo_candidates.csv \
+            --prefix-receipt first/FCP_20242_taxa_prefix1_original_photo_receipt.json \
+            --k1-selected k1/selected_observation_photo_probability_sample.csv \
+            --k1-manifest k1/manifest.json \
+            --main-parquet old-main/combined_actual_photo_checkpoint.parquet \
+            --main-receipt old-main/checkpoint_receipt.json \
+            --prior-group00-parquet old-group00/measured_photos.parquet \
+            --prior-group00-receipt old-group00/receipt.json \
+            --prior-r1-parquet old-R1/measured_photos.parquet \
+            --prior-r1-receipt old-R1/receipt.json \
+            --prior-r2-parquet old-R2/measured_photos.parquet \
+            --prior-r2-receipt old-R2/receipt.json \
+            --technical technical/technical_original_photo_id_reservations.csv \
+            --output next-source
+      - name: Prove all first 20242 FCP original-photo probabilities and five outcome categories conserved
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,csv,hashlib
+          from pathlib import Path
+          manifest=json.loads(Path('next-source/manifest.json').read_text())
+          assert manifest['schema']=='mois_full_source_observation_sampling_cohort_v1'
+          assert manifest['selected_FCP_U100_eligible_source_taxa']==20242
+          assert manifest['selected_original_photo_observations']==20242
+          assert manifest['full_frame_photo_ids']==93209351
+          assert manifest['original_images_downloaded_by_source_bridge']==0
+          assert manifest['no_original_image_ROI_inference_by_source_bridge']
+          assert manifest['new_FCP_photo_ROI_jobs_not_launched_until_separate_resource_and_duplicate_gate']
+          counts=manifest['photo_ID_technical_unknown_and_reuse_dispositions']
+          assert sum(counts.values())==20242
+          assert manifest['new_photo_attempts_planned']==counts['new_original_photo_ROI_queued']
+          assert len(manifest['group_ids'])==(manifest['work_units']+3)//4
+          assert manifest['work_units']==(manifest['new_photo_attempts_planned']+255)//256
+          photo=set();taxa=set()
+          f=Path('next-source/all_FCP_U100_prefix1_photo_source_dispositions.csv')
+          with f.open(newline='') as source:
+              for row in csv.DictReader(source):
+                  assert row['photo_id'] not in photo and row['inat_taxon_id'] not in taxa
+                  photo.add(row['photo_id']);taxa.add(row['inat_taxon_id'])
+                  assert row['reuse_or_new_photo_outcome'] in counts
+                  assert float(row['depth1_joint_original_photo_inclusion_probability'])>0
+          assert len(photo)==20242
+          assert hashlib.sha256(f.read_bytes()).hexdigest()==manifest['frozen_all_selected_FCP_photo_dispositions_SHA256']
+          for u,digest in manifest['photo_shard_sha256'].items():
+              part=Path('next-source/shards')/f'shard-{int(u):03d}.csv'
+              assert hashlib.sha256(part.read_bytes()).hexdigest()==digest
+          print('MOIS_FCP_U100_DEPTH1_PREVIOUS_ORIGINAL_ROI_AND_K1_REUSE_COMPLETE',
+                json.dumps({k:manifest[k] for k in (
+                    'selected_FCP_U100_eligible_source_taxa',
+                    'previously_measured_original_photo_ids_reused',
+                    'inflight_K1_photo_IDs_reserved_without_redownload',
+                    'technical_pilot_photo_IDs_not_refetched',
+                    'unsupported_original_photo_format_selected_as_unknown',
+                    'new_photo_attempts_planned')},sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-FCP-full93m-U100-firstphoto-old-photo-and-K1-original-ROI-reuse
+          path: next-source/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish only new FCP photo SOURCE targets, never open new photo pixels while K1 running
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          tar -cf next-FCP-U100-first-photo-ROI-source-shards.tar -C next-source shards/
+          gh release create "$RESULT_TAG" \
+            next-source/manifest.json \
+            next-source/all_FCP_U100_prefix1_photo_source_dispositions.csv \
+            next-FCP-U100-first-photo-ROI-source-shards.tar \
+            --repo "$REPO" --target "$GITHUB_SHA" \
+            --title 'MOIS source-only FCP U100 first photo for 20242 taxa after old/K1 image reuse' \
+            --notes 'FCP 93,209,351-photo source first hashed original observation per each of 20,242 U100-eligible taxa, true per-photo 1/N_taxon/M_original-observation-photographs inclusion probabilities. Exact photo IDs already measured in previous SHA-authenticated MOIS and FCP-inclusive source arms are marked REUSE with their original ROI outcomes, while photo IDs in the 80,035-observation currently running K1 source are marked RESERVED until those image workers finish. Technical holdout and unsupported original photo formats are technical unknowns, not nonwhite flowers. Only never-before-scheduled photo IDs are present in frozen original 256-photo ROI-v4 source shards; this job downloads ZERO images, evaluates ZERO image ROIs, and does NOT launch additional inference until the active K1 source, provider budget and immutable source photo dedup are independently checked. Full 42,111 source taxon roster remains known including 21,869 FCP-U100-ineligible taxa; not worldwide unbiased native or blooming white-flower frequency.'
