@@ -1,0 +1,128 @@
+name: MOIS diagnostic original photo-ID legacy observation UUID crosswalk (no photos)
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_diagnose_prior_photo_uuid_crosswalk.py
+      - tests/test_mois_diagnose_prior_photo_uuid_crosswalk.py
+      - .github/workflows/mois-diagnose-original-obs-id-crosswalk.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_diagnose_prior_photo_uuid_crosswalk.py
+      - tests/test_mois_diagnose_prior_photo_uuid_crosswalk.py
+      - .github/workflows/mois-diagnose-original-obs-id-crosswalk.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-original-photo-UUID-observation-crosswalk-diagnosis-source-only
+  cancel-in-progress: false
+jobs:
+  test-provenance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests; legacy numeric/UUID distinction, missing technical IDs, original SHA and shell syntax
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 pyarrow==19.0.1 numpy==2.1.3 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_diagnose_prior_photo_uuid_crosswalk.py
+          python -m unittest discover -s tests -p test_mois_diagnose_prior_photo_uuid_crosswalk.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          workflow=yaml.safe_load(open('.github/workflows/mois-diagnose-original-obs-id-crosswalk.yml'))
+          scripts=[s['run'] for job in workflow['jobs'].values() for s in job['steps'] if 'run' in s]
+          assert len(scripts)>=4
+          for cmd in scripts:
+              p=subprocess.run(['bash','-n'],input=cmd,capture_output=True,text=True)
+              assert p.returncode==0,p.stderr
+          print('MOIS_ORIGINAL_PHOTO_UUID_DIAGNOSTIC_ALL_SHELLS_VALID',len(scripts))
+          PY
+  inspect-signed-real-original-photo-id-collisions:
+    needs: test-provenance
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SAMPLE_TAG: mois-full93m-tier06-original-taxon-month-lat-onephoto-K1-probability-v1
+      RESULT_TAG: mois-signed-full93m-balanced-K1-prior-photo-observation-UUID-diagnostic-v1
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Avoid refetching already diagnosed identical immutable source snapshots
+        id: guard
+        run: |
+          set -euo pipefail
+          echo ready=false >> "$GITHUB_OUTPUT"
+          if gh release view "$RESULT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'Original-photo UUID crosswalk already diagnosed from this exact SHA source.'
+            exit 0
+          fi
+          gh release view "$SAMPLE_TAG" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          echo ready=true >> "$GITHUB_OUTPUT"
+      - name: Download ONLY existing measured original-photo Parquet ID columns and frozen probability sample metadata
+        if: steps.guard.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 pyarrow==19.0.1 numpy==2.1.3
+          gh release download "$SAMPLE_TAG" --repo "$REPO" --dir sampled \
+            --pattern manifest.json \
+            --pattern selected_observation_photo_probability_sample.csv
+          gh release download mois-real-pixel-checkpoint-39969920310-v1 \
+            --repo "$REPO" --dir old-main \
+            --pattern checkpoint_receipt.json --pattern combined_actual_photo_checkpoint.parquet
+          gh release download mois-tier06-group00-first64bucket-warm-original-RGB-v1 \
+            --repo "$REPO" --dir old-group00 \
+            --pattern receipt.json --pattern measured_photos.parquet
+          gh release download mois-tier06-all16-first4bucket-broad-warm-original-RGB-v1 \
+            --repo "$REPO" --dir old-R1 \
+            --pattern receipt.json --pattern measured_photos.parquet
+          gh release download mois-tier06-all16-buckets004to011-broad-warm-original-RGB-v1 \
+            --repo "$REPO" --dir old-R2 \
+            --pattern receipt.json --pattern measured_photos.parquet
+      - name: Classify exact same original photo-ID overlaps by UUID vs numeric vs missing observation reference
+        if: steps.guard.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_diagnose_prior_photo_uuid_crosswalk \
+            --sample sampled/selected_observation_photo_probability_sample.csv \
+            --manifest sampled/manifest.json \
+            --main-parquet old-main/combined_actual_photo_checkpoint.parquet \
+            --main-receipt old-main/checkpoint_receipt.json \
+            --group00-parquet old-group00/measured_photos.parquet \
+            --group00-receipt old-group00/receipt.json \
+            --r1-parquet old-R1/measured_photos.parquet \
+            --r1-receipt old-R1/receipt.json \
+            --r2-parquet old-R2/measured_photos.parquet \
+            --r2-receipt old-R2/receipt.json \
+            --output original_source_observation_ID_diagnosis.json
+          test -s original_source_observation_ID_diagnosis.json
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.guard.outputs.ready == 'true'
+        with:
+          name: mois-original-photo-id-crosswalk-UUID-vs-historical-data-only
+          path: original_source_observation_ID_diagnosis.json
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish only anonymized hashed photo ID format/count diagnosis without biological inference
+        if: steps.guard.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release create "$RESULT_TAG" \
+            original_source_observation_ID_diagnosis.json \
+            --repo "$REPO" --target "$GITHUB_SHA" \
+            --title 'MOIS genuine same-photo observation-ID crosswalk diagnosis, source-only' \
+            --notes 'READ ONLY diagnostic. Detects actual same photo IDs between SHA-signed 80035 full93m balanced original-photo source observations and historical 911767 genuine original photo terminal checkpoint plus three separate real tier06 photo source arms. Reports only categorical UUID/numeric/missing ID mismatches and hashed photo examples; opens no original images, performs no colour re-inference, changes no source IDs or old photo labels. Genuine different UUIDs require separate source identity audit and cannot be coerced to an equivalent sampling unit. No worldwide flower colour inference.'
