@@ -173,6 +173,39 @@ class BalancingExistingOriginalPixelsTests(unittest.TestCase):
         self.assertEqual(rows[0]["additional_source_arm"],"prior_group00")
         self.assertEqual(rows[0]["evidence_conflict"],"false")
 
+    def test_historic_main_blank_ROI_morph_is_not_assigned_white(self):
+        # Original six-arm checkpoint may contain legacy unspecified technical
+        # hue state; its receipt counts that photo as unclassifiable.
+        main,receipt=self.priors[0][1],self.priors[0][2]
+        df=pd.read_parquet(main)
+        df.loc[1,"morph"]=""
+        df.loc[1,"measurement_status"]=""
+        df.to_parquet(main,index=False)
+        old=json.loads(receipt.read_text())
+        old["output_sha256"][main.name]=sha(main)
+        receipt.write_text(json.dumps(old))
+        result=self.bridge()
+        self.assertGreaterEqual(
+            result["prior_original_crossarm_photo_overlap"][
+                "old_original_photo_legacy_unknown_morph_rows"],1)
+        self.assertTrue(
+            result["legacy_noncanonical_original_morph_states_were_not_classified"])
+        with (self.output/"shards/shard-000.csv").open(newline="") as file:
+            frame=list(csv.DictReader(file))
+        self.assertEqual({x["photo_id"] for x in frame},{"6","7"})
+
+    def test_blank_hist_morph_with_falsely_classified_terminal_is_rejected(self):
+        main,receipt=self.priors[0][1],self.priors[0][2]
+        df=pd.read_parquet(main)
+        df.loc[1,"morph"]=""
+        df.loc[1,"measurement_status"]="classified_four_state_morph"
+        df.to_parquet(main,index=False)
+        old=json.loads(receipt.read_text())
+        old["output_sha256"][main.name]=sha(main)
+        receipt.write_text(json.dumps(old))
+        with self.assertRaisesRegex(ValueError,"technical unknown falsely"):
+            self.bridge()
+
     def test_same_original_photo_with_different_observation_fails_closed(self):
         self.change_prior_to_shared_photo(new_obs="obsC")
         with self.assertRaisesRegex(ValueError,
