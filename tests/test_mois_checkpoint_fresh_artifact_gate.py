@@ -5,7 +5,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from scripts.acquisition.mois_checkpoint_fresh_artifact_gate import (
-    decide_checkpoint, latest_checkpoint_tag, validate_snapshots,
+    decide_checkpoint, latest_checkpoint_tag, latest_checkpoint_tag_from_gh,
+    validate_snapshots,
     WAVES as PINNED_WAVES, PREFIXES as PINNED_PREFIXES,
 )
 
@@ -84,6 +85,50 @@ class TestScheduledCheckpointGate(unittest.TestCase):
         ]
         self.assertEqual(latest_checkpoint_tag(releases),"mois-real-pixel-checkpoint-95-v1")
         self.assertIsNone(latest_checkpoint_tag([]))
+
+    def test_paginated_release_lookup_recovers_checkpoint_beyond_first_100(self):
+        unrelated = [
+            {"tag_name": f"mois-new-worker-release-{i}", "draft": False,
+             "published_at": "2026-10-24T08:00:00Z"}
+            for i in range(135)
+        ]
+        published = [
+            {"tag_name": "mois-real-pixel-checkpoint-39969920310-v1",
+             "draft": False, "published_at": "2026-10-23T14:32:00Z"},
+            {"tag_name": "mois-real-pixel-checkpoint-39741340512-v1",
+             "draft": False, "published_at": "2026-10-22T07:35:52Z"},
+        ]
+        responses = unrelated + published
+
+        def simulated_gh_call(cmd, *, text):
+            self.assertTrue(text)
+            self.assertIn("--paginate", cmd)
+            self.assertIn("per_page=100", cmd[-1])
+            # The real gh CLI prints each selected release as a JSON object,
+            # not one JSON array that can safely be truncated to page 1.
+            return "\\n".join(json.dumps(x, indent=2) for x in responses)
+
+        self.assertEqual(
+            latest_checkpoint_tag_from_gh("zuizui0223/mois", simulated_gh_call),
+            "mois-real-pixel-checkpoint-39969920310-v1")
+
+    def test_paginated_release_lookup_fails_closed_without_baseline(self):
+        def no_checkpoints(cmd, *, text):
+            return "\\n".join(json.dumps(
+                {"tag_name": f"other-{i}", "draft": False,
+                 "published_at": "2026-10-24T08:00:00Z"})
+                for i in range(135))
+        with self.assertRaisesRegex(ValueError, "No immutable real-pixel checkpoint"):
+            latest_checkpoint_tag_from_gh("zuizui0223/mois", no_checkpoints)
+
+    def test_all_checkpoint_workflows_use_paginated_checkpoint_lookup(self):
+        root = Path(__file__).resolve().parents[1]/".github/workflows"
+        for name in ("mois-auto-checkpoint-when-new-pixels.yml",
+                     "mois-completed-pixel-checkpoint.yml"):
+            text = (root/name).read_text()
+            self.assertIn("latest_checkpoint_tag_from_gh", text)
+            self.assertNotIn("get_json(f'repos/{repo}/releases?per_page=100')", text)
+            self.assertNotIn("gh_json(f'repos/{repo}/releases?per_page=100')", text)
 
     def test_schedule_workflow_never_reacquires_or_overwrites_original_data(self):
         wf = (Path(__file__).resolve().parents[1]/".github/workflows"/
