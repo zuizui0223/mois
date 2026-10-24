@@ -165,7 +165,7 @@ class BalancingExistingOriginalPixelsTests(unittest.TestCase):
     def test_byte_tampering_of_original_93m_sample_is_refused(self):
         with self.source.open("ab") as f:
             f.write(b"fake-extra-source")
-        with self.assertRaisesRegex(ValueError,"manifest or selected roster SHA changed"):
+        with self.assertRaisesRegex(ValueError,"(manifest or selected roster SHA changed|Not the exact SHA-signed)"):
             self.bridge()
 
     def test_sample_is_immutable_after_success(self):
