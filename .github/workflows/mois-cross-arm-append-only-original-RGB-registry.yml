@@ -79,8 +79,10 @@ jobs:
             echo 'ready=false' >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          latest=$(gh api "repos/$REPO/releases?per_page=100" --jq '.[] | select((.draft | not) and (.tag_name | test("^mois-real-pixel-checkpoint-[0-9]+-v1$"))) | .tag_name' | sort -t- -k5,5nr | head -1)
-          test -n "$latest"
+          latest=$(gh api --paginate "repos/$REPO/releases?per_page=100" --jq '.[] | select((.draft | not) and (.tag_name | test("^mois-real-pixel-checkpoint-[0-9]+-v1$"))) | .tag_name' | sort -t- -k5,5nr | head -1)
+          # More than 100 unrelated releases can precede the latest pixel checkpoint.
+          # Missing a known checkpoint must fail closed, never invent a fresh baseline.
+          test -n "$latest" || { echo "Cannot locate immutable checkpoint across paginated releases" >&2; exit 1; }
           mainrun=$(echo "$latest" | cut -d- -f5)
           test "$mainrun" -ge 39884380759
           suffix=$(echo "$groups" | tr ' ' '-')
