@@ -150,17 +150,20 @@ jobs:
         if: steps.inventory.outputs.ready == 'true'
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import json,os
+          # GITHUB_ENV affects later steps, not the current shell.
+          # Capture the immutable tag in this process before release publishing.
+          OUTPUT_TAG="$(python - <<'PY'
+          import json
           from pathlib import Path
           d=json.loads(Path('ledger/k1_cumulative_original_ROI_receipt.json').read_text())
           name=('mois-K1-genuine-completed-original-ROI-'+
                 str(d['completed_and_SHA_sealed_original_worker_groups'])+'groups-'+
                 d['source_original_group_receipt_aggregate_SHA256'][:16]+'-v1')
-          with open(os.environ['GITHUB_ENV'],'a') as stream:
-              stream.write('OUTPUT_TAG='+name+'\n')
-          print('MOIS_CUMULATIVE_ORIGINAL_PIXEL_SHA_VERSIONED_RELEASE',name)
+          print(name)
           PY
+          )"
+          echo "MOIS_CUMULATIVE_ORIGINAL_PIXEL_SHA_VERSIONED_RELEASE $OUTPUT_TAG"
+          echo "OUTPUT_TAG=$OUTPUT_TAG" >> "$GITHUB_ENV"
           if gh release view "$OUTPUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
             gh release download "$OUTPUT_TAG" --repo "$REPO" --dir prior \
               --pattern k1_cumulative_original_ROI_receipt.json \
