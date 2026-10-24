@@ -166,6 +166,22 @@ class OriginalFCPPrefixOnePhotoTests(unittest.TestCase):
             m.check_prefix_probabilities(self.prefix,prefix_sha=sha(self.prefix),
                                          expected_eligible=3)
 
+    def test_four_parallel_new_photo_groups_only_after_all_original_K1_complete(self):
+        # The FCP depth-1 3141-photo source has already excluded all K1 IDs.
+        # Four groups may run concurrently only once the parent 8-worker wave
+        # finished, preventing double S3 acquisition and accidental CPU overlap.
+        workflow = (Path(__file__).resolve().parents[1] / ".github/workflows" /
+                    "mois-fcp-u100-depth1-new3141-original-ROI.yml")
+        text = workflow.read_text(encoding="utf-8")
+        self.assertIn("K1_RUN: '40066261878'", text)
+        self.assertIn('if [ "$completed" -lt 75 ]; then', text)
+        self.assertIn('test "$completed" -eq 75', text)
+        self.assertIn("max-parallel: 4", text)
+        self.assertIn("groups=[0,1,2,3]", text)
+        self.assertIn("cancel-in-progress: false", text)
+        self.assertIn("new_photo_attempts_planned", text)
+        self.assertIn("inflight_K1_photo_IDs_reserved_without_redownload", text)
+
     def test_already_published_outcome_is_immutable(self):
         self.run_collect()
         with self.assertRaisesRegex(ValueError,"must not be overwritten"):
