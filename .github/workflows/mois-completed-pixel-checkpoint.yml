@@ -73,12 +73,10 @@ jobs:
           import json,os,subprocess
           from pathlib import Path
           from scripts.acquisition.mois_checkpoint_fresh_artifact_gate import (
-              WAVES,PREFIXES,latest_checkpoint_tag,decide_checkpoint)
+              WAVES,PREFIXES,latest_checkpoint_tag_from_gh,decide_checkpoint)
           repo='zuizui0223/mois'
-          def gh_json(url):
-              return json.loads(subprocess.check_output(
-                  ['gh','api',url],text=True))
-          tag=latest_checkpoint_tag(gh_json(f'repos/{repo}/releases?per_page=100'))
+          # Scan all published releases; missing baseline must fail closed.
+          tag=latest_checkpoint_tag_from_gh(repo)
           previous=None
           if tag is not None:
               Path('previous-checkpoint').mkdir()
