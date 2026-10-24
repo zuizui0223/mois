@@ -285,6 +285,57 @@ class BalancingExistingOriginalPixelsTests(unittest.TestCase):
             self.bridge()
         self.assertFalse(self.output.exists())
 
+    def rewrite_balanced_original_source_photo_UUID(self, value):
+        source=list(self.rows)
+        source[0]=dict(source[0],observation_id=value)
+        with self.source.open("w",newline="") as f:
+            writer=csv.DictWriter(f,fieldnames=list(source[0]),lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(source)
+        manifest=json.loads(self.manifest.read_text())
+        manifest["original_source_sample_full_table_SHA256"]=sha(self.source)
+        self.manifest.write_text(json.dumps(manifest))
+
+    def test_exact_photo_ID_reused_across_numeric_iNat_and_signed_UUID_representations(self):
+        uuid="15dbeb6f-493a-4a3a-91bf-a832eddf1001"
+        self.rewrite_balanced_original_source_photo_UUID(uuid)
+        self.change_reused_original_photo_observation_to_legacy_missing("1234567")
+        report=self.bridge()
+        self.assertEqual(report["reused_original_photo_ids"],1)
+        self.assertEqual(report["reused_photo_prior_numeric_observation_UUID_alias"],1)
+        self.assertEqual(report["reused_photo_legacy_observation_unresolved"],0)
+        self.assertTrue(report[
+            "same_photo_ID_prior_numeric_observation_alias_not_a_validated_global_UUID_crosswalk"
+        ])
+        self.assertEqual(report["new_photo_attempts_planned"],2)
+        with (self.output/"already_measured_original_photo_reuse.csv").open(newline="") as f:
+            old=list(csv.DictReader(f))
+        self.assertEqual(len(old),1)
+        self.assertEqual(old[0]["photo_id"],"1")
+        self.assertEqual(old[0]["observation_id"],uuid)
+        self.assertEqual(old[0]["prior_old_observation_ID_reference"],"1234567")
+        self.assertEqual(old[0]["observation_ID_crosswalk_relation"],
+                         "old_numeric_ID_vs_signed_UUID_same_photo_ID_unverified_crosswalk")
+        self.assertEqual(old[0]["same_photo_ID_does_not_prove_independent_observation_crosswalk"],
+                         "true")
+        self.assertEqual(old[0]["prior_automatic_ROI_morph"],"white")
+        self.assertFalse(report["colour_measured"])
+
+    def test_numeric_ID_cannot_be_accepted_if_signed_source_uses_another_text_scheme(self):
+        self.change_reused_original_photo_observation_to_legacy_missing("1234567")
+        with self.assertRaisesRegex(ValueError,"conflicting original observation UUID"):
+            self.bridge()
+        self.assertFalse(self.output.exists())
+
+    def test_two_different_nonmissing_signed_UUIDs_are_never_equated(self):
+        uuid="15dbeb6f-493a-4a3a-91bf-a832eddf1001"
+        self.rewrite_balanced_original_source_photo_UUID(uuid)
+        self.change_reused_original_photo_observation_to_legacy_missing(
+            "15dbeb6f-493a-4a3a-91bf-a832eddf1002")
+        with self.assertRaisesRegex(ValueError,"conflicting original observation UUID"):
+            self.bridge()
+        self.assertFalse(self.output.exists())
+
     def test_unchanged_selected_photo_probability_is_mandatory(self):
         d=list(self.rows)
         d[1]=dict(d[1],joint_photo_selection_probability="0.5")
