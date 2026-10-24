@@ -1,0 +1,302 @@
+name: MOIS new 93m balanced onephoto ROI-v4 warm 8-runner acquisition
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_93m_balanced_prior_ROI_reuse_bridge.py
+      - tests/test_mois_93m_balanced_prior_ROI_reuse_bridge.py
+      - .github/workflows/mois-93m-balanced-onephoto-real-warm8-RGB.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_93m_balanced_prior_ROI_reuse_bridge.py
+      - tests/test_mois_93m_balanced_prior_ROI_reuse_bridge.py
+      - .github/workflows/mois-93m-balanced-onephoto-real-warm8-RGB.yml
+  workflow_dispatch:
+    inputs:
+      resume_run:
+        description: Prior source-identical work run for sealed RGB worker reuse
+        type: string
+        required: false
+        default: ''
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-93m-balanced-onephoto-K1-real-original-RGB-never-restart
+  cancel-in-progress: false
+jobs:
+  source-and-probability-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test prior pixel reuse, immutable new source, valid joint probability and run-step syntax
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 pyarrow==19.0.1 numpy==2.1.3 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_93m_balanced_prior_ROI_reuse_bridge.py
+          python -m unittest discover -s tests -p test_mois_93m_balanced_prior_ROI_reuse_bridge.py -v
+          python -m unittest discover -s tests -p test_mois_warm_original_roi.py -v
+          python - <<'PY'
+          import yaml,subprocess
+          d=yaml.safe_load(open('.github/workflows/mois-93m-balanced-onephoto-real-warm8-RGB.yml'))
+          n=0
+          for job in d['jobs'].values():
+              for step in job['steps']:
+                  if 'run' not in step:continue
+                  p=subprocess.run(['bash','-n'],input=step['run'],text=True,capture_output=True)
+                  assert p.returncode==0,(step.get('name'),p.stderr)
+                  n+=1
+          assert n>=8
+          print('MOIS_FULL93M_ONEPHOTO_SCALED_WORKER_ALL_SHELL_STEPS_VALID',n)
+          PY
+  original-only-source:
+    needs: source-and-probability-contract
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+      groups: ${{ steps.make.outputs.groups }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      RESUME_RUN: ${{ inputs.resume_run || '' }}
+      MASTER_TAG: mois-full93m-tier06-original-taxon-month-lat-onephoto-K1-probability-v1
+      SOURCE_TAG: mois-full93m-tier06-balanced-onephoto-K1-new-original-warm8-RGB-source-v1
+      FINAL_TAG: mois-full93m-tier06-balanced-onephoto-K1-new-original-warm8-RGB-v1
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Skip complete source photo release and require explicit resume for already frozen original work
+        id: gate
+        run: |
+          set -euo pipefail
+          echo ready=false >> "$GITHUB_OUTPUT"
+          if gh release view "$FINAL_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'Original sample FCP ROI-v4 was already completed; do not repeat.'
+            exit 0
+          fi
+          gh release view "$MASTER_TAG" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          if [ -z "$RESUME_RUN" ] && gh release view "$SOURCE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'Existing original-photo source already reserved. Only explicit prior run can resume.' >&2
+            exit 1
+          fi
+          echo ready=true >> "$GITHUB_OUTPUT"
+      - name: Recover original K1 balanced source and only latest four genuine already measured photo-ID ledgers
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          gh release download "$MASTER_TAG" --repo "$REPO" --dir balanced-master \
+            --pattern manifest.json \
+            --pattern selected_observation_photo_probability_sample.csv
+          gh release download mois-real-pixel-checkpoint-39969920310-v1 --repo "$REPO" \
+            --dir old-main --pattern checkpoint_receipt.json \
+            --pattern combined_actual_photo_checkpoint.parquet
+          gh release download mois-tier06-group00-first64bucket-warm-original-RGB-v1 --repo "$REPO" \
+            --dir old-group00 --pattern receipt.json --pattern measured_photos.parquet
+          gh release download mois-tier06-all16-first4bucket-broad-warm-original-RGB-v1 --repo "$REPO" \
+            --dir old-R1 --pattern receipt.json --pattern measured_photos.parquet
+          gh release download mois-tier06-all16-buckets004to011-broad-warm-original-RGB-v1 --repo "$REPO" \
+            --dir old-R2 --pattern receipt.json --pattern measured_photos.parquet
+          gh release download mois-93m-tier06-16-new-original-photo-warm-parity-v1 --repo "$REPO" \
+            --dir technical --pattern technical_original_photo_id_reservations.csv
+      - name: Deduplicate EXACT previously measured original photo IDs, retain each new true source probability
+        id: make
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_93m_balanced_prior_ROI_reuse_bridge \
+            --sample-manifest balanced-master/manifest.json \
+            --sample-selected balanced-master/selected_observation_photo_probability_sample.csv \
+            --main-parquet old-main/combined_actual_photo_checkpoint.parquet \
+            --main-receipt old-main/checkpoint_receipt.json \
+            --old-parquet old-group00/measured_photos.parquet \
+            --old-receipt old-group00/receipt.json \
+            --r1-parquet old-R1/measured_photos.parquet \
+            --r1-receipt old-R1/receipt.json \
+            --r2-parquet old-R2/measured_photos.parquet \
+            --r2-receipt old-R2/receipt.json \
+            --technical technical/technical_original_photo_id_reservations.csv \
+            --output source
+          python - <<'PY'
+          import json,os
+          data=json.load(open('source/manifest.json'))
+          assert data['schema']=='mois_full_source_observation_sampling_cohort_v1'
+          assert data['all_balanced_selected_original_observations']==80035
+          assert data['source_precolour_balanced_manifest_SHA256']==\
+                 'c0ba3a316a336816065590540e75034bd8c2b9b7362034163673702103c44977'
+          assert data['images_downloaded_by_this_source_bridge']==0
+          assert data['original_photo_source_probabilities_unchanged_by_prior_pixel_reuse']
+          assert 1000<=data['new_photo_attempts_planned']<=80035
+          assert len(data['group_ids'])<=80
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('groups='+json.dumps(data['group_ids'])+'\n')
+          print('MOIS_NEW_NEVER_DOWNLOADED_BALANCED_FROZEN_ROI_SOURCE',
+                json.dumps(dict(new_original_photos=data['new_photo_attempts_planned'],
+                                existing_exact_photo_ROIs_reused=data['reused_original_photo_ids'],
+                                original_warm_worker_groups=len(data['group_ids'])),
+                           sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-full93m-balanced-onephoto-K1-new-precolour-original-ROI-source
+          path: source/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish immutable selected probability source before opening any new licensed original pixels
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          tar -cf balanced-new-original-photo-shards.tar -C source shards/
+          if gh release view "$SOURCE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$SOURCE_TAG" --repo "$REPO" --dir existing \
+              --pattern manifest.json
+            cmp existing/manifest.json source/manifest.json
+          else
+            gh release create "$SOURCE_TAG" \
+              source/manifest.json source/already_measured_original_photo_reuse.csv \
+              balanced-new-original-photo-shards.tar \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS genuine original 93m balanced K1 new-photo-only frozen ROI work roster' \
+              --notes 'All 80035 independent original-photo sampling strata and exact nonzero per-photo inclusion probabilities came from a full 597070-ID signed tier06 metadata frame. This source-only bridge independently SHA-validated the latest six-arm original photo checkpoint plus three prior independently source-audited tier06 original photo arms, reused exact original photo IDs without another image fetch and kept previously observed other-photo observations in the randomized sample to avoid altering source inclusion probabilities. All native/anthesis/photo-quality assumptions remain unvalidated. This release contains NO newly inferred pixels; immutable source only. Original FCP ROI-v4 source shards and their hashes are frozen for the large scale parallel worker run.'
+          fi
+  warm-original-ROI:
+    needs: original-only-source
+    if: github.event_name != 'pull_request' && needs.original-only-source.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        group: ${{ fromJSON(needs.original-only-source.outputs.groups) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RESUME_RUN: ${{ inputs.resume_run || '' }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-full93m-balanced-onephoto-K1-new-precolour-original-ROI-source
+          path: source
+      - name: Restore only SAME-SOURCE original completed photo units on a manually specified resume
+        run: |
+          set -euo pipefail
+          mkdir -p measured
+          if [ -n "$RESUME_RUN" ]; then
+            [[ "$RESUME_RUN" =~ ^[0-9]+$ ]]
+            gh run download "$RESUME_RUN" --repo zuizui0223/mois \
+              --name 'mois-balanced-onephoto-K1-real-RGB-group-${{ matrix.group }}' \
+              --dir measured || true
+          fi
+      - name: Restore unchanged frozen YOLO11 plus EfficientSAM CPU original photo ROI-v4 models
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          (cd "$RUNNER_TEMP/fcp" && bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam")
+      - name: Actual never-before-downloaded original FCP photo ROIs with one model init per 1024 images
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-balanced-onephoto-original-paced-source"
+          python -m scripts.acquisition.mois_warm_original_roi \
+            --source source --runtime "$RUNNER_TEMP/fcp" \
+            --sam "$RUNNER_TEMP/sam" \
+            --group '${{ matrix.group }}' --output measured
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-balanced-onephoto-K1-real-RGB-group-${{ matrix.group }}
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+  collect-true-pixels:
+    needs: [original-only-source,warm-original-ROI]
+    if: github.event_name != 'pull_request' && needs.original-only-source.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      FINAL_TAG: mois-full93m-tier06-balanced-onephoto-K1-new-original-warm8-RGB-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-full93m-balanced-onephoto-K1-new-precolour-original-ROI-source
+          path: source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-balanced-onephoto-K1-real-RGB-group-*
+          path: workers
+      - name: Source-photo/observation/individual image terminal SHA audits, freeze per-photo design propensity
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.acquisition.mois_completed_pixel_checkpoint import collect_wave
+          from scripts.analysis.mois_reassemble_original_new4096_measurements import METHOD
+          plan=json.loads(Path('source/manifest.json').read_text())
+          rows,proof=collect_wave(Path('source'),Path('workers'),METHOD)
+          assert proof['wave_complete'] and proof['attempted']==plan['new_photo_attempts_planned']
+          assert proof['classifiable']+proof['acquisition_failed']+proof['unclassifiable_acquired']==proof['attempted']
+          assert len({r['photo_id'] for r in rows})==len(rows)
+          assert len({r['observation_id'] for r in rows})==len(rows)
+          assert all(r['source_arm']==plan['source_arm'] for r in rows)
+          assert all(0<float(r['selection_probability'])<=1 for r in rows)
+          Path('balanced_original_source_photo_terminal_QA.json').write_text(
+              json.dumps(proof,indent=2,sort_keys=True)+'\n')
+          print('MOIS_BALANCED_ORIGINAL_PHOTO_ROI_FULL_SOURCE_CERTIFIED',
+                proof['attempted'],proof['classifiable'])
+          PY
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure collect \
+            --source source --workers workers --output finished
+          cp balanced_original_source_photo_terminal_QA.json finished/
+          cp source/manifest.json finished/source.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-full93m-balanced-new-K1-original-ROI-complete-photo-results
+          path: finished/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Release TRUE original photo pixel Parquet separately from source metadata and old source arms
+        run: |
+          set -euo pipefail
+          if gh release view "$FINAL_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$FINAL_TAG" --repo "$REPO" --dir old --pattern receipt.json
+            cmp old/receipt.json finished/receipt.json
+          else
+            gh release create "$FINAL_TAG" finished/*.json finished/*.parquet \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS tier06 balanced K1 genuine new original pixel ROIs with true joint sample probabilities' \
+              --notes 'Only original photo IDs independently source/observation selected with positive 93m tier06 x taxon-month-lat x one-photo conditional probabilities were downloaded once, processed with unchanged full-resolution frozen FCP YOLO11 plus EfficientSAM ROI-v4, and published with image/terminal/source SHA attestations. 80035 balanced original observation-photo target records were preselected; any already measured exact photo IDs were reused without new download in a separate signed source sidecar. Unsupported photos and technical ROI unknowns remain unknown, not an assumed flower hue. This source arm is NOT a probability-complete worldwide photo colour census or confirmed wild/native flowering species response.'
+          fi
