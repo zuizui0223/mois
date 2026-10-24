@@ -138,6 +138,18 @@ class OriginalFCPPrecolourPreflightTests(unittest.TestCase):
             }
         }),encoding="utf-8")
 
+
+    def update_synthetic_manifest_sha(self, *, dispositions=False, prefix=False):
+        # In adversarial tests, deliberately re-sign synthetic files to prove
+        # semantic identity/probability checks also reject invalid originals;
+        # the separate un-re-signed tests cover byte SHA fail-closed behavior.
+        doc=json.loads(self.manifest.read_text(encoding="utf-8"))
+        if dispositions:
+            doc["frozen_all_selected_FCP_photo_dispositions_SHA256"]=sha(self.disp)
+        if prefix:
+            doc["source_full93m_prefix1_selected_csv_SHA256"]=sha(self.prefix)
+        self.manifest.write_text(json.dumps(doc),encoding="utf-8")
+
     def run_preflight(self):
         return m.preflight(
             self.source,self.prefix,self.disp,self.cert,self.k1,self.output,
@@ -163,9 +175,7 @@ class OriginalFCPPrecolourPreflightTests(unittest.TestCase):
         rows=list(self.dispositions)
         rows[2]["observation_id"]="WRONG_UUID"
         self.write_csv(self.disp,list(rows[0]),rows)
-        self.manifest.write_text(
-            self.manifest.read_text().replace(
-                self.dispositions[0]["photo_id"],self.dispositions[0]["photo_id"]))
+        self.update_synthetic_manifest_sha(dispositions=True)
         with self.assertRaisesRegex(ValueError,"photo/observation/taxon"):
             self.run_preflight()
 
@@ -173,7 +183,8 @@ class OriginalFCPPrecolourPreflightTests(unittest.TestCase):
         rows=list(self.dispositions)
         rows[2]["reuse_or_new_photo_outcome"]="new_original_photo_ROI_queued"
         self.write_csv(self.disp,list(rows[0]),rows)
-        with self.assertRaisesRegex(ValueError,"already active K1|photo"):
+        self.update_synthetic_manifest_sha(dispositions=True)
+        with self.assertRaisesRegex(ValueError,"already active K1 original image"):
             self.run_preflight()
 
     def test_a_shard_byte_flip_cannot_be_published_as_new_source(self):
@@ -186,6 +197,7 @@ class OriginalFCPPrecolourPreflightTests(unittest.TestCase):
         rows[0]=dict(rows[0])
         rows[0]["depth1_joint_original_photo_inclusion_probability"]="0.5"
         self.write_csv(self.prefix,list(rows[0]),rows)
+        self.update_synthetic_manifest_sha(prefix=True)
         with self.assertRaisesRegex(ValueError,"1/N/M changed"):
             self.run_preflight()
 
