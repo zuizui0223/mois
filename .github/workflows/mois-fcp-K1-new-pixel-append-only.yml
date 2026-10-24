@@ -4,12 +4,16 @@ on:
     paths:
       - scripts/acquisition/mois_fcp_k1_append_completed_original_photo_group.py
       - tests/test_mois_fcp_k1_append_completed_original_photo_group.py
+      - scripts/acquisition/mois_fcp_k1_fast_completion_gate.py
+      - tests/test_mois_fcp_k1_fast_completion_gate.py
       - .github/workflows/mois-fcp-K1-new-pixel-append-only.yml
   push:
     branches: [main]
     paths:
       - scripts/acquisition/mois_fcp_k1_append_completed_original_photo_group.py
       - tests/test_mois_fcp_k1_append_completed_original_photo_group.py
+      - scripts/acquisition/mois_fcp_k1_fast_completion_gate.py
+      - tests/test_mois_fcp_k1_fast_completion_gate.py
       - .github/workflows/mois-fcp-K1-new-pixel-append-only.yml
   workflow_dispatch:
   workflow_run:
@@ -47,8 +51,9 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 PyYAML==6.0.2
-          python -m py_compile scripts/acquisition/mois_fcp_k1_append_completed_original_photo_group.py
+          python -m py_compile scripts/acquisition/mois_fcp_k1_append_completed_original_photo_group.py scripts/acquisition/mois_fcp_k1_fast_completion_gate.py
           python -m unittest discover -s tests -p test_mois_fcp_k1_append_completed_original_photo_group.py -v
+          python -m unittest discover -s tests -p test_mois_fcp_k1_fast_completion_gate.py -v
           python - <<'PY'
           import subprocess,yaml
           from pathlib import Path
@@ -81,45 +86,66 @@ jobs:
           gh api "repos/$REPO/actions/runs/$ORIGINAL_K1_RUN/jobs?per_page=100" > original-k1-jobs.json
           gh api "repos/$REPO/actions/runs/$ORIGINAL_K1_RUN/artifacts?per_page=100" > original-k1-artifacts.json
           python - <<'PY'
-          import json,os,re,subprocess
-          jobs=json.load(open('original-k1-jobs.json'))['jobs']
-          artifacts=json.load(open('original-k1-artifacts.json'))['artifacts']
-          good={x['name'] for x in jobs if x['conclusion']=='success'}
-          by_name={}
-          for item in artifacts:
-              name=item['name']
-              if name.startswith('mois-balanced-onephoto-K1-real-RGB-group-'):
-                  match=re.fullmatch(r'mois-balanced-onephoto-K1-real-RGB-group-([0-9]+)',name)
-                  assert match and 0<=int(match.group(1))<75,'Unexpected signed K1 original worker group'
-                  assert name not in by_name,'Duplicated source-photo original worker result'
-                  assert item['expired'] is False,'Expired authentic original RGB artifact'
-                  assert isinstance(item.get('digest'),str) and re.fullmatch(
-                      r'sha256:[0-9a-f]{64}',item['digest']), 'Invalid original-worker ZIP SHA'
-                  assert type(item.get('size_in_bytes')) is int and item['size_in_bytes']>0, 'Empty original ROI evidence'
-                  by_name[name]=item
-          # One paginated metadata read replaces up to 75 network calls.
-          # A newly published release after this snapshot remains idempotent:
-          # seal compares the immutable receipt before creating it.
-          existing_tags=set(subprocess.check_output(
-              ['gh','api','--paginate','--jq','.[] | .tag_name',
-               f'repos/{os.environ["REPO"]}/releases?per_page=100'],
-              text=True).splitlines())
-          allready=[]
-          for group in range(75):
-              name=f'mois-balanced-onephoto-K1-real-RGB-group-{group}'
-              if f'warm-original-ROI ({group})' not in good or name not in by_name:
-                  continue
-              assert by_name[name]['expired'] is False,'Original ROI source artifact expired'
-              tag=f'mois-full93m-balanced-onephoto-K1-original-RGB-append-group-{group}-v1'
-              if tag not in existing_tags:allready.append(group)
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          from scripts.acquisition.mois_fcp_k1_fast_completion_gate import (
+              newest_snapshot_tag, verified_archived_groups,
+              successful_finished_groups, groups_needing_archive,
+              missing_from_all_releases, SEALED_TAG,
+          )
+          repo=os.environ['REPO']
+          run=int(os.environ['ORIGINAL_K1_RUN'])
+          jobs=json.loads(Path('original-k1-jobs.json').read_text())['jobs']
+          artifacts=json.loads(Path('original-k1-artifacts.json').read_text())['artifacts']
+          complete=successful_finished_groups(jobs,artifacts)
+          # One page normally holds the most recent K1 cumulative release.
+          # If absent, fall back to a complete paginated release search.
+          recent=subprocess.check_output([
+              'gh','api','--jq','.[] | .tag_name',
+              f'repos/{repo}/releases?per_page=100'],text=True).splitlines()
+          tag=newest_snapshot_tag(recent)
+          if tag:
+              Path('last-K1-cumulative').mkdir(exist_ok=False)
+              subprocess.run([
+                  'gh','release','download',tag,'--repo',repo,
+                  '--dir','last-K1-cumulative',
+                  '--pattern','k1_cumulative_original_ROI_receipt.json',
+              ],check=True)
+              body=subprocess.check_output([
+                  'gh','api',f'repos/{repo}/releases/tags/{tag}'],text=True)
+              published=json.loads(body)
+              items=[x for x in published['assets'] if
+                  x['name']=='k1_cumulative_original_ROI_receipt.json']
+              assert len(items)==1,'Signed K1 cumulative receipt asset missing/repeated'
+              blob=Path('last-K1-cumulative/k1_cumulative_original_ROI_receipt.json')
+              actual='sha256:'+hashlib.sha256(blob.read_bytes()).hexdigest()
+              assert actual==items[0]['digest'],'Cumulative K1 published JSON asset SHA mismatch'
+              archived=verified_archived_groups(
+                  json.loads(blob.read_text(encoding='utf-8')),tag)
+              def sealed(group):
+                  return subprocess.run(
+                      ['gh','release','view',SEALED_TAG.format(group),'--repo',repo],
+                      stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+              ready=groups_needing_archive(complete,archived,sealed)
+              scan_mode='latest_signed_cumulative_snapshot_delta'
+          else:
+              # Valid cold-start fallback: never skip prior signed group releases.
+              all_tags=subprocess.check_output([
+                  'gh','api','--paginate','--jq','.[] | .tag_name',
+                  f'repos/{repo}/releases?per_page=100'],text=True).splitlines()
+              ready=missing_from_all_releases(complete,all_tags)
+              archived=set()
+              scan_mode='cold_start_full_release_pagination'
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
-              out.write('ready='+('true' if allready else 'false')+'\n')
-              out.write('groups='+json.dumps(allready)+'\n')
+              out.write('ready='+('true' if ready else 'false')+'\n')
+              out.write('groups='+json.dumps(ready)+'\n')
           print('MOIS_FCP_K1_NEWLY_COMPLETED_TRUE_PHOTO_WORK_GROUPS',
-                json.dumps({'original_run':int(os.environ['ORIGINAL_K1_RUN']),
-                            'already_successful_original_group_results':len(by_name),
-                            'new_groups_needing_append':allready,
+                json.dumps({'original_run':run,'real_photo_success_groups':len(complete),
+                            'signed_cumulative_archive_groups':len(archived),
+                            'new_groups_needing_append':ready,
+                            'metadata_lookup_mode':scan_mode,
                             'original_images_to_reacquire':0},sort_keys=True))
+
           PY
   seal:
     needs: [inspect, test]
