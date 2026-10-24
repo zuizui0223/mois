@@ -140,3 +140,4 @@ jobs:
               --repo "$REPO" --target "$GITHUB_SHA" \
               --title 'MOIS 3141 never-measured FCP U100 originals ready after K1 - source-only preflight' \
               --notes 'Actual precolour 93m-source FCP U100 first-photo metadata only. Independently checked all 20242 eligible nominal taxon/photo/observation IDs, 15483 old photo-ID reuse, 1618 K1 source photo-ID/UUID matches, 3141 genuinely new images not previously measured or K1-reserved, 1/N/M design probabilities, 13 byte-SHA-pinned image-work CSV shards and original source manifest. No original images downloaded, ROI colour inferred, historical 929138 Parquet reread, flower-stage or wild/native individual verified. The separate model workflow must wait until K1 75/75 model workers and 75/75 sealed image terminals finish.'
+          fi
