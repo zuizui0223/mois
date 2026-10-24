@@ -182,6 +182,43 @@ class OriginalFCPPrefixOnePhotoTests(unittest.TestCase):
         self.assertIn("new_photo_attempts_planned", text)
         self.assertIn("inflight_K1_photo_IDs_reserved_without_redownload", text)
 
+    def test_signed_K1_group_release_gate_requires_canonical_complete_75(self):
+        # Execute the actual embedded source gate, rather than only checking
+        # text. The previous GitHub releases page contains >100 other tags.
+        import re
+        import subprocess
+        import sys
+        import yaml
+        workflow=(Path(__file__).resolve().parents[1] / ".github/workflows" /
+                  "mois-fcp-u100-depth1-new3141-original-ROI.yml")
+        jobs=yaml.safe_load(workflow.read_text(encoding="utf-8"))["jobs"]
+        gate=next(step["run"] for step in jobs["original-source-only"]["steps"]
+                  if step.get("id")=="gate")
+        self.assertIn("gh api --paginate",gate)
+        self.assertIn("select(.draft == false)",gate)
+        self.assertIn('if [ "$completed" -lt 75 ]; then',gate)
+        self.assertIn('if [ "$sealed" -lt 75 ]; then',gate)
+        self.assertIn('test "$sealed" -eq 75',gate)
+        self.assertIn("original photo terminal groups have been SHA-published",gate)
+        snippet=re.search(r"sealed=\\$\\(python - <<'PY'\\n(.*?)\\nPY\\n\\)",gate,re.S)
+        self.assertIsNotNone(snippet)
+        def run_group_gate(groups):
+            with TemporaryDirectory() as directory:
+                names=[f"mois-full93m-balanced-onephoto-K1-original-RGB-append-group-{g}-v1"
+                       for g in groups]
+                (Path(directory)/"k1-immutable-published-tags.txt").write_text(
+                    "\\n".join(names)+"\\n",encoding="utf-8")
+                return subprocess.run([sys.executable,"-c",snippet.group(1)],
+                    cwd=directory,text=True,capture_output=True)
+        for expected in (0,1,74,75):
+            got=run_group_gate(range(expected))
+            self.assertEqual(got.returncode,0,got.stderr)
+            self.assertEqual(got.stdout.strip(),str(expected))
+        wrong=run_group_gate(list(range(74))+[75])
+        self.assertNotEqual(wrong.returncode,0,"Invalid K1 group 75 must fail")
+        repeated=run_group_gate([0,0])
+        self.assertNotEqual(repeated.returncode,0,"Duplicate signed K1 group must fail")
+
     def test_already_published_outcome_is_immutable(self):
         self.run_collect()
         with self.assertRaisesRegex(ValueError,"must not be overwritten"):
