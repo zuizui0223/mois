@@ -35,7 +35,8 @@ MODEL_BLOB="b1d7091db44682559bbe4b48a9f3b8db648501a6"
 
 
 def seal(source,workers,output,*,expected_source_sha=SOURCE_SHA,
-         expected=EXPECTED,expected_source_n=SOURCE_N):
+         expected=EXPECTED,expected_source_n=SOURCE_N,
+         prior_reused=PRIOR_REUSED,k1_reserved=K1_RESERVED):
     source,workers,output=map(Path,(source,workers,output))
     require(not output.exists(),"Do not overwrite authentic original-photo ROI outcome release")
     path=source/"manifest.json"
@@ -48,8 +49,11 @@ def seal(source,workers,output,*,expected_source_sha=SOURCE_SHA,
             and plan.get("selected_FCP_U100_eligible_source_taxa")==expected_source_n
             and plan.get("full_frame_photo_ids")==93_209_351
             and plan.get("new_photo_attempts_planned")==expected
-            and plan.get("previously_measured_original_photo_ids_reused")==PRIOR_REUSED
-            and plan.get("inflight_K1_photo_IDs_reserved_without_redownload")==K1_RESERVED
+            and plan.get("previously_measured_original_photo_ids_reused")==prior_reused
+            and plan.get("inflight_K1_photo_IDs_reserved_without_redownload")==k1_reserved
+            and expected_source_n==prior_reused+k1_reserved+
+                plan.get("technical_pilot_photo_IDs_not_refetched",0)+
+                plan.get("unsupported_original_photo_format_selected_as_unknown",0)+expected
             and plan.get("photo_already_reserved_by_K1_never_fetched_twice") is True
             and plan.get("FCP_top100_photo_prefix_inclusion_probability_corrected_to_1_over_N_M") is True
             and plan.get("colour_measured") is False,
@@ -133,8 +137,8 @@ def seal(source,workers,output,*,expected_source_sha=SOURCE_SHA,
         "schema":SCHEMA,
         "source_full_93m_original_photo_ids":93_209_351,
         "FCP_U100_first_observation_taxon_IDs_in_source":expected_source_n,
-        "prior_real_original_photo_ROI_reuse_without_new_inference":PRIOR_REUSED,
-        "overlapping_inflight_K1_photos_not_refetched":K1_RESERVED,
+        "prior_real_original_photo_ROI_reuse_without_new_inference":prior_reused,
+        "overlapping_inflight_K1_photos_not_refetched":k1_reserved,
         "new_unique_original_photo_attempts":expected,
         "new_automatically_four_hue_ROI_classified":flags["classified"],
         "new_image_acquisition_failed":flags["failed"],
