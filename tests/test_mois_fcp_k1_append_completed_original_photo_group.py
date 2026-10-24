@@ -164,9 +164,12 @@ class TrueFrozenK1GroupTests(unittest.TestCase):
         self.assertFalse(jobs["seal"]["strategy"]["fail-fast"])
         self.assertIn("'gh','api','--paginate'", wf.read_text(encoding="utf-8"))
         self.assertIn("releases?per_page=100", wf.read_text(encoding="utf-8"))
-        self.assertIn("Unexpected signed K1 original worker group",wf.read_text(encoding="utf-8"))
-        self.assertIn("Invalid original-worker ZIP SHA",wf.read_text(encoding="utf-8"))
-        self.assertIn("Empty original ROI evidence",wf.read_text(encoding="utf-8"))
+        gate=(Path(__file__).resolve().parents[1]/"scripts/acquisition"/
+              "mois_fcp_k1_fast_completion_gate.py").read_text(encoding="utf-8")
+        self.assertIn("Malformed or duplicate K1 original work group",gate)
+        self.assertIn("Original completed photo ZIP expired or lacked authenticated SHA",gate)
+        self.assertIn('artifact["size_in_bytes"]>0',gate)
+        self.assertIn("signed_cumulative_archive_groups",wf.read_text(encoding="utf-8"))
 
     def test_sealing_is_immutable(self):
         self.seal()
