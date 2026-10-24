@@ -1,0 +1,163 @@
+name: MOIS fast exact worldwide original photo counts after K1 completion
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_k1_compact_global_pixel_totals.py
+      - tests/test_mois_k1_compact_global_pixel_totals.py
+      - .github/workflows/mois-k1-fast-exact-global-photo-counts.yml
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_k1_compact_global_pixel_totals.py
+      - tests/test_mois_k1_compact_global_pixel_totals.py
+      - .github/workflows/mois-k1-fast-exact-global-photo-counts.yml
+  workflow_run:
+    workflows:
+      - MOIS FCP K1 signed cumulative true original photo progress
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '56 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-K1-fast-published-global-original-photo-certificate
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test old full-union parity, all-source probability and no historic Parquet refetch
+        run: |
+          set -euo pipefail
+          python -m pip install -q PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_k1_compact_global_pixel_totals.py
+          python -m unittest discover -s tests -p test_mois_k1_compact_global_pixel_totals.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          w=yaml.safe_load(open('.github/workflows/mois-k1-fast-exact-global-photo-counts.yml'))
+          blocks=[step['run'] for job in w['jobs'].values()
+                  for step in job['steps'] if 'run' in step]
+          assert len(blocks)>=5
+          for block in blocks:
+              p=subprocess.run(['bash','-n'],input=block,capture_output=True,text=True)
+              assert p.returncode==0,p.stderr
+          print('MOIS_K1_FAST_EXACT_GLOBAL_ORIGINAL_SOURCE_ALL_SHELL_PASS',len(blocks))
+          PY
+  publish-fast-global-original-pixel-totals:
+    needs: test
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - name: Choose newest genuine K1 source receipt across ALL release pages
+        id: gate
+        run: |
+          set -euo pipefail
+          gh api --paginate --jq '.[] | {tag_name: .tag_name, published_at: .published_at, draft: .draft}' \
+            "repos/$REPO/releases?per_page=100" > signed-releases.jsonl
+          python - <<'PY'
+          import json,os,re,subprocess
+          from pathlib import Path
+          data=Path('signed-releases.jsonl').read_text()
+          decoder=json.JSONDecoder()
+          candidates=[]
+          while data.strip():
+              data=data.lstrip()
+              value,end=decoder.raw_decode(data)
+              data=data[end:]
+              match=re.fullmatch(
+                  r'mois-K1-genuine-completed-original-ROI-([0-9]+)groups-([0-9a-f]{16})-v1',
+                  str(value.get('tag_name') or ''))
+              if match and value.get('draft') is False and value.get('published_at'):
+                  n=int(match.group(1))
+                  assert 1<=n<=75
+                  candidates.append((n,value['published_at'],value['tag_name'],match.group(2)))
+          assert candidates,'No genuine archived K1 ROI group receipts to recompute from'
+          n,date,source,short=max(candidates)
+          target=f'mois-exact-world-original-photo-compact-K1-{n}groups-{short}-v1'
+          exists=subprocess.run(['gh','release','view',target,'--repo',os.environ['REPO']],
+              stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:
+              out.write('ready='+str(not exists).lower()+'\n')
+          if not exists:
+              with open(os.environ['GITHUB_ENV'],'a') as env:
+                  env.write('K1_CUMULATIVE_TAG='+source+'\n')
+                  env.write('OUTPUT_TAG='+target+'\n')
+          print('MOIS_FAST_FULL_WORLD_REAL_ORIGINAL_PIXELS_NEW_K1_RECEIPTS',json.dumps(
+              {'K1_completed_groups':n,'source':source,'target':target,
+               'already_source_SHA_published':exists,'historical_pixel_re_downloads':0},
+              sort_keys=True),flush=True)
+          PY
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Download ONLY frozen K1 ID index and signed tiny cumulative/old-full16 receipts
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release download mois-original-K1-76753-photo-ID-disjoint-from-929138-historical-v1 \
+            --repo "$REPO" --dir signed-source \
+            --pattern K1_original_source_disjointness_certificate.json \
+            --pattern K1_all_original_new_photo_source_IDs.csv.gz
+          gh release download "$K1_CUMULATIVE_TAG" --repo "$REPO" --dir latest-K1 \
+            --pattern k1_cumulative_original_ROI_receipt.json
+          gh release download mois-verified-global929138-plus-K1-16groups-a102f923fa1b8022-v1 \
+            --repo "$REPO" --dir independently-audited-full16 \
+            --pattern historical_plus_K1_source_signed_original_photo_ID_union.json
+          echo '47fe5775475f7346cd6f331c928bfe20d3217152a45124481eee0c76726c692d  signed-source/K1_original_source_disjointness_certificate.json' | sha256sum -c -
+          echo 'b620e56cc8386670d183f7a7a74f707cd22de5ccdbb55c1dace2c4a9617a0386  signed-source/K1_all_original_new_photo_source_IDs.csv.gz' | sha256sum -c -
+          echo 'ae25b993ea1f2f69dcfa187a2a925794210f8ce1823bb262dd3e70db4a391ffd  independently-audited-full16/historical_plus_K1_source_signed_original_photo_ID_union.json' | sha256sum -c -
+      - name: Revalidate complete precolour K1 original ID roster and exact full16 crossarm parity
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_k1_compact_global_pixel_totals \
+            --certificate signed-source/K1_original_source_disjointness_certificate.json \
+            --roster signed-source/K1_all_original_new_photo_source_IDs.csv.gz \
+            --cumulative latest-K1/k1_cumulative_original_ROI_receipt.json \
+            --old16 independently-audited-full16/historical_plus_K1_source_signed_original_photo_ID_union.json \
+            --output final
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-fast-original-K1-exact-global-photo-hues-${{ github.run_id }}
+          path: final/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Release immutable globally unique photo-ID and classified ROI totals
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if gh release view "$OUTPUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$OUTPUT_TAG" --repo "$REPO" --dir old \
+              --pattern mois_original_photo_global_compact_cumulative_count.json
+            cmp old/mois_original_photo_global_compact_cumulative_count.json \
+              final/mois_original_photo_global_compact_cumulative_count.json
+          else
+            gh release create "$OUTPUT_TAG" \
+              final/mois_original_photo_global_compact_cumulative_count.json \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS genuine original photo-ID globally unique cumulative K1 colour pixels' \
+              --notes 'Each completed K1 original ROI group is source/terminal SHA-verified. Historical929138 photo-ID disjointness across ALL preselected 76753 K1 images was separately proved once against actual immutable old Parquets and full16 independent photo-ID union. Reuses only a ~3.95 MB compressed SHA-pinned source index and signed tiny ROI receipts to update global unique photo and four-hue label counts. No old 929138 Parquet reread, raw source image download, colour re-inference, unverified blooming/wild/native classification or statistically representative flora colour inference.'
+          fi
