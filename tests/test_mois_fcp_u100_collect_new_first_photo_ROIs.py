@@ -219,6 +219,42 @@ class OriginalFCPPrefixOnePhotoTests(unittest.TestCase):
         repeated=run_group_gate([0,0])
         self.assertNotEqual(repeated.returncode,0,"Duplicate signed K1 group must fail")
 
+    def test_post_K1_sealed_release_triggers_FCP_without_idle_heavy_CI(self):
+        # Final K1 model completion is not final publication; a source-linked
+        # workflow_run from the last signed group must also wake FCP U100.
+        # Neither unfinished nor failed K1 runs may start original photo work.
+        import yaml
+        wf=Path(__file__).resolve().parents[1] / ".github/workflows" / (
+            "mois-fcp-u100-depth1-new3141-original-ROI.yml")
+        d=yaml.safe_load(wf.read_text(encoding="utf-8"))
+        on=d.get("on",d.get(True))
+        triggers=on["workflow_run"]["workflows"]
+        self.assertIn("MOIS new 93m balanced onephoto ROI-v4 warm 8-runner acquisition",triggers)
+        self.assertIn(
+            "MOIS FCP K1 immediately append completed source-verified original ROI groups",
+            triggers)
+        jobs=d["jobs"]
+        self.assertNotIn("needs",jobs["original-source-only"])
+        gate_condition=jobs["original-source-only"]["if"]
+        self.assertIn("github.event.workflow_run.conclusion == 'success'",gate_condition)
+        self.assertIn("github.event.workflow_run.head_branch == 'main'",gate_condition)
+        self.assertIn("head_repository.full_name == 'zuizui0223/mois'",gate_condition)
+        tests=jobs["frozen-source-probability-tests"]
+        self.assertEqual(tests["needs"],"original-source-only")
+        self.assertIn("always()",tests["if"])
+        self.assertIn("github.event_name == 'pull_request'",tests["if"])
+        self.assertIn("github.event_name == 'push'",tests["if"])
+        self.assertIn("needs.original-source-only.outputs.ready == 'true'",tests["if"])
+        infer=jobs["true-original-image-ROI"]
+        self.assertEqual(infer["needs"],["original-source-only","frozen-source-probability-tests"])
+        self.assertIn("needs.frozen-source-probability-tests.result == 'success'",infer["if"])
+        seal=jobs["seal-new-photo-FCP-taxon-coverage"]
+        self.assertEqual(seal["needs"],[
+            "original-source-only","frozen-source-probability-tests",
+            "true-original-image-ROI"])
+        self.assertIn("needs.true-original-image-ROI.result == 'success'",seal["if"])
+        self.assertIn("needs.frozen-source-probability-tests.result == 'success'",seal["if"])
+
     def test_already_published_outcome_is_immutable(self):
         self.run_collect()
         with self.assertRaisesRegex(ValueError,"must not be overwritten"):
