@@ -96,13 +96,20 @@ def prior_original_photo_index(sources, expected_counts):
         this_arm_conflicts=0
         this_arm_obs_overlaps=0
         for record in frame.itertuples(index=False,name=None):
-            pid,obs,morph,status,image_sha=map(str,record)
-            require(morph in (*HUES,"mixed_uncertain"),
-                    "Prior original ROI morph not in signed four-hue/uncertain vocabulary")
-            known=morph in HUES
+            pid,obs,original_morph,status,image_sha=map(str,record)
+            known=original_morph in HUES
             if status:
                 require(known==(status=="classified_four_state_morph"),
                         "Prior technical unknown falsely recorded as petal hue")
+            # Old 0.9m-image checkpoint projections can retain a blank morph
+            # for a photo that was NEVER classifiable. Unlike a new ROI worker
+            # terminal it need not spell out mixed_uncertain. Blank/legacy
+            # unknown outcomes cannot become observed four-hue flowers.
+            morph=original_morph if known else "mixed_uncertain"
+            if not known and original_morph != "mixed_uncertain":
+                overlap["old_original_photo_legacy_unknown_morph_rows"]+=1
+                if original_morph:
+                    overlap["old_original_photo_nonempty_noncanonical_morph_rows"]+=1
             if obs not in missing_observation_values:
                 previous_observation=obs_to_arm.get(obs)
                 if previous_observation is None:
@@ -171,6 +178,8 @@ def prior_original_photo_index(sources, expected_counts):
             "same_photo_ROI_evidence_conflicts":this_arm_conflicts,
             "observations_shared_with_another_arm_distinct_photo":
                 this_arm_obs_overlaps,
+            "legacy_unclassified_photo_morph_values_converted_to_technical_unknown_only":
+                True,
         })
     require({x["source_arm"] for x in source_info}==set(PRIOR_SOURCE_KEYS),
             "Missing prior authentic original photo source-arm ledger")
@@ -383,6 +392,7 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
             "selected_reused_photos_with_conflicting_prior_ROI_status":
                 counts["selected_reused_photo_has_conflicting_prior_ROI_evidence"],
             "per_photo_conflicting_old_hues_preserved_as_technical_unknown":True,
+            "legacy_noncanonical_original_morph_states_were_not_classified":True,
             "reused_original_photo_ids":len(reused),
             "reused_exact_photo_results_SHA256":sha256(reused_file),
             "previously_measured_original_observations_with_different_sample_photo":
