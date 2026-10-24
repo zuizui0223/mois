@@ -198,6 +198,15 @@ class SignedCrossArmOriginalLedgerTests(unittest.TestCase):
         self.assertEqual(result["main_checkpoint_four_hue_classified"],2)
         self.assertEqual(result["original_photo_attempts_distinct_across_all_verified_arms"],10)
 
+    def test_current_cross_arm_source_gate_paginates_real_checkpoint_releases(self):
+        workflow = (Path(__file__).resolve().parents[1] / ".github/workflows" /
+                    "mois-cross-arm-append-only-original-RGB-registry.yml")
+        content = workflow.read_text(encoding="utf-8")
+        self.assertIn('gh api --paginate "repos/$REPO/releases?per_page=100"', content)
+        self.assertIn("Cannot locate immutable checkpoint across paginated releases",
+                      content)
+        self.assertNotIn('latest=$(gh api "repos/$REPO/releases?per_page=100"', content)
+
     def test_latest_signed_main_regression_is_rejected_before_reading_old_photos(self):
         with self.assertRaisesRegex(ValueError,"cannot regress"):
             ledger.register(
