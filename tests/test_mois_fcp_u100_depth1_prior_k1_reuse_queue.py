@@ -137,7 +137,7 @@ class FCPFull93mFirstPhotoReuseTests(unittest.TestCase):
 
     def test_source_photo_or_group_receipt_tamper_refused(self):
         self.prefix.write_text(self.prefix.read_text()+"\n")
-        with self.assertRaisesRegex(ValueError,"SHA differs"):
+        with self.assertRaisesRegex(ValueError,"No source-audited|SHA differs"):
             self.bridge()
         self.assertFalse(self.out.exists())
 
