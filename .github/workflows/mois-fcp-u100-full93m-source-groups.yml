@@ -44,7 +44,7 @@ jobs:
               assert p.returncode==0,p.stderr
           print('MOIS_FCP_FULL93M_SOURCE_GROUP_ALL_BASH_STEPS_VALID',len(shells))
           PY
-  first-real-taxonomic-source-group:
+  source-only-all16-original-taxon-groups:
     needs: original-FCP-U100-source-safety-tests
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
@@ -54,11 +54,12 @@ jobs:
       actions: read
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 4
       matrix:
-        # Real 93m source ~4GB. Verify one actual eight-shard taxonomic group
-        # before widening 14-tier ingestion across the other 15 groups.
-        group: ['00']
+        # All16 mutually disjoint original taxon-modulo source groups.
+        # One full 14-tier group already SHA-verified and published; idempotent
+        # gate skips it. Four concurrent metadata-only jobs bound provider load.
+        group: ['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15']
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: zuizui0223/mois
