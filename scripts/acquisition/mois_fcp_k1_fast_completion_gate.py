@@ -137,14 +137,24 @@ def successful_finished_groups(jobs, artifacts):
 
 
 def groups_needing_archive(successful, archived, has_individual_release):
-    """Query ONLY new genuine groups absent from the last source-verified snapshot."""
+    """Check only new signed K1 groups, with bounded concurrent metadata reads.
+
+    A dozen successful original-photo workers may finish before the next
+    GitHub scheduled scan.  Release HEAD checks are independent and purely
+    metadata-only. Parallelise up to six, but retain deterministic ascending
+    group order and fail closed if any signed release check fails.
+    """
     require(isinstance(archived,set) and archived<=successful,
             "Previously archived original-photo group not among successful K1 workers")
-    ready=[]
-    for group in sorted(successful-archived):
-        if not has_individual_release(group):
-            ready.append(group)
-    return ready
+    pending=sorted(successful-archived)
+    if len(pending)<3:
+        return [g for g in pending if not has_individual_release(g)]
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=min(6,len(pending))) as pool:
+        found=list(pool.map(has_individual_release,pending))
+    require(all(type(x) is bool for x in found),
+            "K1 release existence metadata was not a verified boolean")
+    return [group for group,exists in zip(pending,found) if not exists]
 
 
 def missing_from_all_releases(successful, all_tags):
