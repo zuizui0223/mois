@@ -200,14 +200,14 @@ class OriginalFCPPrefixOnePhotoTests(unittest.TestCase):
         self.assertIn('if [ "$sealed" -lt 75 ]; then',gate)
         self.assertIn('test "$sealed" -eq 75',gate)
         self.assertIn("original photo terminal groups have been SHA-published",gate)
-        snippet=re.search(r"sealed=\\$\\(python - <<'PY'\\n(.*?)\\nPY\\n\\)",gate,re.S)
+        snippet=re.search(r"sealed=\$\(python - <<'PY'\n(.*?)\nPY\n\)",gate,re.S)
         self.assertIsNotNone(snippet)
         def run_group_gate(groups):
             with TemporaryDirectory() as directory:
                 names=[f"mois-full93m-balanced-onephoto-K1-original-RGB-append-group-{g}-v1"
                        for g in groups]
                 (Path(directory)/"k1-immutable-published-tags.txt").write_text(
-                    "\\n".join(names)+"\\n",encoding="utf-8")
+                    "\n".join(names)+"\n",encoding="utf-8")
                 return subprocess.run([sys.executable,"-c",snippet.group(1)],
                     cwd=directory,text=True,capture_output=True)
         for expected in (0,1,74,75):
