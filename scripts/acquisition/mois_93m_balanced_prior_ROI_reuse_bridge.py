@@ -49,11 +49,26 @@ HUES=("white","yellow_orange","red_pink","blue_purple")
 
 
 def prior_original_photo_index(sources, expected_counts):
-    """Authenticated prior source arms, checksums and photo+observation IDs."""
+    """Source-SHA audit historical arms, and reuse each original photo ID only ONCE.
+
+    An updated six-arm cumulative checkpoint can contain a photo previously
+    published as a separate tier06 arm. This is *not* a reason to download it
+    again, or silently double count it. Equal photo IDs must have compatible
+    observation identity; conflicting original-image or colour evidence is
+    conservatively marked ambiguous and exported for separate human review.
+
+    Same observation with distinct photos across historical source arms is
+    counted as a provenance overlap (not used to claim independent samples).
+    This source-only process does not repair old global statistical estimands.
+    """
     import pandas as pd
     ids={}
     obs_to_arm={}
     source_info=[]
+    duplicate_photo_records=[]
+    conflict_records=[]
+    overlap=Counter()
+    missing_observation_values={"", "nan", "None", "null"}
     for arm,path,receipt in sources:
         require(arm in PRIOR_SOURCE_KEYS and arm not in {x["source_arm"] for x in source_info},
                 "Unknown or duplicated previously signed original-photo source arm")
@@ -77,19 +92,73 @@ def prior_original_photo_index(sources, expected_counts):
                 and frame.photo_id.astype(str).is_unique,
                 "Corrupt previously classified original photo source ID inventory")
         count=0
+        this_arm_duplicates=0
+        this_arm_conflicts=0
+        this_arm_obs_overlaps=0
         for record in frame.itertuples(index=False,name=None):
             pid,obs,morph,status,image_sha=map(str,record)
-            require(pid not in ids and morph in (*HUES,"mixed_uncertain"),
-                    "Overlapping original photo ID across previous source sampling arms")
+            require(morph in (*HUES,"mixed_uncertain"),
+                    "Prior original ROI morph not in signed four-hue/uncertain vocabulary")
             known=morph in HUES
             if status:
                 require(known==(status=="classified_four_state_morph"),
                         "Prior technical unknown falsely recorded as petal hue")
-            if obs and obs not in ("nan","None","null"):
-                require(obs not in obs_to_arm or obs_to_arm[obs]==arm,
-                        "Previous cross-arm original observation unexpectedly duplicated")
-                obs_to_arm[obs]=arm
-            ids[pid]=(arm,obs,morph,status,image_sha)
+            if obs not in missing_observation_values:
+                previous_observation=obs_to_arm.get(obs)
+                if previous_observation is None:
+                    obs_to_arm[obs]=(arm,pid)
+                elif previous_observation[0]!=arm and previous_observation[1]!=pid:
+                    overlap["old_cross_arm_shared_observation_different_photos"]+=1
+                    this_arm_obs_overlaps+=1
+            previous=ids.get(pid)
+            if previous is not None:
+                old_arm,old_obs,old_morph,old_status,old_sha=previous
+                overlap["old_cross_arm_exact_duplicate_photo_rows"]+=1
+                this_arm_duplicates+=1
+                require(old_obs in missing_observation_values
+                        or obs in missing_observation_values
+                        or old_obs==obs,
+                        "Conflicting original observation UUID for the SAME photo ID across historical sources")
+                reason=[]
+                if old_morph!=morph:
+                    reason.append("four_hue_or_unknown_morph_disagreement")
+                if (old_status and status and old_status!=status):
+                    reason.append("terminal_status_disagreement")
+                if (old_sha and image_sha and old_sha!=image_sha):
+                    reason.append("original_image_SHA256_disagreement")
+                if reason:
+                    overlap["old_cross_arm_same_photo_evidence_conflicts"]+=1
+                    this_arm_conflicts+=1
+                    conflict_records.append({
+                        "photo_id":pid,
+                        "first_arm":old_arm,
+                        "second_arm":arm,
+                        "observation_id":old_obs or obs,
+                        "first_morph":old_morph,
+                        "second_morph":morph,
+                        "first_status":old_status,
+                        "second_status":status,
+                        "first_image_sha256":old_sha,
+                        "second_image_sha256":image_sha,
+                        "conflict_reason":";".join(reason),
+                    })
+                    # Do not select one contradictory prior labelled ROI as
+                    # biologically true, and never refetch this same photo.
+                    ids[pid]=(old_arm,old_obs or obs,"mixed_uncertain",
+                              "conflicting_prior_ROI_evidence","")
+                else:
+                    # Prefer fuller non-missing proof, never change a
+                    # compatible original-photo morph classification.
+                    ids[pid]=(old_arm,old_obs or obs,old_morph,
+                              old_status or status,old_sha or image_sha)
+                duplicate_photo_records.append({
+                    "photo_id":pid,"first_source_arm":old_arm,
+                    "additional_source_arm":arm,
+                    "same_observation_id":str(old_obs==obs).lower(),
+                    "evidence_conflict":str(bool(reason)).lower(),
+                })
+            else:
+                ids[pid]=(arm,obs,morph,status,image_sha)
             count+=known
         require(count==hues,"Signed historical original photo hue sum changed")
         source_info.append({
@@ -98,10 +167,21 @@ def prior_original_photo_index(sources, expected_counts):
             "four_hue_classified":hues,
             "photo_parquet_SHA256":sha256(path),
             "receipt_SHA256":sha256(receipt),
+            "original_photo_IDs_already_in_other_historical_arm":this_arm_duplicates,
+            "same_photo_ROI_evidence_conflicts":this_arm_conflicts,
+            "observations_shared_with_another_arm_distinct_photo":
+                this_arm_obs_overlaps,
         })
     require({x["source_arm"] for x in source_info}==set(PRIOR_SOURCE_KEYS),
             "Missing prior authentic original photo source-arm ledger")
-    return ids,obs_to_arm,source_info
+    # Keep original IDs unique; raw per-arm attempted counts may include
+    # repeated photos. Summing four source-arm totals is NEVER a union size.
+    overlap["unique_old_photo_IDs"] = len(ids)
+    overlap["signed_arm_photo_rows"] = sum(x["original_photo_attempts"] for x in source_info)
+    require(overlap["signed_arm_photo_rows"]-len(ids) ==
+            overlap["old_cross_arm_exact_duplicate_photo_rows"],
+            "Historical duplicate photo-ID count conservation failed")
+    return ids,obs_to_arm,source_info,dict(overlap),duplicate_photo_records,conflict_records
 
 
 def build(sample_manifest, sample_selected, prior_sources, technical,
@@ -132,7 +212,8 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
             and source.get("selection_probability_is_per_photo_in_signed_shards") is True
             and source["original_source_sample_full_table_SHA256"]==sha256(sample_selected),
             "Not the exact SHA-signed full-tier observation-balanced precolour source")
-    prior_ids,prior_obs,prior_audit=prior_original_photo_index(
+    (prior_ids,prior_obs,prior_audit,overlap_summary,
+     prior_duplicate_records,prior_conflict_records)=prior_original_photo_index(
         prior_sources,expected_prior_counts)
     if expected_technical_sha is not None:
         require(sha256(technical)==expected_technical_sha,
@@ -150,6 +231,9 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
     output.parent.mkdir(parents=True,exist_ok=True)
     stage=Path(tempfile.mkdtemp(prefix="mois-balanced-source-ROI-new-only-",dir=output.parent))
     counts=Counter()
+    # Historical source overlap is known photo source reuse, not a new
+    # biological event. The labels may conflict and are explicitly marked.
+    counts["historic_prior_unique_original_photo_IDs"]=len(prior_ids)
     seen=set();observations=set()
     kept=[];reused=[]
     try:
@@ -192,7 +276,11 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
                         "prior_automatic_ROI_morph":old_hue,
                         "prior_ROI_status":old_status,
                         "prior_original_image_SHA256":old_sha,
+                        "prior_photo_ROI_provenance_conflict":
+                            str(old_status=="conflicting_prior_ROI_evidence").lower(),
                     })
+                    if old_status=="conflicting_prior_ROI_evidence":
+                        counts["selected_reused_photo_has_conflicting_prior_ROI_evidence"]+=1
                     counts["exact_previous_photo_IDs_reused"]+=1
                     continue
                 counts["fresh_photo_observation_already_measured_other_image"]+=obs in prior_obs
@@ -241,11 +329,27 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
                         "shard":str(unit),
                     })
             shard_sha[str(unit)]=sha256(path)
+        # Retain per-original-photo cross-arm provenance for quality audit.
+        # A real duplicate source row is not a distinct newly measured photo.
+        collision_file=stage/"prior_original_photo_crossarm_overlap.csv"
+        with collision_file.open("w",encoding="utf-8",newline="") as f:
+            w=csv.DictWriter(
+                f,fieldnames=("photo_id","first_source_arm","additional_source_arm",
+                              "same_observation_id","evidence_conflict"),lineterminator="\n")
+            w.writeheader();w.writerows(prior_duplicate_records)
+        conflicts_file=stage/"prior_original_photo_ROI_conflicts.csv"
+        conflict_fields=("photo_id","first_arm","second_arm","observation_id",
+                         "first_morph","second_morph","first_status","second_status",
+                         "first_image_sha256","second_image_sha256","conflict_reason")
+        with conflicts_file.open("w",encoding="utf-8",newline="") as f:
+            w=csv.DictWriter(f,fieldnames=conflict_fields,lineterminator="\n")
+            w.writeheader();w.writerows(prior_conflict_records)
         reused_file=stage/"already_measured_original_photo_reuse.csv"
         columns=("photo_id","observation_id","source_arm",
                  "balanced_joint_photo_probability","prior_measured_arm",
                  "prior_automatic_ROI_morph","prior_ROI_status",
-                 "prior_original_image_SHA256")
+                 "prior_original_image_SHA256",
+                 "prior_photo_ROI_provenance_conflict")
         with reused_file.open("w",encoding="utf-8",newline="") as f:
             writer=csv.DictWriter(f,fieldnames=columns,lineterminator="\n")
             writer.writeheader();writer.writerows(reused)
@@ -271,6 +375,14 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
             "all_balanced_selected_original_observations":expected_sample,
             "known_previous_full_photo_and_observation_IDs_source_SHA_verified":True,
             "prior_original_pixel_arms":prior_audit,
+            "prior_original_crossarm_photo_overlap":overlap_summary,
+            "prior_original_crossarm_overlap_rows_SHA256":sha256(collision_file),
+            "prior_original_crossarm_conflict_rows_SHA256":sha256(conflicts_file),
+            "previously_counted_photo_ID_duplicates_are_NOT_new_inferences":True,
+            "historical_source_overlap_does_not_imply_independent_observations":True,
+            "selected_reused_photos_with_conflicting_prior_ROI_status":
+                counts["selected_reused_photo_has_conflicting_prior_ROI_evidence"],
+            "per_photo_conflicting_old_hues_preserved_as_technical_unknown":True,
             "reused_original_photo_ids":len(reused),
             "reused_exact_photo_results_SHA256":sha256(reused_file),
             "previously_measured_original_observations_with_different_sample_photo":
@@ -295,6 +407,8 @@ def build(sample_manifest, sample_selected, prior_sources, technical,
             json.dumps(info,indent=2,sort_keys=True)+"\n",encoding="utf-8")
         os_replace=__import__("os").replace
         os_replace(stage,output)
+        print("MOIS_BALANCED_PRIOR_ORIGINAL_PHOTO_SOURCE_OVERLAP",
+              json.dumps(overlap_summary,sort_keys=True),flush=True)
         print("MOIS_BALANCED_SAMPLE_ONLY_NEW_ORIGINAL_ROI_FROZEN_SHARDS",
               json.dumps({k:info[k] for k in (
                   "all_balanced_selected_original_observations",
