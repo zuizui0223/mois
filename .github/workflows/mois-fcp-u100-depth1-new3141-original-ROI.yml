@@ -1,0 +1,256 @@
+name: MOIS FCP U100 depth1 only 3141 never-measured genuine original ROI pixels
+on:
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_u100_collect_new_first_photo_ROIs.py
+      - tests/test_mois_fcp_u100_collect_new_first_photo_ROIs.py
+      - .github/workflows/mois-fcp-u100-depth1-new3141-original-ROI.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_u100_collect_new_first_photo_ROIs.py
+      - tests/test_mois_fcp_u100_collect_new_first_photo_ROIs.py
+      - .github/workflows/mois-fcp-u100-depth1-new3141-original-ROI.yml
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - MOIS new 93m balanced onephoto ROI-v4 warm 8-runner acquisition
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '47 * * * *'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-full93m-FCP-U100-prefix1-only-new3141-photo-ROI-after-K1-v1
+  cancel-in-progress: false
+jobs:
+  frozen-source-probability-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test original FCP first-photo inclusion design, ROI invariants and shell parsing
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_fcp_u100_collect_new_first_photo_ROIs.py
+          python -m unittest discover -s tests -p test_mois_fcp_u100_collect_new_first_photo_ROIs.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          d=yaml.safe_load(open('.github/workflows/mois-fcp-u100-depth1-new3141-original-ROI.yml'))
+          scripts=[s['run'] for job in d['jobs'].values() for s in job['steps'] if 'run' in s]
+          assert len(scripts)>=6
+          for cmd in scripts:
+              r=subprocess.run(['bash','-n'],input=cmd,text=True,capture_output=True)
+              assert r.returncode==0,r.stderr
+          print('MOIS_FCP_FULL93M_U100_3141_ALL_BASH_STEPS_VALID',len(scripts))
+          PY
+  original-source-only:
+    needs: frozen-source-probability-tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+      groups: ${{ steps.gate.outputs.groups }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      K1_RUN: '40066261878'
+      ORIGINAL_SOURCE_TAG: mois-full93m-FCP-U100-prefix1-photo-reuse-and-inflight-K1-source-v1
+      FINISHED_TAG: mois-full93m-FCP-U100-depth1-only3141-new-original-RGB-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Do not compete with eight active K1 image workers or re-download any FCP photo
+        id: gate
+        run: |
+          set -euo pipefail
+          echo 'ready=false' >> "$GITHUB_OUTPUT"
+          if gh release view "$FINISHED_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'FCP first new 3141 original photos already SHA-published. No repetition.'
+            exit 0
+          fi
+          gh api "repos/$REPO/actions/runs/$K1_RUN/jobs?per_page=100" \
+            --jq '[.jobs[] | select(.name | startswith("warm-original-ROI (")) | select(.conclusion=="success")] | length' \
+            > finished-original-workers.txt
+          completed=$(cat finished-original-workers.txt)
+          if [ "$completed" -lt 75 ]; then
+            echo "The original K1 photo source has only $completed/75 genuinely complete worker groups."
+            echo 'Wait for existing ORIGINAL image workers: do not start competing S3 downloads.'
+            exit 0
+          fi
+          test "$completed" -eq 75
+          gh release view "$ORIGINAL_SOURCE_TAG" --repo "$REPO" \
+            --json isDraft --jq .isDraft | grep -qx false
+          echo ready=true >> "$GITHUB_OUTPUT"
+          echo 'groups=[0,1,2,3]' >> "$GITHUB_OUTPUT"
+          echo 'MOIS_FCP_U100_ALL_K1_ORIGINAL_WORKERS_COMPLETE_FIRST3141_CAN_START'
+      - name: Retrieve only immutable 3141-photo FCP source and global one-photo per taxon rank
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release download "$ORIGINAL_SOURCE_TAG" --repo "$REPO" \
+            --dir source \
+            --pattern manifest.json \
+            --pattern next-FCP-U100-first-photo-ROI-source-shards.tar
+          echo 'fe49344241fbc051eebbbcbc8eb627a040198dc2b3ee56c89401876b58d28a6a  source/manifest.json' | sha256sum -c -
+          tar -xf source/next-FCP-U100-first-photo-ROI-source-shards.tar -C source
+          gh release download mois-full93m-FCP-U100-progressive-prefix1-20242-taxa-original-source-v1 \
+            --repo "$REPO" --dir prefix \
+            --pattern FCP_20242_taxa_prefix1_original_photo_candidates.csv
+          echo '0403905f04d2def07d3f2e0caee28728a54923ef187f1fc2c63318857012b713  prefix/FCP_20242_taxa_prefix1_original_photo_candidates.csv' | sha256sum -c -
+      - name: Validate 20242 FCP source taxon decisions and all 13 SHA-frozen 256-original-photo units
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv,json,hashlib
+          from pathlib import Path
+          from scripts.acquisition.mois_fcp_u100_collect_new_first_photo_ROIs import (
+              check_prefix_probabilities,PREFIX_PHOTOS_SHA,PREFIX_ARM)
+          prefix=check_prefix_probabilities(
+              'prefix/FCP_20242_taxa_prefix1_original_photo_candidates.csv')
+          assert len(prefix)==20242
+          m=json.loads(Path('source/manifest.json').read_text())
+          assert m['schema']=='mois_full_source_observation_sampling_cohort_v1'
+          assert m['full_frame_photo_ids']==93209351
+          assert m['source_arm']==PREFIX_ARM
+          assert m['selected_FCP_U100_eligible_source_taxa']==20242
+          assert m['new_photo_attempts_planned']==3141
+          assert m['previously_measured_original_photo_ids_reused']==15483
+          assert m['inflight_K1_photo_IDs_reserved_without_redownload']==1618
+          assert m['group_ids']==[0,1,2,3] and m['work_units']==13
+          total=0;ids=set();taxa=set();obs=set()
+          for unit in m['worker_ids']:
+              f=Path('source/shards')/f'shard-{unit:03d}.csv'
+              assert hashlib.sha256(f.read_bytes()).hexdigest()==m['photo_shard_sha256'][str(unit)]
+              with f.open(newline='') as stream:
+                  rows=list(csv.DictReader(stream))
+              assert 0<len(rows)<=256
+              for r in rows:
+                  pid=r['photo_id'];unit_taxon=r['inat_taxon_id'];ob=r['observation_id']
+                  assert pid not in ids and unit_taxon not in taxa and ob not in obs
+                  assert pid in prefix and prefix[pid][:2]==(ob,unit_taxon)
+                  assert abs(float(r['selection_probability'])/prefix[pid][2]-1)<1e-12
+                  ids.add(pid);taxa.add(unit_taxon);obs.add(ob);total+=1
+          assert total==3141
+          print('MOIS_FCP_U100_NEW_REAL_ORIGINAL_SOURCE_READY',
+                json.dumps({'eligible_taxa':20242,'previous_ROI_reused':15483,
+                            'reserved_K1_duplicate_downloads_prevented':1618,
+                            'genuinely_new_original_photo_targets':total},sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-FCP-20242-prefix1-3141-new-original-precolour-shards
+          path: source/
+          retention-days: 90
+          if-no-files-found: error
+  true-original-image-ROI:
+    needs: original-source-only
+    if: github.event_name != 'pull_request' && needs.original-source-only.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        group: ${{ fromJSON(needs.original-source-only.outputs.groups) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-FCP-20242-prefix1-3141-new-original-precolour-shards
+          path: source
+      - name: Restore exact old FCP fixed YOLO11 detector and EfficientSAM ROI-v4
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          (cd "$RUNNER_TEMP/fcp" && bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam")
+      - name: Download only previously unused FCP first-photo IDs, warm-model unchanged full ROI-v4
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-fcp-U100-prefix1-only-new3141-pacing"
+          python -m scripts.acquisition.mois_warm_original_roi \
+            --source source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --group '${{ matrix.group }}' --output original-worker
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-FCP-U100-depth1-new-original-RGB-group-${{ matrix.group }}
+          path: original-worker/
+          retention-days: 90
+          if-no-files-found: warn
+  seal-new-photo-FCP-taxon-coverage:
+    needs: [original-source-only,true-original-image-ROI]
+    if: github.event_name != 'pull_request' && needs.original-source-only.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OUTPUT_TAG: mois-full93m-FCP-U100-depth1-only3141-new-original-RGB-v1
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-FCP-20242-prefix1-3141-new-original-precolour-shards
+          path: source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-FCP-U100-depth1-new-original-RGB-group-*
+          path: workers
+      - name: Independently verify 3141 real photo ID/observation/taxon/probability against globally frozen FCP first-photo prefix
+        run: |
+          set -euo pipefail
+          gh release download mois-full93m-FCP-U100-progressive-prefix1-20242-taxa-original-source-v1 \
+            --repo "$REPO" --dir prefix \
+            --pattern FCP_20242_taxa_prefix1_original_photo_candidates.csv
+          python -m scripts.acquisition.mois_fcp_u100_collect_new_first_photo_ROIs \
+            --source source --workers workers \
+            --prefix prefix/FCP_20242_taxa_prefix1_original_photo_candidates.csv \
+            --output actual
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-full93m-FCP-U100-depth1-only-new3141-original-photo-ROI-results
+          path: actual/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish only genuine NEW FCP first-photo automatic four-hue original pixels
+        run: |
+          set -euo pipefail
+          if gh release view "$OUTPUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$OUTPUT_TAG" --repo "$REPO" --dir prior \
+              --pattern receipt.json
+            cmp prior/receipt.json actual/receipt.json
+          else
+            gh release create "$OUTPUT_TAG" actual/*.json actual/*.parquet \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS genuine original FCP U100 first-photo ROI - only 3141 never previously measured images' \
+              --notes 'Completes only the 3141 genuinely new original photo FCP U100 eligible nominal taxon first-photo source IDs, after the existing 80035-observation K1 parent model workers finished. The other 15483 already measured exact photo IDs and 1618 K1-inflight identical photo IDs are reused from their own immutable original pixel releases with no duplicate S3 image download or original full ROI-v4 re-inference. All 20242 eligible nominal taxa remain in the source decision frame with true 1/N_taxon/M_original_observation_photo selection propensity and 21869 rare taxa retained elsewhere. Missing/unclear ROI values remain unknown; botanical flowering, local wild/native and statistically representative global white-flora frequency are NOT implied. This original-photo Parquet contains only new 3141 terminal attempts, not silently classified 20242 white or coloured flowers.'
+          fi
