@@ -33,10 +33,10 @@ class FCPProgressiveDepthOneTests(unittest.TestCase):
             for j in range(100):
                 uuid=f"observation-{taxon}-{j:04d}"
                 photo_id=str(10_000_000+int(taxon)*1000+j)
-                extension="gif" if taxon=="256" and j==0 else "jpg"
-                group.append((original_observation_priority(uuid),uuid,photo_id,extension))
+                group.append((original_observation_priority(uuid),uuid,photo_id,"jpg"))
             group.sort()
             for index,(_,uuid,photo_id,ext) in enumerate(group):
+                ext="gif" if taxon=="256" and index==0 else ext
                 rank="supported" if ext=="jpg" else "unsupported_original_extension"
                 raw={
                     "photo_id":photo_id,"observation_id":uuid,
