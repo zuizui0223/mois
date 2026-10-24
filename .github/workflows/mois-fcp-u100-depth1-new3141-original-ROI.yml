@@ -85,6 +85,37 @@ jobs:
             exit 0
           fi
           test "$completed" -eq 75
+          # K1 jobs finishing is necessary but not sufficient: the overlapping
+          # 1618 FCP first-photo IDs must have actual signed, published original
+          # ROI terminal evidence available before any independent FCP download.
+          # GitHub now holds >100 releases; scan every page once, not 75 calls.
+          gh api --paginate --jq '.[] | select(.draft == false) | .tag_name' \
+            "repos/$REPO/releases?per_page=100" > k1-immutable-published-tags.txt
+          sealed=$(python - <<'PY'
+          import re
+          from pathlib import Path
+          expression=re.compile(
+              r'mois-full93m-balanced-onephoto-K1-original-RGB-append-group-(\\d+)-v1\\Z')
+          groups=set()
+          for line in Path('k1-immutable-published-tags.txt').read_text().splitlines():
+              tag=line.strip()
+              match=expression.fullmatch(tag)
+              if not match: continue
+              number=int(match.group(1))
+              assert 0<=number<75 and tag==(
+                  f'mois-full93m-balanced-onephoto-K1-original-RGB-append-group-{number}-v1'
+              ),'Unexpected frozen K1 published group ID'
+              assert number not in groups,'Repeated K1 signed original photo group tag'
+              groups.add(number)
+          print(len(groups))
+          PY
+          )
+          if [ "$sealed" -lt 75 ]; then
+            echo "K1 workers are complete, but only $sealed/75 original photo terminal groups have been SHA-published."
+            echo 'Do not launch duplicate FCP 3141 images until K1 pixel sources are archived.'
+            exit 0
+          fi
+          test "$sealed" -eq 75
           gh release view "$ORIGINAL_SOURCE_TAG" --repo "$REPO" \
             --json isDraft --jq .isDraft | grep -qx false
           echo ready=true >> "$GITHUB_OUTPUT"
