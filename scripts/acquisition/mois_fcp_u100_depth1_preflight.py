@@ -196,9 +196,12 @@ def preflight(source, prefix_csv, dispositions_csv, k1_certificate,
             # Signed Counter snapshots omit zero-valued categories.
             # Reconcile only nonzero actions, while separately requiring both
             # technical/unsupported counts to be exactly zero above.
-            and {k:v for k,v in actions.items() if v}
-                ==doc["photo_ID_technical_unknown_and_reuse_dispositions"],
-            "Not all 20242 FCP-U100 selection/old/K1/new original-photo outcomes conserved")
+            and set(doc["photo_ID_technical_unknown_and_reuse_dispositions"])<=set(ACTIONS)
+            and all(
+                actions[key]==doc["photo_ID_technical_unknown_and_reuse_dispositions"].get(key,0)
+                for key in ACTIONS),
+            "Not all 20242 FCP-U100 selection/old/K1/new original-photo outcomes conserved; "
+            +f"actual={dict(actions)} signed={doc['photo_ID_technical_unknown_and_reuse_dispositions']}")
 
     shards={}
     sharded=set()
