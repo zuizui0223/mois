@@ -193,7 +193,11 @@ def preflight(source, prefix_csv, dispositions_csv, k1_certificate,
             and actions["new_original_photo_ROI_queued"]==new
             and actions["prior_independent_technical_photo_holdout"]==0
             and actions["unsupported_original_photo_format_technical_unknown"]==0
-            and actions==doc["photo_ID_technical_unknown_and_reuse_dispositions"],
+            # Signed Counter snapshots omit zero-valued categories.
+            # Reconcile only nonzero actions, while separately requiring both
+            # technical/unsupported counts to be exactly zero above.
+            and {k:v for k,v in actions.items() if v}
+                ==doc["photo_ID_technical_unknown_and_reuse_dispositions"],
             "Not all 20242 FCP-U100 selection/old/K1/new original-photo outcomes conserved")
 
     shards={}
