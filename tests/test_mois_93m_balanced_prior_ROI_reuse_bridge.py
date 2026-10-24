@@ -247,6 +247,44 @@ class BalancingExistingOriginalPixelsTests(unittest.TestCase):
             self.bridge()
         self.assertFalse(self.output.exists())
 
+    def change_reused_original_photo_observation_to_legacy_missing(self, unknown="nan"):
+        p=self.priors[0][1]
+        frame=pd.read_parquet(p)
+        frame.loc[0,"observation_id"]=unknown
+        frame.to_parquet(p,index=False)
+        receipt=self.priors[0][2]
+        record=json.loads(receipt.read_text())
+        record["output_sha256"][p.name]=sha(p)
+        receipt.write_text(json.dumps(record))
+
+    def test_signed_full93m_photo_UUID_backfills_unknown_old_roi_source_only(self):
+        self.change_reused_original_photo_observation_to_legacy_missing("nan")
+        data=self.bridge()
+        self.assertEqual(data["reused_original_photo_ids"],1)
+        self.assertEqual(data["reused_photo_legacy_observation_unresolved"],1)
+        self.assertTrue(data["missing_legacy_observation_backfilled_only_from_signed_93m_source"])
+        with (self.output/"already_measured_original_photo_reuse.csv").open(newline="") as f:
+            rows=list(csv.DictReader(f))
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]["photo_id"],"1")
+        self.assertEqual(rows[0]["observation_id"],"obsA")
+        self.assertEqual(rows[0]["prior_observation_id_missing_in_legacy_source"],"true")
+        self.assertEqual(rows[0]["prior_automatic_ROI_morph"],"white")
+        self.assertEqual(data["new_photo_attempts_planned"],2)
+        self.assertFalse(data["colour_measured"])
+
+    def test_blank_and_null_tokens_are_not_trusted_as_real_original_UUIDs(self):
+        for missing in ("", "nan", "None", "NULL", "null", "na", "N/A"):
+            self.assertTrue(bridge.prior_observation_unknown(missing))
+        for real in ("obsA", "1234abcd", "actual-photo-observation"):
+            self.assertFalse(bridge.prior_observation_unknown(real))
+
+    def test_genuinely_conflicting_nonmissing_photo_observation_remains_refused(self):
+        self.change_reused_original_photo_observation_to_legacy_missing("a-real-but-different-UUID")
+        with self.assertRaisesRegex(ValueError,"conflicting original observation UUID"):
+            self.bridge()
+        self.assertFalse(self.output.exists())
+
     def test_unchanged_selected_photo_probability_is_mandatory(self):
         d=list(self.rows)
         d[1]=dict(d[1],joint_photo_selection_probability="0.5")
