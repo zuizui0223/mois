@@ -171,6 +171,17 @@ class OriginalFCPPrecolourPreflightTests(unittest.TestCase):
         self.assertFalse((self.root/"source"/"original_photo_ROIs.parquet").exists())
         self.assertTrue((self.output/"fcp_u100_3141_photo_only_source_preflight_receipt.json").exists())
 
+    def test_counter_origin_manifest_omits_zero_count_categories(self):
+        # Actual signed reuse stage writes dict(Counter), which omits zero
+        # counts instead of including synthetic zero-valued labels.
+        d=json.loads(self.manifest.read_text(encoding="utf-8"))
+        key="photo_ID_technical_unknown_and_reuse_dispositions"
+        d[key]={name:n for name,n in d[key].items() if n}
+        self.manifest.write_text(json.dumps(d),encoding="utf-8")
+        result=self.run_preflight()
+        self.assertEqual(result["never_before_measured_FCP_U100_original_photo_ROI_target_IDs"],2)
+        self.assertEqual(result["new_original_photos_overlap_with_K1"],0)
+
     def test_reserved_K1_photo_must_be_same_original_observation_and_taxon(self):
         rows=list(self.dispositions)
         rows[2]["observation_id"]="WRONG_UUID"
