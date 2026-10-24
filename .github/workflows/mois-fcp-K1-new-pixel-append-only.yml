@@ -81,7 +81,7 @@ jobs:
           gh api "repos/$REPO/actions/runs/$ORIGINAL_K1_RUN/jobs?per_page=100" > original-k1-jobs.json
           gh api "repos/$REPO/actions/runs/$ORIGINAL_K1_RUN/artifacts?per_page=100" > original-k1-artifacts.json
           python - <<'PY'
-          import json,os,subprocess
+          import json,os,re,subprocess
           jobs=json.load(open('original-k1-jobs.json'))['jobs']
           artifacts=json.load(open('original-k1-artifacts.json'))['artifacts']
           good={x['name'] for x in jobs if x['conclusion']=='success'}
@@ -89,7 +89,13 @@ jobs:
           for item in artifacts:
               name=item['name']
               if name.startswith('mois-balanced-onephoto-K1-real-RGB-group-'):
+                  match=re.fullmatch(r'mois-balanced-onephoto-K1-real-RGB-group-([0-9]+)',name)
+                  assert match and 0<=int(match.group(1))<75,'Unexpected signed K1 original worker group'
                   assert name not in by_name,'Duplicated source-photo original worker result'
+                  assert item['expired'] is False,'Expired authentic original RGB artifact'
+                  assert isinstance(item.get('digest'),str) and re.fullmatch(
+                      r'sha256:[0-9a-f]{64}',item['digest']), 'Invalid original-worker ZIP SHA'
+                  assert type(item.get('size_in_bytes')) is int and item['size_in_bytes']>0, 'Empty original ROI evidence'
                   by_name[name]=item
           # One paginated metadata read replaces up to 75 network calls.
           # A newly published release after this snapshot remains idempotent:
