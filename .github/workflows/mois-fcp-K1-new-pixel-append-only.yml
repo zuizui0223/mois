@@ -219,17 +219,62 @@ jobs:
           TAG: mois-full93m-balanced-onephoto-K1-original-RGB-append-group-${{ matrix.group }}-v1
         run: |
           set -euo pipefail
-          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
-            gh release download "$TAG" --repo "$REPO" --dir old \
-              --pattern original_K1_group_receipt.json
-            cmp old/original_K1_group_receipt.json append/original_K1_group_receipt.json
-          else
-            gh release create "$TAG" \
-              append/original_K1_group_receipt.json \
-              append/original_photo_ROIs.parquet \
-              append/original_photo_hue_counts.csv \
-              append/original_photo_source_coverage.json \
-              --repo "$REPO" --target "$GITHUB_SHA" \
-              --title "MOIS frozen FCP K1 original image ROI true completed group $GROUP" \
-              --notes 'Completed original photographic pixels only, independently SHA checked from one signed 40066261878 model worker. True per-original-photo nested tier/observation/photo inclusion probability retained (heterogeneous); missing/failed full-resolution YOLO11+EfficientSAM FCP ROI-v4 results remain unknown, no original photo fetch or re-inference by this append-only action. Previous 3280 ROI photos are only reusable historical results, not counted as newly measured. The world 93209351-ID candidate photo metadata frame remains intact; these few worker-photo rows do not estimate unweighted global wild/native white-flower prevalence.'
+          if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            # Rare transient GitHub App HTTP 403s must not silently strand
+            # genuine completed image terminals. Retry only release metadata
+            # publishing; never fetch a source image or rerun its ROI model.
+            for attempt in 1 2 3; do
+              if gh release create "$TAG" \
+                append/original_K1_group_receipt.json \
+                append/original_photo_ROIs.parquet \
+                append/original_photo_hue_counts.csv \
+                append/original_photo_source_coverage.json \
+                --repo "$REPO" --target "$GITHUB_SHA" \
+                --title "MOIS frozen FCP K1 original image ROI true completed group $GROUP" \
+                --notes 'Completed original photographic pixels only, independently SHA checked from one signed 40066261878 model worker. True per-original-photo nested tier/observation/photo inclusion probability retained (heterogeneous); missing/failed full-resolution YOLO11+EfficientSAM FCP ROI-v4 results remain unknown, no original photo fetch or re-inference by this append-only action. Previous 3280 ROI photos are only reusable historical results, not counted as newly measured. The world 93209351-ID candidate photo metadata frame remains intact; these few worker-photo rows do not estimate unweighted global wild/native white-flower prevalence.'; then
+                break
+              fi
+              echo "K1 original ROI group $GROUP release creation attempt $attempt failed" >&2
+              # An interrupted asset upload can leave a partial tag; validate
+              # the entire immutable remote asset SHA inventory below instead
+              # of re-publishing, overwriting or masking partial evidence.
+              if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo 'GitHub Releases remains inaccessible; signed source ROI artifacts are retained in Actions.' >&2
+                exit 1
+              fi
+              sleep $((attempt * 5))
+            done
           fi
+          gh api "repos/$REPO/releases/tags/$TAG" > signed-published-original-release.json
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          release=json.loads(Path('signed-published-original-release.json').read_text())
+          assert release['tag_name']==os.environ['TAG'] and not release['draft']
+          originals=Path('append')
+          expected={
+              'original_K1_group_receipt.json',
+              'original_photo_ROIs.parquet',
+              'original_photo_hue_counts.csv',
+              'original_photo_source_coverage.json',
+          }
+          published={a['name']:a for a in release['assets']}
+          assert set(published)==expected, 'Incomplete/extra K1 immutable original photo ROI assets'
+          for name in sorted(expected):
+              original=originals/name
+              assert original.is_file() and original.stat().st_size>0
+              asset=published[name]
+              digest='sha256:'+hashlib.sha256(original.read_bytes()).hexdigest()
+              assert asset['digest']==digest and asset['size']==original.stat().st_size, (
+                  'Published K1 original ROI asset digest/size changed: '+name
+              )
+          print('MOIS_K1_REMOTE_ALL_FOUR_ASSETS_BYTE_SHA_VERIFIED',
+                json.dumps({'group':int(os.environ['GROUP']),
+                            'photo_ROI_release':release['tag_name'],
+                            'immutable_original_ROI_assets':len(expected),
+                            'new_image_downloads_and_colour_inferences':0},
+                           sort_keys=True),flush=True)
+          PY
