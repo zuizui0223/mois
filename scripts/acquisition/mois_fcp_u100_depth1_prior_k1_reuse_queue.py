@@ -40,7 +40,6 @@ from scripts.acquisition.mois_queue_from_full93m_target_tiers import WORKER_COLU
 from scripts.acquisition.mois_93m_balanced_prior_ROI_reuse_bridge import (
     PRIOR_MAIN,PRIOR_OLD,PRIOR_R1,PRIOR_R2,
     prior_original_photo_index, prior_source_observation_relation,
-    prior_observation_unknown, technical_reservations,
     SOURCE_SAMPLE_SHA, SOURCE_SELECTED_SHA,
 )
 from scripts.acquisition.mois_fcp_u100_progressive_depth1_photo_source import (
@@ -57,6 +56,27 @@ FULL_TARGET=20_242
 K1_TOTAL=80_035
 UPSTREAM_PHOTOS=93_209_351
 TECH_SHA="7038130d6a3cc45100f11a3994da7d6735c554dcb8e6bc829c27f5bef82f2639"
+
+def technical_reservations(path, *, expected_sha=TECH_SHA):
+    """Do not re-download the independently archived genuine 16-photo pilot."""
+    path=Path(path)
+    require(sha256(path)==expected_sha,"Original photo technical holdout source SHA changed")
+    seen=set()
+    observations=set()
+    with path.open(newline="",encoding="utf-8") as f:
+        reader=csv.DictReader(f)
+        require({"photo_id","observation_id","acquired","status"}<=set(reader.fieldnames or ()),
+                "Original photo technical trial needs real photo and observation IDs")
+        for row in reader:
+            pid=row["photo_id"]
+            obs=row["observation_id"]
+            require(pid.isdecimal() and bool(obs) and pid not in seen,
+                    "Duplicate or malformed previously benchmarked original photo IDs")
+            seen.add(pid)
+            observations.add(obs)
+    require(bool(seen),"No original technical photo identity reservation present")
+    return seen,observations
+
 
 ACTIONS=("prior_original_photo_ROI_reuse",
          "reserved_by_inflight_K1_original_photo",
