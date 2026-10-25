@@ -129,6 +129,14 @@ class TestFullK1AndNeverMeasuredFCPGlobalPhotoUnion(unittest.TestCase):
             "ready_for_inference_ONLY_AFTER_K1_75_WORKERS_AND_75_SIGNED_GROUP_RELEASES":True,
         }))
 
+    def resign_synthetic_FCP_pixel_receipt(self):
+        # Mutation tests intentionally re-sign their synthetic Parquet/receipt
+        # so validation reaches the original photo identity and status gates.
+        # Independent unresigned-file regression below still tests byte SHAs.
+        report=json.loads(self.fcp_receipt.read_text())
+        report["actual_new_image_parquet_SHA256"]=sha(self.fcp_parquet)
+        self.fcp_receipt.write_text(json.dumps(report))
+
     def run_union(self,**kw):
         args=dict(
             k1_global_sha=sha(self.k1_global),
@@ -161,6 +169,7 @@ class TestFullK1AndNeverMeasuredFCPGlobalPhotoUnion(unittest.TestCase):
     def test_repeated_K1_photo_must_not_be_labelled_as_new_FCP(self):
         pixel=dict(self.pixel,photo_id="200")
         pd.DataFrame([pixel]).to_parquet(self.fcp_parquet,index=False)
+        self.resign_synthetic_FCP_pixel_receipt()
         with self.assertRaisesRegex(ValueError,"photo IDs|new measured"):
             self.run_union()
         self.assertFalse(self.output.exists())
@@ -168,6 +177,7 @@ class TestFullK1AndNeverMeasuredFCPGlobalPhotoUnion(unittest.TestCase):
     def test_changed_status_cannot_turn_failed_photo_to_classified_white(self):
         pixel=dict(self.pixel,measurement_status="image_acquisition_failed")
         pd.DataFrame([pixel]).to_parquet(self.fcp_parquet,index=False)
+        self.resign_synthetic_FCP_pixel_receipt()
         with self.assertRaisesRegex(ValueError,"terminal image SHA|technical nonresponse"):
             self.run_union()
         self.assertFalse(self.output.exists())
@@ -175,6 +185,7 @@ class TestFullK1AndNeverMeasuredFCPGlobalPhotoUnion(unittest.TestCase):
     def test_wrong_photo_probability_does_not_survive_signed_source(self):
         pixel=dict(self.pixel,selection_probability="0.4")
         pd.DataFrame([pixel]).to_parquet(self.fcp_parquet,index=False)
+        self.resign_synthetic_FCP_pixel_receipt()
         with self.assertRaisesRegex(ValueError,"selection probability"):
             self.run_union()
         self.assertFalse(self.output.exists())
