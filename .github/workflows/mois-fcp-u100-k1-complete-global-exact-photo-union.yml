@@ -136,3 +136,4 @@ jobs:
               --repo "$REPO" --target "$GITHUB_SHA" \
               --title 'MOIS all K1 75 plus genuine FCP 3141 original photo-ID unique worldwide ROI census' \
               --notes 'Only SHA-pinned completed original-photo ROI terminals from 929138 historical original photos, 76753 distinct new FCP-K1 originals and 3141 distinct NEW U100-prefix1 original photos; preserves the old 15483 and K1 1618 sampled-photo reuses exactly once. Cross-arm photo IDs, original observation/taxon identity, true 1/N/M photo inclusion probabilities, image checksums, four-hue classifications and missing/technical unknowns are independently checked. 93209351 upstream candidate metadata photo IDs are NOT classified petals. No raw image download, colour model reinference, botanically verified wild/native flowering individuals or globally unbiased white-colour prevalence is claimed.'
+          fi
