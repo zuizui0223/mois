@@ -1,0 +1,95 @@
+name: MOIS latest1043930 four ecological axes integrated result and permanent source release
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_latest1043930_integrated_four_axes.py
+      - .github/workflows/mois-latest1043930-integrated-four-axes.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-20261025-actual1043930-four-ecological-axes-final-signed-release
+  cancel-in-progress: false
+jobs:
+  latest-full-real-photo-comparison:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Restore only data provenance and actual previously executed four gradient results
+        run: |
+          set -euo pipefail
+          mkdir -p x/source x/climate x/water x/island x/season x/bias x/prior
+          gh run download 40187688390 --repo zuizui0223/mois \
+            --name mois-1043930-latest-original-photo-four-hue-fully-signed-union --dir x/source
+          gh run download 40188040027 --repo zuizui0223/mois \
+            --name mois-real-latest1043930-photoid-original-worldclim-humidity-elevation --dir x/climate
+          gh run download 40188264686 --repo zuizui0223/mois \
+            --name mois-real1043930-water-humidity-elevation-within-genus-local-refit --dir x/water
+          gh run download 40188478245 --repo zuizui0223/mois \
+            --name mois-real-latest1043930-island-mainland-elevation-gshhg --dir x/island
+          gh run download 40187892268 --repo zuizui0223/mois \
+            --name mois-real-latest1043930-exact-season-taxon-turnover-20261025 --dir x/season
+          gh run download 40188745881 --repo zuizui0223/mois \
+            --name mois-real1043930-colour-classifiability-bias-by-four-ecological-axes --dir x/bias
+          gh release download mois-four-ecological-gradients-original350399-20261025-v1 \
+            --repo zuizui0223/mois --dir x/prior --pattern mois_four_axis_20261025_source_reanalysis.json
+      - name: Strict numerical reconciliation of old 350399 vs ACTUAL new1043930 wetlands altitude islands seasons
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/analysis/mois_latest1043930_integrated_four_axes.py
+          python -m scripts.analysis.mois_latest1043930_integrated_four_axes \
+            --source x/source/mois_latest_1043930_photo_union_receipt.json \
+            --climate x/climate/mois_latest1043930_photo_climate_receipt.json \
+            --water x/water/latest1043930_climate_macroecology.json \
+            --elev-island x/island/mois_latest1043930_island_altitude_result.json \
+            --season x/season/latest1043930_season.json \
+            --bias x/bias/latest1043930_selection_bias_report.json \
+            --prior x/prior/mois_four_axis_20261025_source_reanalysis.json \
+            --output latest1043930_four_axis_final
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          file=Path('latest1043930_four_axis_final/mois_latest1043930_four_axis_comparison.json')
+          r=json.loads(file.read_text())
+          assert r['global_original_photo_ID_attempts_latest']==1043930
+          assert r['actual_classifiable_four_hue_photographs_latest']==459235
+          assert r['source_colour_unknowns']==584695
+          assert r['annual_environment_classified_complete']==458174
+          assert r['source_arm_FCP5_groups_sealed']==35
+          assert r['photo_image_downloads_for_this_reanalysis']==0
+          assert r['ROI_four_hue_unknowns_relabelled']==0
+          assert len(r['recomputed_four_axes'])==7
+          print('MOIS_NEWEST_1043930_ALL_FOUR_ECOLOGICAL_AXES_FULLY_RECONCILED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261025-genuine-latest1043930-four-macroecological-axes-and-ROI-bias
+          path: latest1043930_four_axis_final/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Save new four-axis result and bias numbers in an immutable public GitHub release
+        run: |
+          set -euo pipefail
+          tag=mois-real-latest1043930-four-ecological-gradients-20261025-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            mkdir -p prior
+            gh release download "$tag" --repo zuizui0223/mois --dir prior \
+              --pattern mois_latest1043930_four_axis_comparison.json
+            cmp prior/mois_latest1043930_four_axis_comparison.json \
+                latest1043930_four_axis_final/mois_latest1043930_four_axis_comparison.json
+            echo 'Identical verified newest four-axis result already published.'
+          else
+            gh release create "$tag" latest1043930_four_axis_final/* \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS 1043930 real photos: global moisture altitude islands seasonal macroecology and missingness' \
+              --notes 'Actual 1,043,930 SHA-authenticated and photo-ID-disjoint original image attempts, 459,235 automatic 4-hue ROIs, 458,174 annual-climate-complete classified photo IDs; all 35 FCP5 groups verified. New 693531 photo climate point samples, all 1043930 GSHHG high-res landmass IDs, within-genus geography/cohort humidity-rain-altitude, updated 315 island climate-matched pairs and 58 nearby high-low geographic groups, latest source taxon-season decompositions, raw classifiability bias by region, season and humidity. No new images, unknown hue imputation, botanically verified wild or causal pigment selection. Old 350399 reference is labelled separately, never reused as latest.'
+          fi
