@@ -158,3 +158,53 @@ the image nor its build command embeds model weights or any photograph.
 - This implementation has not scanned all 93m image pixels or provisioned
   cloud infrastructure. Extrapolate only from source-SHA-verified real-image
   benchmarks, not planning receipts.
+
+## Source-locked production-oriented benchmarks (real data, 25 October 2026)
+
+**True medium-image I/O + model overlap (run 40173769300):**
+
+- Reused 4,096 already completed Tier12/Part0/Chunk0 photos without fetching them
+  again, and processed **4,096 genuinely NEW** Tier12/Part0/Chunk1 photos.
+- Warm YOLO11n weights SHA `f1aaeec4...` and 500px original source parent
+  SHA were independently checked.
+- New 4,096 source attempts: **4,078 image decodes, 3,998 flower-box candidates,
+  80 screen-negatives and 18 technical errors**. None were falsely called a
+  botanically confirmed open flower or a frozen four-hue petal ROI.
+- Actual overlapped worker wall: **525.815 seconds = 7.7898 original photo
+  attempts/sec**. For the very same packets, summing measured download/decode
+  time (512.046 s) and YOLO/box proxy computation (226.738 s) gives **738.784 s**.
+  Overlapping those stages saved ~212.97 seconds (**28.8%** of the additive
+  serial-component total); the 738.784 s counterfactual is *not* a separate
+  randomized end-to-end A/B run.
+- Provider budget for that one worker was capped at 8 S3 requests/sec, so
+  7.79 photo attempts/sec is a pilot at the configured ceiling, **not the
+  maximum S3/provider capacity**.
+
+**Metadata-exact five-slot source work plan (run 40174675292, NO image
+download):** The signed 1,792 original source-part records reconcile to
+93,209,351 photo IDs in 23,890 planned <=4,096-photo chunks. Stable SHA
+partitioning into five compute slots assigns photo counts:
+`18,411,004 / 18,647,852 / 18,832,876 / 18,381,429 / 18,936,190`;
+the largest-to-smallest photo workload ratio is **1.0302**. At hypothetical
+fully sustained **40 photo attempts/s aggregate** (five independent 8/s
+workers), that is **26.97 days** of uninterrupted Stage1 image attempts,
+without allowances for provider throttling, setup, failures or scientific
+full-resolution validation. No five-worker simultaneous throughput has been
+observed yet.
+
+**Single-pass colour quality warning (data-only K1 run 40174407217):**
+on 128 K1 photos already machine classified by frozen four-colour full ROI,
+the HSV-leading category inside the 500px YOLO candidate box agreed on
+**96/128 (75.0%)**. With a prespecified best-minus-second category
+margin >=0.10, it agreed on **86/107 (80.4%)** retained photos. For original
+K1 white labels, the raw proxy agreement was only **41/61 (67.2%)**.
+A box colour proxy exists for 123/128 original ROI/flip-gate failures, but
+NONE of these are known biological colour rescue successes; source unknowns
+were not converted into confirmed petal labels. A better one-pass organ
+segmentation/colour method is still needed before treating Stage1 RGB as a
+primary ecological flower-colour observation.
+
+Original GitHub run evidence:
+- https://github.com/zuizui0223/mois/actions/runs/40173769300
+- https://github.com/zuizui0223/mois/actions/runs/40174675292
+- https://github.com/zuizui0223/mois/actions/runs/40174407217
