@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 import csv
 import gzip
 import hashlib
@@ -342,7 +343,8 @@ def scan_source(source, output, *, expected_source_sha256,
                 expected_count, part, tier,
                 detector=None, download=None, workers=8, batch_size=512,
                 max_packets=None, source_role="full93m",
-                parent_source_sha256=None, chunk_index=None, io_executor=None):
+                parent_source_sha256=None, chunk_index=None, io_executor=None,
+                prefetch_next_packet=False):
     """Actually scan pixels. No complete receipt for a limited pilot."""
     source, output = Path(source), Path(output)
     require(sha_file(source) == expected_source_sha256,
@@ -353,6 +355,9 @@ def scan_source(source, output, *, expected_source_sha256,
             "Invalid original 93m disjoint source partition")
     require(1 <= batch_size <= 8192 and 1 <= workers <= 64,
             "Unbounded pixel packet or download concurrency")
+    require(not prefetch_next_packet or
+            (io_executor is not None and batch_size <= 256),
+            "Prefetch must use one shared I/O executor and <=256 photos per packet")
     require(max_packets is None or max_packets > 0, "Invalid pilot limit")
     require(source_role in ("full93m", "full93m_chunk", "K1_calibration"),
             "A full source part, verified bounded source chunk, or K1 calibration is required")
@@ -383,11 +388,42 @@ def scan_source(source, output, *, expected_source_sha256,
         if isinstance(detector, WarmFlowerBoxDetector) else
         "test_injected_detector:" + type(detector).__name__
     )
-    with gzip.open(source, "rt", encoding="utf-8", newline="") as stream:
+    source_scan_started=time.monotonic()
+    with (ThreadPoolExecutor(max_workers=1) if prefetch_next_packet
+          else nullcontext(None)) as one_ahead, gzip.open(
+              source, "rt", encoding="utf-8", newline="") as stream:
         reader = csv.DictReader(stream)
         require(tuple(reader.fieldnames or ()) == COLUMNS,
                 "Not an original photo-by-observation disjoint tier source")
-        for idx, rows in enumerate(packets(reader, batch_size)):
+
+        def pending_packets():
+            items=iter(enumerate(packets(reader,batch_size)))
+            if not prefetch_next_packet:
+                for i,pkt in items:
+                    yield i,pkt,None
+                return
+            def schedule(item):
+                if item is None or (max_packets is not None
+                                    and item[0]>=max_packets):
+                    return None
+                index,pkt=item
+                dest=output/("packet-%07d.csv.gz"%index)
+                proof=output/("packet-%07d.receipt.json"%index)
+                if dest.exists() or proof.exists():
+                    return None
+                return one_ahead.submit(
+                    fetch_decode_packet,pkt,part=part,tier=tier,
+                    download=download,workers=workers,
+                    source_role=source_role,io_executor=io_executor)
+            current=next(items,None)
+            pending=schedule(current)
+            while current is not None:
+                following=next(items,None)
+                next_future=schedule(following)
+                yield current[0],current[1],pending
+                current,pending=following,next_future
+
+        for idx, rows, fetch_future in pending_packets():
             if max_packets is not None and idx >= max_packets:
                 break
             # Source is sorted by taxonomic source shard, not photo ID.
@@ -419,10 +455,14 @@ def scan_source(source, output, *, expected_source_sha256,
             else:
                 started = time.monotonic()
                 perf = {}
-                result = process_packet(rows, part=part, tier=tier,
-                                        detector=detector, download=download,
-                                        workers=workers, source_role=source_role,
-                                        performance=perf, io_executor=io_executor)
+                fetched = fetch_future.result() if fetch_future is not None else None
+                result = process_packet(
+                    rows, part=part, tier=tier,
+                    detector=detector, download=download, workers=workers,
+                    source_role=source_role, performance=perf,
+                    io_executor=io_executor,
+                    preloaded_pairs=fetched[0] if fetched is not None else None,
+                    preloaded_transfer_seconds=fetched[1] if fetched is not None else None)
                 write_packet_csv(dest, result)
                 counts = dict(Counter(r["screen_status"] for r in result))
                 proof = {
@@ -498,10 +538,29 @@ def scan_source(source, output, *, expected_source_sha256,
         "screening_only_not_verified_flower_colour": True,
         "input_is_disjoint_upstream_by_photo_id": True,
     }
+    if prefetch_next_packet:
+        true_elapsed=time.monotonic()-source_scan_started
+        complete["source_scan_prefetch_overlapped"]=True
+        complete["actual_medium_pixel_source_wall_seconds"]=round(true_elapsed,3)
+        complete["actual_photo_ids_per_second_after_prefetch"]=(
+            round(total/true_elapsed,4) if true_elapsed>0 else None)
+        complete["prefetched_photo_packet_size"]=batch_size
     if full:
         final_path = output / "complete_receipt.json"
         if final_path.exists():
-            require(json.loads(final_path.read_text(encoding="utf-8")) == complete,
+            previous=json.loads(final_path.read_text(encoding="utf-8"))
+            # Replays do not recompute original elapsed time, photo colours,
+            # downloaded image bytes, or historical full ROI outcomes.
+            if prefetch_next_packet:
+                stable=[k for k in complete if k not in (
+                    "source_scan_prefetch_overlapped",
+                    "actual_medium_pixel_source_wall_seconds",
+                    "actual_photo_ids_per_second_after_prefetch",
+                    "prefetched_photo_packet_size")]
+                require(all(previous.get(k)==complete[k] for k in stable),
+                        "A completed photo source cannot be relabelled by resume")
+                return previous
+            require(previous == complete,
                     "Immutable complete source shard receipt changed")
         else:
             final_path.write_text(json.dumps(complete, sort_keys=True, indent=2) + "\n")
