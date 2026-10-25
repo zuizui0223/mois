@@ -484,7 +484,9 @@ def scan_source(source, output, *, expected_source_sha256,
                     "box_colour_proxy_not_verified_flower_petals": True,
                     "screen_negative_is_not_botanical_absence": True,
                     "original_full_resolution_ROI_modified": False,
-                    "packet_wall_seconds": round(time.monotonic() - started, 3),
+                    "packet_wall_seconds": round(
+                        time.monotonic() - started +
+                        (fetched[1] if fetched is not None else 0), 3),
                     **perf,
                     "output_sha256": sha_file(dest),
                 }
