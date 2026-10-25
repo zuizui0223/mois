@@ -164,3 +164,4 @@ jobs:
             gh release create "$RESULT" global/* --repo "$REPO" --target "$GITHUB_SHA" \
               --title 'MOIS worldwide FCP U100 first5 genuine source photo IDs across 20242 nominal taxa' \
               --notes 'SHA-verified nested original observation photo source: full 93,209,351 source opportunity index, 42,111 nominal source taxa, 20,242 FCP U100 source eligible taxa. First5=101210 real original photo source ID candidates, exactly first1 frozen members +80968 rank2to5 candidates. Correct nested inclusion 5/N_i/M_o, delta-only 4/N_i/M_o; one photo per independent original observation. Additional 80968 source candidates are NOT yet never-measured image targets; prior FCP/MOIS/K1 original photo-ID overlap and technical unknowns MUST be removed first. No source photo images downloaded, flower ROI inferred, native/wild flowering status verified or globally unbiased white prevalence estimated.'
+          fi
