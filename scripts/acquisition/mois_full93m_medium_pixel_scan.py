@@ -33,6 +33,10 @@ import urllib.request
 from scripts.acquisition.mois_onepass_full93m_target_tiers import (
     COLUMNS, normalized_extension,
 )
+from scripts.acquisition.mois_flower_box_lab_colour import (
+    PROTOCOL as BOX_LAB_PROTOCOL, DESCRIPTOR_COLUMNS as BOX_LAB_COLUMNS,
+    flower_box_lab_descriptor,
+)
 
 SCHEMA = "mois_all_original_photo_medium_pixel_stage1_terminal_v1"
 SOURCE_ARM = "full93m_observation_and_photo_complete_source"
@@ -46,6 +50,11 @@ COLUMNS_OUT = (
     "box_proxy_blue_purple", "box_proxy_other",
     "source_arm", "source_photo_inclusion_probability", "audit_stratum",
 )
+# v1 completed packets are immutable: Lab colours live in a SEPARATELY VERSIONED
+# packet schema/output path. Never rewrite a legacy packet to add new columns.
+FEATURE_MODES=("legacy_hsv","floral_box_lab_v2")
+LAB_SCHEMA="mois_all_original_photo_medium_pixel_stage1_CIELAB_dominant_v2"
+COLUMNS_LAB=COLUMNS_OUT+BOX_LAB_COLUMNS
 ALLOWED = {"candidate", "negative", "uncertain", "error"}
 HOST = "https://inaturalist-open-data.s3.amazonaws.com/photos/"
 MAX_IMAGE_BYTES = 3_000_000
@@ -267,7 +276,7 @@ def fetch_decode_packet(rows, *, part, tier, download, workers,
     return result, round(time.monotonic()-began,3)
 
 def classify_fetched_packet(rows,pairs,detector,*,download_seconds,
-                            performance=None):
+                            performance=None,feature_mode="legacy_hsv"):
     """One immutable YOLO detector handles all fetched decoded photo candidates."""
     started=time.monotonic()
     out=[base for base,_ in pairs]
@@ -293,6 +302,16 @@ def classify_fetched_packet(rows,pairs,detector,*,download_seconds,
                          "box_proxy_red_pink","box_proxy_blue_purple",
                          "box_proxy_other"),proxies):
                         out[i][key]=value
+                    if feature_mode=="floral_box_lab_v2":
+                        try:
+                            out[i].update(flower_box_lab_descriptor(image,xyxy))
+                        except Exception as lab_exc:
+                            # Do NOT silently substitute a nine-palette or
+                            # guessed petal value when image-Lab fails.
+                            out[i]["screen_status"]="uncertain"
+                            out[i]["technical_reason"]=(
+                                "floral_box_Lab_proxy_error:"+
+                                type(lab_exc).__name__)
         except Exception as exc:
             for i,_ in valid:
                 out[i]["screen_status"]="error"
@@ -311,7 +330,8 @@ def classify_fetched_packet(rows,pairs,detector,*,download_seconds,
 
 def process_packet(rows, *, part, tier, detector, download, workers,
                    source_role="full93m", performance=None, io_executor=None,
-                   preloaded_pairs=None, preloaded_transfer_seconds=None):
+                   preloaded_pairs=None, preloaded_transfer_seconds=None,
+                   feature_mode="legacy_hsv"):
     """Backward-compatible source scan, optionally using prefetched 500px pixels."""
     if preloaded_pairs is None:
         require(preloaded_transfer_seconds is None,"Missing prefetched source photo pixels")
@@ -326,15 +346,15 @@ def process_packet(rows, *, part, tier, detector, download, workers,
         pairs,download_seconds=preloaded_pairs,preloaded_transfer_seconds
     return classify_fetched_packet(
         rows,pairs,detector,download_seconds=download_seconds,
-        performance=performance)
+        performance=performance,feature_mode=feature_mode)
 
-def write_packet_csv(path, rows):
+def write_packet_csv(path, rows, *, fieldnames=COLUMNS_OUT):
     tmp = path.with_suffix(path.suffix + ".partial")
     with tmp.open("wb") as raw:
         with gzip.GzipFile(filename="", fileobj=raw, mode="wb",
                            compresslevel=2, mtime=0) as zipped:
             with io.TextIOWrapper(zipped, encoding="utf-8", newline="") as text:
-                w = csv.DictWriter(text, fieldnames=COLUMNS_OUT, lineterminator="\n")
+                w = csv.DictWriter(text, fieldnames=fieldnames, lineterminator="\n")
                 w.writeheader()
                 w.writerows(rows)
     os.replace(tmp, path)
@@ -344,8 +364,8 @@ def scan_source(source, output, *, expected_source_sha256,
                 detector=None, download=None, workers=8, batch_size=512,
                 max_packets=None, source_role="full93m",
                 parent_source_sha256=None, chunk_index=None, io_executor=None,
-                prefetch_next_packet=False):
-    """Actually scan pixels. No complete receipt for a limited pilot."""
+                prefetch_next_packet=False, feature_mode="legacy_hsv"):
+    """Scan actual pixels; v2 adds direct floral BOX sRGB Lab without 4-hue gate."""
     source, output = Path(source), Path(output)
     require(sha_file(source) == expected_source_sha256,
             "Signed full93m original input photo gzip SHA changed")
@@ -355,6 +375,10 @@ def scan_source(source, output, *, expected_source_sha256,
             "Invalid original 93m disjoint source partition")
     require(1 <= batch_size <= 8192 and 1 <= workers <= 64,
             "Unbounded pixel packet or download concurrency")
+    require(feature_mode in FEATURE_MODES,
+            "An explicit supported immutable photo colour feature mode is required")
+    record_schema=LAB_SCHEMA if feature_mode=="floral_box_lab_v2" else SCHEMA
+    column_names=COLUMNS_LAB if feature_mode=="floral_box_lab_v2" else COLUMNS_OUT
     require(not prefetch_next_packet or
             (io_executor is not None and batch_size <= 256),
             "Prefetch must use one shared I/O executor and <=256 photos per packet")
@@ -388,6 +412,8 @@ def scan_source(source, output, *, expected_source_sha256,
         if isinstance(detector, WarmFlowerBoxDetector) else
         "test_injected_detector:" + type(detector).__name__
     )
+    if feature_mode=="floral_box_lab_v2":
+        model_identity+="|"+BOX_LAB_PROTOCOL
     source_scan_started=time.monotonic()
     with (ThreadPoolExecutor(max_workers=1) if prefetch_next_packet
           else nullcontext(None)) as one_ahead, gzip.open(
@@ -438,7 +464,8 @@ def scan_source(source, output, *, expected_source_sha256,
                 require(dest.exists() and receipt_path.exists(),
                         "Incomplete previous packet; manual diagnosis required")
                 proof = json.loads(receipt_path.read_text(encoding="utf-8"))
-                require(proof.get("source_gzip_sha256") == expected_source_sha256
+                require(proof.get("schema")==record_schema
+                        and proof.get("source_gzip_sha256") == expected_source_sha256
                         and proof.get("output_sha256") == sha_file(dest)
                         and proof.get("photo_ids") == len(rows)
                         and proof.get("first_photo_id") == ids[0]
@@ -462,11 +489,14 @@ def scan_source(source, output, *, expected_source_sha256,
                     source_role=source_role, performance=perf,
                     io_executor=io_executor,
                     preloaded_pairs=fetched[0] if fetched is not None else None,
-                    preloaded_transfer_seconds=fetched[1] if fetched is not None else None)
-                write_packet_csv(dest, result)
+                    preloaded_transfer_seconds=fetched[1] if fetched is not None else None,
+                    feature_mode=feature_mode)
+                write_packet_csv(dest, result,fieldnames=column_names)
                 counts = dict(Counter(r["screen_status"] for r in result))
                 proof = {
-                    "schema": SCHEMA,
+                    "schema": record_schema,
+                    **({"CIELAB_box_source_protocol":BOX_LAB_PROTOCOL}
+                       if feature_mode=="floral_box_lab_v2" else {}),
                     "source_gzip_sha256": expected_source_sha256,
                     "first_photo_id": ids[0], "last_photo_id": ids[-1],
                     "photo_ids": len(result), "source_part": part, "source_tier": tier,
@@ -510,7 +540,11 @@ def scan_source(source, output, *, expected_source_sha256,
         require(total == expected_count,
                 "Signed full source input photo count does not match true attempts")
     complete = {
-        "schema": SCHEMA,
+        "schema": record_schema,
+        **({"CIELAB_box_source_protocol":BOX_LAB_PROTOCOL,
+            "floral_region_is_not_petals_semantically_separated":True,
+            "principal_Lab_mode_is_not_calibrated_spectral_reflectance":True}
+           if feature_mode=="floral_box_lab_v2" else {}),
         "source_gzip_sha256": expected_source_sha256,
         "source_part": part, "source_tier": tier,
         "source_role": source_role,
