@@ -23,7 +23,7 @@ jobs:
       - name: Install source-only analytical libraries
         run: |
           set -euo pipefail
-          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2
           python -m py_compile scripts/analysis/mois_real256_same_photo_roi9_vs_box_lab.py
       - name: Restore exactly SAME genuine original photo IDs from ROI9 atlas and real YOLO box CIELAB
         run: |
