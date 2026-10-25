@@ -26,7 +26,8 @@ def require(cond, msg):
         raise ValueError("MOIS_93M_REAL_PIXEL_CHUNK: " + msg)
 
 def run(chunks, output, chunk_index, *, detector,
-        download, workers=8, batch_size=512, max_packets=None):
+        download, workers=8, batch_size=512, max_packets=None,
+        io_executor=None):
     chunks, output = Path(chunks), Path(output)
     report = json.loads((chunks / "chunk_receipt.json").read_text())
     require(report.get("schema") == CHUNK_SCHEMA
@@ -76,6 +77,7 @@ def run(chunks, output, chunk_index, *, detector,
         chunk_index=chunk_index,
         detector=detector, download=download,
         workers=workers, batch_size=batch_size, max_packets=max_packets,
+        io_executor=io_executor,
     )
     complete = bool(result["all_original_input_photos_attempted"])
     require(result["source_role"] == "full93m_chunk"
