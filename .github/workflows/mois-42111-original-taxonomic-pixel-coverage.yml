@@ -1,0 +1,136 @@
+name: MOIS full42111 taxon true-original-photo ROI breadth and rare species acquisition gaps
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/analysis/mois_full42111_taxon_pixel_coverage.py
+      - tests/test_mois_full42111_taxon_pixel_coverage.py
+      - .github/workflows/mois-42111-original-taxonomic-pixel-coverage.yml
+  pull_request:
+    paths:
+      - scripts/analysis/mois_full42111_taxon_pixel_coverage.py
+      - tests/test_mois_full42111_taxon_pixel_coverage.py
+      - .github/workflows/mois-42111-original-taxonomic-pixel-coverage.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-real1009032-original-hue-photo-coverage-42111-source-taxa
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify exact source 42111 taxon/93209351-photo cohort and no false original hue
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m py_compile scripts/analysis/mois_full42111_taxon_pixel_coverage.py
+          python -m unittest discover -s tests -p test_mois_full42111_taxon_pixel_coverage.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          w=yaml.safe_load(open('.github/workflows/mois-42111-original-taxonomic-pixel-coverage.yml'))
+          blocks=[step['run'] for job in w['jobs'].values() for step in job['steps'] if 'run' in step]
+          assert len(blocks)>=5
+          for block in blocks:
+              p=subprocess.run(['bash','-n'],input=block,text=True,capture_output=True)
+              assert p.returncode==0,p.stderr
+          print('MOIS_42111_TRUE_PIXEL_COVERAGE_SHELL_PASS',len(blocks))
+          PY
+  measure-source-taxonomic-coverage-without-reinference:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-source42111-real1009032-original-photo-taxon-breadth-and-rare-gap-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip if complete original-photo source breadth report already SHA-frozen
+        id: gate
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo ready=false >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          gh release view mois-global-original-RGB-K1-75-plus-FCP-U100-3141-exact-unique-v1 \
+            --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          gh release view mois-full93m-tier06-balanced-onephoto-K1-new-original-warm8-RGB-v1 \
+            --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          echo ready=true >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Read signed complete source taxa and all actual source-photo ROI results only
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          gh release download mois-full-93209351-FCP-U100-complete-42111-original-photo-source-v1 \
+            --repo "$REPO" --dir census \
+            --pattern full42111_nominal_taxa_original_U100_source_eligibility.csv
+          echo '6adab400c72932ab1079cdb66632018e90b14f20af2aaf53d6a8521dd8eb8441  census/full42111_nominal_taxa_original_U100_source_eligibility.csv' | sha256sum -c -
+          gh release download mois-real-pixel-checkpoint-39969920310-v1 \
+            --repo "$REPO" --dir historical/main \
+            --pattern combined_actual_photo_checkpoint.parquet \
+            --pattern checkpoint_receipt.json
+          gh release download mois-tier06-group00-first64bucket-warm-original-RGB-v1 \
+            --repo "$REPO" --dir historical/group00 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-tier06-all16-first4bucket-broad-warm-original-RGB-v1 \
+            --repo "$REPO" --dir historical/r1 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-tier06-all16-buckets004to011-broad-warm-original-RGB-v1 \
+            --repo "$REPO" --dir historical/r2 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-full93m-tier06-balanced-onephoto-K1-new-original-warm8-RGB-v1 \
+            --repo "$REPO" --dir k1 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          echo '0d3de3374a06b1e7b9ad0281e2ab7844632ed139db871488524061191c8f34c1  k1/measured_photos.parquet' | sha256sum -c -
+          echo 'e86463bc61f9eebd8cbdbe01269f767c140bf243f9e374027008e9f095eb9044  k1/receipt.json' | sha256sum -c -
+          gh release download mois-full93m-FCP-U100-depth1-only3141-new-original-RGB-v1 \
+            --repo "$REPO" --dir fcp \
+            --pattern new_FCP_depth1_original_photo_ROIs.parquet --pattern receipt.json
+          echo 'ee79c60671dda65a3d2f4f9319af952dbe81ab805ce269fe32b3bb3448b0d6b8  fcp/new_FCP_depth1_original_photo_ROIs.parquet' | sha256sum -c -
+          echo '5dbd4590ae96729cd9469fc8403a8ee4528d18e1fb5b928d5a108483ea29150b  fcp/receipt.json' | sha256sum -c -
+      - name: Quantify exact original photo/hue coverage for every nominal species and prioritize rare zero-hue species
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_full42111_taxon_pixel_coverage \
+            --census census/full42111_nominal_taxa_original_U100_source_eligibility.csv \
+            --historical historical --k1 k1 --fcp fcp --output verified
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-true-one-million-original-photo-42111-species-pixel-coverage
+          path: verified/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish exact taxon representation gaps without imputing technical nonresponse as white
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$TAG" --repo "$REPO" --dir old \
+              --pattern mois_full42111_original_pixel_taxon_coverage_receipt.json
+            cmp old/mois_full42111_original_pixel_taxon_coverage_receipt.json \
+                verified/mois_full42111_original_pixel_taxon_coverage_receipt.json
+          else
+            gh release create "$TAG" verified/* --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS 42111 actual nominal source taxa original-photo colour ROI coverage after one million real photos' \
+              --notes 'All 93209351-photo-ID and 42111-taxon original source opportunities preserved; exact full historical 929138 + K1 76753 + new FCP 3141 original image ROI attempts and automatic four-hue observations SHA audited. Taxon-level original photos attempted, classifiable and technically uncertain counted separately. Under100-observation taxa without any classified original ROIs highlighted for NEXT original image acquisition. No source image fetch, YOLO model inference, independence assumption, wild/native botanical confirmation or globally unbiased white flower proportion.'
+          fi
