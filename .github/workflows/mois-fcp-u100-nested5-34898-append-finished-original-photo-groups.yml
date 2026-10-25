@@ -1,0 +1,201 @@
+name: MOIS FCP nested5 append only completed actual original RGB image groups
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_u100_nested5_seal_finished_group.py
+      - tests/test_mois_fcp_u100_nested5_seal_finished_group.py
+      - .github/workflows/mois-fcp-u100-nested5-34898-append-finished-original-photo-groups.yml
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_u100_nested5_seal_finished_group.py
+      - tests/test_mois_fcp_u100_nested5_seal_finished_group.py
+      - .github/workflows/mois-fcp-u100-nested5-34898-append-finished-original-photo-groups.yml
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - MOIS genuine FCP nested5 new 34898 original image ROI warm 8 runner
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '7,17,27,37,47,57 * * * *'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-FCP5-only-new34898-photo-completed-ROI-data-only-append
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
+        github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      ready: ${{ steps.scan.outputs.ready }}
+      groups: ${{ steps.scan.outputs.groups }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_RUN: '40151706880'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect finished model worker IDs and original photo SHA archives only
+        id: scan
+        run: |
+          set -euo pipefail
+          gh api "repos/$REPO/actions/runs/$SOURCE_RUN/jobs?per_page=100" > original-jobs.json
+          gh api "repos/$REPO/actions/runs/$SOURCE_RUN/artifacts?per_page=100" > original-artifacts.json
+          python - <<'PY'
+          import json,os,re,subprocess
+          from pathlib import Path
+          jobs=json.loads(Path('original-jobs.json').read_text())['jobs']
+          artifacts=json.loads(Path('original-artifacts.json').read_text())['artifacts']
+          successful=set()
+          for job in jobs:
+              match=re.fullmatch(r'worker \(([0-9]+)\)',job['name'])
+              if match and job.get('conclusion')=='success':
+                  number=int(match.group(1))
+                  assert 0<=number<35 and number not in successful
+                  successful.add(number)
+          verified={}
+          for item in artifacts:
+              match=re.fullmatch(r'mois-FCP5-new-original-RGB-group-([0-9]+)',
+                                 item['name'])
+              if match:
+                  group=int(match.group(1))
+                  assert 0<=group<35 and group not in verified
+                  assert item['expired'] is False
+                  assert isinstance(item.get('digest'),str) and re.fullmatch(
+                      r'sha256:[0-9a-f]{64}',item['digest'])
+                  assert type(item.get('size_in_bytes')) is int and item['size_in_bytes']>0
+                  verified[group]=item
+          complete=successful & set(verified)
+          tags=set(subprocess.check_output([
+              'gh','api','--paginate','--jq','.[] | select(.draft == false) | .tag_name',
+              f'repos/{os.environ["REPO"]}/releases?per_page=100'
+          ],text=True).splitlines())
+          prefix='mois-FCP-U100-nested5-34898-original-ROI-append-group-'
+          pending=[n for n in sorted(complete) if f'{prefix}{n}-v1' not in tags]
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('ready='+str(bool(pending)).lower()+'\n')
+              f.write('groups='+json.dumps(pending)+'\n')
+          print('MOIS_FCP5_FINISHED_REAL_ORIGINAL_PHOTOS_READY_TO_SHA_SEAL',json.dumps({
+              'model_run':int(os.environ['SOURCE_RUN']),
+              'successful_image_worker_groups':len(successful),
+              'verified_source_original_pixel_archives':len(verified),
+              'groups_needing_append':pending,
+              'raw_image_downloads_or_ROI_model_calls':0
+          },sort_keys=True),flush=True)
+          PY
+  tests:
+    needs: inspect
+    if: >-
+      always() &&
+      (github.event_name == 'push' || github.event_name == 'pull_request' ||
+       (needs.inspect.result == 'success' && needs.inspect.outputs.ready == 'true'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify original image, technical unknown, terminal and selection probability regression
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_fcp_u100_nested5_seal_finished_group.py
+          python -m unittest discover -s tests -p test_mois_fcp_u100_nested5_seal_finished_group.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          path='.github/workflows/mois-fcp-u100-nested5-34898-append-finished-original-photo-groups.yml'
+          d=yaml.safe_load(open(path))
+          scripts=[x['run'] for j in d['jobs'].values() for x in j['steps'] if 'run' in x]
+          assert len(scripts)>=4
+          for text in scripts:
+              result=subprocess.run(['bash','-n'],input=text,text=True,capture_output=True)
+              assert result.returncode==0,result.stderr
+          print('MOIS_FCP5_REAL_NEW_GROUP_SEAL_ALL_BASH_BLOCKS_OK',len(scripts))
+          PY
+  seal:
+    needs: [inspect, tests]
+    if: >-
+      github.event_name != 'pull_request' &&
+      needs.inspect.outputs.ready == 'true' &&
+      needs.tests.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: ${{ fromJSON(needs.inspect.outputs.groups) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_RUN: '40151706880'
+      GROUP: ${{ matrix.group }}
+      TAG: mois-FCP-U100-nested5-34898-original-ROI-append-group-${{ matrix.group }}-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download ONLY original completed model artifact and source 137 packets
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          gh run download "$SOURCE_RUN" --repo "$REPO" \
+            --name mois-FCP5-34898-new-original-photo-source --dir source
+          echo '89e6c924e172fcc8b862daf30ca88bade2d5f1e2141134950b03928d510e4931  source/manifest.json' | sha256sum -c -
+          gh run download "$SOURCE_RUN" --repo "$REPO" \
+            --name "mois-FCP5-new-original-RGB-group-$GROUP" --dir worker
+      - name: SHA-prove original source, terminal photo and original warm-model results
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_fcp_u100_nested5_seal_finished_group \
+            --source source --workers worker --group "$GROUP" --output sealed
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads(Path('sealed/original_group_receipt.json').read_text())
+          assert r['original_worker_group']==int(os.environ['GROUP'])
+          assert r['frozen_original_FCP_yolo_efficientSAM_roi_v4_method_attested']
+          assert r['unknown_technical_ROIs_never_cast_to_white']
+          assert r['original_image_bytes_downloaded_OR_colour_ROI_inferred_by_sealer']==0
+          assert r['new_actual_original_photo_ID_attempts']>0
+          assert r['new_actual_four_hue_classified']<=r['new_actual_original_photo_ID_attempts']
+          print('MOIS_FCP5_GENUINE_COMPLETED_GROUP_SAVED',
+                r['original_worker_group'],r['new_actual_original_photo_ID_attempts'],
+                r['new_actual_four_hue_classified'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-FCP5-nested5-completed-original-photo-group-${{ matrix.group }}
+          path: sealed/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish immutable signed original photo ROI group without source photo re-inference
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$TAG" --repo "$REPO" --dir previous \
+              --pattern original_group_receipt.json
+            cmp previous/original_group_receipt.json sealed/original_group_receipt.json
+          else
+            gh release create "$TAG" \
+              sealed/original_group_receipt.json \
+              sealed/original_photo_ROIs.parquet \
+              sealed/original_photo_hue_counts.csv \
+              sealed/original_photo_source_coverage.json \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title "MOIS FCP5 genuine new original photo pixel group $GROUP" \
+              --notes 'SHA-pinned original full-resolution FCP YOLO11 and EfficientSAM ROI-v4 image worker; per-photo original terminal SHA and photo ID verified. Technical access failure and colour-unclassifiable outcomes retained. Original nested 5/N/M inclusion probabilities retained; no raw image fetch, repeat inference, wild/native flowering assumptions or unbiased worldwide colour estimate.'
+          fi
