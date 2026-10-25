@@ -184,17 +184,21 @@ jobs:
       - name: Publish versioned K1+FCP3141+new-FCP5 genuine original photo ID/hue source totals
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import json,os
+          # GITHUB_ENV only applies to LATER workflow steps, not this shell.
+          # Capture the SHA versioned tag now so gh release create never sees
+          # an unset or empty name after successful genuine image provenance QA.
+          SIGNED_OUTPUT_TAG=$(python - <<'PY'
+          import json
           from pathlib import Path
           d=json.loads(Path('completed/mois_FCP5_partial_genuine_original_pixel_cumulative.json').read_text())
           tag=('mois-FCP5-source-signed-new-original-ROI-'+
                str(d['new_actual_finished_original_photo_groups'])+'groups-'+
                d['original_group_receipt_set_SHA256'][:16]+'-v1')
-          with open(os.environ['GITHUB_ENV'],'a') as stream:
-              stream.write('SIGNED_OUTPUT_TAG='+tag+'\n')
-          print('MOIS_FCP5_ACTUAL_PIXELS_PARTIAL_SIGNED_GLOBAL_RELEASE',tag,flush=True)
+          print(tag)
           PY
+          )
+          test -n "$SIGNED_OUTPUT_TAG"
+          echo "MOIS_FCP5_ACTUAL_PIXELS_PARTIAL_SIGNED_GLOBAL_RELEASE $SIGNED_OUTPUT_TAG"
           if gh release view "$SIGNED_OUTPUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
             gh release download "$SIGNED_OUTPUT_TAG" --repo "$REPO" --dir old \
               --pattern mois_FCP5_partial_genuine_original_pixel_cumulative.json
