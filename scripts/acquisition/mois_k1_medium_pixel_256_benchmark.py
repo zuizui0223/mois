@@ -18,7 +18,7 @@ import json
 from pathlib import Path
 
 from scripts.acquisition.mois_full93m_medium_pixel_scan import (
-    scan_source, sha_file, download_medium, Pacer,
+    scan_source, sha_file, download_medium, Pacer, WarmFlowerBoxDetector,
 )
 from scripts.acquisition.mois_onepass_full93m_target_tiers import COLUMNS
 
@@ -120,7 +120,8 @@ def prepare(k1_parquet, k1_receipt, directory, *, n_per=N_PER,
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return report
 
-def benchmark(source_dir, result_dir, *, workers=8, rps=2.0):
+def benchmark(source_dir, result_dir, *, workers=8, rps=2.0,
+              detector=None):
     require(workers <= 12 and 0 < rps <= 3.0,
             "Bounded provider access pilot only; no 93m bulk requests")
     source_dir, result_dir = Path(source_dir), Path(result_dir)
@@ -136,7 +137,7 @@ def benchmark(source_dir, result_dir, *, workers=8, rps=2.0):
     status = scan_source(
         source, result_dir, expected_source_sha256=meta["original_photo_source_sha256"],
         expected_count=256, part=0, tier=0, source_role="K1_calibration",
-        detector=None, download=lambda u: download_medium(u, pace),
+        detector=detector, download=lambda u: download_medium(u, pace),
         workers=workers, batch_size=256, max_packets=1)
     require(not status["all_original_input_photos_attempted"]
             and status["actual_unique_source_photo_ids_attempted"] == 256
@@ -173,7 +174,11 @@ def benchmark(source_dir, result_dir, *, workers=8, rps=2.0):
         "source_K1_roi_classification_by_medium_scan_status": {
             k: dict(v) for k, v in by_status.items()
         },
-        "actual_flower_detection_model_used": False,
+        "actual_flower_detection_model_used": detector is not None,
+        "flower_box_model_original_weight_sha256": (
+            detector.model_sha if detector is not None else None),
+        "flower_box_candidate_count": int(status["screen_counts"].get("candidate", 0)),
+        "flower_box_negative_screen_count": int(status["screen_counts"].get("negative", 0)),
         "flower_detection_recall_established": False,
         "no_raw_photo_bytes_published": True,
         "stage1_pixel_packet_SHA256": sha_file(result_dir / "packet-0000000.csv.gz"),
@@ -188,6 +193,12 @@ def main():
     a.add_argument("--k1-receipt", type=Path, required=True)
     a.add_argument("--source-output", type=Path, required=True)
     a.add_argument("--pixel-output", type=Path, required=True)
+    a.add_argument("--weights", type=Path)
+    a.add_argument("--weights-sha256")
+    a.add_argument("--flower-class-id", type=int, default=0)
+    a.add_argument("--flower-class-name", default="flower")
+    a.add_argument("--device", default="cpu")
+    a.add_argument("--detector-conf", type=float, default=0.02)
     a.add_argument("--execute", action="store_true",
                    help="Actually download no more than 256 medium images at <=3 req/s")
     a.add_argument("--workers", type=int, default=8)
@@ -196,8 +207,16 @@ def main():
     source = prepare(x.k1_parquet, x.k1_receipt, x.source_output)
     print("MOIS_K1_SIGNED_PIXEL_CALIBRATION_SOURCE", json.dumps(source, sort_keys=True))
     if x.execute:
+        require((x.weights is None and x.weights_sha256 is None) or
+                (x.weights is not None and x.weights_sha256 is not None),
+                "Detector weights and SHA must be specified together")
+        detector = (WarmFlowerBoxDetector(
+            x.weights, x.weights_sha256,
+            x.flower_class_id, x.flower_class_name,
+            device=x.device, conf=x.detector_conf) if x.weights else None)
         result = benchmark(x.source_output, x.pixel_output,
-                           workers=x.workers, rps=x.requests_per_second)
+                           workers=x.workers, rps=x.requests_per_second,
+                           detector=detector)
         print("MOIS_K1_256_REAL_MEDIUM_PIXELS", json.dumps(result, sort_keys=True))
 
 if __name__ == "__main__":
