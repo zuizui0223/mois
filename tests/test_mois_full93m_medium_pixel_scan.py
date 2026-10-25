@@ -231,6 +231,73 @@ class OriginalMediumPixelScanTests(unittest.TestCase):
                     workers=2,batch_size=512,
                     io_executor=executor,prefetch_next_packet=True)
 
+    def test_next_packet_download_actually_overlaps_first_packet_yolo(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Event
+        ids=list(range(9000,9032))
+        with gzip.open(self.source,"wt",newline="") as f:
+            writer=csv.DictWriter(f,fieldnames=COLUMNS,lineterminator="\n")
+            writer.writeheader()
+            for pid in ids:
+                row={k:"" for k in COLUMNS}
+                row.update(photo_id=str(pid),observation_uuid="OB"+str(pid),
+                           inat_taxon_id="14",image_extension="png",tier="0")
+                writer.writerow(row)
+        detecting=Event()
+        overlap_observed=Event()
+        calls=[]
+        def fetch(url):
+            pid=int(url.split("/")[-2])
+            calls.append(pid)
+            if pid>=9016:
+                if detecting.wait(timeout=3):
+                    overlap_observed.set()
+            return self.photo
+        class Detector:
+            def __init__(self): self.calls=0
+            def __call__(self,images):
+                self.calls+=1
+                if self.calls==1:
+                    detecting.set()
+                    assert overlap_observed.wait(timeout=3), (
+                        "Next packet was NOT fetched during current YOLO inference")
+                return [None]*len(images)
+        detector=Detector()
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            r=scan.scan_source(
+                self.source,self.output,
+                expected_source_sha256=scan.sha_file(self.source),
+                expected_count=32,part=0,tier=0,
+                detector=detector,download=fetch,workers=4,batch_size=16,
+                io_executor=executor,prefetch_next_packet=True)
+        self.assertTrue(overlap_observed.is_set())
+        self.assertEqual(detector.calls,2)
+        self.assertEqual(sorted(calls),ids)
+        self.assertEqual(r["screen_counts"],{"negative":32})
+
+    def test_capped_prefetch_does_not_download_future_unscheduled_photos(self):
+        from concurrent.futures import ThreadPoolExecutor
+        with gzip.open(self.source,"wt",newline="") as f:
+            w=csv.DictWriter(f,fieldnames=COLUMNS,lineterminator="\n")
+            w.writeheader()
+            for n in range(32):
+                row={k:"" for k in COLUMNS}
+                row.update(photo_id=str(10000+n),observation_uuid="OBS"+str(n),
+                           inat_taxon_id="11",image_extension="png",tier="0")
+                w.writerow(row)
+        urls=[]
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            r=scan.scan_source(
+                self.source,self.output,
+                expected_source_sha256=scan.sha_file(self.source),
+                expected_count=32,part=0,tier=0,
+                detector=None,download=lambda url:(urls.append(url),self.photo)[1],
+                workers=4,batch_size=16,max_packets=1,
+                io_executor=executor,prefetch_next_packet=True)
+        self.assertEqual(len(urls),16)
+        self.assertFalse(r["all_original_input_photos_attempted"])
+        self.assertFalse((self.output/"complete_receipt.json").exists())
+
     def test_bad_source_sha_and_malformed_photo_fail_closed(self):
         with self.assertRaisesRegex(ValueError, "SHA changed"):
             scan.scan_source(self.source, self.output,
