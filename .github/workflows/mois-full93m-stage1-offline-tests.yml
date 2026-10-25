@@ -249,3 +249,109 @@ jobs:
             YOLO500_results/
           retention-days: 90
           if-no-files-found: warn
+  first-true-93m-source-tier00-part000-136-real-medium-pixels:
+    if: github.event_name == 'push' && github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass' && contains(github.event.head_commit.message, '[first93m136]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      ULTRALYTICS_OFFLINE: 'True'
+      PHOTO_SHA: f4fb52383147cb720367b474d8a755ef1f8181deaee57d86960d802323d82d7e
+      WEIGHT_SHA: f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install medium-pixel warm model without full-resolution EfficientSAM
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 Pillow==11.3.0 \
+            ultralytics==8.4.112
+      - name: Extract only one exact signed full93m source photo part from published 14-tier register
+        run: |
+          set -euo pipefail
+          mkdir -p source weights
+          gh release download mois-complete-93209351-original-photo-target-tiers-v1 \
+            --repo zuizui0223/mois --dir source \
+            --pattern tier-00-group-00.tar \
+            --pattern mois_all_original_photo_target_tiers_receipt.json
+          python - <<'PY'
+          import hashlib,json,tarfile
+          from pathlib import Path
+          reg=json.loads(Path('source/mois_all_original_photo_target_tiers_receipt.json').read_text())
+          assert reg['exact_original_photo_IDs_in_all_disjoint_tiers']==93209351
+          tar=Path('source/tier-00-group-00.tar')
+          digest=hashlib.sha256(tar.read_bytes()).hexdigest()
+          assert digest==reg['published_tier_archive_SHA256'][tar.name]
+          expected='tier-00/part-000.csv.gz'
+          with tarfile.open(tar) as t:
+            members={x.name for x in t.getmembers() if x.isfile()}
+            assert expected in members
+            photo_bytes=t.extractfile(expected).read()
+          import os
+          target=Path('source')/expected
+          target.parent.mkdir(parents=True,exist_ok=True)
+          target.write_bytes(photo_bytes)
+          assert hashlib.sha256(photo_bytes).hexdigest()==os.environ['PHOTO_SHA']
+          print('MOIS_93M_REAL_SIGNED_ORIGINAL_SOURCE_PART_READY',expected,len(photo_bytes))
+          PY
+      - name: Restore the exact historical FCP YOLO11 flower instance detector without SAM weights
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp-model"
+          git -C "$RUNNER_TEMP/fcp-model" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp-model" fetch --no-tags --depth=1 origin 9fae6ccdf684a46026f72ba12e98de2c5c54bf2a
+          git -C "$RUNNER_TEMP/fcp-model" show FETCH_HEAD:data/atlas/qualification/roi_v4_training/jrc_yolo11n_last_v4.pt > weights/jrc_yolo11n_last_v4.pt
+          echo "$WEIGHT_SHA  weights/jrc_yolo11n_last_v4.pt" | sha256sum -c -
+          python - <<'PY'
+          from ultralytics import YOLO
+          assert YOLO('weights/jrc_yolo11n_last_v4.pt').names.get(0)=='item'
+          print('MOIS_TRUE_FCP_YOLO_CLASS_ITEM_WEIGHT_ATTESTED')
+          PY
+      - name: Actually finish signed 136-photo Tier0 Part0 through medium pixels and real frozen YOLO
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_full93m_medium_pixel_scan \
+            --source source/tier-00/part-000.csv.gz \
+            --source-sha256 "$PHOTO_SHA" --expected-count 136 \
+            --part 0 --tier 0 \
+            --weights weights/jrc_yolo11n_last_v4.pt \
+            --weights-sha256 "$WEIGHT_SHA" \
+            --flower-class-id 0 --flower-class-name item \
+            --device cpu --model-conf 0.02 \
+            --workers 8 --batch-size 256 --requests-per-second 2 \
+            --output true93m_part000
+      - name: Verify actual complete-original-photo-id shard and no constructed flower colours
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv,gzip,hashlib,json,os
+          from pathlib import Path
+          root=Path('true93m_part000')
+          full=json.loads((root/'complete_receipt.json').read_text())
+          assert full['source_role']=='full93m'
+          assert full['source_gzip_sha256']==os.environ['PHOTO_SHA']
+          assert full['all_original_input_photos_attempted'] is True
+          assert full['expected_photo_ids']==136
+          assert full['actual_unique_source_photo_ids_attempted']==136
+          assert full['medium_image_pixels_decoded']+full['medium_image_pixels_unavailable']==136
+          assert full['detector_identity'].startswith('yolo11:'+os.environ['WEIGHT_SHA'])
+          assert full['screening_only_not_verified_flower_colour'] is True
+          with gzip.open(root/'packet-0000000.csv.gz','rt') as handle:
+            rows=list(csv.DictReader(handle))
+          assert len(rows)==136 and len(set(x['photo_id'] for x in rows))==136
+          assert all(x['source_arm']=='full93m_observation_and_photo_complete_source' for x in rows)
+          assert all(x['source_photo_inclusion_probability']=='1' for x in rows)
+          print('MOIS_REAL_93M_STAGE1_PART000_136_PICTURE_PIXELS_COMPLETE',json.dumps(full,sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-93m-genuine-p000-tier00-medium-yolo-136-photo-completed
+          path: true93m_part000/
+          retention-days: 90
+          if-no-files-found: warn
