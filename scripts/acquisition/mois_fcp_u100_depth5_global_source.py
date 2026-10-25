@@ -83,20 +83,38 @@ def global_source(folders, first1, output, *,
         receipt_file=folder/"nested5_source_receipt.json"
         receipt=json.loads(receipt_file.read_text(encoding="utf-8"))
         group=receipt.get("original_taxon_modulo_source_group")
-        require(type(group) is int and 0<=group<expected_groups and group not in group_audits
-                and receipt.get("schema")==GROUP_SCHEMA
-                and receipt.get("global_U100_complete_42111_source_receipt_SHA256")
-                    ==GLOBAL_RECEIPT_SHA
-                and receipt.get("nested_original_photo_depth5_source_arm")==ARM
-                and receipt.get("global_source_original_photo_IDs_metadata_only")==EXPECTED_PHOTOS
-                and receipt.get("global_nominal_source_taxa")==EXPECTED_TAXA
-                and receipt.get("global_U100_eligible_taxa")==expected_eligible
-                and receipt.get("source_group_original_photo_IDs_distinct") is True
-                and receipt.get("source_group_original_observations_distinct") is True
-                and receipt.get("source_group_candidate_photo_rank_unchanged") is True
-                and receipt.get("original_photo_IDs_already_measured_by_old_FCP_MOIS_and_K1_excluded") is False
-                and receipt.get("new_image_download_or_frozen_ROI_inference_this_stage")==0,
-                "Unsigned/modified or repeated full93m original five-photo source taxon group")
+        # Give an exact contract failure rather than a generic source mismatch:
+        # the immutable published group metadata may differ from a synthetic
+        # unit-test fixture. Any mismatch still FAILS CLOSED before source data.
+        checks = {
+            "group_valid_unique":type(group) is int and 0<=group<expected_groups
+                and group not in group_audits,
+            "schema":receipt.get("schema")==GROUP_SCHEMA,
+            "global_U100_receipt_SHA":receipt.get(
+                "global_U100_complete_42111_source_receipt_SHA256")==GLOBAL_RECEIPT_SHA,
+            "source_arm":receipt.get("nested_original_photo_depth5_source_arm")==ARM,
+            "source_total_photo_IDs":receipt.get(
+                "global_source_original_photo_IDs_metadata_only")==EXPECTED_PHOTOS,
+            "source_total_nominal_taxa":receipt.get(
+                "global_nominal_source_taxa")==EXPECTED_TAXA,
+            "U100_eligible_taxa":receipt.get(
+                "global_U100_source_eligible_taxa")==expected_eligible,
+            "source_group_photo_ID_uniqueness":receipt.get(
+                "source_group_original_photo_IDs_distinct") is True,
+            "source_group_observation_uniqueness":receipt.get(
+                "source_group_original_observations_distinct") is True,
+            "source_group_photo_rank_unchanged":receipt.get(
+                "source_group_candidate_photo_rank_unchanged") is True,
+            "source_photo_reuse_not_yet_done":receipt.get(
+                "original_photo_IDs_already_measured_by_old_FCP_MOIS_and_K1_excluded") is False,
+            "no_actual_new_colour_pixels":receipt.get(
+                "new_image_download_or_frozen_ROI_inference_this_stage")==0,
+        }
+        violated=[name for name, ok in checks.items() if not ok]
+        require(not violated,
+                "Unsigned/modified or repeated full93m original five-photo source taxon group: "
+                + ",".join(violated))
+
         a=folder/PREFIX_FILENAME
         b=folder/DELTA_FILENAME
         require(sha256(a)==receipt["first5_csv_SHA256"]
