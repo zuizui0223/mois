@@ -49,6 +49,9 @@ ALLOWED = {"candidate", "negative", "uncertain", "error"}
 HOST = "https://inaturalist-open-data.s3.amazonaws.com/photos/"
 MAX_IMAGE_BYTES = 3_000_000
 
+class ProviderBackpressure(RuntimeError):
+    """Stop this photo shard on S3 rate-limit feedback; do not hammer provider."""
+
 def require(ok, why):
     if not ok:
         raise ValueError("MOIS_FULL93M_PIXEL_SCAN: " + why)
@@ -121,7 +124,11 @@ def download_medium(url, pacer, *, timeout=20, retries=2,
                 TimeoutError, OSError, ValueError) as exc:
             last = exc
             status = getattr(exc, "code", None)
-            # Do not retry permanent 4xx; obey rate limits and backoff on 429.
+            if status == 429:
+                raise ProviderBackpressure(
+                    "HTTP 429 from Open Data S3: suspend shard and lower "
+                    "the CLUSTER-WIDE rate, do not retry each photo") from exc
+            # Do not retry permanent 4xx; halt on provider 429.
             if status in (400, 401, 403, 404, 410, 451):
                 break
             if attempt < retries:
@@ -239,9 +246,12 @@ def process_packet(rows, *, part, tier, detector, download, workers):
                         mean_visible_brightness=str(brightness),
                         screen_status="uncertain", technical_reason="")
             return base, image
+        except ProviderBackpressure:
+            raise
         except Exception as exc:
             base["technical_reason"] = ("pixel_access_or_decode_error:" +
-                                        type(exc).__name__)
+                                        type(exc).__name__ +
+                                        ":" + str(exc)[:80].replace("\n", " "))
             return base, None
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
