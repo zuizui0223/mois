@@ -77,7 +77,9 @@ def union(k1_global, fcp_receipt, fcp_parquet, preflight_receipt,
           prefix_sha=PREFIX_PHOTOS_SHA,
           k1_roster_sha=K1_ROSTER_SHA,
           old_n=HISTORICAL,k1_n=K1,new_n=U100,
-          eligible=ELIGIBLE,old_reuse=REUSE_OLD,k1_reuse=REUSE_K1):
+          eligible=ELIGIBLE,old_reuse=REUSE_OLD,k1_reuse=REUSE_K1,
+          k1_hues_expected=444604, fcp_hues_expected=1201,
+          k1_groups_expected=75):
     import pandas as pd
     output=Path(output)
     require(not output.exists(), "Refuse overwrite of immutable genuine global ROI union")
@@ -96,12 +98,12 @@ def union(k1_global, fcp_receipt, fcp_parquet, preflight_receipt,
     require(g.get("schema")==K1_GLOBAL_SCHEMA
             and g.get("signed_historical_true_distinct_original_photo_IDs")==old_n
             and g.get("K1_original_new_photo_attempts")==k1_n
-            and g.get("genuine_K1_completed_and_SHA_sealed_groups")==75
+            and g.get("genuine_K1_completed_and_SHA_sealed_groups")==k1_groups_expected
             and g.get("source_K1_all_precolour_original_photo_IDs_disjoint_from_historical")==k1_n
             and g.get("zero_all_source_K1_vs_historical_photo_ID_overlap") is True
             and g.get("counts_reproduce_independent_full_929138_ID_union") is True
             and g.get("exact_worldwide_historical_plus_completed_K1_distinct_original_photo_IDs")==old_n+k1_n
-            and g.get("exact_worldwide_historical_plus_completed_K1_four_hue_ROIs")==444604
+            and g.get("exact_worldwide_historical_plus_completed_K1_four_hue_ROIs")==k1_hues_expected
             and g.get("additional_raw_image_downloads_or_ROI_inference_during_this_update")==0,
             "K1 all 75 actual photo groups/historical identity not independently signed")
     require(f.get("schema")==FCP_ROI_SCHEMA
@@ -216,7 +218,7 @@ def union(k1_global, fcp_receipt, fcp_parquet, preflight_receipt,
                 f["newly_true_image_FCP_four_hue_classified"],
                 f["newly_true_image_acquisition_failed"],
                 f["newly_true_image_unclassifiable_acquired"])
-            and classified==1201
+            and classified==fcp_hues_expected
             and all(int(hues.eq(h).sum())==f["new_original_photo_hue_counts"][h]
                     for h in (*HUES,"mixed_uncertain"))
             and int(hues.eq("mixed_uncertain").sum())==failed+uncertain,
