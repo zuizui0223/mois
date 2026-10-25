@@ -43,7 +43,7 @@ jobs:
           gh run download 40188478245 --repo zuizui0223/mois \
             --name mois-real-latest1043930-island-mainland-elevation-gshhg \
             --dir islands
-          echo 'b4233c7818a6e67934fc7375ca3ddb110f79b7180d0f7e0adcb408b02d70c5c  K1/fresh_flower_roi_Lab_mode/packet-0000000.csv.gz' | sha256sum -c -
+          echo 'b4233c7818a56e67934fc7375ca3ddb110f79b7180d0f7e0adcb408b02d70c5c  K1/fresh_flower_roi_Lab_mode/packet-0000000.csv.gz' | sha256sum -c -
       - name: Actually compute source-backed L C hue, white-like green-like brown-like on every supported axis
         run: |
           set -euo pipefail
