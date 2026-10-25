@@ -106,8 +106,6 @@ def bridge(source_dir, output, *, expected_count=None):
             ):
                 writer.writerow(row)
         database.close()
-        strata = {x[0] for x in csv.reader(open(target_csv,encoding="utf-8"))
-                  if x and x[0]!="photo_id"}
         # Full source shadow keeps negatives; 1.0 is never a production
         # non-flower exclusion rate and requires no retrospective review waiver.
         actual_strata=set()
