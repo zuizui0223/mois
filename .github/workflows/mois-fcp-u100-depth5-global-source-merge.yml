@@ -1,0 +1,150 @@
+name: MOIS global FCP U100 nested first5 source across all 20242 taxa, zero image inference
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_u100_depth5_global_source.py
+      - tests/test_mois_fcp_u100_depth5_global_source.py
+      - .github/workflows/mois-fcp-u100-depth5-global-source-merge.yml
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_u100_depth5_global_source.py
+      - tests/test_mois_fcp_u100_depth5_global_source.py
+      - .github/workflows/mois-fcp-u100-depth5-global-source-merge.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-worldwide-FCP-U100-original-nested-first5-complete-all-source
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Confirm five observation ranks/conditional probabilities/immutability and workflow syntax
+        run: |
+          set -euo pipefail
+          python -m pip install -q PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_fcp_u100_depth5_global_source.py
+          python -m unittest discover -s tests -p test_mois_fcp_u100_depth5_global_source.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          from pathlib import Path
+          spec=yaml.safe_load(Path('.github/workflows/mois-fcp-u100-depth5-global-source-merge.yml').read_text())
+          blocks=[x['run'] for job in spec['jobs'].values() for x in job['steps'] if 'run' in x]
+          assert len(blocks)>=4
+          for b in blocks:
+              check=subprocess.run(['bash','-n'],input=b,text=True,capture_output=True)
+              assert check.returncode==0,check.stderr
+          print('MOIS_NESTED_5_COMPLETE_WORLDWIDE_FCP_SOURCE_BASH_VALID',len(blocks))
+          PY
+  full-source-only:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-FCP-global93m-U100-nested-first5-20242-taxa-source-only-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure not regenerating already globally archived signed first5 source
+        id: gate
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo ready=false >> "$GITHUB_OUTPUT"
+            echo 'All first5 original observation photo source IDs already frozen.'
+            exit 0
+          fi
+          for n in $(seq 0 15); do
+            tag="mois-FCP-U100-first5-93m-original-photo-taxongroup-$n-v1"
+            gh release view "$tag" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          done
+          echo ready=true >> "$GITHUB_OUTPUT"
+          echo 'All16 original source nested ranks published. No image pixels to acquire yet.'
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Reuse existing 16 SHA-sealed nested first5 source group CSVs, not 93m raw source
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          gh release download mois-full93m-FCP-U100-progressive-prefix1-20242-taxa-original-source-v1 \
+            --repo "$REPO" --dir original-first1 \
+            --pattern FCP_20242_taxa_prefix1_original_photo_candidates.csv
+          echo '0403905f04d2def07d3f2e0caee28728a54923ef187f1fc2c63318857012b713  original-first1/FCP_20242_taxa_prefix1_original_photo_candidates.csv' | sha256sum -c -
+          python - <<'PY'
+          import json,os,subprocess
+          from concurrent.futures import ThreadPoolExecutor
+          from pathlib import Path
+          def get(n):
+              folder=Path('nested-groups')/('group%02d'%n)
+              folder.mkdir(parents=True,exist_ok=False)
+              tag=f'mois-FCP-U100-first5-93m-original-photo-taxongroup-{n}-v1'
+              subprocess.run(['gh','release','download',tag,'--repo',os.environ['REPO'],
+                  '--dir',str(folder),'--pattern','nested5_source_receipt.json',
+                  '--pattern','original_FCP_U100_prefix5_rank1to5_candidates.csv',
+                  '--pattern','original_FCP_U100_rank2to5_INCREMENTAL_CANDIDATES_not_new_ROIs.csv'],
+                  check=True,capture_output=True,text=True)
+              assert len(list(folder.iterdir()))==3,'Source group files missing'
+              return str(folder)
+          with ThreadPoolExecutor(max_workers=4) as pool:
+              group_dirs=list(pool.map(get,range(16)))
+          Path('signed-groups.json').write_text(json.dumps(group_dirs,indent=2)+'\n')
+          print('MOIS_GLOBAL_STAGE5_16_PUBLISHED_SOURCE_GROUPS_LOADED',
+                len(group_dirs),'original_images_fetched=0',flush=True)
+          PY
+      - name: Aggregate 101210 independent first5 photo candidates and 80968 increment-only candidates
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.acquisition.mois_fcp_u100_depth5_global_source import global_source
+          sources=[Path(p) for p in json.loads(Path('signed-groups.json').read_text())]
+          report=global_source(
+              sources,Path('original-first1/FCP_20242_taxa_prefix1_original_photo_candidates.csv'),
+              Path('global-first5'))
+          assert report['eligible_taxa_with_at_least100_original_observations']==20242
+          assert report['global_first5_nested_source_photo_IDs']==101210
+          assert report['global_incremental_rank2to5_candidate_photo_IDs_NOT_NEW_INFERENCES']==80968
+          assert report['ranks2to5_genuine_never_measured_photo_IDs_not_yet_deduplicated']
+          assert report['new_image_downloads_and_original_ROI_inferences_performed']==0
+          print('MOIS_WORLDWIDE_FCP_U100_STAGE5_ORIGINAL_PHOTO_SOURCE_SHA_RECONCILED',
+                101210,80968,flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-full-world-20242-taxon-80k-nested5-dedup-needed-original-photo-source
+          path: global-first5/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish immutable first5 original rank photo IDs/probabilities for new pixel reuse
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$TAG" --repo "$REPO" --dir prior \
+              --pattern global_FCP_U100_depth5_source_receipt.json
+            cmp prior/global_FCP_U100_depth5_source_receipt.json \
+                global-first5/global_FCP_U100_depth5_source_receipt.json
+          else
+            gh release create "$TAG" global-first5/* \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS 20242 taxon FCP U100 depth5 101210 first-photo candidates, next 80968 before photo reuse' \
+              --notes 'All 16 taxon-modulo source group releases and 20242 exact U100-eligible taxa/100 independent observation source ranks SHA validated. Exactly first5 101210 original photo candidates and additional original ranks2to5 80968 PHOTO IDs are source metadata ONLY, NOT new ROI-measured pixels. Next computational stage must SHA-reuse previous FCP/MOIS complete million photo-ID results before any actual original image acquisition. No model inference, wild/native bloom verification or unbiased global prevalence.'
+          fi
