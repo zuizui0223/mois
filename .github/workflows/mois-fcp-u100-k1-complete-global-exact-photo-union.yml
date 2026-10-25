@@ -1,0 +1,138 @@
+name: MOIS exact global full K1 plus 3141 genuine FCP U100 original flower colour ROIs
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_u100_k1_full_global_union.py
+      - tests/test_mois_fcp_u100_k1_full_global_union.py
+      - .github/workflows/mois-fcp-u100-k1-complete-global-exact-photo-union.yml
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_u100_k1_full_global_union.py
+      - tests/test_mois_fcp_u100_k1_full_global_union.py
+      - .github/workflows/mois-fcp-u100-k1-complete-global-exact-photo-union.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-K1-all75-FCP-U100-new3141-original-source-global-true-photo-only-union
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reject duplicate K1/FCP photos, wrong original probability, image-SHA drift and false hues
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_fcp_u100_k1_full_global_union.py
+          python -m unittest discover -s tests -p test_mois_fcp_u100_k1_full_global_union.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          d=yaml.safe_load(open('.github/workflows/mois-fcp-u100-k1-complete-global-exact-photo-union.yml'))
+          blocks=[x['run'] for job in d['jobs'].values() for x in job['steps'] if 'run' in x]
+          assert len(blocks)>=5
+          for block in blocks:
+              p=subprocess.run(['bash','-n'],input=block,text=True,capture_output=True)
+              assert p.returncode==0,p.stderr
+          print('MOIS_K1_FCP_3141_TRUE_SOURCE_GLOBAL_UNION_ALL_SHELL_BLOCKS_VALID',len(blocks))
+          PY
+  publish-complete-actual-original-photo-roi-global:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-global-original-RGB-K1-75-plus-FCP-U100-3141-exact-unique-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Avoid downloading signed already-reconciled source inputs again
+        id: gate
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo ready=false >> "$GITHUB_OUTPUT"
+            echo 'Already published SHA-frozen full K1 and real 3141-FCP source/photo-ID union.'
+          else
+            echo ready=true >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Download only signed source ROIs and metadata, NO image acquisition
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          gh release download mois-exact-world-original-photo-compact-K1-75groups-b4679ab3832b3a1f-v1 \
+            --repo "$REPO" --dir input/K1 \
+            --pattern mois_original_photo_global_compact_cumulative_count.json
+          echo 'b75380101cbe7cc9935fbf33dd94a287452c4a08f90ee9865b9bce0c51c6134c  input/K1/mois_original_photo_global_compact_cumulative_count.json' | sha256sum -c -
+          gh release download mois-full93m-FCP-U100-depth1-only3141-new-original-RGB-v1 \
+            --repo "$REPO" --dir input/FCP \
+            --pattern new_FCP_depth1_original_photo_ROIs.parquet --pattern receipt.json
+          echo 'ee79c60671dda65a3d2f4f9319af952dbe81ab805ce269fe32b3bb3448b0d6b8  input/FCP/new_FCP_depth1_original_photo_ROIs.parquet' | sha256sum -c -
+          echo '5dbd4590ae96729cd9469fc8403a8ee4528d18e1fb5b928d5a108483ea29150b  input/FCP/receipt.json' | sha256sum -c -
+          gh release download mois-FCP-U100-20242-taxa-only3141-photo-K1-disjoint-preflight-v1 \
+            --repo "$REPO" --dir input/preflight \
+            --pattern fcp_u100_3141_photo_only_source_preflight_receipt.json
+          echo '7920cdefb4dd1f5a35def3cdf3fb3c1d19e86e87d4f8db8dab08645e37542eef  input/preflight/fcp_u100_3141_photo_only_source_preflight_receipt.json' | sha256sum -c -
+          gh release download mois-full93m-FCP-U100-prefix1-photo-reuse-and-inflight-K1-source-v1 \
+            --repo "$REPO" --dir input/decision \
+            --pattern all_FCP_U100_prefix1_photo_source_dispositions.csv
+          echo 'dacf3a8df021bac2de9f6f02fa779b246e71e544be4e473296f90ad19f66e63f  input/decision/all_FCP_U100_prefix1_photo_source_dispositions.csv' | sha256sum -c -
+          gh release download mois-full93m-FCP-U100-progressive-prefix1-20242-taxa-original-source-v1 \
+            --repo "$REPO" --dir input/prefix \
+            --pattern FCP_20242_taxa_prefix1_original_photo_candidates.csv
+          echo '0403905f04d2def07d3f2e0caee28728a54923ef187f1fc2c63318857012b713  input/prefix/FCP_20242_taxa_prefix1_original_photo_candidates.csv' | sha256sum -c -
+          gh release download mois-original-K1-76753-photo-ID-disjoint-from-929138-historical-v1 \
+            --repo "$REPO" --dir input/K1-source \
+            --pattern K1_all_original_new_photo_source_IDs.csv.gz
+          echo 'b620e56cc8386670d183f7a7a74f707cd22de5ccdbb55c1dace2c4a9617a0386  input/K1-source/K1_all_original_new_photo_source_IDs.csv.gz' | sha256sum -c -
+      - name: Recompute exact old/K1/FCP photo-ID union from actual 3141 image terminal outcomes
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_fcp_u100_k1_full_global_union \
+            --k1-global input/K1/mois_original_photo_global_compact_cumulative_count.json \
+            --fcp-receipt input/FCP/receipt.json \
+            --fcp-parquet input/FCP/new_FCP_depth1_original_photo_ROIs.parquet \
+            --preflight input/preflight/fcp_u100_3141_photo_only_source_preflight_receipt.json \
+            --dispositions input/decision/all_FCP_U100_prefix1_photo_source_dispositions.csv \
+            --prefix input/prefix/FCP_20242_taxa_prefix1_original_photo_candidates.csv \
+            --k1-roster input/K1-source/K1_all_original_new_photo_source_IDs.csv.gz \
+            --output verified
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-actual-K1-75-plus-FCP3141-complete-photo-ID-union
+          path: verified/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish only globally source-disjoint real-photo measurements with terminal technical unknowns
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$TAG" --repo "$REPO" --dir previous \
+              --pattern mois_K1_FCP_U100_source_audited_global_original_photo_union.json
+            cmp previous/mois_K1_FCP_U100_source_audited_global_original_photo_union.json \
+                verified/mois_K1_FCP_U100_source_audited_global_original_photo_union.json
+          else
+            gh release create "$TAG" \
+              verified/mois_K1_FCP_U100_source_audited_global_original_photo_union.json \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS all K1 75 plus genuine FCP 3141 original photo-ID unique worldwide ROI census' \
+              --notes 'Only SHA-pinned completed original-photo ROI terminals from 929138 historical original photos, 76753 distinct new FCP-K1 originals and 3141 distinct NEW U100-prefix1 original photos; preserves the old 15483 and K1 1618 sampled-photo reuses exactly once. Cross-arm photo IDs, original observation/taxon identity, true 1/N/M photo inclusion probabilities, image checksums, four-hue classifications and missing/technical unknowns are independently checked. 93209351 upstream candidate metadata photo IDs are NOT classified petals. No raw image download, colour model reinference, botanically verified wild/native flowering individuals or globally unbiased white-colour prevalence is claimed.'
