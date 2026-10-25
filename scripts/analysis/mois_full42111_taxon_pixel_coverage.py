@@ -47,7 +47,7 @@ OLD_COUNTS={"main":PRIOR_MAIN, "prior_group00":PRIOR_OLD,
             "prior_R1":PRIOR_R1, "prior_R2":PRIOR_R2}
 
 def source_taxon_eligible(nobs,nphotos,flag):
-    require(type(nobs) is int and nobs>=1
+    require(type(nobs) is int and nobs>=0
             and type(nphotos) is int and nphotos>=nobs
             and flag==("true" if nobs>=100 else "false"),
             "Original full93m taxon independent-observation eligibility mutated")
@@ -71,6 +71,7 @@ def taxon_coverage_record(taxon,species,nobs,nphotos,flag,attempted,classified):
         "has_any_photo_attempt":str(attempted>0).lower(),
         "has_any_four_hue_ROI":str(classified>0).lower(),
         "source_taxon_under100_observations":str(nobs<100).lower(),
+        "has_independent_original_observation_to_resample":str(nobs>0).lower(),
     }
 
 
@@ -202,7 +203,8 @@ def run(census, historical, k1, fcp, output, *,census_sha=CENSUS_SHA,
                 "source_original_photo_IDs","U100_eligible_100plus_observations",
                 "genuine_original_photo_attempts","automatic_four_hue_ROIs",
                 "acquired_or_evaluated_but_hue_unknown","has_any_photo_attempt",
-                "has_any_four_hue_ROI","source_taxon_under100_observations"]
+                "has_any_four_hue_ROI","source_taxon_under100_observations",
+                "has_independent_original_observation_to_resample"]
         full=stage/"all_42111_nominal_source_taxon_actual_original_ROI_coverage.csv"
         missing=stage/"under100_observation_taxa_without_automatic_four_hue_ROI.csv"
         metric=Counter()
@@ -224,7 +226,11 @@ def run(census, historical, k1, fcp, output, *,census_sha=CENSUS_SHA,
                     metric["under100_observation_source_taxa"]+=1
                     metric["under100_with_any_measured_photo"]+=attempted>0
                     metric["under100_with_any_four_hue_ROI"]+=classified>0
-                    if not classified:gap.writerow(row)
+                    if nobs==0:
+                        metric["zero_original_observation_source_taxa_no_defensible_observation_photo"]+=1
+                    elif not classified:
+                        gap.writerow(row)
+                        metric["rare_selectable_source_taxa_without_four_hue"]+=1
                 else:
                     metric["U100_eligible_source_taxa"]+=1
                     metric["U100_eligible_with_any_measured_photo"]+=attempted>0
