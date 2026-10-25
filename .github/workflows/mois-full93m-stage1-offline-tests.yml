@@ -9,6 +9,8 @@ on:
       - scripts/acquisition/mois_full93m_medium_pixel_scan.py
       - scripts/acquisition/mois_k1_medium_pixel_256_benchmark.py
       - tests/test_mois_full93m_medium_pixel_scan.py
+      - tests/test_mois_medium_stage1_to_stage2_shadow.py
+      - scripts/acquisition/mois_medium_stage1_to_stage2_shadow.py
       - .github/workflows/mois-full93m-stage1-offline-tests.yml
   pull_request:
     paths:
@@ -19,6 +21,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 jobs:
   offline-tests:
     runs-on: ubuntu-24.04
@@ -37,6 +40,7 @@ jobs:
             scripts/acquisition/mois_full93m_medium_pixel_scan.py
           python -m unittest discover -s tests \
             -p test_mois_full93m_medium_pixel_scan.py -v
+          python -m unittest discover -s tests -p test_mois_medium_stage1_to_stage2_shadow.py -v
           echo 'MOIS_ALL_93M_SOURCE_PHOTO_STAGE1_OFFLINE_TESTS_PASS'
   actual-K1-medium-256-calibration:
     if: github.event_name == 'push' && github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass' && contains(github.event.head_commit.message, '[pilot256]')
@@ -355,3 +359,60 @@ jobs:
           path: true93m_part000/
           retention-days: 90
           if-no-files-found: warn
+  actual-136-full93m-pixels-to-stage2-shadow:
+    if: github.event_name == 'push' && github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass' && contains(github.event.head_commit.message, '[bridge136]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recover already-scanned REAL 136 original 500px photo outcomes; no images
+        run: |
+          set -euo pipefail
+          gh run download 40163902072 --repo zuizui0223/mois \
+            --name mois-93m-genuine-p000-tier00-medium-yolo-136-photo-completed \
+            --dir signed_medium_136
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('signed_medium_136/complete_receipt.json').read_text())
+          assert x['actual_unique_source_photo_ids_attempted']==136
+          assert x['all_original_input_photos_attempted']
+          assert x['screen_counts']=={'candidate':130,'negative':6}
+          assert x['source_role']=='full93m'
+          print('MOIS_REAL_FIRST_136_PIXELS_RESTORED_BY_SIGNED_SOURCE')
+          PY
+      - name: Preserve all 136 photo IDs through Stage2 SHADOW probability queue
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_medium_stage1_to_stage2_shadow \
+            --source signed_medium_136 \
+            --output stage2_shadow_136 --expected-count 136
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          d=Path('stage2_shadow_136')
+          s=json.loads((d/'bridge_receipt.json').read_text())
+          a=json.loads((d/'stage2_queue/stage2_assignment_receipt.json').read_text())
+          assert s['original_stage1_states']=={'candidate':130,'negative':6}
+          assert s['stage2_full_ROI_candidates_including_screen_negatives']==136
+          assert s['screen_negatives_excluded']==0
+          assert a['mode']=='shadow'
+          assert a['counts']['queued_full_roi']==136
+          assert a['counts']['negative_not_sampled']==0
+          with (d/'stage2_queue/all_photo_screen_decisions.csv').open() as f:
+            rows=list(csv.DictReader(f))
+          assert len(rows)==len({r['photo_id'] for r in rows})==136
+          assert all(r['full_roi_selected']=='true' for r in rows)
+          print('MOIS_FIRST_FULL93M_REAL_136_STAGE2_SHADOW_ALL_PHOTOS_RETAINED',json.dumps(s,sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-first-real93m-136-medium-to-stage2-100pct-shadow-no-exclusions
+          path: stage2_shadow_136/
+          if-no-files-found: error
+          retention-days: 90
