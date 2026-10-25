@@ -106,6 +106,41 @@ class OriginalMediumPixelScanTests(unittest.TestCase):
         self.assertFalse((self.output / "packet-0000000.receipt.json").exists())
         self.assertFalse((self.output / "complete_receipt.json").exists())
 
+    def test_bounded_original_chunk_has_distinct_scope_and_strict_restart_identity(self):
+        doc = scan.scan_source(
+            self.source, self.output,
+            expected_source_sha256=scan.sha_file(self.source),
+            expected_count=4, tier=0, part=0, source_role="full93m_chunk",
+            parent_source_sha256="a"*64, chunk_index=17,
+            detector=None, download=lambda url: self.photo,
+            batch_size=4, workers=1)
+        self.assertTrue(doc["all_original_input_photos_attempted"])
+        self.assertEqual(doc["source_role"], "full93m_chunk")
+        self.assertEqual(doc["source_chunk_index"], 17)
+        self.assertEqual(doc["source_parent_sha256"], "a"*64)
+        self.assertFalse(doc["entire_original_source_part_completed"])
+        with gzip.open(self.output/"packet-0000000.csv.gz", "rt") as fh:
+            rows=list(csv.DictReader(fh))
+        self.assertTrue(all(row["source_arm"]==scan.SOURCE_ARM for row in rows))
+        self.assertTrue(all(row["source_photo_inclusion_probability"]=="1" for row in rows))
+        with self.assertRaisesRegex(ValueError, "Cannot resume"):
+            scan.scan_source(
+                self.source, self.output,
+                expected_source_sha256=scan.sha_file(self.source),
+                expected_count=4, tier=0, part=0, source_role="full93m_chunk",
+                parent_source_sha256="a"*64, chunk_index=18,
+                detector=None, download=lambda url: self.photo, batch_size=4,
+                workers=1)
+
+    def test_chunk_cannot_masquerade_as_full_source_without_parent_sha(self):
+        with self.assertRaisesRegex(ValueError, "signed original parent"):
+            scan.scan_source(
+                self.source, self.output,
+                expected_source_sha256=scan.sha_file(self.source),
+                expected_count=4, tier=0, part=0, source_role="full93m_chunk",
+                detector=None, download=lambda url: self.photo,
+                batch_size=4, workers=1)
+
     def test_bad_source_sha_and_malformed_photo_fail_closed(self):
         with self.assertRaisesRegex(ValueError, "SHA changed"):
             scan.scan_source(self.source, self.output,
