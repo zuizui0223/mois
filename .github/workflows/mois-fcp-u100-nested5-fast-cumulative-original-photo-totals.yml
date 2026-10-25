@@ -47,6 +47,55 @@ jobs:
         id: scan
         run: |
           set -euo pipefail
+          # Cheap SHA-cumulative idle gate: 1 worker-status query and 1
+          # recent-release page instead of all ~3,000 historic releases.
+          # Fall through to exhaustive source-group discovery only when a
+          # genuinely new original-image model worker has completed.
+          gh api "repos/$REPO/actions/runs/40151706880/jobs?per_page=100" > FCP5-worker-jobs.json
+          gh api --jq '.[] | select(.draft == false) | .tag_name' \
+            "repos/$REPO/releases?per_page=100" > FCP5-recent-release-tags.txt
+          python - <<'PY'
+          import json,os,re
+          from pathlib import Path
+          jobs=json.loads(Path('FCP5-worker-jobs.json').read_text())['jobs']
+          done=set()
+          for job in jobs:
+              match=re.fullmatch(r'worker \(([0-9]+)\)',str(job.get('name') or ''))
+              if match and job.get('conclusion')=='success':
+                  group=int(match.group(1))
+                  assert 0<=group<35 and group not in done, 'Duplicate/invalid original FCP5 worker'
+                  done.add(group)
+          recent=Path('FCP5-recent-release-tags.txt').read_text().splitlines()
+          pattern=re.compile(
+              r'mois-FCP5-source-signed-new-original-ROI-([0-9]+)groups-[0-9a-f]{16}-v1\Z')
+          published=[]
+          for tag in recent:
+              match=pattern.fullmatch(tag.strip())
+              if match:
+                  count=int(match.group(1))
+                  assert 1<=count<=35, 'Invalid SHA-sealed FCP5 cumulative release count'
+                  published.append(count)
+          last=max(published,default=None)
+          assert last is None or last<=len(done), (
+              'Last SHA-published FCP5 original image group count exceeds successful model units')
+          if len(done)==0 or last==len(done):
+              with open(os.environ['GITHUB_OUTPUT'],'a') as output:
+                  output.write('ready=false\n')
+                  output.write('tags=[]\n')
+              Path('FCP5-fast-idle-state').write_text('nothing_new\n')
+              print('MOIS_FCP5_FAST_IDLE_NO_NEW_SOURCE_PIXELS',json.dumps({
+                  'finished_original_model_groups':len(done),
+                  'latest_source_SHA_published_groups':last,
+                  'historical_release_pages_scanned':1,
+                  'new_image_downloads_or_inferences':0},sort_keys=True))
+          else:
+              print('MOIS_FCP5_REAL_NEW_ORIGINAL_WORK_REQUIRES_SOURCE_SHA_DISCOVERY',
+                    json.dumps({'finished_original_model_groups':len(done),
+                                'last_recent_signed_groups':last},sort_keys=True))
+          PY
+          if [ -f FCP5-fast-idle-state ]; then
+            exit 0
+          fi
           gh api --paginate --jq '.[] | select(.draft == false) | .tag_name' \
             "repos/$REPO/releases?per_page=100" > actual-groups.txt
           python - <<'PY'
