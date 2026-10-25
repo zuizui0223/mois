@@ -1,0 +1,134 @@
+name: MOIS persistent pooled-S3 medium pixel replay first4096 exact source photos
+on:
+  push:
+    branches: [feat/full93m-medium-pixel-firstpass]
+    paths:
+      - .github/workflows/mois-93m-reuse1536-pool8.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-93m-actual-tier12-p000-c0-complete4096-reuse1536-pool8
+  cancel-in-progress: false
+jobs:
+  one-persistent-worker-real-2560-new-medium-pixels:
+    if: github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[pool8]'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      ULTRALYTICS_OFFLINE: 'True'
+      WEIGHT_SHA: f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install reproducible CPU detector and reusable S3 HTTPS pool once
+        run: |
+          set -euo pipefail
+          python -m pip install -q Pillow==11.3.0 numpy==2.1.3 \
+            ultralytics==8.4.112 urllib3==2.5.0
+          python -m py_compile scripts/acquisition/mois_93m_persistent_worker.py
+          python -m unittest discover -s tests -p test_mois_93m_persistent_worker.py -v
+      - name: Obtain genuine signed 363920-photo parent and reuse existing original 1536 completed images
+        run: |
+          set -euo pipefail
+          mkdir -p signed prior1536 persistent_results/tier-12/part-000/chunk-00000 weights
+          gh run download 40166855425 --repo zuizui0223/mois \
+            --name mois-full93m-real-tier12-part000-363920-source-89-sha-bounded-photo-chunks \
+            --dir signed
+          gh run download 40168244966 --repo zuizui0223/mois \
+            --name mois-full93m-tier12-part000-chunk0-first1536-original-500px-yolo \
+            --dir prior1536
+          cp -a prior1536/. persistent_results/tier-12/part-000/chunk-00000/
+          printf 'signed\n' > source_roots.txt
+          python - <<'PY'
+          import csv,hashlib,json
+          from pathlib import Path
+          source=Path('signed'); prior=Path('persistent_results/tier-12/part-000/chunk-00000')
+          r=json.loads((source/'chunk_receipt.json').read_text())
+          assert r['actual_original_photo_IDs']==363920 and r['chunks']==89
+          assert r['original_source_part_sha256']=='2601e901d31cb1aac65ac94ce3d2e6e3cce9aef45cacd137a4213cd81b2c53eb'
+          assert hashlib.sha256((source/'chunk_manifest.csv').read_bytes()).hexdigest()==r['manifest_sha256']
+          with (source/'chunk_manifest.csv').open() as f: first=next(csv.DictReader(f))
+          assert first['chunk_index']=='0' and int(first['expected_photo_ids'])==4096
+          assert hashlib.sha256((source/first['chunk_relative_path']).read_bytes()).hexdigest()==first['chunk_gzip_sha256']
+          for i in range(3):
+              data=prior/f'packet-{i:07d}.csv.gz'
+              proof=json.loads((prior/f'packet-{i:07d}.receipt.json').read_text())
+              assert data.is_file()
+              assert hashlib.sha256(data.read_bytes()).hexdigest()==proof['output_sha256']
+              assert proof['source_role']=='full93m_chunk' and proof['source_chunk_index']==0
+          old=json.loads((prior/'chunk_progress_01536.json').read_text())
+          assert old['actual_new_or_resumed_medium_photo_attempts']==1536
+          assert not (prior/'complete_receipt.json').exists()
+          print('MOIS_REUSE_1536_REAL_SOURCE_PHOTOS_WITHOUT_REDOWNLOAD',flush=True)
+          PY
+          for i in 0 1 2; do
+            printf 'packet-%07d.csv.gz\n' "$i"
+          done | while read -r f; do sha256sum "persistent_results/tier-12/part-000/chunk-00000/$f"; done > old1536_packet_SHA256.txt
+      - name: Reuse original frozen YOLO11n flower detector, no new weights or SAM
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp-detector"
+          git -C "$RUNNER_TEMP/fcp-detector" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp-detector" fetch --no-tags --depth=1 origin 9fae6ccdf684a46026f72ba12e98de2c5c54bf2a
+          git -C "$RUNNER_TEMP/fcp-detector" show FETCH_HEAD:data/atlas/qualification/roi_v4_training/jrc_yolo11n_last_v4.pt > weights/jrc_yolo11n_last_v4.pt
+          echo "$WEIGHT_SHA  weights/jrc_yolo11n_last_v4.pt" | sha256sum -c -
+      - name: Actually resume missing 2560 genuine medium photographs with ONE pooled warm model at 8 requests/sec
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_93m_persistent_worker \
+            --chunks-roots-file source_roots.txt \
+            --output persistent_results \
+            --weights weights/jrc_yolo11n_last_v4.pt \
+            --weights-sha256 "$WEIGHT_SHA" \
+            --worker-slot 0 --worker-slots 1 \
+            --approved-aggregate-rps 8 \
+            --download-workers 16 --batch-size 512 \
+            --max-chunks 1 --device cpu --execute
+      - name: Prove the previous 1536 records identical and full 4096 child completed, not entire parent
+        run: |
+          set -euo pipefail
+          sha256sum -c old1536_packet_SHA256.txt
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('persistent_results/tier-12/part-000/chunk-00000')
+          r=json.loads((root/'complete_receipt.json').read_text())
+          assert r['source_role']=='full93m_chunk'
+          assert r['actual_unique_source_photo_ids_attempted']==4096
+          assert r['expected_photo_ids']==4096
+          assert r['source_chunk_index']==0
+          assert not r['entire_original_source_part_completed']
+          assert r['all_original_input_photos_attempted']
+          assert r['medium_image_pixels_decoded']+r['medium_image_pixels_unavailable']==4096
+          assert r['detector_identity']=='yolo11:f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5:item:0.02'
+          assert len(list(root.glob('packet-*.csv.gz')))==8
+          progress=json.loads((root/'chunk_progress_04096.json').read_text())
+          assert progress['actual_new_or_resumed_medium_photo_attempts']==4096
+          assert not progress['entire_parent_original_photo_part_scanned']
+          status=json.loads(Path('persistent_results/slot-0000-status.json').read_text())
+          assert status['chunks_source_sha_verified_complete']==1
+          assert status['actual_source_photo_attempts_in_verified_completed_chunks']==4096
+          assert status['approved_aggregate_source_requests_per_second']==8
+          assert status['full_93m_pixel_census_complete'] is False
+          print('MOIS_PERSISTENT_POOLED_S3_COMPLETE_SIGNED_FIRST4096_WITH_2560_NEW_PIXELS',
+                json.dumps({'packet_reused':1536,'new_photo_ids':2560,
+                            'decoded':r['medium_image_pixels_decoded'],
+                            'wall_s':r['aggregate_packet_work_seconds'],
+                            'status':r['screen_counts']},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-93m-4096-source-photos-persistent-pooled8-reuse1536-2560new
+          path: persistent_results/
+          retention-days: 90
+          if-no-files-found: warn
