@@ -1,0 +1,129 @@
+name: MOIS FCP U100 nested first5 original observation photo source no images
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_u100_depth5_source.py
+      - tests/test_mois_fcp_u100_depth5_source.py
+      - .github/workflows/mois-fcp-u100-depth5-source-only.yml
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_u100_depth5_source.py
+      - tests/test_mois_fcp_u100_depth5_source.py
+      - .github/workflows/mois-fcp-u100-depth5-source-only.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-fcp-u100-depth5-first5-real-observation-source-only
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Audit source rank 1 to 5, original photo SHA, conditional 5/N/M, and workflow shell
+        run: |
+          set -euo pipefail
+          python -m pip install -q PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_fcp_u100_depth5_source.py
+          python -m unittest discover -s tests -p test_mois_fcp_u100_depth5_source.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          w=yaml.safe_load(open('.github/workflows/mois-fcp-u100-depth5-source-only.yml'))
+          cmds=[s['run'] for job in w['jobs'].values() for s in job['steps'] if 'run' in s]
+          assert len(cmds)>=4
+          for cmd in cmds:
+              p=subprocess.run(['bash','-n'],input=cmd,text=True,capture_output=True)
+              assert p.returncode==0,p.stderr
+          print('MOIS_FCP_U100_FIRST5_PRECOLOUR_ALL_SHELL_VALID',len(cmds))
+          PY
+  original-photo-source-per-taxon-group:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      GROUP: ${{ matrix.group }}
+      RESULT: mois-FCP-U100-first5-93m-original-photo-taxongroup-${{ matrix.group }}-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip already SHA-frozen nested original source, never redownload photo pixels
+        id: gate
+        run: |
+          set -euo pipefail
+          if gh release view "$RESULT" --repo "$REPO" >/dev/null 2>&1; then
+            echo ready=false >> "$GITHUB_OUTPUT"
+          else
+            echo ready=true >> "$GITHUB_OUTPUT"
+          fi
+      - name: Download already archived source top100 independent observations and global signed census
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          tag="mois-global93m-FCP-U100-14tier-original-source-group$(printf '%02d' "$GROUP")-v1"
+          gh release download "$tag" --repo "$REPO" --dir parent \
+            --pattern exact_100_full93m_original_photo_observation_candidates.csv \
+            --pattern fcp_U100_full93m_group_source_receipt.json
+          gh release download mois-full-93209351-FCP-U100-complete-42111-original-photo-source-v1 \
+            --repo "$REPO" --dir globally-signed \
+            --pattern fcp_U100_all42111_nominal_taxa_full93m_source_receipt.json
+          echo '152e77c2ac9c3b414a2d30d1e4e5cc74ee93bbf60ffc2993234551cd28fc39d3  globally-signed/fcp_U100_all42111_nominal_taxa_full93m_source_receipt.json' | sha256sum -c -
+      - name: Freeze nested rank1 to 5 and rank2 to 5 original photo candidates with exact observation probabilities
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_fcp_u100_depth5_source \
+            --source parent/exact_100_full93m_original_photo_observation_candidates.csv \
+            --receipt parent/fcp_U100_full93m_group_source_receipt.json \
+            --global-receipt globally-signed/fcp_U100_all42111_nominal_taxa_full93m_source_receipt.json \
+            --group "$GROUP" --output nested
+          python - <<'PY'
+          import json
+          r=json.load(open('nested/nested5_source_receipt.json'))
+          assert r['first5_observation_independent_original_photo_candidates']==5*r['source_group_eligible_nominal_taxa']
+          assert r['new_candidate_ranks2to5_NOT_yet_measured']==4*r['source_group_eligible_nominal_taxa']
+          assert r['full_100_observation_photo_rank_candidates_audited']==100*r['source_group_eligible_nominal_taxa']
+          assert r['new_image_download_or_frozen_ROI_inference_this_stage']==0
+          assert r['original_photo_IDs_already_measured_by_old_FCP_MOIS_and_K1_excluded'] is False
+          print('MOIS_FCP_NESTED5_REAL_PRECOLOUR_SOURCE_GROUP',r['original_taxon_modulo_source_group'],
+                r['new_candidate_ranks2to5_NOT_yet_measured'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-fcp-u100-first5-original-source-group-${{ matrix.group }}
+          path: nested/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Preserve immutable nested first5 source group (not real measured images)
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if gh release view "$RESULT" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$RESULT" --repo "$REPO" --dir old \
+              --pattern nested5_source_receipt.json
+            cmp old/nested5_source_receipt.json nested/nested5_source_receipt.json
+          else
+            gh release create "$RESULT" nested/nested5_source_receipt.json \
+              nested/original_FCP_U100_prefix5_rank1to5_candidates.csv \
+              nested/original_FCP_U100_rank2to5_INCREMENTAL_CANDIDATES_not_new_ROIs.csv \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title "MOIS SHA-verified nested FCP first5 photo candidates group $GROUP" \
+              --notes 'Only source metadata from immutable global FCP U100. Nested first5 one original photo per independent observation: conditional photo inclusion 5/N_taxon/M_photo. Ranks2to5 are incremental PHOTO CANDIDATES, not genuinely unmeasured photo images until independently photo-ID de-duplicated with all existing FCP/MOIS/K1 outcomes. Colour, verified flowering, native/wild, ROI classifications, and global abundance are not implied. No original image downloads or inference.'
+          fi
