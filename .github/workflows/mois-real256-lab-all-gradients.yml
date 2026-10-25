@@ -1,0 +1,77 @@
+name: MOIS actual 256 photos sRGB CIELAB green brown white by all global axes diagnostic
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_real256_flower_box_lab_all_gradients.py
+      - tests/test_mois_real256_flower_box_lab_all_gradients.py
+      - .github/workflows/mois-real256-lab-all-gradients.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  previous-real-pixel-source-K1-Lab-all-global-axis-diagnostic:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install source-only real-photo geo-Lab dependencies and test circular hue
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_real256_flower_box_lab_all_gradients.py
+          python -m unittest discover -s tests -p test_mois_real256_flower_box_lab_all_gradients.py -v
+      - name: Restore original 251 actual CIELAB ROI boxes and full-million WorldClim GSHHG photo-aligned sources
+        run: |
+          set -euo pipefail
+          mkdir -p K1 climate islands
+          gh run download 40197802202 --repo zuizui0223/mois \
+            --name mois-real-K1-256-500px-floral-region-dominant-Lab-green-brown-v2 \
+            --dir K1
+          gh run download 40188040027 --repo zuizui0223/mois \
+            --name mois-real-latest1043930-photoid-original-worldclim-humidity-elevation \
+            --dir climate
+          gh run download 40188478245 --repo zuizui0223/mois \
+            --name mois-real-latest1043930-island-mainland-elevation-gshhg \
+            --dir islands
+          echo 'b4233c7818a6e67934fc7375ca3ddb110f79b7180d0f7e0adcb408b02d70c5c  K1/fresh_flower_roi_Lab_mode/packet-0000000.csv.gz' | sha256sum -c -
+      - name: Actually compute source-backed L C hue, white-like green-like brown-like on every supported axis
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real256_flower_box_lab_all_gradients \
+            --pixel-dir K1/fresh_flower_roi_Lab_mode \
+            --climate climate/mois_latest1043930_original_photo_climate_six_columns.parquet \
+            --geography islands/latest1043930_all_original_photo_GSHHG_landmass.parquet \
+            --geo-receipt islands/mois_latest1043930_island_altitude_result.json \
+            --output lab256_axes
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('lab256_axes/mois_real256_flower_box_Lab_all_axes_result.json').read_text())
+          assert a['schema']=='mois_real_K1_256_251_flower_box_CIELAB_all_ecological_axes_source_diagnostic_v1'
+          assert a['real_original_photo_attempts']==256
+          assert a['actual_CIELAB_flower_box_photos']==251
+          assert a['original_ROI_K1_outcome_balanced_128_success_128_failure'] is True
+          assert a['lab_green_brown_are_box_pixel_traits_not_botanical_petal_species']
+          assert a['photo_ID_source_image_downloads_in_this_POSTmeasurement_analysis']==0
+          axes={x['axis'] for x in a['all_axes_descriptive_lab_pilot']}
+          assert {'latitude_zone','hemisphere_season','island_mainland','elevation',
+                  'atmospheric_vapour_quintile','annual_rainfall_quintile'}<=axes
+          print('MOIS_ACTUAL_256_SRGB_LAB_FLORAL_BOX_ALL_GLOBAL_AXES_DONE')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-256-real-floral-box-Lab-white-green-brown-across-global-gradients
+          path: lab256_axes/
+          retention-days: 90
+          if-no-files-found: warn
