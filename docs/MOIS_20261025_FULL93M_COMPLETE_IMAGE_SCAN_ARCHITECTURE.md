@@ -80,10 +80,16 @@ source receipts (no image fetching):
 
 ```bash
 python -m scripts.acquisition.mois_full93m_every_photo_scan_manifest \
-  --registry SOURCE/complete_target_registry.json \
-  --group-receipt SOURCE/group-*/receipt.json \
+  --registry SOURCE/mois_all_original_photo_target_tiers_receipt.json \
+  --group-receipt SOURCE/group-??-receipt.json \
   --output PLAN
 ```
+
+The source release stores 224 tier-group TAR archives (14 tiers × 16 groups),
+not 1,792 individually released gzip files. Extract **only the selected
+signed** `tier-XX-group-YY.tar` archives to a trusted TARGETS directory
+before starting those jobs; never re-enumerate the underlying full source.
+The existing per-group receipt SHA verifies each extracted gzip input.
 
 Each job row identifies an existing original tier source gzip with
 `relative_source_gzip_path`, `source_gzip_sha256`, `expected_photo_rows`,
