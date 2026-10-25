@@ -19,6 +19,7 @@ class TestActualWorldOriginalImageTaxonomicBreadth(unittest.TestCase):
             "ee79c60671dda65a3d2f4f9319af952dbe81ab805ce269fe32b3bb3448b0d6b8")
 
     def test_rare_taxon_below100_must_not_be_false_FCP_eligible(self):
+        self.assertFalse(m.source_taxon_eligible(0,2,"false"))
         self.assertFalse(m.source_taxon_eligible(1,2,"false"))
         self.assertFalse(m.source_taxon_eligible(99,300,"false"))
         self.assertTrue(m.source_taxon_eligible(100,101,"true"))
@@ -29,7 +30,7 @@ class TestActualWorldOriginalImageTaxonomicBreadth(unittest.TestCase):
             m.source_taxon_eligible(100,100,"false")
 
     def test_no_photo_source_count_can_be_smaller_than_original_observation_count(self):
-        for a,b in ((0,1),(1,0),(100,99),(-1,0)):
+        for a,b in ((1,0),(100,99),(-1,0)):
             with self.subTest(a=a,b=b),self.assertRaisesRegex(ValueError,"eligibility mutated"):
                 m.source_taxon_eligible(a,b,"false")
 
@@ -46,6 +47,9 @@ class TestActualWorldOriginalImageTaxonomicBreadth(unittest.TestCase):
         self.assertEqual(x["has_any_photo_attempt"],"false")
         self.assertEqual(x["has_any_four_hue_ROI"],"false")
         self.assertEqual(x["acquired_or_evaluated_but_hue_unknown"],0)
+        self.assertEqual(x["has_independent_original_observation_to_resample"],"true")
+        noobs=m.taxon_coverage_record("102","plant",0,1,"false",0,0)
+        self.assertEqual(noobs["has_independent_original_observation_to_resample"],"false")
 
     def test_no_unmeasured_image_can_be_assigned_automatic_hue(self):
         with self.assertRaisesRegex(ValueError,"denominators invalid"):
