@@ -69,12 +69,21 @@ per-region, season and photo-age validation. Costs (CPU, S3/object storage,
 network, transfer and instances) are unmeasured; price actual cloud hardware
 and data access before committing resources.
 
-The iNaturalist Open Data public S3 is different from the rate-limited
-iNaturalist API. Amazon S3 documents multiple pooled connections, SDK retry
-and running compute in the same region as the source bucket:
+The iNaturalist **Open Data S3 bucket** is expressly the bulk licensed-photo
+source, not the iNaturalist API/web media origin. The site's warnings about
+5 GB/hour or 24 GB/day should not be mechanically interpreted as the AWS
+Open Data S3 quota: the iNaturalist Help Center directs bulk photo researchers
+to the Open Dataset. There is **no experimentally established S3-wide
+aggregate request quota here**, so plan provider-compliant bounded benchmark
+steps without falsely equating the API's request/website cap with S3 bandwidth:
+https://help.inaturalist.org/en/support/solutions/articles/151000223300-how-i-download-inaturalist-photos-to-use-for-research-
+https://www.inaturalist.org/pages/api+recommended+practices
+https://registry.opendata.aws/inaturalist-open-data/
+Amazon S3 documents connection pooling, retry and colocating compute
+in the same AWS region:
 https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance-guidelines.html
-The iNaturalist Open Data source describes the medium image variant and
-licensing: https://github.com/inaturalist/inaturalist-open-data
+The Open Data source documents medium 500px images and photo-specific license
+obligations: https://github.com/inaturalist/inaturalist-open-data
 
 Provider rules and user budget still apply. No rate limit may be bypassed by
 IP rotation or disguising a multi-worker job. A distributed cluster needs
