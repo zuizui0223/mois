@@ -1,0 +1,121 @@
+name: MOIS genuine K1 nine-palette floral-colour and unknown-status cluster audit
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/analysis/mois_k1_nine_palette_cluster_audit.py
+      - tests/test_mois_k1_nine_palette_cluster_audit.py
+      - .github/workflows/mois-k1-real-nine-palette-clustering.yml
+  pull_request:
+    paths:
+      - scripts/analysis/mois_k1_nine_palette_cluster_audit.py
+      - tests/test_mois_k1_nine_palette_cluster_audit.py
+      - .github/workflows/mois-k1-real-nine-palette-clustering.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-K1-true-original-76753-nine-palette-independent-cluster-pilot
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reject palette mislabelling and test stable nine-component Hellinger clustering
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scikit-learn==1.6.1 PyYAML==6.0.2
+          python -m py_compile scripts/analysis/mois_k1_nine_palette_cluster_audit.py
+          python -m unittest discover -s tests -p 'test_mois_k1_nine_palette_cluster_audit.py' -v
+          python - <<'PY'
+          import subprocess,yaml
+          from pathlib import Path
+          workflow=Path('.github/workflows/mois-k1-real-nine-palette-clustering.yml')
+          d=yaml.safe_load(workflow.read_text())
+          blocks=[step['run'] for job in d['jobs'].values()
+                  for step in job['steps'] if 'run' in step]
+          assert len(blocks)>=4
+          for block in blocks:
+              p=subprocess.run(['bash','-n'],input=block,text=True,capture_output=True)
+              assert p.returncode==0,p.stderr
+          print('MOIS_REAL_PHOTO_9PALETTE_MISSINGNESS_CLUSTER_SHELL_PASS',len(blocks))
+          PY
+  analyse-actual-signed-original-photos:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SRC_TAG: mois-full93m-tier06-balanced-onephoto-K1-new-original-warm8-RGB-v1
+      OUTPUT_TAG: mois-real-K1-76753-original-photo-nine-palette-and-unknown-classification-pilot-v1
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure signed original source and no prior result rewrite
+        id: gate
+        run: |
+          set -euo pipefail
+          if gh release view "$OUTPUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo 'Frozen real-photo nine-palette audit already published; no repeat.'
+            exit 0
+          fi
+          gh release view "$SRC_TAG" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Download only authentic completed K1 original-photo terminal Parquet, NOT image pixels
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scikit-learn==1.6.1
+          gh release download "$SRC_TAG" --repo "$REPO" --dir original-K1 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          echo '0d3de3374a06b1e7b9ad0281e2ab7844632ed139db871488524061191c8f34c1  original-K1/measured_photos.parquet' | sha256sum -c -
+          echo 'e86463bc61f9eebd8cbdbe01269f767c140bf243f9e374027008e9f095eb9044  original-K1/receipt.json' | sha256sum -c -
+      - name: Diagnose 4-hue missingness, nine-palette numeric ROI coverage, exploratory colour clusters
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_k1_nine_palette_cluster_audit \
+            --source original-K1/measured_photos.parquet \
+            --receipt original-K1/receipt.json \
+            --output derived-9palette
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-K1-actual-original-flower-nine-palette-cluster-and-technical-unknown-v1
+          path: derived-9palette/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish exploratory source-proved continuous hue result separately from four frozen labels
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if gh release view "$OUTPUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$OUTPUT_TAG" --repo "$REPO" --dir prior \
+              --pattern nine_palette_original_RGB_AUDIT_receipt.json
+            cmp prior/nine_palette_original_RGB_AUDIT_receipt.json \
+                derived-9palette/nine_palette_original_RGB_AUDIT_receipt.json
+          else
+            gh release create "$OUTPUT_TAG" derived-9palette/* --repo "$REPO" \
+              --target "$GITHUB_SHA" \
+              --title 'MOIS 76753 genuine K1 original-photo ROI: 9-component continuous hue and unknown/failure clusters' \
+              --notes 'Source-locked exploratory nine frozen biological palette fractions and Hellinger kmeans archetypes with heldout silhouette/seed stability. Classifier not updated, four original labels and 48861 acquired-but-unclassifiable photo outcomes retained verbatim; ROI/flip-gate and image-acquisition failures NEVER relabelled. Positive nine-palette mixtures on explicit ambiguous terminal statuses may receive an exploratory cluster, NOT a verified flower-colour class. Source original per-photo provenance and SHA verified. Not calibrated CIELAB or verified botanical blooming/wild/native, not unbiased global white-flower rate. No new RGB photo acquisition or inference.'
+          fi
