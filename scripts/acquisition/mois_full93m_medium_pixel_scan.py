@@ -219,10 +219,9 @@ def packets(reader, n):
             return
         yield part
 
-def process_packet(rows, *, part, tier, detector, download, workers,
-                   source_role="full93m", performance=None, io_executor=None):
-    """Bounded parallel fetch; single warm-batch inference on decoded images."""
-    from PIL import Image
+def fetch_decode_packet(rows, *, part, tier, download, workers,
+                        source_role="full93m", io_executor=None):
+    """Network and decode only. Pure source metadata enters; source images are ephemeral."""
     def one(row):
         base = {k: "" for k in COLUMNS_OUT}
         base.update(
@@ -257,58 +256,76 @@ def process_packet(rows, *, part, tier, detector, download, workers,
                                         type(exc).__name__ +
                                         ":" + str(exc)[:80].replace("\n", " "))
             return base, None
-
-    download_started = time.monotonic()
+    began=time.monotonic()
     if io_executor is None:
-        with ThreadPoolExecutor(max_workers=workers) as pool:
-            pairs = list(pool.map(one, rows))
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            result=list(executor.map(one, rows))
     else:
-        # Long-lived worker: reuse threads/HTTP connections across ALL source chunks.
-        pairs = list(io_executor.map(one, rows))
-    download_wall = time.monotonic() - download_started
-    box_started = time.monotonic()
-    out = [base for base, _ in pairs]
-    valid = [(i, image) for i, (_, image) in enumerate(pairs) if image is not None]
+        result=list(io_executor.map(one, rows))
+    require(len(result)==len(rows),"Source photo rows lost during medium-pixel decode")
+    return result, round(time.monotonic()-began,3)
+
+def classify_fetched_packet(rows,pairs,detector,*,download_seconds,
+                            performance=None):
+    """One immutable YOLO detector handles all fetched decoded photo candidates."""
+    started=time.monotonic()
+    out=[base for base,_ in pairs]
+    valid=[(i,image) for i,(_,image) in enumerate(pairs) if image is not None]
     if valid and detector is not None:
         try:
-            boxes = detector([image for _, image in valid])
-            require(len(boxes) == len(valid), "Detector dropped input image")
-            for (i, img), box in zip(valid, boxes):
+            boxes=detector([image for _,image in valid])
+            require(len(boxes)==len(valid),"Detector dropped input image")
+            for (i,image),box in zip(valid,boxes):
                 if box is None:
-                    out[i]["screen_status"] = "negative"
-                    out[i]["technical_reason"] = "model_screen_no_flower_candidate"
+                    out[i]["screen_status"]="negative"
+                    out[i]["technical_reason"]="model_screen_no_flower_candidate"
                 else:
-                    score, xyxy = float(box["score"]), box["xyxy"]
-                    require(math.isfinite(score) and 0 <= score <= 1 and
-                            len(xyxy) == 4, "Invalid YOLO bounding box")
-                    out[i]["screen_status"] = "candidate"
-                    out[i]["flower_box_score"] = format(score, ".6g")
-                    out[i]["flower_box_xyxy"] = ",".join(
-                        format(float(v), ".6g") for v in xyxy)
-                    proxies = proxy_from_box(img, xyxy)
-                    for key, value in zip(
-                        ("box_proxy_white", "box_proxy_yellow_orange",
-                         "box_proxy_red_pink", "box_proxy_blue_purple",
-                         "box_proxy_other"), proxies):
-                        out[i][key] = value
+                    score,xyxy=float(box["score"]),box["xyxy"]
+                    require(math.isfinite(score) and 0<=score<=1 and len(xyxy)==4,
+                            "Invalid YOLO bounding box")
+                    out[i]["screen_status"]="candidate"
+                    out[i]["flower_box_score"]=format(score,".6g")
+                    out[i]["flower_box_xyxy"]=",".join(format(float(v),".6g") for v in xyxy)
+                    proxies=proxy_from_box(image,xyxy)
+                    for key,value in zip(
+                        ("box_proxy_white","box_proxy_yellow_orange",
+                         "box_proxy_red_pink","box_proxy_blue_purple",
+                         "box_proxy_other"),proxies):
+                        out[i][key]=value
         except Exception as exc:
-            for i, _ in valid:
-                out[i]["screen_status"] = "error"
-                out[i]["technical_reason"] = ("model_inference_error:" +
-                                              type(exc).__name__)
+            for i,_ in valid:
+                out[i]["screen_status"]="error"
+                out[i]["technical_reason"]="model_inference_error:"+type(exc).__name__
     elif valid:
-        for i, _ in valid:
-            out[i]["technical_reason"] = "pixel_scanned_without_flower_detector"
+        for i,_ in valid:
+            out[i]["technical_reason"]="pixel_scanned_without_flower_detector"
     if performance is not None:
         performance.update(
-            medium_image_access_and_decode_wall_seconds=round(download_wall, 3),
+            medium_image_access_and_decode_wall_seconds=round(download_seconds,3),
             flower_box_inference_and_proxy_wall_seconds=round(
-                time.monotonic() - box_started, 3),
-        )
-    require(len(out) == len(rows) and
-            all(r["screen_status"] in ALLOWED for r in out),
-            "Stage1 row conservation failed")
+                time.monotonic()-started,3))
+    require(len(out)==len(rows) and all(row["screen_status"] in ALLOWED for row in out),
+            "Stage1 photo row/status conservation failed")
     return out
+
+def process_packet(rows, *, part, tier, detector, download, workers,
+                   source_role="full93m", performance=None, io_executor=None,
+                   preloaded_pairs=None, preloaded_transfer_seconds=None):
+    """Backward-compatible source scan, optionally using prefetched 500px pixels."""
+    if preloaded_pairs is None:
+        require(preloaded_transfer_seconds is None,"Missing prefetched source photo pixels")
+        pairs,download_seconds=fetch_decode_packet(
+            rows,part=part,tier=tier,download=download,workers=workers,
+            source_role=source_role,io_executor=io_executor)
+    else:
+        require(len(preloaded_pairs)==len(rows)
+                and isinstance(preloaded_transfer_seconds,(float,int))
+                and preloaded_transfer_seconds>=0,
+                "Prefetched photo count or timing changed")
+        pairs,download_seconds=preloaded_pairs,preloaded_transfer_seconds
+    return classify_fetched_packet(
+        rows,pairs,detector,download_seconds=download_seconds,
+        performance=performance)
 
 def write_packet_csv(path, rows):
     tmp = path.with_suffix(path.suffix + ".partial")
