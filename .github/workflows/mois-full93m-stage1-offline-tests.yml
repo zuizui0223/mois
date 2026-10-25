@@ -211,7 +211,7 @@ jobs:
           from ultralytics import YOLO
           y=YOLO('weights/jrc_yolo11n_last_v4.pt')
           print('MOIS_FROZEN_FLOWER_DETECTOR_CLASS_NAMES',y.names,flush=True)
-          assert y.names.get(0)=='flower', 'Wrong class 0; do not invent a flower detector.'
+          assert y.names.get(0)=='item', 'Wrong class 0; do not invent a flower detector.'
           PY
       - name: Actually fetch original K1 medium images and run warm frozen YOLO11 without EfficientSAM
         run: |
@@ -221,7 +221,7 @@ jobs:
             --source-output K1_calibration --pixel-output YOLO500_results \
             --weights weights/jrc_yolo11n_last_v4.pt \
             --weights-sha256 f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5 \
-            --flower-class-id 0 --flower-class-name flower \
+            --flower-class-id 0 --flower-class-name item \
             --device cpu --detector-conf 0.02 \
             --workers 8 --requests-per-second 2 --execute
       - name: Verify actual flower-box model evidence and preserve unknown labels
