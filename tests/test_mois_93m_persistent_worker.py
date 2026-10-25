@@ -121,7 +121,7 @@ class LongLivedExactSourcePhotoTests(unittest.TestCase):
         a=p.execute([self.chunks],self.output,weights=self.root/"weight.pt",
                     weight_sha="a"*64,slot=0,slots=1,approved_aggregate_rps=50,
                     detector=self.Detector(),downloader=self.fetch,
-                    download_workers=2,batch_size=2)
+                    download_workers=2,batch_size=16)
         self.assertEqual(a["actual_source_photo_attempts_in_verified_completed_chunks"],7)
         self.assertEqual(a["medium_photo_pixels_decoded"],7)
         self.assertEqual(a["chunks_source_sha_verified_complete"],2)
@@ -132,7 +132,7 @@ class LongLivedExactSourcePhotoTests(unittest.TestCase):
         b=p.execute([self.chunks],self.output,weights=self.root/"weight.pt",
                     weight_sha="a"*64,slot=0,slots=1,approved_aggregate_rps=50,
                     detector=self.Detector(),downloader=self.fetch,
-                    download_workers=2,batch_size=2)
+                    download_workers=2,batch_size=16)
         self.assertEqual(b["actual_source_photo_attempts_in_verified_completed_chunks"],7)
         self.assertEqual(len(self.requested),7,"Existing signed pixels were fetched again")
 
@@ -143,7 +143,7 @@ class LongLivedExactSourcePhotoTests(unittest.TestCase):
             p.execute([self.chunks],self.output,weights=self.root/"weight.pt",
                       weight_sha="a"*64,approved_aggregate_rps=3,
                       detector=self.Detector(),downloader=self.fetch,
-                      download_workers=1,batch_size=2)
+                      download_workers=1,batch_size=16)
         self.assertEqual(self.requested,[])
 
     def test_execute_requires_positive_explicit_budget(self):
@@ -151,7 +151,7 @@ class LongLivedExactSourcePhotoTests(unittest.TestCase):
             p.execute([self.chunks],self.output,weights=self.root/"weight.pt",
                       weight_sha="a"*64,approved_aggregate_rps=0,
                       detector=self.Detector(),downloader=self.fetch,
-                      download_workers=1,batch_size=2)
+                      download_workers=1,batch_size=16)
         self.assertEqual(self.requested,[])
 
 if __name__=="__main__":
