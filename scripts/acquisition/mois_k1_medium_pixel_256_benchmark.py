@@ -121,7 +121,7 @@ def prepare(k1_parquet, k1_receipt, directory, *, n_per=N_PER,
     return report
 
 def benchmark(source_dir, result_dir, *, workers=8, rps=2.0,
-              detector=None):
+              detector=None, feature_mode="legacy_hsv"):
     require(workers <= 12 and 0 < rps <= 3.0,
             "Bounded provider access pilot only; no 93m bulk requests")
     source_dir, result_dir = Path(source_dir), Path(result_dir)
@@ -138,7 +138,8 @@ def benchmark(source_dir, result_dir, *, workers=8, rps=2.0,
         source, result_dir, expected_source_sha256=meta["original_photo_source_sha256"],
         expected_count=256, part=0, tier=0, source_role="K1_calibration",
         detector=detector, download=lambda u: download_medium(u, pace),
-        workers=workers, batch_size=256, max_packets=1)
+        workers=workers, batch_size=256, max_packets=1,
+        feature_mode=feature_mode)
     require(not status["all_original_input_photos_attempted"]
             and status["actual_unique_source_photo_ids_attempted"] == 256
             and status["calibration_subset_not_global_census"] is True
@@ -159,8 +160,32 @@ def benchmark(source_dir, result_dir, *, workers=8, rps=2.0,
             raw_bytes.append(int(row["downloaded_bytes"]))
     require(len(rows) == 256 and len(origin) == 256,
             "Lost K1 source photo status during benchmarking")
+    floral_lab={} 
+    if feature_mode=="floral_box_lab_v2":
+        from statistics import median
+        measured=[r for r in rows if r["screen_status"]=="candidate"
+                  and r.get("floral_box_main_L_star")]
+        def vals(field):
+            return [float(x[field]) for x in measured if x.get(field)]
+        floral_lab={
+            "source_version":"mois_flower_box_srgb_cielab_mode_v1",
+            "candidate_box_lab_measured_count":len(measured),
+            "median_major_box_L_star":median(vals("floral_box_main_L_star")) if measured else None,
+            "median_major_box_C_star":median(vals("floral_box_main_C_star")) if measured else None,
+            "major_box_greenlike_photo_count_fraction_at_least_25pct":
+                sum(float(x["floral_box_fraction_green_like"])>=.25 for x in measured),
+            "major_box_brownlike_photo_count_fraction_at_least_25pct":
+                sum(float(x["floral_box_fraction_brown_like"])>=.25 for x in measured),
+            "major_box_whitelike_photo_count_fraction_at_least_25pct":
+                sum(float(x["floral_box_fraction_white_like"])>=.25 for x in measured),
+            "this_is_flower_box_not_semantic_petals":True,
+            "photo_strata_purposely_128_prior_ROI_success_128_prior_failure":
+                True
+        }
     summary = {
         "schema": "mois_K1_256_actually_decoded_medium_pixel_benchmark_v1",
+        "color_feature_mode":feature_mode,
+        "observed_flower_box_lab_features":floral_lab,
         "original_K1_photo_ROI_source_SHA256": meta["K1_signed_source_sha256"],
         "pilot_is_not_independent_photo_or_global_flora_prevalence": True,
         "pilot_images_attempted": 256,
@@ -199,6 +224,8 @@ def main():
     a.add_argument("--flower-class-name", default="item")
     a.add_argument("--device", default="cpu")
     a.add_argument("--detector-conf", type=float, default=0.02)
+    a.add_argument("--colour-feature-mode",default="legacy_hsv",
+                   choices=("legacy_hsv","floral_box_lab_v2"))
     a.add_argument("--execute", action="store_true",
                    help="Actually download no more than 256 medium images at <=3 req/s")
     a.add_argument("--workers", type=int, default=8)
@@ -216,7 +243,8 @@ def main():
             device=x.device, conf=x.detector_conf) if x.weights else None)
         result = benchmark(x.source_output, x.pixel_output,
                            workers=x.workers, rps=x.requests_per_second,
-                           detector=detector)
+                           detector=detector,
+                           feature_mode=x.colour_feature_mode)
         print("MOIS_K1_256_REAL_MEDIUM_PIXELS", json.dumps(result, sort_keys=True))
 
 if __name__ == "__main__":
