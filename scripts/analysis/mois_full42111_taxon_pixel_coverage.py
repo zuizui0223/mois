@@ -46,6 +46,34 @@ FCP_RECEIPT_SHA="5dbd4590ae96729cd9469fc8403a8ee4528d18e1fb5b928d5a108483ea29150
 OLD_COUNTS={"main":PRIOR_MAIN, "prior_group00":PRIOR_OLD,
             "prior_R1":PRIOR_R1, "prior_R2":PRIOR_R2}
 
+def source_taxon_eligible(nobs,nphotos,flag):
+    require(type(nobs) is int and nobs>=1
+            and type(nphotos) is int and nphotos>=nobs
+            and flag==("true" if nobs>=100 else "false"),
+            "Original full93m taxon independent-observation eligibility mutated")
+    return nobs>=100
+
+
+def taxon_coverage_record(taxon,species,nobs,nphotos,flag,attempted,classified):
+    source_taxon_eligible(nobs,nphotos,flag)
+    require(taxon.isdecimal() and type(attempted) is int
+            and type(classified) is int
+            and 0<=classified<=attempted,
+            "Attempted/classifiable taxon original image denominators invalid")
+    return {
+        "inat_taxon_id":taxon,"species":species,
+        "source_original_distinct_observations":nobs,
+        "source_original_photo_IDs":nphotos,
+        "U100_eligible_100plus_observations":flag,
+        "genuine_original_photo_attempts":attempted,
+        "automatic_four_hue_ROIs":classified,
+        "acquired_or_evaluated_but_hue_unknown":attempted-classified,
+        "has_any_photo_attempt":str(attempted>0).lower(),
+        "has_any_four_hue_ROI":str(classified>0).lower(),
+        "source_taxon_under100_observations":str(nobs<100).lower(),
+    }
+
+
 def read_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
@@ -71,9 +99,7 @@ def run(census, historical, k1, fcp, output, *,census_sha=CENSUS_SHA,
             nobs=int(row["full_93m_original_observation_count"])
             nphotos=int(row["full_93m_original_photo_count"])
             flag=row["FCP_U100_source_eligible"]
-            require(nobs>=1 and nphotos>=nobs
-                    and flag==("true" if nobs>=100 else "false"),
-                    "Original full93m taxon independent-observation eligibility mutated")
+            source_taxon_eligible(nobs,nphotos,flag)
             taxa[taxon]=(row["species"],nobs,nphotos,flag)
             raw_photos+=nphotos
             raw_obs+=nobs
@@ -188,18 +214,8 @@ def run(census, historical, k1, fcp, output, *,census_sha=CENSUS_SHA,
             gap.writeheader()
             for taxon,(species,nobs,nphotos,flag) in sorted(taxa.items(),key=lambda z:int(z[0])):
                 attempted,classified=per_taxon[taxon]
-                row={
-                    "inat_taxon_id":taxon,"species":species,
-                    "source_original_distinct_observations":nobs,
-                    "source_original_photo_IDs":nphotos,
-                    "U100_eligible_100plus_observations":flag,
-                    "genuine_original_photo_attempts":attempted,
-                    "automatic_four_hue_ROIs":classified,
-                    "acquired_or_evaluated_but_hue_unknown":attempted-classified,
-                    "has_any_photo_attempt":str(attempted>0).lower(),
-                    "has_any_four_hue_ROI":str(classified>0).lower(),
-                    "source_taxon_under100_observations":str(nobs<100).lower(),
-                }
+                row=taxon_coverage_record(
+                    taxon,species,nobs,nphotos,flag,attempted,classified)
                 writer.writerow(row)
                 metric["taxa_in_source"]+=1
                 metric["taxa_at_least_one_photo_attempt"]+=attempted>0
