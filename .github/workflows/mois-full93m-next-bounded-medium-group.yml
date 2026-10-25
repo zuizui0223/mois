@@ -68,6 +68,7 @@ jobs:
         env:
           TIER: ${{ steps.plan.outputs.tier }}
           GROUP: ${{ steps.plan.outputs.group }}
+          EXPECTED: ${{ steps.plan.outputs.expected }}
         run: |
           set -euo pipefail
           mkdir -p signed weights
@@ -86,7 +87,7 @@ jobs:
           p=json.loads(Path(f'signed/group-{g:02d}-receipt.json').read_text())
           assert r['exact_original_photo_IDs_in_all_disjoint_tiers']==93209351
           assert p['source_snapshot_SHA256']==r['full_source_manifest_sha256']
-          assert int(p['counts_by_disjoint_tier'][str(t)])==1074
+          assert int(p['counts_by_disjoint_tier'][str(t)])==int(os.environ['EXPECTED'])
           assert len(p['parts'])==8
           print('MOIS_FROZEN_GROUP_SOURCE_BYTES_METADATA_MATCH',t,g,os.environ['EXPECTED'])
           PY
