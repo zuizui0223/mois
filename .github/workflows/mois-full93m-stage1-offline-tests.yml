@@ -1,0 +1,39 @@
+name: MOIS 93m all-photo stage1 offline coverage and pixel scanner tests
+on:
+  push:
+    branches:
+      - main
+      - feat/full93m-medium-pixel-firstpass
+    paths:
+      - scripts/acquisition/mois_full93m_every_photo_scan_manifest.py
+      - scripts/acquisition/mois_full93m_medium_pixel_scan.py
+      - tests/test_mois_full93m_medium_pixel_scan.py
+      - .github/workflows/mois-full93m-stage1-offline-tests.yml
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_full93m_every_photo_scan_manifest.py
+      - scripts/acquisition/mois_full93m_medium_pixel_scan.py
+      - tests/test_mois_full93m_medium_pixel_scan.py
+      - .github/workflows/mois-full93m-stage1-offline-tests.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify 128×14 source completeness and medium image bytes without S3 requests
+        run: |
+          set -euo pipefail
+          python -m pip install -q Pillow==11.3.0 numpy==2.1.3
+          python -m py_compile \
+            scripts/acquisition/mois_full93m_every_photo_scan_manifest.py \
+            scripts/acquisition/mois_full93m_medium_pixel_scan.py
+          python -m unittest discover -s tests \
+            -p test_mois_full93m_medium_pixel_scan.py -v
+          echo 'MOIS_ALL_93M_SOURCE_PHOTO_STAGE1_OFFLINE_TESTS_PASS'
