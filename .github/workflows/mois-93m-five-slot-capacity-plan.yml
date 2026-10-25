@@ -1,0 +1,105 @@
+name: MOIS source-authenticated 93m five persistent worker load balance
+on:
+  push:
+    branches: [feat/full93m-medium-pixel-firstpass]
+    paths:
+      - .github/workflows/mois-93m-five-slot-capacity-plan.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  plan-five-nonoverlapping-persistent-source-slots:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve all signed 93m source IDs as exactly 1792 disjoint metadata photo parts
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh run download 40163052435 --repo zuizui0223/mois \
+            --name mois-all-93209351-source-photo-stage1-1792-signed-jobs-v1 \
+            --dir source
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          rows=list(Path('source').rglob('all_original_photos_stage1_jobs.csv'))
+          assert len(rows)==1,rows
+          p=rows[0]
+          expected='6b607a4b7b0863d65a0eb514d4158434453e7ae4d909f4cf1e3372b424eb9279'
+          assert hashlib.sha256(p.read_bytes()).hexdigest()==expected
+          Path('source/source_path.txt').write_text(str(p.resolve())+'\n')
+          print('MOIS_FULL93M_SOURCE_SHAS_1792_REUSED_ONCE_NO_IMAGE_PIXELS',p)
+          PY
+      - name: Convert signed 1792 photo-input parts to complete and disjoint 4096-photo warm worker plan
+        run: |
+          set -euo pipefail
+          source=$(cat source/source_path.txt)
+          python -m scripts.acquisition.mois_full93m_4096_chunk_warm_job_plan \
+            --original-1792-jobs "$source" \
+            --source-sha256 6b607a4b7b0863d65a0eb514d4158434453e7ae4d909f4cf1e3372b424eb9279 \
+            --chunk-size 4096 --chunks-per-warm 8 \
+            --output warm_plan
+      - name: Verify original 93m photo counts and exact five-slot hash load balance without photo downloads
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv,json
+          from collections import Counter
+          from pathlib import Path
+          from scripts.acquisition.mois_93m_persistent_worker import slot_for
+          root=Path("warm_plan")
+          r=json.loads((root/"all93m_chunk_workplan_receipt.json").read_text())
+          assert r["original_source_photo_IDs_entire_universe"]==93209351
+          assert r["original_source_part_tier_jobs"]==1792
+          assert r["images_downloaded"]==0
+          assert r["actual_photo_scans_completed_by_this_plan"]==0
+          photos=Counter();chunks=Counter()
+          seen=set()
+          with (root/"all_photo_source_4096_chunk_tasks.csv").open(newline="") as stream:
+              for row in csv.DictReader(stream):
+                  tier,part,index=int(row["tier"]),int(row["part"]),int(row["chunk_index"])
+                  key=(tier,part,index)
+                  assert key not in seen, "Duplicate signed original source chunk"
+                  seen.add(key)
+                  n=int(row["planned_original_photo_ids"])
+                  assert 1<=n<=4096
+                  s=slot_for(tier,part,index,5)
+                  photos[s]+=n;chunks[s]+=1
+          assert len(seen)==r["planned_child_photo_chunk_tasks"]
+          assert sum(photos.values())==93209351
+          assert sum(chunks.values())==len(seen)
+          assert len(photos)==5
+          report={
+              "schema":"mois_full93m_five_slot_balanced_persistent_worker_capacity_plan_v1",
+              "exact_source_photo_IDs_all_slots":93209351,
+              "signed_source_part_tier_jobs":1792,
+              "source_chunks_all":len(seen),
+              "source_chunk_size_max":4096,
+              "planned_slot_original_photo_IDs":{str(s):photos[s] for s in range(5)},
+              "planned_slot_chunks":{str(s):chunks[s] for s in range(5)},
+              "max_over_min_slot_photo_count":max(photos.values())/min(photos.values()),
+              "photos_per_sec_goal_per_worker":8.0,
+              "aggregate_5_workers_goal_photos_per_sec":40.0,
+              "theoretical_93m_total_days_at_40_photo_attempts_per_second":93209351/40/86400,
+              "actual_parallel_5_worker_tier12_throughput_measured":False,
+              "image_bytes_downloaded_or_photo_colours_claimed":0,
+              "source_native_species_or_season_preexcluded":False,
+          }
+          Path("warm_plan/five_slot_capacity_receipt.json").write_text(
+              json.dumps(report,indent=2,sort_keys=True)+"\n")
+          print('MOIS_FULL93M_FIVE_PERSISTENT_SLOTS_EXACT_SOURCE_CAPACITY',
+                json.dumps(report,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-exact93209351-4096-photo-five-persistent-worker-balanced-plan
+          path: warm_plan/
+          retention-days: 90
+          if-no-files-found: error
