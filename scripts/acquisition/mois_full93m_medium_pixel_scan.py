@@ -178,23 +178,29 @@ class WarmFlowerBoxDetector:
         label = names[class_id] if isinstance(names, (list, tuple)) else names.get(class_id)
         require(label == expected_class_name, "YOLO flower class name mismatch")
         self.class_id, self.conf, self.device = class_id, conf, device
+        self.model_sha = expected_sha256
+        self.model_identity = expected_class_name
 
     def __call__(self, images):
-        predictions = self.model.predict(source=images, imgsz=512,
-                                         conf=self.conf, device=self.device,
-                                         verbose=False, stream=False)
-        require(len(predictions) == len(images), "YOLO image counts changed")
+        # Fixed-size inference microbatches prevent 512-image GPU OOM.
         output = []
-        for image, prediction in zip(images, predictions):
-            best = None
-            for box in prediction.boxes:
-                if int(box.cls.item()) != self.class_id:
-                    continue
-                score = float(box.conf.item())
-                xyxy = list(map(float, box.xyxy[0].tolist()))
-                if best is None or score > best["score"]:
-                    best = {"score": score, "xyxy": xyxy}
-            output.append(best)
+        for offset in range(0, len(images), 32):
+            subset = images[offset:offset + 32]
+            predictions = self.model.predict(source=subset, imgsz=512,
+                                             batch=len(subset),
+                                             conf=self.conf, device=self.device,
+                                             verbose=False, stream=False)
+            require(len(predictions) == len(subset), "YOLO image counts changed")
+            for prediction in predictions:
+                best = None
+                for box in prediction.boxes:
+                    if int(box.cls.item()) != self.class_id:
+                        continue
+                    score = float(box.conf.item())
+                    xyxy = list(map(float, box.xyxy[0].tolist()))
+                    if best is None or score > best["score"]:
+                        best = {"score": score, "xyxy": xyxy}
+                output.append(best)
         return output
 
 def packets(reader, n):
@@ -310,7 +316,14 @@ def scan_source(source, output, *, expected_source_sha256,
         download = lambda url: download_medium(url, pace)
     stats = Counter()
     first = last = None
-    completed_packets = 0
+    completed_packets = decoded_count = 0
+    model_identity = (
+        "pixel_only_pilot" if detector is None else
+        "yolo11:" + detector.model_sha + ":" +
+        detector.model_identity + ":" + str(detector.conf)
+        if isinstance(detector, WarmFlowerBoxDetector) else
+        "test_injected_detector:" + type(detector).__name__
+    )
     with gzip.open(source, "rt", encoding="utf-8", newline="") as stream:
         reader = csv.DictReader(stream)
         require(tuple(reader.fieldnames or ()) == COLUMNS,
@@ -334,7 +347,10 @@ def scan_source(source, output, *, expected_source_sha256,
                         and proof.get("output_sha256") == sha_file(dest)
                         and proof.get("photo_ids") == len(rows)
                         and proof.get("first_photo_id") == ids[0]
-                        and proof.get("last_photo_id") == ids[-1],
+                        and proof.get("last_photo_id") == ids[-1]
+                        and proof.get("source_part") == part
+                        and proof.get("source_tier") == tier
+                        and proof.get("detector_identity") == model_identity,
                         "Cannot resume a packet with different source identity")
                 counts = proof["screen_counts"]
             else:
@@ -349,6 +365,7 @@ def scan_source(source, output, *, expected_source_sha256,
                     "source_gzip_sha256": expected_source_sha256,
                     "first_photo_id": ids[0], "last_photo_id": ids[-1],
                     "photo_ids": len(result), "source_part": part, "source_tier": tier,
+                    "detector_identity": model_identity,
                     "screen_counts": counts,
                     "medium_image_pixels_attempted": len(result),
                     "medium_image_pixels_decoded": sum(bool(r["image_pixel_sha256"]) for r in result),
@@ -363,6 +380,7 @@ def scan_source(source, output, *, expected_source_sha256,
                 temporary.write_text(json.dumps(proof, sort_keys=True, indent=2) + "\n")
                 os.replace(temporary, receipt_path)
             stats.update(counts)
+            decoded_count += int(proof["medium_image_pixels_decoded"])
             completed_packets += 1
             first = ids[0] if first is None else first
             last = ids[-1]
@@ -379,8 +397,10 @@ def scan_source(source, output, *, expected_source_sha256,
         "actual_unique_source_photo_ids_attempted": total,
         "packets_sealed": completed_packets,
         "screen_counts": dict(stats),
+        "detector_identity": model_identity,
+        "medium_image_pixels_decoded": decoded_count,
+        "medium_image_pixels_unavailable": total - decoded_count,
         "all_original_input_photos_attempted": full,
-        "pixel_decoded": (total - stats["error"] - stats["uncertain"] >= 0),
         "screening_only_not_verified_flower_colour": True,
         "input_is_disjoint_upstream_by_photo_id": True,
     }
