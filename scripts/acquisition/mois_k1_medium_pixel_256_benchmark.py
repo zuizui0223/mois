@@ -196,7 +196,7 @@ def main():
     a.add_argument("--weights", type=Path)
     a.add_argument("--weights-sha256")
     a.add_argument("--flower-class-id", type=int, default=0)
-    a.add_argument("--flower-class-name", default="flower")
+    a.add_argument("--flower-class-name", default="item")
     a.add_argument("--device", default="cpu")
     a.add_argument("--detector-conf", type=float, default=0.02)
     a.add_argument("--execute", action="store_true",
