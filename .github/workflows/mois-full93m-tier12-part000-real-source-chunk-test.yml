@@ -1,0 +1,100 @@
+name: MOIS exact 363920 source photo IDs split to 4096-image scan units
+on:
+  push:
+    branches:
+      - feat/full93m-medium-pixel-firstpass
+    paths:
+      - .github/workflows/mois-full93m-tier12-part000-real-source-chunk-test.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-source-only-tier12-part000-full-363920-4096-photo-chunk-conversion
+  cancel-in-progress: false
+jobs:
+  stream-genuine-largest-tier-source-to-sha-chunks:
+    if: github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[chunk363920]'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_TAG: mois-complete-93209351-original-photo-target-tiers-v1
+      SRC_SHA: 2601e901d31cb1aac65ac94ce3d2e6e3cce9aef45cacd137a4213cd81b2c53eb
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run offline source-integrity and chunk-regression tests
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/acquisition/mois_full93m_source_part_chunks.py
+          python -m unittest discover -s tests -p test_mois_full93m_source_part_chunks.py -v
+      - name: Read only the official tier12 group00 source TAR and signed global receipt
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh release download "$SOURCE_TAG" --repo "$REPO" --dir source \
+            --pattern tier-12-group-00.tar \
+            --pattern mois_all_original_photo_target_tiers_receipt.json \
+            --pattern group-00-receipt.json
+          python - <<'PY'
+          import hashlib,json,os,tarfile
+          from pathlib import Path
+          root=Path('source')
+          registry=json.loads((root/'mois_all_original_photo_target_tiers_receipt.json').read_text())
+          group=json.loads((root/'group-00-receipt.json').read_text())
+          assert registry['exact_original_photo_IDs_in_all_disjoint_tiers']==93209351
+          assert group['schema']=='mois_onepass_full93m_disjoint_photo_target_tiers_v1'
+          tar=root/'tier-12-group-00.tar'
+          assert hashlib.sha256(tar.read_bytes()).hexdigest()==registry['published_tier_archive_SHA256'][tar.name]
+          wanted='tier-12/part-000.csv.gz'
+          with tarfile.open(tar) as archive:
+              found={m.name for m in archive.getmembers() if m.isfile()}
+              assert wanted in found
+              src=archive.extractfile(wanted).read()
+          dest=root/'part-000-tier12.csv.gz'
+          dest.write_bytes(src)
+          expected=group['parts'][0]['ranked_target_csv_sha256']['12']
+          assert int(group['parts'][0]['part'])==0
+          assert group['parts'][0]['counts_by_disjoint_tier']['12']==363920
+          assert expected==os.environ['SRC_SHA']
+          assert hashlib.sha256(src).hexdigest()==expected
+          print('MOIS_TIER12_GENUINE_363920_PHOTO_SOURCE_BYTES_SHA_VERIFIED',
+                len(src),flush=True)
+          PY
+      - name: Actually stream all 363920 source records into 4096-photo SHA-verified chunks, NO pixel download
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_full93m_source_part_chunks \
+            --source source/part-000-tier12.csv.gz \
+            --source-sha256 "$SRC_SHA" \
+            --expected-count 363920 --tier 12 --part 0 \
+            --chunk-size 4096 --output full93m_scannable_chunks
+          python - <<'PY'
+          import csv,hashlib,json
+          from pathlib import Path
+          root=Path('full93m_scannable_chunks')
+          receipt=json.loads((root/'chunk_receipt.json').read_text())
+          with (root/'chunk_manifest.csv').open(newline='') as f:
+              chunks=list(csv.DictReader(f))
+          assert receipt['actual_original_photo_IDs']==363920
+          assert receipt['expected_original_photo_IDs']==363920
+          assert receipt['chunks']==89 and len(chunks)==89
+          assert sum(int(r['expected_photo_ids']) for r in chunks)==363920
+          assert all(1<=int(r['expected_photo_ids'])<=4096 for r in chunks)
+          assert receipt['image_pixels_downloaded']==0
+          for row in chunks:
+              p=root/row['chunk_relative_path']
+              assert hashlib.sha256(p.read_bytes()).hexdigest()==row['chunk_gzip_sha256']
+          print('MOIS_LARGE_SOURCE_363920_PHOTO_IDS_CHUNKED_INTO_89_SAFE_4096_PHOTO_TASKS',
+                json.dumps(receipt,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-full93m-real-tier12-part000-363920-source-89-sha-bounded-photo-chunks
+          path: full93m_scannable_chunks/
+          retention-days: 90
+          if-no-files-found: warn
