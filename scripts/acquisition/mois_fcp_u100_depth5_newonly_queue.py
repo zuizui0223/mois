@@ -131,6 +131,12 @@ def reconcile(prefix5,delta,receipt_path,known,output, *,
             and manifest.get("global_incremental_rank2to5_candidate_photo_IDs_NOT_NEW_INFERENCES")==expected_delta
             and manifest.get("eligible_taxa_with_at_least100_original_observations")==expected_taxa
             and manifest.get("ranks2to5_genuine_never_measured_photo_IDs_not_yet_deduplicated") is True
+            and manifest.get("csv_outputs_SHA256",{}).get(
+                "global_FCP_U100_nested_first5_original_photo_candidates.csv.gz")
+                ==expected_source_sha
+            and manifest.get("csv_outputs_SHA256",{}).get(
+                "global_FCP_U100_incremental_rank2to5_candidates_NEED_DEDUP.csv.gz")
+                ==expected_delta_sha
             and manifest.get("new_image_downloads_and_original_ROI_inferences_performed")==0,
             "Immutable worldwide FCP-U100 depth5 source totals changed")
     require(len(known)==expected_prior,
