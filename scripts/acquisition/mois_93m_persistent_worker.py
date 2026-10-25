@@ -282,7 +282,8 @@ def main():
     a.add_argument("--execute",action="store_true",
                    help="Required to actually access public AWS S3 photos")
     x=a.parse_args()
-    roots=[line.strip() for line in x.chunks_roots_file.read_text().splitlines()
+    roots=[str((x.chunks_roots_file.parent / line.strip()).resolve())
+           for line in x.chunks_roots_file.read_text().splitlines()
            if line.strip() and not line.lstrip().startswith("#")]
     require(bool(roots),"At least one signed source root required")
     p=plan(roots,slot=x.worker_slot,slots=x.worker_slots)
