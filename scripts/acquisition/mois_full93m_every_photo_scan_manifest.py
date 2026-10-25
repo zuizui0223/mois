@@ -114,7 +114,9 @@ def build_jobs(registry_path, receipts, output_dir, *,
         report = {
             "schema": SCHEMA,
             "signed_full_source_registry_sha256": sha256(registry_path),
-            "signed_group_receipts_sha256": {p.name: sha256(p) for p in receipts},
+            "signed_group_receipts_sha256": [
+                {"path": str(p), "sha256": sha256(p)} for p in receipts
+            ],
             "source_original_photo_ID_count": expected_photos,
             "source_original_partitions": expected_parts,
             "source_disjoint_tiers": expected_tiers,
