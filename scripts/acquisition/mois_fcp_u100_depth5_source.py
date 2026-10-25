@@ -192,7 +192,7 @@ def freeze_group(source_csv, source_receipt, global_receipt, output, group, *,
                         and int(taxon)%128//8==group
                         and pid not in original_ids and obs not in original_obs
                         and row["source_arm"]==PARENT_ARM,
-                        "Original 100-observation source ID duplicated or group changed")
+                        "Original 100-observation source photo ID duplicated or group changed")
                 original_ids.add(pid);original_obs.add(obs)
                 if taxon!=current:
                     if current is not None:
