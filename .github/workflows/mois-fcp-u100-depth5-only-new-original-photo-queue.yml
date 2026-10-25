@@ -1,0 +1,178 @@
+name: MOIS stage5 FCP U100 photo-ID dedup source for NEW original image ROI wave
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_u100_depth5_new_original_photo_queue.py
+      - tests/test_mois_fcp_u100_depth5_new_original_photo_queue.py
+      - .github/workflows/mois-fcp-u100-depth5-only-new-original-photo-queue.yml
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_u100_depth5_new_original_photo_queue.py
+      - tests/test_mois_fcp_u100_depth5_new_original_photo_queue.py
+      - .github/workflows/mois-fcp-u100-depth5-only-new-original-photo-queue.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-fcp-stage5-new-original-pixels-blind-true-old-photo-ID-dedup
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate source 4/N/M, full photo-ID reuse and unknown preservation
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_fcp_u100_depth5_new_original_photo_queue.py
+          python -m unittest discover -s tests -p test_mois_fcp_u100_depth5_new_original_photo_queue.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          w=yaml.safe_load(open('.github/workflows/mois-fcp-u100-depth5-only-new-original-photo-queue.yml'))
+          blocks=[s['run'] for job in w['jobs'].values() for s in job['steps'] if 'run' in s]
+          assert len(blocks)>=5
+          for script in blocks:
+              r=subprocess.run(['bash','-n'],input=script,text=True,capture_output=True)
+              assert r.returncode==0,r.stderr
+          print('MOIS_FCP_U100_RANK2TO5_REAL_PRIOR_DEDUP_ALL_BASH_VALID',len(blocks))
+          PY
+  freeze-next-real-photo-source-only:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-FCP-U100-stage5-rank2to5-only-unmeasured-original-ROI-source-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Avoid repeating 1-million-photo ID source overlap reconciliation
+        id: gate
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo ready=false >> "$GITHUB_OUTPUT"
+            echo 'FCP nested depth5 prior photo ID reuse source already signed/published.'
+            exit 0
+          fi
+          for source in mois-global-original-RGB-K1-75-plus-FCP-U100-3141-exact-unique-v1 \
+                        mois-full93m-FCP-U100-nested5-20242-taxa-80968-rank2to5-source-v1; do
+            gh release view "$source" --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          done
+          echo ready=true >> "$GITHUB_OUTPUT"
+          echo 'Source is ready: no K1/FCP image-download overlap can be accepted.'
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Download ONLY signed source selection and completed original image ROI Parquets
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          gh release download mois-full93m-FCP-U100-nested5-20242-taxa-80968-rank2to5-source-v1 \
+            --repo "$REPO" --dir nested \
+            --pattern global_FCP_U100_depth5_source_receipt.json \
+            --pattern global_FCP_U100_incremental_rank2to5_candidates_NEED_DEDUP.csv.gz
+          echo '037e74dd236d04c44f0d84c7b9d0b3e436e72fe6ddd470cc315c1dc56b0e197f  nested/global_FCP_U100_depth5_source_receipt.json' | sha256sum -c -
+          echo 'e25ee074ca844ab0ec411991376ef9788625ed1d5f0b6355cde0be986fcffb13  nested/global_FCP_U100_incremental_rank2to5_candidates_NEED_DEDUP.csv.gz' | sha256sum -c -
+          gh release download mois-real-pixel-checkpoint-39969920310-v1 \
+            --repo "$REPO" --dir old/main \
+            --pattern combined_actual_photo_checkpoint.parquet --pattern checkpoint_receipt.json
+          gh release download mois-tier06-group00-first64bucket-warm-original-RGB-v1 \
+            --repo "$REPO" --dir old/group00 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-tier06-all16-first4bucket-broad-warm-original-RGB-v1 \
+            --repo "$REPO" --dir old/r1 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-tier06-all16-buckets004to011-broad-warm-original-RGB-v1 \
+            --repo "$REPO" --dir old/r2 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-full93m-tier06-balanced-onephoto-K1-new-original-warm8-RGB-v1 \
+            --repo "$REPO" --dir real-K1 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          echo '0d3de3374a06b1e7b9ad0281e2ab7844632ed139db871488524061191c8f34c1  real-K1/measured_photos.parquet' | sha256sum -c -
+          gh release download mois-full93m-FCP-U100-depth1-only3141-new-original-RGB-v1 \
+            --repo "$REPO" --dir real-FCP \
+            --pattern new_FCP_depth1_original_photo_ROIs.parquet --pattern receipt.json
+          echo 'ee79c60671dda65a3d2f4f9319af952dbe81ab805ce269fe32b3bb3448b0d6b8  real-FCP/new_FCP_depth1_original_photo_ROIs.parquet' | sha256sum -c -
+      - name: Freeze ONLY never-attempted FCP ranks2..5 source images and source-probability SHA
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_fcp_u100_depth5_new_original_photo_queue \
+            --global-gz nested/global_FCP_U100_incremental_rank2to5_candidates_NEED_DEDUP.csv.gz \
+            --global-receipt nested/global_FCP_U100_depth5_source_receipt.json \
+            --historical old --k1 real-K1 --fcp real-FCP --output new-source
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('new-source/manifest.json').read_text())
+          assert d['schema']=='mois_FCP_U100_rank2to5_new_original_photo_pixels_after_all_prior_ID_dedup_v1'
+          assert d['new_rank2to5_source_photo_candidates']==80968
+          assert d['old_existing_global_real_original_photo_attempts']==1009032
+          assert d['new_original_photo_IDs_selected_never_previously_measured']>0
+          assert d['new_original_photo_IDs_selected_never_previously_measured'] + \
+            d['original_photo_IDs_with_existing_ROI_reused'] + \
+            d['original_photo_unsupported_formats_technical_unknown']==80968
+          assert d['source_U100_incremental_rank2to5_photo_probability_is_4_over_N_over_M']
+          assert d['source_photo_sample_decided_without_photo_pixels_or_colour']
+          assert d['new_four_hue_ROIs_inferred_by_this_source_process']==0
+          print('MOIS_FCP_U100_NEW_RANKS2TO5_S3_FREE_SOURCE_QUEUE_FROZEN',json.dumps(
+              dict(next_original_photo_targets=d['new_original_photo_IDs_selected_never_previously_measured'],
+                   already_attempted_reused=d['original_photo_IDs_with_existing_ROI_reused'],
+                   technical_unsupported=d['original_photo_unsupported_formats_technical_unknown'],
+                   work_units=d['number_original_photo_work_units']),sort_keys=True),flush=True)
+          PY
+          tar -cf frozen-shards.tar -C new-source shards/
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          d=json.loads(Path('new-source/manifest.json').read_text())
+          p=Path('frozen-shards.tar')
+          proof={'schema':'mois_original_FCP_depth5_new_ROI_source_tar_SHA_receipt_v1',
+                 'photo_shard_tar_sha256':hashlib.sha256(p.read_bytes()).hexdigest(),
+                 'shards':len(d['worker_photo_shard_SHA256']),
+                 'new_source_photos':d['new_original_photo_IDs_selected_never_previously_measured'],
+                 'image_bytes_downloaded_in_this_source_stage':0}
+          Path('new-source/source_tar_receipt.json').write_text(json.dumps(proof,sort_keys=True,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-fcp-U100-nested5-real-new-80k-candidates-deduped-photo-queue
+          path: |
+            new-source/*.json
+            new-source/*.csv
+            frozen-shards.tar
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish original-image SOURCE ONLY, keep future full ROI pixels separate
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$TAG" --repo "$REPO" --dir prior --pattern manifest.json
+            cmp prior/manifest.json new-source/manifest.json
+          else
+            gh release create "$TAG" new-source/manifest.json \
+              new-source/source_tar_receipt.json \
+              new-source/previous_original_image_photo_ID_reuse.csv \
+              new-source/unsupported_original_image_source_unknown.csv \
+              new-source/source_real_1009032_photo_ID_prior_audit.json \
+              frozen-shards.tar \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS FCP-U100 depth5 only truly NEW original-image ROI targets after 1009032 real previous photo ID reuse' \
+              --notes 'Verified 80968 nested original rank2to5 independently observed photo candidates across 20242 U100-eligible taxa. Fully deduplicated exact source photo IDs against 929138 historical, 76753 K1 and 3141 FCP genuinely completed original pixels. Images already measured are saved as reuse with existing hue/unknowns, never fetched or classified twice. Remaining supported NEVER measured photo IDs in 256-photo source packets retain their correct 4/N_taxon/M_original_obs selection propensity; cumulative first5 prefix5 is 5/N/M. Unsupported image formats remain nonwhite technical unknowns. No raw source image downloads, model inference, wild/native blooming verification or global flora white prevalence estimation was done in this SOURCE-ONLY stage.'
+          fi
