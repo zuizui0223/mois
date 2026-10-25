@@ -170,7 +170,7 @@ class OriginalMediumPixelScanTests(unittest.TestCase):
                         photo_license="cc-by",image_extension="png",tier="0")
             extra.append(base)
         with gzip.open(self.source,"wt",newline="") as f:
-            w=csv.DictWriter(f,fieldnames=COLUMNS,lineterminator="\\n")
+            w=csv.DictWriter(f,fieldnames=COLUMNS,lineterminator="\n")
             w.writeheader();w.writerows(extra)
         class Detector:
             def __init__(self): self.calls=0
