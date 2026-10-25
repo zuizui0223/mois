@@ -94,6 +94,18 @@ class OriginalMediumPixelScanTests(unittest.TestCase):
         self.assertEqual(doc["actual_unique_source_photo_ids_attempted"], 2)
         self.assertFalse((self.output / "complete_receipt.json").exists())
 
+    def test_provider_backpressure_aborts_without_sealing_packet(self):
+        def throttled(_url):
+            raise scan.ProviderBackpressure("simulated provider HTTP 429")
+        with self.assertRaisesRegex(scan.ProviderBackpressure, "429"):
+            scan.scan_source(
+                self.source, self.output,
+                expected_source_sha256=scan.sha_file(self.source),
+                expected_count=4, part=0, tier=0,
+                detector=None, download=throttled, batch_size=4, workers=2)
+        self.assertFalse((self.output / "packet-0000000.receipt.json").exists())
+        self.assertFalse((self.output / "complete_receipt.json").exists())
+
     def test_bad_source_sha_and_malformed_photo_fail_closed(self):
         with self.assertRaisesRegex(ValueError, "SHA changed"):
             scan.scan_source(self.source, self.output,
@@ -145,6 +157,7 @@ class CompleteUniverseManifestTests(unittest.TestCase):
         self.assertEqual(out["all_disjoint_scan_jobs_including_empty"], 4)
         self.assertEqual(out["source_original_photo_ID_count"], 4)
         self.assertEqual(out["actual_images_downloaded_or_scanned"], 0)
+        self.assertEqual(len(out["signed_group_receipts_sha256"]), 1)
         self.assertFalse(out["scan_complete"])
         with (self.output / "all_original_photos_stage1_jobs.csv").open() as f:
             rows = list(csv.DictReader(f))
