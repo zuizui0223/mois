@@ -180,6 +180,30 @@ class FCP5FinishedGroupOriginalPhotoUnitTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"Incomplete or duplicate"):
             self.run_seal()
 
+    def test_released_finished_group_retries_transient_403_then_verifies_all_asset_SHAs(self):
+        # The signed source pixels/terminal are produced once. If GitHub
+        # release publishing briefly returns HTTP 403, retry metadata only,
+        # and refuse partially created or mismatched immutable assets.
+        import yaml
+        workflow=(Path(__file__).resolve().parents[1] / ".github/workflows" /
+                  "mois-fcp-u100-nested5-34898-append-finished-original-photo-groups.yml")
+        flow=yaml.safe_load(workflow.read_text(encoding="utf-8"))
+        step=next(x for x in flow["jobs"]["seal"]["steps"]
+                  if x.get("name","").startswith("Publish immutable signed original"))
+        run=step["run"]
+        self.assertIn("for attempt in 1 2 3; do",run)
+        self.assertIn("gh release create \"$TAG\"",run)
+        self.assertIn("gh api \"repos/$REPO/releases/tags/$TAG\"",run)
+        self.assertIn("'original_group_receipt.json'",run)
+        self.assertIn("'original_photo_ROIs.parquet'",run)
+        self.assertIn("'original_photo_hue_counts.csv'",run)
+        self.assertIn("'original_photo_source_coverage.json'",run)
+        self.assertIn("hashlib.sha256(source.read_bytes()).hexdigest()",run)
+        self.assertIn("asset['digest']==digest",run)
+        self.assertIn("asset['size']==source.stat().st_size",run)
+        self.assertIn("Missing, duplicated or extra FCP5 original ROI release asset",run)
+        self.assertIn("source_pixels_re_downloaded_or_re_inferred",run)
+
     def test_immutable_original_photo_group_no_overwrite(self):
         self.run_seal()
         with self.assertRaisesRegex(ValueError,"Never replace immutable"):
