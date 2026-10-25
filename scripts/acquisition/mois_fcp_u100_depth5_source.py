@@ -104,8 +104,8 @@ def source_row(row, rank, first_photo):
         parent_original_photo_U100_source_arm=PARENT_ARM,
         independent_accepted_species_and_native_stage_verified="false",
     )
-    require(tuple(out)==FIELDS, "Nested full93m FCP source photo field schema drift")
-    return out
+    require(set(out)==set(FIELDS), "Nested full93m FCP source photo field schema drift")
+    return {key:out[key] for key in FIELDS}
 
 
 def freeze_group(source_csv, source_receipt, global_receipt, output, group, *,
