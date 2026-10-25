@@ -326,7 +326,8 @@ def scan_source(source, output, *, expected_source_sha256,
         download = lambda url: download_medium(url, pace)
     stats = Counter()
     first = last = None
-    completed_packets = decoded_count = 0
+    completed_packets = decoded_count = payload_bytes = 0
+    measured_packet_wall_seconds = 0.0
     model_identity = (
         "pixel_only_pilot" if detector is None else
         "yolo11:" + detector.model_sha + ":" +
@@ -379,6 +380,9 @@ def scan_source(source, output, *, expected_source_sha256,
                     "screen_counts": counts,
                     "medium_image_pixels_attempted": len(result),
                     "medium_image_pixels_decoded": sum(bool(r["image_pixel_sha256"]) for r in result),
+                    "medium_image_bytes_downloaded": sum(
+                        int(r["downloaded_bytes"]) for r in result
+                        if r["downloaded_bytes"].isdecimal()),
                     "flower_stage_ground_truth_verified": False,
                     "box_colour_proxy_not_verified_flower_petals": True,
                     "screen_negative_is_not_botanical_absence": True,
@@ -391,6 +395,8 @@ def scan_source(source, output, *, expected_source_sha256,
                 os.replace(temporary, receipt_path)
             stats.update(counts)
             decoded_count += int(proof["medium_image_pixels_decoded"])
+            payload_bytes += int(proof["medium_image_bytes_downloaded"])
+            measured_packet_wall_seconds += float(proof["packet_wall_seconds"])
             completed_packets += 1
             first = ids[0] if first is None else first
             last = ids[-1]
@@ -410,6 +416,11 @@ def scan_source(source, output, *, expected_source_sha256,
         "detector_identity": model_identity,
         "medium_image_pixels_decoded": decoded_count,
         "medium_image_pixels_unavailable": total - decoded_count,
+        "medium_image_payload_bytes_downloaded": payload_bytes,
+        "aggregate_packet_work_seconds": round(measured_packet_wall_seconds, 3),
+        "images_per_worker_wall_second_if_sequential": (
+            round(total / measured_packet_wall_seconds, 4)
+            if measured_packet_wall_seconds > 0 else None),
         "all_original_input_photos_attempted": full,
         "screening_only_not_verified_flower_colour": True,
         "input_is_disjoint_upstream_by_photo_id": True,
