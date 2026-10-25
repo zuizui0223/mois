@@ -152,6 +152,67 @@ def source_prior_dedup_receipt(info):
     exclusions and independent technical benchmark exclusions before pixels.
     Only *that* known signed input layout is permitted as a compatibility path.
     """
+    # The 2026-10-24 full K1 75-group model run completed all 76,753
+    # ORIGINAL photo terminals, but the old collector only recognized the
+    # unrelated tier06 'bucket0' source layout.  This explicit, SHA-bound
+    # compatibility path preserves genuine pre-colour K1 prior photo reuse
+    # and observation/technical-holdout design without synthesizing counts.
+    if info.get("source_group")=="balanced_taxon_month_lat_K1":
+        from scripts.acquisition.mois_fcp_k1_append_completed_original_photo_group import (
+            PARENT_SOURCE_SHA, SOURCE_ARM, SOURCE_PLANNED,
+            SELECTED_SOURCE_OBSERVATIONS, REUSED_OLD_ORIGINALS,
+        )
+        previous=info.get("prior_original_crossarm_photo_overlap")
+        technical=info.get("technical_holdout_images_not_redownloaded")
+        unsupported=info.get("unsupported_original_formats_technical_unknown")
+        require(
+            info.get("schema")==SCHEMA
+            and info.get("source_tier")==6
+            and info.get("source_arm")==SOURCE_ARM
+            and info.get("full_frame_photo_ids")==93_209_351
+            and info.get("source_precolour_balanced_manifest_SHA256")==PARENT_SOURCE_SHA
+            and info.get("new_photo_attempts_planned")==SOURCE_PLANNED
+            and info.get("all_balanced_selected_original_observations")==
+                SELECTED_SOURCE_OBSERVATIONS
+            and info.get("reused_original_photo_ids")==REUSED_OLD_ORIGINALS
+            and type(technical) is int and technical>=0
+            and type(unsupported) is int and unsupported>=0
+            and SOURCE_PLANNED+REUSED_OLD_ORIGINALS+technical+unsupported==
+                SELECTED_SOURCE_OBSERVATIONS
+            and isinstance(previous,dict)
+            and previous.get("unique_old_photo_IDs")==929_138
+            and previous.get("signed_arm_photo_rows")==929_138
+            and isinstance(info.get("prior_original_pixel_arms"),list)
+            and len(info["prior_original_pixel_arms"])==4
+            and info.get("selection_probability") is None
+            and info.get("sampling_nested_joint_probability_per_photo") is True
+            and info.get("original_photo_source_probabilities_unchanged_by_prior_pixel_reuse") is True
+            and info.get("known_previous_full_photo_and_observation_IDs_source_SHA_verified") is True
+            and info.get("previously_counted_photo_ID_duplicates_are_NOT_new_inferences") is True
+            and info.get("all_original_photo_ids_in_master_probability_frame_preserved") is True
+            and info.get("technical_unknown_not_other_colour") is True
+            and info.get("colour_measured") is False
+            and info.get("images_downloaded_by_this_source_bridge")==0
+            and info.get("new_colour_ROIs_inferred_by_this_source_bridge")==0
+            and info.get("photo_specific_anthesis_native_wild_not_independently_reviewed") is True,
+            "K1 source photo-ID-only vs reused-observation joint-selection denominator changed")
+        return {
+            "matching_prior_measured_photos_reused":REUSED_OLD_ORIGINALS,
+            "source_deduplication_reporting_grain":
+                "exact_original_photo_ID_reuse; source_observation_sampling_unchanged",
+            "independent_original_observation_photo_targets":
+                SELECTED_SOURCE_OBSERVATIONS,
+            "new_original_photo_IDs_measured":SOURCE_PLANNED,
+            "prior_original_photo_IDs_reused_without_new_inference":
+                REUSED_OLD_ORIGINALS,
+            "technical_photo_ID_holdouts_not_redownloaded":technical,
+            "unsupported_original_image_formats_excluded":unsupported,
+            "historical_unique_source_photo_IDs_unchanged":929_138,
+            "K1_original_joint_photo_selection_probability_per_individual_photo":True,
+            "historical_source_photo_ID_disjointness_preverified":True,
+            "botanical_flower_native_status_unreviewed":True,
+            "source_precolour_photo_dispositions_reconciled":True,
+        }
     existing=info.get("previously_measured_photo_ids_skipped")
     if existing is not None:
         require(type(existing) is int and existing>=0,
