@@ -90,7 +90,7 @@ def global_source(folders, first1, output, *,
                 and receipt.get("nested_original_photo_depth5_source_arm")==ARM
                 and receipt.get("global_source_original_photo_IDs_metadata_only")==EXPECTED_PHOTOS
                 and receipt.get("global_nominal_source_taxa")==EXPECTED_TAXA
-                and receipt.get("global_U100_source_eligible_taxa")==expected_eligible
+                and receipt.get("global_U100_eligible_taxa")==expected_eligible
                 and receipt.get("source_group_original_photo_IDs_distinct") is True
                 and receipt.get("source_group_original_observations_distinct") is True
                 and receipt.get("source_group_candidate_photo_rank_unchanged") is True
