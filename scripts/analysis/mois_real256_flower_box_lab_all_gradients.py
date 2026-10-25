@@ -23,7 +23,7 @@ from scripts.analysis.mois_real1043930_global_zonal_colour import (
 SCHEMA="mois_real_K1_256_251_flower_box_CIELAB_all_ecological_axes_source_diagnostic_v1"
 N=256
 CANDIDATE=251
-SOURCE_SHA="b4233c7818a6e67934fc7375ca3ddb110f79b7180d0f7e0adcb408b02d70c5c"
+SOURCE_SHA="b4233c7818a56e67934fc7375ca3ddb110f79b7180d0f7e0adcb408b02d70c5c"
 LAB_PROTOCOL="mois_flower_box_srgb_cielab_mode_v1"
 LAB_FIELDS=(
     "floral_box_main_L_star",
