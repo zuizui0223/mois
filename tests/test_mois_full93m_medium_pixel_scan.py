@@ -132,6 +132,25 @@ class OriginalMediumPixelScanTests(unittest.TestCase):
                 detector=None, download=lambda url: self.photo, batch_size=4,
                 workers=1)
 
+    def test_provider_403_429_503_immediately_stop_all_future_image_attempts(self):
+        import urllib.error
+        from unittest.mock import patch
+        for code in (403,429,503):
+            with self.subTest(http_status=code):
+                forbidden=urllib.error.HTTPError("https://example.test/f.jpg",
+                                                 code,"provider limited",{},None)
+                with patch("urllib.request.urlopen",side_effect=forbidden):
+                    with self.assertRaisesRegex(scan.ProviderBackpressure,
+                                                "HTTP "+str(code)):
+                        scan.download_medium("https://example.test/f.jpg",
+                                             scan.Pacer(1000),retries=0)
+        missing=urllib.error.HTTPError("https://example.test/f.jpg",
+                                      404,"gone",{},None)
+        with patch("urllib.request.urlopen",side_effect=missing):
+            with self.assertRaisesRegex(RuntimeError,"image_access_failed"):
+                scan.download_medium("https://example.test/f.jpg",
+                                     scan.Pacer(1000),retries=0)
+
     def test_chunk_cannot_masquerade_as_full_source_without_parent_sha(self):
         with self.assertRaisesRegex(ValueError, "signed original parent"):
             scan.scan_source(
