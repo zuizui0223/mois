@@ -1,0 +1,157 @@
+name: MOIS reusable bounded genuine full93m medium photo group scanner
+on:
+  push:
+    branches:
+      - feat/full93m-medium-pixel-firstpass
+    paths:
+      - analysis_specs/mois_full93m_next_bounded_medium_photo_group.json
+      - .github/workflows/mois-full93m-next-bounded-medium-group.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-all93m-bounded-new-original-medium-image-run
+  cancel-in-progress: false
+jobs:
+  signed-genuine-medium-photo-group:
+    if: github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[bounded1074]'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 23
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      ULTRALYTICS_OFFLINE: 'True'
+      CONFIG: analysis_specs/mois_full93m_next_bounded_medium_photo_group.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate one bounded source group and original image resource policy
+        id: plan
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os
+          c=json.load(open(os.environ['CONFIG']))
+          assert c['schema']=='mois_full93m_one_bounded_actual_medium_pixel_source_group_v1'
+          assert c['full_original_photo_ids']==93209351
+          assert 0<=c['tier']<14 and 0<=c['group']<16
+          assert 1<=c['expected_source_photo_ids']<=c['max_real_image_attempts_this_run']<=1200
+          assert 0<c['provider_medium_requests_per_second']<=3.0
+          assert 1<=c['bounded_parallel_downloads']<=12
+          assert c['frozen_yolo_class_id']==0 and c['frozen_yolo_class_name']=='item'
+          assert c['frozen_yolo_original_weight_sha256']=='f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5'
+          assert c['requires_source_group_sha_and_original_photo_count'] is True
+          assert c['no_photographic_native_or_taxon_exclusions'] is True
+          assert c['original_pixels_reprocessed_from_previous_source'] is False
+          assert c['full_93m_census_complete'] is False
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output:
+              for key,value in [('tier',c['tier']),('group',c['group']),
+                  ('expected',c['expected_source_photo_ids']),
+                  ('max',c['max_real_image_attempts_this_run']),
+                  ('rps',c['provider_medium_requests_per_second']),
+                  ('workers',c['bounded_parallel_downloads']),
+                  ('weight_sha',c['frozen_yolo_original_weight_sha256'])]:
+                  output.write(f'{key}={value}\n')
+          print('MOIS_93M_BOUND_NEW_REAL_IMAGE_SCAN_POLICY',c,flush=True)
+          PY
+      - name: Install one unchanged original FCP YOLO model and image decoder
+        run: |
+          set -euo pipefail
+          python -m pip install -q Pillow==11.3.0 numpy==2.1.3 ultralytics==8.4.112
+          python -m py_compile scripts/acquisition/mois_full93m_signed_tier_group_warm_scan.py
+      - name: Fetch only EXACT tier group source files from already published 93m metadata, no image pixels yet
+        env:
+          TIER: ${{ steps.plan.outputs.tier }}
+          GROUP: ${{ steps.plan.outputs.group }}
+        run: |
+          set -euo pipefail
+          mkdir -p signed weights
+          tier=$(printf '%02d' "$TIER")
+          group=$(printf '%02d' "$GROUP")
+          gh release download mois-complete-93209351-original-photo-target-tiers-v1 \
+            --repo zuizui0223/mois --dir signed \
+            --pattern "tier-$tier-group-$group.tar" \
+            --pattern "group-$group-receipt.json" \
+            --pattern mois_all_original_photo_target_tiers_receipt.json
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          t=int(os.environ['TIER']);g=int(os.environ['GROUP'])
+          r=json.loads(Path('signed/mois_all_original_photo_target_tiers_receipt.json').read_text())
+          p=json.loads(Path(f'signed/group-{g:02d}-receipt.json').read_text())
+          assert r['exact_original_photo_IDs_in_all_disjoint_tiers']==93209351
+          assert p['source_snapshot_SHA256']==r['full_source_manifest_sha256']
+          assert int(p['counts_by_disjoint_tier'][str(t)])==1074
+          assert len(p['parts'])==8
+          print('MOIS_FROZEN_GROUP_SOURCE_BYTES_METADATA_MATCH',t,g,os.environ['EXPECTED'])
+          PY
+        # Export expected count only inside this step; env references the signed plan.
+      - name: Reuse frozen FCP YOLO11 weight SHA rather than downloading unverified detector
+        env:
+          WEIGHT_SHA: ${{ steps.plan.outputs.weight_sha }}
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp-model"
+          git -C "$RUNNER_TEMP/fcp-model" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp-model" fetch --no-tags --depth=1 origin 9fae6ccdf684a46026f72ba12e98de2c5c54bf2a
+          git -C "$RUNNER_TEMP/fcp-model" show FETCH_HEAD:data/atlas/qualification/roi_v4_training/jrc_yolo11n_last_v4.pt > weights/jrc_yolo11n_last_v4.pt
+          echo "$WEIGHT_SHA  weights/jrc_yolo11n_last_v4.pt" | sha256sum -c -
+      - name: Actually scan ALL source photos in this one bounded group using 500px YOLO warm inference
+        env:
+          TIER: ${{ steps.plan.outputs.tier }}
+          GROUP: ${{ steps.plan.outputs.group }}
+          PHOTO_CAP: ${{ steps.plan.outputs.max }}
+          RPS: ${{ steps.plan.outputs.rps }}
+          WORKERS: ${{ steps.plan.outputs.workers }}
+          WEIGHT_SHA: ${{ steps.plan.outputs.weight_sha }}
+        run: |
+          set -euo pipefail
+          tier=$(printf '%02d' "$TIER")
+          group=$(printf '%02d' "$GROUP")
+          python -m scripts.acquisition.mois_full93m_signed_tier_group_warm_scan \
+            --registry signed/mois_all_original_photo_target_tiers_receipt.json \
+            --group-receipt "signed/group-$group-receipt.json" \
+            --archive "signed/tier-$tier-group-$group.tar" \
+            --tier "$TIER" --group "$GROUP" \
+            --max-photo-ids "$PHOTO_CAP" \
+            --weights weights/jrc_yolo11n_last_v4.pt \
+            --weight-sha256 "$WEIGHT_SHA" \
+            --workers "$WORKERS" --requests-per-second "$RPS" \
+            --device cpu --output complete_bounded_source_group
+      - name: Independently check exact source original photo count and group statuses
+        env:
+          TIER: ${{ steps.plan.outputs.tier }}
+          GROUP: ${{ steps.plan.outputs.group }}
+          EXPECTED: ${{ steps.plan.outputs.expected }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path('complete_bounded_source_group')
+          d=json.loads((root/'whole_group_receipt.json').read_text())
+          expected=int(os.environ['EXPECTED'])
+          assert d['source_group_tier']==int(os.environ['TIER'])
+          assert d['source_group']==int(os.environ['GROUP'])
+          assert d['actual_real_photo_stage1_completed_in_group']==expected
+          assert d['new_original_medium_pixel_attempts_in_this_run']==expected
+          assert d['previous_same_full_photo_model_photo_ids_reused_without_redownload']==0
+          assert d['stage1_candidate_photos']+d['stage1_negative_photos_NOT_removed']+d['stage1_uncertain']+d['stage1_error']==expected
+          assert d['frozen_yolo_one_warm_model_initialization']==1
+          assert len(list(root.glob('part-*/complete_receipt.json')))==8
+          assert d['no_hue_label_imputed_or_source_rois_relabelled'] is True
+          assert d['source_complete_93m'] is False
+          print('MOIS_SOURCE_REAL_NEW_GROUP_IMAGES_STG1_COMPLETE',json.dumps(d,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-source-93m-next-bounded-genuine-medium-photo-YOLO-results
+          path: complete_bounded_source_group/
+          retention-days: 90
+          if-no-files-found: warn
