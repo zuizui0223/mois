@@ -20,7 +20,7 @@ class NestedFiveNewOriginalPixelQueue(unittest.TestCase):
         self.receipt=self.root/"source.json"
         self.output=self.root/"output"
         self.already={
-            "1002":("old","OLDOBS2","mixed_uncertain","unclassified",""),
+            "1002":("old","OBS-2","mixed_uncertain","unclassified",""),
         }
         self.rows=[]
         for rank in range(2,6):
