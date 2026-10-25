@@ -149,6 +149,62 @@ class TestFCP5OriginalPhotoPartialCumulative(unittest.TestCase):
         self.assertIn('gh release create "$SIGNED_OUTPUT_TAG"',block)
         self.assertNotIn("stream.write('SIGNED_OUTPUT_TAG='+tag",block)
 
+    def test_fast_idle_cumulative_original_photo_gate_and_fresh_real_worker(self):
+        # Execute the *actual* workflow embedded Python against synthetic
+        # GitHub worker/release metadata. A completed SHA-signed 10-group
+        # cumulative requires no 3000-release walk; two newly finished model
+        # groups must instead proceed to the authentic full release scan.
+        import os
+        import re
+        import subprocess
+        import sys
+        import yaml
+        workflow=(Path(__file__).resolve().parents[1]/".github/workflows"/
+                  "mois-fcp-u100-nested5-fast-cumulative-original-photo-totals.yml")
+        cfg=yaml.safe_load(workflow.read_text(encoding="utf-8"))
+        block=next(step["run"] for step in cfg["jobs"]["inspect"]["steps"]
+                   if step.get("id")=="scan")
+        self.assertIn("FCP5-worker-jobs.json",block)
+        self.assertIn("FCP5-recent-release-tags.txt",block)
+        self.assertIn("FCP5-fast-idle-state",block)
+        self.assertIn("MOIS_FCP5_FAST_IDLE_NO_NEW_SOURCE_PIXELS",block)
+        self.assertIn("gh api --paginate",block)
+        self.assertLess(block.index("FCP5-fast-idle-state"),
+                        block.index("gh api --paginate"))
+        snippets=re.findall(r"python - <<'PY'\n(.*?)\nPY",block,re.S)
+        self.assertGreaterEqual(len(snippets),2)
+        first=snippets[0]
+        def fixture(success,latest=None):
+            with TemporaryDirectory() as folder:
+                path=Path(folder)
+                jobs={"jobs":[{"name":f"worker ({i})","conclusion":"success"}
+                              for i in range(success)]}
+                (path/"FCP5-worker-jobs.json").write_text(json.dumps(jobs))
+                text=(f'mois-FCP5-source-signed-new-original-ROI-{latest}groups-'
+                      + "a"*16+"-v1\n") if latest is not None else ""
+                (path/"FCP5-recent-release-tags.txt").write_text(text)
+                out=path/"GITHUB_OUTPUT"
+                proc=subprocess.run([sys.executable,"-c",first],
+                    cwd=path,text=True,capture_output=True,
+                    env={**os.environ,"GITHUB_OUTPUT":str(out)})
+                return (proc,out.read_text() if out.exists() else "",
+                        (path/"FCP5-fast-idle-state").is_file())
+        result,output,marker=fixture(10,10)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertTrue(marker)
+        self.assertIn("ready=false",output)
+        result,output,marker=fixture(10,8)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertFalse(marker)
+        self.assertIn("REAL_NEW_ORIGINAL_WORK_REQUIRES",result.stdout)
+        result,_,marker=fixture(8,10)
+        self.assertNotEqual(result.returncode,0)
+        self.assertFalse(marker)
+        result,output,marker=fixture(0)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertTrue(marker)
+        self.assertIn("ready=false",output)
+
     def test_cumulative_artifacts_are_content_deterministic_and_immutable(self):
         self.group(0)
         first=self.accumulate()
