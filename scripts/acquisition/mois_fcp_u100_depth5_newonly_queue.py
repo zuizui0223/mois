@@ -137,6 +137,7 @@ def reconcile(prefix5,delta,receipt_path,known,output, *,
             "Genuine prior original image pixels missing from source reuse gate")
 
     source_rows={}
+    per_taxon={}
     ranks=Counter()
     first1=set()
     seen_obs=set()
@@ -171,6 +172,7 @@ def reconcile(prefix5,delta,receipt_path,known,output, *,
                 require(pid in known,"Already measured FCP U100 first photo unexpectedly unavailable")
                 first1.add(taxon)
             source_rows[pid]=r
+            per_taxon.setdefault(taxon,[]).append(r)
             ranks[taxon]+=1
             seen_obs.add(obs)
     require(len(source_rows)==expected_first5 and len(ranks)==expected_taxa
@@ -191,6 +193,7 @@ def reconcile(prefix5,delta,receipt_path,known,output, *,
             original_delta[pid]=row
     require(len(original_delta)==expected_delta and len(set(original_delta))==expected_delta,
             "Expected complete candidate source ranks2to5 for 20242 taxa")
+    output.parent.mkdir(parents=True,exist_ok=True)
     staged=Path(tempfile.mkdtemp(prefix="mois-fcp-depth5-onlynew-",dir=output.parent))
     try:
         decisions=staged/"original_FCP5_all_first5_photo_reuse_and_new_dispositions.csv.gz"
@@ -204,8 +207,8 @@ def reconcile(prefix5,delta,receipt_path,known,output, *,
                     writer=csv.DictWriter(f,fieldnames=DECISION_FIELDS,lineterminator="\n")
                     writer.writeheader()
                     for taxon in sorted(ranks,key=int):
-                        group=[z for z in source_rows.values() if z["inat_taxon_id"]==taxon]
-                        group.sort(key=lambda row:int(row["U100_source_original_observation_rank"]))
+                        group=sorted(per_taxon[taxon],
+                            key=lambda row:int(row["U100_source_original_observation_rank"]))
                         # Every original observation remains in its hash-ranked
                         # source position; no replacing unknown images with bloom photos.
                         first=group[0]["photo_id"]
@@ -226,8 +229,10 @@ def reconcile(prefix5,delta,receipt_path,known,output, *,
                                 action="original_photo_unsupported_extension_unknown"
                                 unsupported.append(row)
                             else:
-                                require(bool(row["photo_url_large"])
-                                        and row["original_image_extension"] in ("jpg","jpeg","png"),
+                                from scripts.acquisition.mois_onepass_full93m_target_tiers import normalized_extension
+                                ext=normalized_extension(row["original_image_extension"])
+                                require(ext is not None and row["photo_url_large"]==
+                                        f"https://inaturalist-open-data.s3.amazonaws.com/photos/{pid}/large.{ext}",
                                         "Previously unmeasured original image lacks immutable S3 source")
                                 action="new_original_photo_ROI_to_infer"
                                 fresh.append(row)
