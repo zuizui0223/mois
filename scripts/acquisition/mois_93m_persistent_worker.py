@@ -244,7 +244,7 @@ def inspect_completed_chunk(sub, source_root, source_receipt, chunk_index,
 def execute(root_paths,output,*,weights,weight_sha,slot=0,slots=1,
             approved_aggregate_rps,download_workers=12,batch_size=512,
             max_chunks=None,device="cpu",detector=None,downloader=None,
-            prefetch_next_packet=False):
+            prefetch_next_packet=False,feature_mode="legacy_hsv"):
     """Process many source chunks in one model/network process.
 
     The aggregate limit is divided across exactly `slots` planned workers.
@@ -290,7 +290,8 @@ def execute(root_paths,output,*,weights,weight_sha,slot=0,slots=1,
                     r=scan_chunk(root,sub,idx,detector=detector,
                                  download=downloader,workers=download_workers,
                                  batch_size=batch_size,io_executor=executor,
-                                 prefetch_next_packet=prefetch_next_packet)
+                                 prefetch_next_packet=prefetch_next_packet,
+                             feature_mode=feature_mode)
                 require(r["source_chunk_all_photo_ids_scanned"] is True
                         and r["actual_new_or_resumed_medium_photo_attempts"]==expected,
                         "Missing actual source photo pixels in completed chunk")
@@ -326,6 +327,7 @@ def execute(root_paths,output,*,weights,weight_sha,slot=0,slots=1,
                         "original_roi_classifications_changed":False,
                         "raw_source_images_written_to_output":False,
                         "next_packet_transfer_overlapped_with_yolo":prefetch_next_packet,
+                        "colour_feature_mode":feature_mode,
                         "elapsed_process_seconds":round(time.monotonic()-start,3),
                     }
                     tmp=output/(f"slot-{slot:04d}-status.json.partial")
@@ -352,6 +354,9 @@ def main():
     a.add_argument("--batch-size",type=int,default=512)
     a.add_argument("--max-chunks",type=int)
     a.add_argument("--device",default="cpu")
+    a.add_argument("--colour-feature-mode",default="legacy_hsv",
+                   choices=("legacy_hsv","floral_box_lab_v2"),
+                   help="Use sRGB CIELAB floral-box major-colour descriptor in same photo pass")
     a.add_argument("--overlap-next-packet",action="store_true",
                    help="Prefetch next <=256 photo packet while detecting current; bounded RAM")
     a.add_argument("--execute",action="store_true",
@@ -375,7 +380,8 @@ def main():
             approved_aggregate_rps=x.approved_aggregate_rps,
             download_workers=x.download_workers,batch_size=x.batch_size,
             max_chunks=x.max_chunks,device=x.device,
-            prefetch_next_packet=x.overlap_next_packet)
+            prefetch_next_packet=x.overlap_next_packet,
+            feature_mode=x.colour_feature_mode)
 
 if __name__=="__main__":
     main()
