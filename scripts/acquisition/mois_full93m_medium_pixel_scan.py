@@ -124,12 +124,13 @@ def download_medium(url, pacer, *, timeout=20, retries=2,
                 TimeoutError, OSError, ValueError) as exc:
             last = exc
             status = getattr(exc, "code", None)
-            if status == 429:
+            if status in (403, 429, 503):
                 raise ProviderBackpressure(
-                    "HTTP 429 from Open Data S3: suspend shard and lower "
-                    "the CLUSTER-WIDE rate, do not retry each photo") from exc
-            # Do not retry permanent 4xx; halt on provider 429.
-            if status in (400, 401, 403, 404, 410, 451):
+                    f"HTTP {status} from Open Data S3: stop this shard "
+                    "and diagnose provider access / global request rate "
+                    "before more photographs are attempted") from exc
+            # 404/410 object deletions stay explicit errors, not fake flower negatives.
+            if status in (400, 401, 404, 410, 451):
                 break
             if attempt < retries:
                 time.sleep(min(15, 2 ** attempt))
