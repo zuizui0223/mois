@@ -368,7 +368,8 @@ def scan_source(source, output, *, expected_source_sha256,
                         and proof.get("last_photo_id") == ids[-1]
                         and proof.get("source_part") == part
                         and proof.get("source_tier") == tier
-                        and proof.get("detector_identity") == model_identity,
+                        and proof.get("detector_identity") == model_identity
+                        and proof.get("source_role") == source_role,
                         "Cannot resume a packet with different source identity")
                 counts = proof["screen_counts"]
             else:
@@ -385,6 +386,7 @@ def scan_source(source, output, *, expected_source_sha256,
                     "first_photo_id": ids[0], "last_photo_id": ids[-1],
                     "photo_ids": len(result), "source_part": part, "source_tier": tier,
                     "detector_identity": model_identity,
+                    "source_role": source_role,
                     "screen_counts": counts,
                     "medium_image_pixels_attempted": len(result),
                     "medium_image_pixels_decoded": sum(bool(r["image_pixel_sha256"]) for r in result),
