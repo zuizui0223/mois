@@ -212,6 +212,7 @@ class OriginalMediumPixelScanTests(unittest.TestCase):
         self.assertEqual(len(got),32)
 
     def test_prefetch_requires_shared_pool_and_bounded_photo_packet(self):
+        from concurrent.futures import ThreadPoolExecutor
         with self.assertRaisesRegex(ValueError,"Prefetch must use"):
             scan.scan_source(
                 self.source,self.output,
