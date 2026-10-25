@@ -66,7 +66,7 @@ def run(photo,clim,geo,out):
   x=d[col].to_numpy(float)
   finite=np.isfinite(x)
   out_q=np.zeros(len(x),dtype=np.int8)
-  out_q[finite]=pd.qcut(x[finite],5,labels=False,duplicates="drop").astype(int).to_numpy()+1
+  out_q[finite]=np.asarray(pd.qcut(x[finite],5,labels=False,duplicates="drop"),dtype=np.int8)+1
   d[name]=np.where(out_q==0,"unknown",out_q.astype(str))
  # Elevation category must preserve invalid values distinctly.
  a=d.altitude.to_numpy(float)
