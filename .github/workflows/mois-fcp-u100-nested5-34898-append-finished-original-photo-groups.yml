@@ -74,12 +74,18 @@ jobs:
                   assert type(item.get('size_in_bytes')) is int and item['size_in_bytes']>0
                   verified[group]=item
           complete=successful & set(verified)
-          tags=set(subprocess.check_output([
-              'gh','api','--paginate','--jq','.[] | select(.draft == false) | .tag_name',
-              f'repos/{os.environ["REPO"]}/releases?per_page=100'
-          ],text=True).splitlines())
+          # Query only genuinely finished source-photo groups (max 35).
+          # Avoid paginating thousands of unrelated historical GitHub Releases
+          # every ten minutes.  The SHA-verifying sealer is still authoritative
+          # and rechecks any concurrently created immutable release.
           prefix='mois-FCP-U100-nested5-34898-original-ROI-append-group-'
-          pending=[n for n in sorted(complete) if f'{prefix}{n}-v1' not in tags]
+          def needs_archiving(group):
+              tag=f'{prefix}{group}-v1'
+              return subprocess.run(
+                  ['gh','release','view',tag,'--repo',os.environ['REPO']],
+                  stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,
+                  check=False).returncode!=0
+          pending=[n for n in sorted(complete) if needs_archiving(n)]
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
               f.write('ready='+str(bool(pending)).lower()+'\n')
               f.write('groups='+json.dumps(pending)+'\n')
