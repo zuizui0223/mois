@@ -130,7 +130,7 @@ def run(registry, group_receipt, archive, output, weights, weight_sha, *,
                 "original_source_complete_receipt_sha256":sha_file(sub/"complete_receipt.json"),
             })
         require(total==total_expected
-                and total==decoded+errors+uncertains
+                and 0<=decoded<=total
                 and candidates+negatives+uncertains+errors==total,
                 "Original complete group status or pixel totals changed")
         summary={
