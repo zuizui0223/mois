@@ -23,6 +23,9 @@ on:
       - tests/test_mois_93m_persistent_worker.py
       - scripts/acquisition/mois_93m_prepare_persistent_source.py
       - tests/test_mois_93m_prepare_persistent_source.py
+      - scripts/acquisition/mois_flower_box_lab_colour.py
+      - tests/test_mois_flower_box_lab_colour.py
+      - tests/test_mois_full93m_floral_lab_v2.py
       - .github/workflows/mois-full93m-stage1-offline-tests.yml
   pull_request:
     paths:
@@ -41,6 +44,9 @@ on:
       - tests/test_mois_93m_persistent_worker.py
       - scripts/acquisition/mois_93m_prepare_persistent_source.py
       - tests/test_mois_93m_prepare_persistent_source.py
+      - scripts/acquisition/mois_flower_box_lab_colour.py
+      - tests/test_mois_flower_box_lab_colour.py
+      - tests/test_mois_full93m_floral_lab_v2.py
       - .github/workflows/mois-full93m-stage1-offline-tests.yml
   workflow_dispatch:
 permissions:
@@ -67,7 +73,8 @@ jobs:
             scripts/acquisition/mois_full93m_warm_chunk_batch.py \
             scripts/acquisition/mois_full93m_4096_chunk_warm_job_plan.py \
             scripts/acquisition/mois_93m_persistent_worker.py \
-            scripts/acquisition/mois_93m_prepare_persistent_source.py
+            scripts/acquisition/mois_93m_prepare_persistent_source.py \
+            scripts/acquisition/mois_flower_box_lab_colour.py
           python -m unittest discover -s tests \
             -p test_mois_full93m_medium_pixel_scan.py -v
           python -m unittest discover -s tests -p test_mois_medium_stage1_to_stage2_shadow.py -v
@@ -77,6 +84,8 @@ jobs:
           python -m unittest discover -s tests -p test_mois_full93m_4096_chunk_warm_job_plan.py -v
           python -m unittest discover -s tests -p test_mois_93m_persistent_worker.py -v
           python -m unittest discover -s tests -p test_mois_93m_prepare_persistent_source.py -v
+          python -m unittest discover -s tests -p test_mois_flower_box_lab_colour.py -v
+          python -m unittest discover -s tests -p test_mois_full93m_floral_lab_v2.py -v
           echo 'MOIS_ALL_93M_SOURCE_PHOTO_STAGE1_OFFLINE_TESTS_PASS'
   actual-K1-medium-256-calibration:
     if: github.event_name == 'push' && github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass' && contains(github.event.head_commit.message, '[pilot256]')
