@@ -706,3 +706,71 @@ jobs:
           path: source_chunk0_stage1/
           retention-days: 90
           if-no-files-found: warn
+  real-93m-23890-chunks-4177-warm-workers:
+    if: github.event_name == 'push' && github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass' && contains(github.event.head_commit.message, '[warmplan4177]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reuse source-authenticated 93,209,351-ID / 1,792-job signed receipt
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh run download 40163052435 --repo zuizui0223/mois \
+            --name mois-all-93209351-source-photo-stage1-1792-signed-jobs-v1 \
+            --dir source
+          echo '6b607a4b7b0863d65a0eb514d4158434453e7ae4d909f4cf1e3372b424eb9279  source/all_original_photos_stage1_jobs.csv' | sha256sum -c -
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('source/plan_receipt.json').read_text())
+          assert x['source_original_photo_ID_count']==93209351
+          assert x['all_disjoint_scan_jobs_including_empty']==1792
+          assert x['actual_images_downloaded_or_scanned']==0
+          assert x['manifest_sha256']=='6b607a4b7b0863d65a0eb514d4158434453e7ae4d909f4cf1e3372b424eb9279'
+          PY
+      - name: Build actual source-photo exact tasks in full 93m scope for 4096-photo chunks and 8-chunk warm workers
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_full93m_4096_chunk_warm_job_plan \
+            --original-1792-jobs source/all_original_photos_stage1_jobs.csv \
+            --source-sha256 6b607a4b7b0863d65a0eb514d4158434453e7ae4d909f4cf1e3372b424eb9279 \
+            --chunk-size 4096 --chunks-per-warm 8 \
+            --output exhaustive_source_tasks
+          python - <<'PY'
+          import csv,json,hashlib
+          from pathlib import Path
+          root=Path('exhaustive_source_tasks')
+          x=json.loads((root/'all93m_chunk_workplan_receipt.json').read_text())
+          assert x['original_source_photo_IDs_entire_universe']==93209351
+          assert x['original_source_part_tier_jobs']==1792
+          assert x['planned_child_photo_chunk_tasks']==23890
+          assert x['planned_one_warm_model_worker_batches']==4177
+          assert x['images_downloaded']==0 and x['flower_colour_classes_inferred']==0
+          with (root/'all_photo_source_4096_chunk_tasks.csv').open() as fh:
+              child=list(csv.DictReader(fh))
+          with (root/'all_one_warm_model_8chunk_batches.csv').open() as fh:
+              warm=list(csv.DictReader(fh))
+          assert len(child)==23890 and len(warm)==4177
+          assert sum(int(z['planned_original_photo_ids']) for z in child)==93209351
+          assert sum(int(z['expected_original_photo_ids']) for z in warm)==93209351
+          assert max(int(z['planned_original_photo_ids']) for z in child)==4096
+          assert max(int(z['child_chunks_in_batch']) for z in warm)<=8
+          print('MOIS_WHOLE_REAL_93M_EXHAUSTIVE_23890_CHUNKS_4177_WARM_BATCHES',
+                json.dumps({k:x[k] for k in
+                  ('original_source_photo_IDs_entire_universe',
+                   'planned_child_photo_chunk_tasks',
+                   'planned_one_warm_model_worker_batches',
+                   'chunk_task_csv_sha256','warm_batch_csv_sha256')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real-93209351-23890-chunks-4177-warm-workers-exact-source-plan
+          path: exhaustive_source_tasks/
+          retention-days: 90
+          if-no-files-found: error
