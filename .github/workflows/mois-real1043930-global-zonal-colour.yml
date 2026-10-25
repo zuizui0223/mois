@@ -1,0 +1,89 @@
+name: MOIS 1043930 genuine photographs white-dominance Arctic South seasons all gradients
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_real1043930_global_zonal_colour.py
+      - tests/test_mois_real1043930_global_zonal_colour.py
+      - .github/workflows/mois-real1043930-global-zonal-colour.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-real1043930-photo-colour-all-hemisphere-polar-season-humidity-island-zones
+  cancel-in-progress: false
+jobs:
+  real-1m-photos-eight-global-geographical-gradients:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 38
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install data-only package and verify polar/seasons/colour-missingness guards
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_real1043930_global_zonal_colour.py
+          python -m unittest discover -s tests -p test_mois_real1043930_global_zonal_colour.py -v
+      - name: Restore exactly SHA-frozen 1043930 source photos 426765 nine-vector outcomes and environmental GSHHG rows
+        run: |
+          set -euo pipefail
+          mkdir -p original climate islands
+          gh release download mois-original1043930-recovered-continuous9-426765-and-ecology-20261025-v1 \
+            --repo zuizui0223/mois --dir original \
+            --pattern mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --pattern mois1043930_FCP447500_nine_palette_restoration_receipt.json
+          gh run download 40188040027 --repo zuizui0223/mois \
+            --name mois-real-latest1043930-photoid-original-worldclim-humidity-elevation \
+            --dir climate
+          gh run download 40188478245 --repo zuizui0223/mois \
+            --name mois-real-latest1043930-island-mainland-elevation-gshhg \
+            --dir islands
+          printf '%s\n' \
+            'b20bbefe15020c21c3b5b0f7edf3f8e08148a4ee7dda8bf772a89bf6b126f447  original/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet' \
+            'ec39b49649acc2ca4a468c00c86d05800e33ea2db1f91a3b119076be38432735  climate/mois_latest1043930_original_photo_climate_six_columns.parquet' \
+            | sha256sum -c -
+      - name: Actually calculate all 1043930 original-photo hemisphere polar moisture elevation island season colour profiles
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real1043930_global_zonal_colour \
+            --photo original/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --receipt original/mois1043930_FCP447500_nine_palette_restoration_receipt.json \
+            --climate climate/mois_latest1043930_original_photo_climate_six_columns.parquet \
+            --geography islands/latest1043930_all_original_photo_GSHHG_landmass.parquet \
+            --geo-receipt islands/mois_latest1043930_island_altitude_result.json \
+            --output global_zonal_colour
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          a=json.loads(Path('global_zonal_colour/mois1043930_global_zonal_white_colour_result.json').read_text())
+          assert a['schema']=='mois_genuine1043930_global_zonal9_maincolour_white_first_v1'
+          assert a['source_original_photo_IDs_attempted']==1043930
+          assert a['original_strict_nine_colour_ROIs']==390541
+          assert a['ambiguity_nine_colour_sensitivity_only']==36224
+          assert a['source_photo_image_downloads']==0
+          assert a['original_ROI_model_reinferences']==0
+          kinds={x['axis'] for x in a['all_crossed_geographic_climate_zone_profiles']}
+          assert {'latitude_zone','season_by_hemisphere','moisture_vapour_quintiles',
+                  'rainfall_quintiles','elevation','island_mainland',
+                  'island_moisture','latitude_island','season_by_latitude_zone'}<=kinds
+          assert len(a['all_crossed_geographic_climate_zone_profiles'])>=65
+          assert a['unavailable_from_saved_source']['major_flower_roi_CIELAB_C_star']
+          assert a['unavailable_from_saved_source']['green_colour_palette_component']
+          print('MOIS_REAL1043930_ALL_GLOBAL_ZONES_ARCTIC_SOUTH_WHITE_MAIN_COLOUR_COMPLETE',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real1043930-worldwide-white-main9-Arctic-South-season-wet-high-island
+          path: global_zonal_colour/
+          retention-days: 90
+          if-no-files-found: warn
