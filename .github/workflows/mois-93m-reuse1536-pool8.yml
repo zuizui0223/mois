@@ -35,6 +35,7 @@ jobs:
           python -m pip install -q Pillow==11.3.0 numpy==2.1.3 \
             ultralytics==8.4.112 urllib3==2.5.0
           python -m py_compile scripts/acquisition/mois_93m_persistent_worker.py
+          python -m scripts.acquisition.mois_93m_persistent_worker --help | grep -q -- '--weights-sha256'
           python -m unittest discover -s tests -p test_mois_93m_persistent_worker.py -v
       - name: Obtain genuine signed 363920-photo parent and reuse existing original 1536 completed images
         run: |
