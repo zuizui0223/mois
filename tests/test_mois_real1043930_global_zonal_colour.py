@@ -60,7 +60,7 @@ class GlobalZonalColourTests(unittest.TestCase):
         r=describe_stratum(d,"latitude_zone","N_polar_66.56_90")
         self.assertEqual(r["source_photo_attempts"],3)
         self.assertEqual(r["strict_original9_ROIs"],2)
-        self.assertEqual(r["strict9_success_pct_of_all_attempts"],100*2/3)
+        self.assertAlmostEqual(r["strict9_success_pct_of_all_attempts"],100*2/3,places=8)
         self.assertAlmostEqual(r["white_fraction_photo_mean_pct"],55)
         self.assertEqual(r["share_dominant_white_pct"],50)
         self.assertEqual(r["share_dominant_bronze_pct"],50)
