@@ -599,3 +599,98 @@ jobs:
           path: source_chunk0_stage1/
           retention-days: 90
           if-no-files-found: warn
+  resume-real-tier12-chunk0-medium-pixels-from512-to1536:
+    if: github.event_name == 'push' && github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass' && contains(github.event.head_commit.message, '[chunk1536]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      ULTRALYTICS_OFFLINE: 'True'
+      WEIGHT_SHA: f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install once the unchanged medium YOLO, not SAM
+        run: |
+          set -euo pipefail
+          python -m pip install -q Pillow==11.3.0 numpy==2.1.3 ultralytics==8.4.112
+          python -m py_compile scripts/acquisition/mois_full93m_signed_chunk_pixel_scan.py
+      - name: Recover signed parent 363920-photo chunk and previously scanned 512 exact source pixels
+        run: |
+          set -euo pipefail
+          mkdir -p signed source_chunk0_stage1 weights
+          gh run download 40166855425 --repo zuizui0223/mois \
+            --name mois-full93m-real-tier12-part000-363920-source-89-sha-bounded-photo-chunks \
+            --dir signed
+          gh run download 40167746622 --repo zuizui0223/mois \
+            --name mois-full93m-tier12-part000-signed-chunk0-first512-real-medium-pixels \
+            --dir source_chunk0_stage1
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          source=Path('signed')
+          r=json.loads((source/'chunk_receipt.json').read_text())
+          assert r['actual_original_photo_IDs']==363920 and r['chunks']==89
+          assert r['original_source_part_sha256']=='2601e901d31cb1aac65ac94ce3d2e6e3cce9aef45cacd137a4213cd81b2c53eb'
+          assert hashlib.sha256((source/'chunk_manifest.csv').read_bytes()).hexdigest()==r['manifest_sha256']
+          prior=Path('source_chunk0_stage1')
+          p=json.loads((prior/'chunk_progress_00512.json').read_text())
+          assert p['source_chunk_index']==0 and p['actual_new_or_resumed_medium_photo_attempts']==512
+          terminal=json.loads((prior/'packet-0000000.receipt.json').read_text())
+          assert terminal['source_role']=='full93m_chunk' and terminal['source_chunk_index']==0
+          assert hashlib.sha256((prior/'packet-0000000.csv.gz').read_bytes()).hexdigest()==terminal['output_sha256']
+          assert not (prior/'complete_receipt.json').exists()
+          print('MOIS_ORIGINAL_REAL_512_SOURCE_PIXELS_REUSABLE_NOT_REDOWNLOADED',flush=True)
+          PY
+      - name: Restore exact pinned item-class FCP model
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp-detector"
+          git -C "$RUNNER_TEMP/fcp-detector" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp-detector" fetch --no-tags --depth=1 origin 9fae6ccdf684a46026f72ba12e98de2c5c54bf2a
+          git -C "$RUNNER_TEMP/fcp-detector" show FETCH_HEAD:data/atlas/qualification/roi_v4_training/jrc_yolo11n_last_v4.pt > weights/jrc_yolo11n_last_v4.pt
+          echo "$WEIGHT_SHA  weights/jrc_yolo11n_last_v4.pt" | sha256sum -c -
+      - name: Skip previous 512 images and scan only next 1024 source photos, SHA-verified
+        run: |
+          set -euo pipefail
+          sha256sum source_chunk0_stage1/packet-0000000.csv.gz > old512_packet_sha.txt
+          python -m scripts.acquisition.mois_full93m_signed_chunk_pixel_scan \
+            --chunks signed --chunk-index 0 --output source_chunk0_stage1 \
+            --weights weights/jrc_yolo11n_last_v4.pt \
+            --weights-sha256 "$WEIGHT_SHA" --device cpu \
+            --workers 8 --requests-per-second 3 \
+            --batch-size 512 --max-packets 3
+          sha256sum -c old512_packet_sha.txt
+      - name: Confirm no previous photo was measured again, and parent 363920 is still incomplete
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('source_chunk0_stage1')
+          old=json.loads((root/'chunk_progress_00512.json').read_text())
+          cur=json.loads((root/'chunk_progress_01536.json').read_text())
+          assert old['actual_new_or_resumed_medium_photo_attempts']==512
+          assert cur['actual_new_or_resumed_medium_photo_attempts']==1536
+          assert cur['source_chunk_expected_photo_ids']==4096
+          assert not cur['source_chunk_all_photo_ids_scanned']
+          assert not cur['entire_parent_original_photo_part_scanned']
+          assert not cur['source_93m_all_images_scanned']
+          assert not (root/'complete_receipt.json').exists()
+          assert len(list(root.glob('packet-*.csv.gz')))==3
+          assert sum(cur['screen_counts'].values())==1536
+          print('MOIS_93M_HIGH_TIER_SOURCE_1536_ACTUAL_PIXELS_NO_REDOWNLOAD',
+                json.dumps(cur,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-full93m-tier12-part000-chunk0-first1536-original-500px-yolo
+          path: source_chunk0_stage1/
+          retention-days: 90
+          if-no-files-found: warn
