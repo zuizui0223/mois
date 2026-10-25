@@ -219,7 +219,7 @@ def packets(reader, n):
         yield part
 
 def process_packet(rows, *, part, tier, detector, download, workers,
-                   source_role="full93m"):
+                   source_role="full93m", performance=None):
     """Bounded parallel fetch; single warm-batch inference on decoded images."""
     from PIL import Image
     def one(row):
@@ -257,8 +257,11 @@ def process_packet(rows, *, part, tier, detector, download, workers,
                                         ":" + str(exc)[:80].replace("\n", " "))
             return base, None
 
+    download_started = time.monotonic()
     with ThreadPoolExecutor(max_workers=workers) as pool:
         pairs = list(pool.map(one, rows))
+    download_wall = time.monotonic() - download_started
+    box_started = time.monotonic()
     out = [base for base, _ in pairs]
     valid = [(i, image) for i, (_, image) in enumerate(pairs) if image is not None]
     if valid and detector is not None:
@@ -291,6 +294,12 @@ def process_packet(rows, *, part, tier, detector, download, workers,
     elif valid:
         for i, _ in valid:
             out[i]["technical_reason"] = "pixel_scanned_without_flower_detector"
+    if performance is not None:
+        performance.update(
+            medium_image_access_and_decode_wall_seconds=round(download_wall, 3),
+            flower_box_inference_and_proxy_wall_seconds=round(
+                time.monotonic() - box_started, 3),
+        )
     require(len(out) == len(rows) and
             all(r["screen_status"] in ALLOWED for r in out),
             "Stage1 row conservation failed")
@@ -335,6 +344,7 @@ def scan_source(source, output, *, expected_source_sha256,
     first = last = None
     completed_packets = decoded_count = payload_bytes = 0
     measured_packet_wall_seconds = 0.0
+    download_decode_seconds = model_proxy_seconds = 0.0
     model_identity = (
         "pixel_only_pilot" if detector is None else
         "yolo11:" + detector.model_sha + ":" +
@@ -374,10 +384,11 @@ def scan_source(source, output, *, expected_source_sha256,
                 counts = proof["screen_counts"]
             else:
                 started = time.monotonic()
+                perf = {}
                 result = process_packet(rows, part=part, tier=tier,
                                         detector=detector, download=download,
-                                        workers=workers,
-                                        source_role=source_role)
+                                        workers=workers, source_role=source_role,
+                                        performance=perf)
                 write_packet_csv(dest, result)
                 counts = dict(Counter(r["screen_status"] for r in result))
                 proof = {
@@ -398,6 +409,7 @@ def scan_source(source, output, *, expected_source_sha256,
                     "screen_negative_is_not_botanical_absence": True,
                     "original_full_resolution_ROI_modified": False,
                     "packet_wall_seconds": round(time.monotonic() - started, 3),
+                    **perf,
                     "output_sha256": sha_file(dest),
                 }
                 temporary = receipt_path.with_suffix(".partial")
@@ -407,6 +419,10 @@ def scan_source(source, output, *, expected_source_sha256,
             decoded_count += int(proof["medium_image_pixels_decoded"])
             payload_bytes += int(proof["medium_image_bytes_downloaded"])
             measured_packet_wall_seconds += float(proof["packet_wall_seconds"])
+            download_decode_seconds += float(
+                proof.get("medium_image_access_and_decode_wall_seconds", 0))
+            model_proxy_seconds += float(
+                proof.get("flower_box_inference_and_proxy_wall_seconds", 0))
             completed_packets += 1
             first = ids[0] if first is None else first
             last = ids[-1]
@@ -430,6 +446,10 @@ def scan_source(source, output, *, expected_source_sha256,
         "medium_image_pixels_unavailable": total - decoded_count,
         "medium_image_payload_bytes_downloaded": payload_bytes,
         "aggregate_packet_work_seconds": round(measured_packet_wall_seconds, 3),
+        "aggregate_medium_image_access_and_decode_wall_seconds":
+            round(download_decode_seconds, 3),
+        "aggregate_flower_box_inference_and_proxy_wall_seconds":
+            round(model_proxy_seconds, 3),
         "images_per_worker_wall_second_if_sequential": (
             round(total / measured_packet_wall_seconds, 4)
             if measured_packet_wall_seconds > 0 else None),
