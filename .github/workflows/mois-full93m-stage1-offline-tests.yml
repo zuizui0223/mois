@@ -9,6 +9,8 @@ on:
       - scripts/acquisition/mois_full93m_medium_pixel_scan.py
       - scripts/acquisition/mois_full93m_source_part_chunks.py
       - scripts/acquisition/mois_full93m_signed_chunk_pixel_scan.py
+      - scripts/acquisition/mois_full93m_warm_chunk_batch.py
+      - tests/test_mois_full93m_warm_chunk_batch.py
       - tests/test_mois_full93m_signed_chunk_pixel_scan.py
       - tests/test_mois_full93m_source_part_chunks.py
       - scripts/acquisition/mois_k1_medium_pixel_256_benchmark.py
@@ -22,6 +24,8 @@ on:
       - scripts/acquisition/mois_full93m_medium_pixel_scan.py
       - scripts/acquisition/mois_full93m_source_part_chunks.py
       - scripts/acquisition/mois_full93m_signed_chunk_pixel_scan.py
+      - scripts/acquisition/mois_full93m_warm_chunk_batch.py
+      - tests/test_mois_full93m_warm_chunk_batch.py
       - tests/test_mois_full93m_signed_chunk_pixel_scan.py
       - tests/test_mois_full93m_source_part_chunks.py
       - tests/test_mois_full93m_medium_pixel_scan.py
@@ -47,12 +51,14 @@ jobs:
             scripts/acquisition/mois_full93m_every_photo_scan_manifest.py \
             scripts/acquisition/mois_full93m_medium_pixel_scan.py \
             scripts/acquisition/mois_full93m_source_part_chunks.py \
-            scripts/acquisition/mois_full93m_signed_chunk_pixel_scan.py
+            scripts/acquisition/mois_full93m_signed_chunk_pixel_scan.py \
+            scripts/acquisition/mois_full93m_warm_chunk_batch.py
           python -m unittest discover -s tests \
             -p test_mois_full93m_medium_pixel_scan.py -v
           python -m unittest discover -s tests -p test_mois_medium_stage1_to_stage2_shadow.py -v
           python -m unittest discover -s tests -p test_mois_full93m_source_part_chunks.py -v
           python -m unittest discover -s tests -p test_mois_full93m_signed_chunk_pixel_scan.py -v
+          python -m unittest discover -s tests -p test_mois_full93m_warm_chunk_batch.py -v
           echo 'MOIS_ALL_93M_SOURCE_PHOTO_STAGE1_OFFLINE_TESTS_PASS'
   actual-K1-medium-256-calibration:
     if: github.event_name == 'push' && github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass' && contains(github.event.head_commit.message, '[pilot256]')
