@@ -294,7 +294,7 @@ def main():
     require(x.weights is not None and x.weights_sha256 is not None
             and x.approved_aggregate_rps is not None,
             "Full photo access requires signed model and explicit aggregate budget")
-    execute(roots,x.output,weights=x.weights,weight_sha=x.weights_sha,
+    execute(roots,x.output,weights=x.weights,weight_sha=x.weights_sha256,
             slot=x.worker_slot,slots=x.worker_slots,
             approved_aggregate_rps=x.approved_aggregate_rps,
             download_workers=x.download_workers,batch_size=x.batch_size,
