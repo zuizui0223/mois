@@ -160,6 +160,76 @@ class OriginalMediumPixelScanTests(unittest.TestCase):
                 detector=None, download=lambda url: self.photo,
                 batch_size=4, workers=1)
 
+    def test_prefetch_32_actual_decoded_source_photos_and_complete_replay(self):
+        from concurrent.futures import ThreadPoolExecutor
+        extra=[]
+        for n in range(32):
+            base={k:"" for k in COLUMNS}
+            base.update(photo_id=str(8000+n),observation_uuid="uuid-"+str(n),
+                        inat_taxon_id="14",observed_on="2025-08-11",
+                        photo_license="cc-by",image_extension="png",tier="0")
+            extra.append(base)
+        with gzip.open(self.source,"wt",newline="") as f:
+            w=csv.DictWriter(f,fieldnames=COLUMNS,lineterminator="\\n")
+            w.writeheader();w.writerows(extra)
+        class Detector:
+            def __init__(self): self.calls=0
+            def __call__(self,images):
+                self.calls+=1
+                return [{"score":.94,"xyxy":[0,0,64,64]} for _ in images]
+        detector=Detector()
+        got=[]
+        def fetch(url):
+            got.append(url)
+            return self.photo
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            receipt=scan.scan_source(
+                self.source,self.output,
+                expected_source_sha256=scan.sha_file(self.source),
+                expected_count=32,part=0,tier=0,
+                detector=detector,download=fetch,workers=4,batch_size=16,
+                io_executor=executor,prefetch_next_packet=True)
+        self.assertTrue(receipt["all_original_input_photos_attempted"])
+        self.assertTrue(receipt["source_scan_prefetch_overlapped"])
+        self.assertEqual(receipt["prefetched_photo_packet_size"],16)
+        self.assertEqual(receipt["screen_counts"],{"candidate":32})
+        self.assertEqual(detector.calls,2)
+        self.assertEqual(len(set(got)),32)
+        self.assertEqual(len(got),32)
+        self.assertGreater(receipt["actual_photo_ids_per_second_after_prefetch"],0)
+        self.assertEqual(receipt["medium_image_pixels_decoded"],32)
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            again=scan.scan_source(
+                self.source,self.output,
+                expected_source_sha256=scan.sha_file(self.source),
+                expected_count=32,part=0,tier=0,
+                detector=detector,
+                download=lambda url: self.fail("Already scanned source pixels redownloaded"),
+                workers=4,batch_size=16,io_executor=executor,
+                prefetch_next_packet=True)
+        self.assertEqual(again,receipt)
+        self.assertEqual(detector.calls,2)
+        self.assertEqual(len(got),32)
+
+    def test_prefetch_requires_shared_pool_and_bounded_photo_packet(self):
+        with self.assertRaisesRegex(ValueError,"Prefetch must use"):
+            scan.scan_source(
+                self.source,self.output,
+                expected_source_sha256=scan.sha_file(self.source),
+                expected_count=4,part=0,tier=0,
+                detector=None,download=lambda _: self.photo,
+                workers=2,batch_size=16,
+                prefetch_next_packet=True)
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            with self.assertRaisesRegex(ValueError,"Prefetch must use"):
+                scan.scan_source(
+                    self.source,self.output,
+                    expected_source_sha256=scan.sha_file(self.source),
+                    expected_count=4,part=0,tier=0,
+                    detector=None,download=lambda _: self.photo,
+                    workers=2,batch_size=512,
+                    io_executor=executor,prefetch_next_packet=True)
+
     def test_bad_source_sha_and_malformed_photo_fail_closed(self):
         with self.assertRaisesRegex(ValueError, "SHA changed"):
             scan.scan_source(self.source, self.output,
