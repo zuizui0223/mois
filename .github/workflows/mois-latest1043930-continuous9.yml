@@ -110,8 +110,8 @@ jobs:
           assert r["source_technical_four_hue_unknown"]==584695
           assert r["all_photo_IDs_kept_even_if_no_valid_roi"] is True
           assert r["new_image_downloads"]==r["new_roi_inferences"]==0
-          assert r["strict_plus_ambiguous_nine_component_vectors"]>=
-              r["strict_9component_real_colour_vectors"]
+          assert (r["strict_plus_ambiguous_nine_component_vectors"] >=
+                  r["strict_9component_real_colour_vectors"])
           k1=r["per_original_source_arm"]["K1"]
           assert k1["original_photo_attempts"]==76753
           assert k1["source_four_hue_labels"]==27689
