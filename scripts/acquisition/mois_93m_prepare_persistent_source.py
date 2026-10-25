@@ -161,7 +161,8 @@ def collect_roots(group_directories, output, *,
         require(len(groups)==14*16 and total==world_total,
                 "Complete worldwide scan roots require all 224 source archives")
     output.parent.mkdir(parents=True,exist_ok=True)
-    output.write_text("".join(n+"\n" for n in sorted(names)),encoding="utf-8")
+    portable=[os.path.relpath(n, start=output.parent) for n in sorted(names)]
+    output.write_text("".join(n+"\n" for n in portable),encoding="utf-8")
     return {
         "world_source_photo_IDs":world_total,
         "prepared_nonempty_signed_source_part_roots":len(seen),
