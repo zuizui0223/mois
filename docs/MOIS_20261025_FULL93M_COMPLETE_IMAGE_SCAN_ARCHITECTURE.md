@@ -103,14 +103,13 @@ python -m scripts.acquisition.mois_full93m_medium_pixel_scan \
   --part 0 --tier 0 \
   --weights /trusted/models/jrc_yolo11n_last_v4.pt \
   --weights-sha256 VERIFIED_MODEL_SHA256 \
-  --flower-class-id 0 --flower-class-name flower \
+  --flower-class-id 0 --flower-class-name item \
   --device 0 --workers 8 --batch-size 512 \
   --requests-per-second 2 \
   --output APPEND_ONLY/p000-t00
 ```
 
-The class label must **actually match** the local saved YOLO model's class
-metadata; the name in the example is not an assertion about every model.
+The SHA-pinned original FCP ROI-v4 YOLO11n weight has class ID 0 named **`item`** (verified in real GitHub Action logs). It is a flower-instance detection model, but the training label is the literal string `item`. Models with other training labels must use their actual metadata; the class name is never guessed.
 No bundled weights and no automatic model download.
 
 ## Performance, source permissions and deployment gate
