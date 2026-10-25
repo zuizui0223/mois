@@ -111,6 +111,16 @@ def global_source(folders, first1, output, *,
                 "new_image_download_or_frozen_ROI_inference_this_stage")==0,
         }
         violated=[name for name, ok in checks.items() if not ok]
+        if violated:
+            print("MOIS_NESTED5_SIGNED_SOURCE_CONTRACT_DIAGNOSTIC",
+                  json.dumps({
+                      "group":group,
+                      "failed_contracts":violated,
+                      "global_source_eligible_taxa_actual":
+                          receipt.get("global_U100_eligible_taxa"),
+                      "global_source_eligible_taxa_expected":expected_eligible,
+                      "actual_receipt_fields":sorted(receipt),
+                  },sort_keys=True),flush=True)
         require(not violated,
                 "Unsigned/modified or repeated full93m original five-photo source taxon group: "
                 + ",".join(violated))
