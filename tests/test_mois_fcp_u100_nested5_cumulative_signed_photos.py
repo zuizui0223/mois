@@ -133,6 +133,22 @@ class TestFCP5OriginalPhotoPartialCumulative(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"Duplicate signed"):
             self.accumulate([a,a])
 
+    def test_release_tag_is_available_in_same_shell_that_publishes_it(self):
+        # Writing GITHUB_ENV only exposes a value to subsequent GitHub Actions
+        # steps. The original per-group data + global SHA audit succeeded but
+        # empty SIGNED_OUTPUT_TAG prevented real cumulative release creation.
+        import yaml
+        workflow=(Path(__file__).resolve().parents[1]/".github/workflows"/
+                  "mois-fcp-u100-nested5-fast-cumulative-original-photo-totals.yml")
+        config=yaml.safe_load(workflow.read_text(encoding="utf-8"))
+        job=config["jobs"]["cumulative"]
+        block=next(s["run"] for s in job["steps"]
+                   if s.get("name","").startswith("Publish versioned"))
+        self.assertIn("SIGNED_OUTPUT_TAG=$(python - <<'PY'",block)
+        self.assertIn('test -n "$SIGNED_OUTPUT_TAG"',block)
+        self.assertIn('gh release create "$SIGNED_OUTPUT_TAG"',block)
+        self.assertNotIn("stream.write('SIGNED_OUTPUT_TAG='+tag",block)
+
     def test_cumulative_artifacts_are_content_deterministic_and_immutable(self):
         self.group(0)
         first=self.accumulate()
