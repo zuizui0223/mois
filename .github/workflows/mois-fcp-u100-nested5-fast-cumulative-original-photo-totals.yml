@@ -1,0 +1,209 @@
+name: MOIS FCP nested5 source signed real original photo cumulative global counts
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_fcp_u100_nested5_cumulative_signed_photos.py
+      - tests/test_mois_fcp_u100_nested5_cumulative_signed_photos.py
+      - .github/workflows/mois-fcp-u100-nested5-fast-cumulative-original-photo-totals.yml
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_fcp_u100_nested5_cumulative_signed_photos.py
+      - tests/test_mois_fcp_u100_nested5_cumulative_signed_photos.py
+      - .github/workflows/mois-fcp-u100-nested5-fast-cumulative-original-photo-totals.yml
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - MOIS FCP nested5 append only completed actual original RGB image groups
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '17,37,57 * * * *'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-FCP-U100-nested5-partial-real-global-original-photo-count-source-signed
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == 'zuizui0223/mois' &&
+        github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    outputs:
+      ready: ${{ steps.scan.outputs.ready }}
+      tags: ${{ steps.scan.outputs.tags }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - name: Look for authentic FCP nested5 per-group ORIGINAL photo ROI releases only
+        id: scan
+        run: |
+          set -euo pipefail
+          gh api --paginate --jq '.[] | select(.draft == false) | .tag_name' \
+            "repos/$REPO/releases?per_page=100" > actual-groups.txt
+          python - <<'PY'
+          import json,os,re
+          from pathlib import Path
+          data=Path('actual-groups.txt').read_text().splitlines()
+          expression=re.compile(
+              r'mois-FCP-U100-nested5-34898-original-ROI-append-group-([0-9]+)-v1\Z')
+          completed={}
+          for tag in data:
+              match=expression.fullmatch(tag)
+              if match:
+                  number=int(match.group(1))
+                  assert 0<=number<35 and number not in completed
+                  completed[number]=tag
+          published_counts=[]
+          for tag in data:
+              match=re.fullmatch(
+                  r'mois-FCP5-source-signed-new-original-ROI-([0-9]+)groups-[0-9a-f]{16}-v1',
+                  tag)
+              if match: published_counts.append(int(match.group(1)))
+          known=max(published_counts,default=0)
+          targets=[completed[n] for n in sorted(completed)]
+          ready=bool(targets) and len(targets)>known
+          with open(os.environ['GITHUB_OUTPUT'],'a') as handle:
+              handle.write('ready='+str(ready).lower()+'\n')
+              handle.write('tags='+json.dumps(targets)+'\n')
+          print('MOIS_FCP5_NEW_GENUINE_ORIGINAL_PHOTO_GROUPS_READY_TO_CUMULATE',
+                json.dumps({'signed_source_groups':len(targets),
+                            'last_sha_versioned_group_count':known,
+                            'need_new_data_only_cumulative':ready,
+                            'raw_original_photo_pixels_downloaded':0},
+                            sort_keys=True),flush=True)
+          PY
+  tests:
+    needs: inspect
+    if: >-
+      always() &&
+      (github.event_name == 'push' || github.event_name == 'pull_request' ||
+       (needs.inspect.result == 'success' && needs.inspect.outputs.ready == 'true'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regression-test real image SHA, unclassified hue counts and original source union
+        run: |
+          set -euo pipefail
+          python -m pip install -q PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_fcp_u100_nested5_cumulative_signed_photos.py
+          python -m unittest discover -s tests -p test_mois_fcp_u100_nested5_cumulative_signed_photos.py -v
+          python - <<'PY'
+          import yaml,subprocess
+          p='.github/workflows/mois-fcp-u100-nested5-fast-cumulative-original-photo-totals.yml'
+          d=yaml.safe_load(open(p))
+          scripts=[x['run'] for j in d['jobs'].values() for x in j['steps'] if 'run' in x]
+          assert len(scripts)>=3
+          for script in scripts:
+              r=subprocess.run(['bash','-n'],input=script,text=True,capture_output=True)
+              assert r.returncode==0,r.stderr
+          print('MOIS_FCP5_ORIGINAL_PHOTO_CUMULATIVE_SHELL_PASS',len(scripts))
+          PY
+  cumulative:
+    needs: [inspect,tests]
+    if: >-
+      github.event_name != 'pull_request' &&
+      needs.inspect.outputs.ready == 'true' &&
+      needs.tests.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SIGNED_GROUP_TAGS: ${{ needs.inspect.outputs.tags }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download only 2KB frozen million-photo SHA-signed baseline receipt
+        run: |
+          set -euo pipefail
+          gh release download mois-global-original-RGB-K1-75-plus-FCP-U100-3141-exact-unique-v1 \
+            --repo "$REPO" --dir baseline \
+            --pattern mois_K1_FCP_U100_source_audited_global_original_photo_union.json
+          echo 'c924cb6d1a873428db197daecc51c67046c89a95193b66713789dcb0ce77a59c  baseline/mois_K1_FCP_U100_source_audited_global_original_photo_union.json' | sha256sum -c -
+      - name: Download only signed published FCP5 per-group JSON terminal receipts, NOT images
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os,re,subprocess
+          from concurrent.futures import ThreadPoolExecutor
+          from pathlib import Path
+          tags=json.loads(os.environ['SIGNED_GROUP_TAGS'])
+          assert tags and len(tags)==len(set(tags)) and len(tags)<=35
+          def fetch(tag):
+              match=re.fullmatch(
+                  r'mois-FCP-U100-nested5-34898-original-ROI-append-group-([0-9]+)-v1',tag)
+              assert match and int(match.group(1))<35
+              dest=Path('group-receipts')/('group'+match.group(1).zfill(2))
+              dest.mkdir(parents=True,exist_ok=False)
+              subprocess.run(['gh','release','download',tag,
+                  '--repo',os.environ['REPO'],'--dir',str(dest),
+                  '--pattern','original_group_receipt.json'],
+                  check=True,capture_output=True,text=True)
+              return str(dest/'original_group_receipt.json')
+          with ThreadPoolExecutor(max_workers=4) as pool:
+              paths=list(pool.map(fetch,tags))
+          Path('receipt-paths.json').write_text(json.dumps(paths,indent=2)+'\n')
+          print('MOIS_FCP5_TRUE_ORIGINAL_ROI_JSON_ONLY_PROVENANCE',len(paths),
+                'no_raw_image_downloads_or_reinferences',flush=True)
+          PY
+      - name: Accumulate new real ROI original photo IDs and four-hue labels excluding all technical unknowns
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.acquisition.mois_fcp_u100_nested5_cumulative_signed_photos import aggregate
+          paths=[Path(s) for s in json.loads(Path('receipt-paths.json').read_text())]
+          old=Path('baseline/mois_K1_FCP_U100_source_audited_global_original_photo_union.json')
+          report=aggregate(paths,old,Path('completed'))
+          print('MOIS_FCP5_NEW_GENUINE_PHOTOS_SOURCE_UNION',
+                report['exact_precolour_disjoint_source_global_original_photo_attempts'],
+                report['exact_precolour_disjoint_source_global_four_hue_ROIs'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-FCP5-real-original-ROI-global-cumulative-${{ github.run_id }}
+          path: completed/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish versioned K1+FCP3141+new-FCP5 genuine original photo ID/hue source totals
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path('completed/mois_FCP5_partial_genuine_original_pixel_cumulative.json').read_text())
+          tag=('mois-FCP5-source-signed-new-original-ROI-'+
+               str(d['new_actual_finished_original_photo_groups'])+'groups-'+
+               d['original_group_receipt_set_SHA256'][:16]+'-v1')
+          with open(os.environ['GITHUB_ENV'],'a') as stream:
+              stream.write('SIGNED_OUTPUT_TAG='+tag+'\n')
+          print('MOIS_FCP5_ACTUAL_PIXELS_PARTIAL_SIGNED_GLOBAL_RELEASE',tag,flush=True)
+          PY
+          if gh release view "$SIGNED_OUTPUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$SIGNED_OUTPUT_TAG" --repo "$REPO" --dir old \
+              --pattern mois_FCP5_partial_genuine_original_pixel_cumulative.json
+            cmp old/mois_FCP5_partial_genuine_original_pixel_cumulative.json \
+                completed/mois_FCP5_partial_genuine_original_pixel_cumulative.json
+          else
+            gh release create "$SIGNED_OUTPUT_TAG" \
+              completed/mois_FCP5_partial_genuine_original_pixel_cumulative.json \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS global real original photo counts, stage5 FCP nested5 completed groups only' \
+              --notes 'Partially model-completed FCP U100 first5 genuine new 34898 original-photo source, independently authenticated per-group FCP-v4 ROI photo/image SHA and nested 5/N/M inclusion probabilities. Adds only new photo attempts and real machine-classified four-hue outcomes to the SHA-verified 1009032-image worldwide baseline. Source-disjoint precolour IDs, technical failures and ROI unknowns preserved; not a complete probability cohort, verified botanical wild/native bloom or unbiased global white-flora prevalence. No new image downloads, model re-inference or previous million original-photo Parquet refetch.'
+          fi
