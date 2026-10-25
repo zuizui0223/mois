@@ -220,7 +220,7 @@ def packets(reader, n):
         yield part
 
 def process_packet(rows, *, part, tier, detector, download, workers,
-                   source_role="full93m", performance=None):
+                   source_role="full93m", performance=None, io_executor=None):
     """Bounded parallel fetch; single warm-batch inference on decoded images."""
     from PIL import Image
     def one(row):
@@ -259,8 +259,12 @@ def process_packet(rows, *, part, tier, detector, download, workers,
             return base, None
 
     download_started = time.monotonic()
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        pairs = list(pool.map(one, rows))
+    if io_executor is None:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            pairs = list(pool.map(one, rows))
+    else:
+        # Long-lived worker: reuse threads/HTTP connections across ALL source chunks.
+        pairs = list(io_executor.map(one, rows))
     download_wall = time.monotonic() - download_started
     box_started = time.monotonic()
     out = [base for base, _ in pairs]
@@ -321,7 +325,7 @@ def scan_source(source, output, *, expected_source_sha256,
                 expected_count, part, tier,
                 detector=None, download=None, workers=8, batch_size=512,
                 max_packets=None, source_role="full93m",
-                parent_source_sha256=None, chunk_index=None):
+                parent_source_sha256=None, chunk_index=None, io_executor=None):
     """Actually scan pixels. No complete receipt for a limited pilot."""
     source, output = Path(source), Path(output)
     require(sha_file(source) == expected_source_sha256,
@@ -401,7 +405,7 @@ def scan_source(source, output, *, expected_source_sha256,
                 result = process_packet(rows, part=part, tier=tier,
                                         detector=detector, download=download,
                                         workers=workers, source_role=source_role,
-                                        performance=perf)
+                                        performance=perf, io_executor=io_executor)
                 write_packet_csv(dest, result)
                 counts = dict(Counter(r["screen_status"] for r in result))
                 proof = {
