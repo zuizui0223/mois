@@ -76,7 +76,7 @@ class TestFullGlobalNestedU100Source(unittest.TestCase):
                 nested_original_photo_depth5_source_arm=g.ARM,
                 global_source_original_photo_IDs_metadata_only=g.EXPECTED_PHOTOS,
                 global_nominal_source_taxa=g.EXPECTED_TAXA,
-                global_U100_source_eligible_taxa=2,
+                global_U100_eligible_taxa=2,
                 source_group_original_photo_IDs_distinct=True,
                 source_group_original_observations_distinct=True,
                 source_group_candidate_photo_rank_unchanged=True,
