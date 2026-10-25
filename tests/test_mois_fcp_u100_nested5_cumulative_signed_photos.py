@@ -50,7 +50,8 @@ class TestFCP5OriginalPhotoPartialCumulative(unittest.TestCase):
             "new_original_acquired_hue_unclassifiable":extra,
             "new_distinct_original_observations":n,
             "new_original_hue_counts":{
-                "white":200,"yellow_orange":0,"red_pink":classified-200,
+                "white":min(200,classified),"yellow_orange":0,
+                "red_pink":classified-min(200,classified),
                 "blue_purple":0,"mixed_uncertain":n-classified},
             "distinct_original_per_photo_joint_probabilities":17,
             "frozen_original_FCP_yolo_efficientSAM_roi_v4_method_attested":True,
