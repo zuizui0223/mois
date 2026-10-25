@@ -132,8 +132,10 @@ class LongLivedExactSourcePhotoTests(unittest.TestCase):
         b=p.execute([self.chunks],self.output,weights=self.root/"weight.pt",
                     weight_sha="a"*64,slot=0,slots=1,approved_aggregate_rps=50,
                     detector=self.Detector(),downloader=self.fetch,
-                    download_workers=2,batch_size=16)
+                    download_workers=2,batch_size=32)
         self.assertEqual(b["actual_source_photo_attempts_in_verified_completed_chunks"],7)
+        self.assertEqual(b["previously_finished_original_source_photo_pixels_reused"],7)
+        self.assertEqual(b["new_source_photo_attempts_this_process"],0)
         self.assertEqual(len(self.requested),7,"Existing signed pixels were fetched again")
 
     def test_chunk_tampering_fails_before_any_photo_request(self):
