@@ -616,6 +616,8 @@ def main():
     a.add_argument("--flower-class-name", default="item")
     a.add_argument("--device", default="cpu")
     a.add_argument("--model-conf", type=float, default=0.02)
+    a.add_argument("--colour-feature-mode", default="legacy_hsv", choices=FEATURE_MODES,
+                   help="Stage1 v2 measures sRGB-derived Lab in YOLO flower box, no petal segmentation")
     a.add_argument("--allow-pixel-only-pilot", action="store_true")
     a.add_argument("--workers", type=int, default=8)
     a.add_argument("--batch-size", type=int, default=512)
@@ -636,7 +638,8 @@ def main():
         x.source, x.output, expected_source_sha256=x.source_sha256,
         expected_count=x.expected_count, part=x.part, tier=x.tier,
         detector=model, download=source_download, workers=x.workers,
-        batch_size=x.batch_size, max_packets=x.max_packets)
+        batch_size=x.batch_size, max_packets=x.max_packets,
+        feature_mode=x.colour_feature_mode)
     print("MOIS_FULL93M_REAL_MEDIUM_PIXEL_SCAN",
           json.dumps(receipt, sort_keys=True))
 
