@@ -98,7 +98,7 @@ def global_source(folders, first1, output, *,
             "source_total_nominal_taxa":receipt.get(
                 "global_nominal_source_taxa")==EXPECTED_TAXA,
             "U100_eligible_taxa":receipt.get(
-                "global_U100_source_eligible_taxa")==expected_eligible,
+                "global_U100_eligible_taxa")==expected_eligible,
             "source_group_photo_ID_uniqueness":receipt.get(
                 "source_group_original_photo_IDs_distinct") is True,
             "source_group_observation_uniqueness":receipt.get(
