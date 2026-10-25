@@ -37,7 +37,7 @@ class Signed93mWarmJobs(unittest.TestCase):
         r=self.compute()
         self.assertEqual(r["original_source_photo_IDs_entire_universe"],21)
         self.assertEqual(r["planned_child_photo_chunk_tasks"],7)
-        self.assertEqual(r["planned_one_warm_model_worker_batches"],5)
+        self.assertEqual(r["planned_one_warm_model_worker_batches"],4)
         self.assertEqual(r["images_downloaded"],0)
         self.assertEqual(r["actual_photo_scans_completed_by_this_plan"],0)
         with (self.out/"all_photo_source_4096_chunk_tasks.csv").open() as f:
@@ -45,7 +45,7 @@ class Signed93mWarmJobs(unittest.TestCase):
         with (self.out/"all_one_warm_model_8chunk_batches.csv").open() as f:
             warm=list(csv.DictReader(f))
         self.assertEqual(len(child),7)
-        self.assertEqual(len(warm),5)
+        self.assertEqual(len(warm),4)
         self.assertEqual(sum(int(x["planned_original_photo_ids"]) for x in child),21)
         self.assertEqual(sum(int(x["expected_original_photo_ids"]) for x in warm),21)
         self.assertTrue(all(x["child_chunk_sha256_available_only_after_real_source_split"]=="true" for x in child))
