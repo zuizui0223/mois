@@ -185,6 +185,62 @@ def plan(root_paths,*,slot=0,slots=1):
         "assigned":assigned,
     }
 
+def inspect_completed_chunk(sub, source_root, source_receipt, chunk_index,
+                            expected, detector_identity):
+    """Reuse a previously *fully* signed photo chunk, even at a new packet width.
+
+    This removes costly rereads and avoids re-running original signed 500px
+    photographs merely because the warm-worker batch size changed.
+    """
+    complete=sub/"complete_receipt.json"
+    if not complete.exists():
+        return None
+    from scripts.acquisition.mois_full93m_medium_pixel_scan import SCHEMA as PIXEL_SCHEMA
+    r=json.loads(complete.read_text(encoding="utf-8"))
+    require(r.get("schema")==PIXEL_SCHEMA
+            and r.get("source_role")=="full93m_chunk"
+            and r.get("source_parent_sha256")==source_receipt["original_source_part_sha256"]
+            and r.get("source_chunk_index")==chunk_index
+            and r.get("source_tier")==source_receipt["original_tier"]
+            and r.get("source_part")==source_receipt["original_part"]
+            and r.get("detector_identity")==detector_identity
+            and r.get("expected_photo_ids")==expected
+            and r.get("actual_unique_source_photo_ids_attempted")==expected
+            and r.get("all_original_input_photos_attempted") is True
+            and r.get("entire_original_source_part_completed") is False
+            and sum(r.get("screen_counts",{}).values())==expected,
+            "Previously completed pixels differ from signed original photo/model")
+    with (source_root/"chunk_manifest.csv").open(newline="",encoding="utf-8") as handle:
+        rows=list(csv.DictReader(handle))
+    part=next((row for row in rows if int(row["chunk_index"])==chunk_index),None)
+    require(part is not None and
+            r["source_gzip_sha256"]==part["chunk_gzip_sha256"],
+            "Previously completed scan chunk source SHA mutated")
+    seen=0
+    packets=sorted(sub.glob("packet-*.csv.gz"))
+    require(len(packets)==r["packets_sealed"] and packets,
+            "Missing immutable photo packet for prior completed source chunk")
+    for data in packets:
+        proof=data.with_suffix("").with_suffix(".receipt.json")
+        require(proof.exists(),"Previously completed source packet receipt missing")
+        d=json.loads(proof.read_text(encoding="utf-8"))
+        require(d.get("output_sha256")==sha_file(data)
+                and d.get("source_gzip_sha256")==part["chunk_gzip_sha256"]
+                and d.get("source_parent_sha256")==source_receipt["original_source_part_sha256"]
+                and d.get("source_chunk_index")==chunk_index
+                and d.get("detector_identity")==detector_identity
+                and d.get("photo_ids",0)>0,
+                "Prior completed original photo pixel/ROI packet cannot be reused")
+        seen+=d["photo_ids"]
+    require(seen==expected,"Prior photo-ID attempts missing from source packets")
+    return {
+        "actual_new_or_resumed_medium_photo_attempts":expected,
+        "medium_decoded_photo_count":r["medium_image_pixels_decoded"],
+        "screen_counts":r["screen_counts"],
+        "source_chunk_all_photo_ids_scanned":True,
+        "source_image_packet_reread_not_inferred":True,
+    }
+
 def execute(root_paths,output,*,weights,weight_sha,slot=0,slots=1,
             approved_aggregate_rps,download_workers=12,batch_size=512,
             max_chunks=None,device="cpu",detector=None,downloader=None,
@@ -214,17 +270,27 @@ def execute(root_paths,output,*,weights,weight_sha,slot=0,slots=1,
         downloader=PooledOpenDataDownloader(per_worker_rps,download_workers)
     selected=p["assigned"][:max_chunks] if max_chunks is not None else p["assigned"]
     completed=Counter(); observed=Counter()
+    reused_completed=0
     start=time.monotonic()
+    model_identity=(
+        "yolo11:"+weight_sha+":item:0.02" if isinstance(detector,WarmFlowerBoxDetector)
+        else "test_injected_detector:"+type(detector).__name__
+    )
     try:
         with ThreadPoolExecutor(max_workers=download_workers) as executor:
             for k,(root,receipt,idx,expected) in enumerate(selected):
                 sub=output/(f"tier-{receipt['original_tier']:02d}")/(
                     f"part-{receipt['original_part']:03d}")/(f"chunk-{idx:05d}")
                 sub.parent.mkdir(parents=True,exist_ok=True)
-                r=scan_chunk(root,sub,idx,detector=detector,
-                             download=downloader,workers=download_workers,
-                             batch_size=batch_size,io_executor=executor,
-                             prefetch_next_packet=prefetch_next_packet)
+                r=inspect_completed_chunk(
+                    sub,root,receipt,idx,expected,model_identity)
+                if r is not None:
+                    reused_completed+=expected
+                else:
+                    r=scan_chunk(root,sub,idx,detector=detector,
+                                 download=downloader,workers=download_workers,
+                                 batch_size=batch_size,io_executor=executor,
+                                 prefetch_next_packet=prefetch_next_packet)
                 require(r["source_chunk_all_photo_ids_scanned"] is True
                         and r["actual_new_or_resumed_medium_photo_attempts"]==expected,
                         "Missing actual source photo pixels in completed chunk")
@@ -246,6 +312,10 @@ def execute(root_paths,output,*,weights,weight_sha,slot=0,slots=1,
                         "actual_source_photo_attempts_in_verified_completed_chunks":
                             completed["original_photo_attempts"],
                         "medium_photo_pixels_decoded":completed["medium_decoded"],
+                        "previously_finished_original_source_photo_pixels_reused":
+                            reused_completed,
+                        "new_source_photo_attempts_this_process":
+                            completed["original_photo_attempts"]-reused_completed,
                         "chunks_source_sha_verified_complete":completed["chunks_completed"],
                         "technical_statuses":dict(observed),
                         "remaining_source_photo_ids_for_this_slot":
