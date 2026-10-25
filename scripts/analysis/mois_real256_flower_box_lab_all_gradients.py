@@ -143,7 +143,7 @@ def run(pixel_dir,climate,geography,geo_receipt,output):
     full["season"]=[season_label(a,b) for a,b in zip(
         full.latitude.to_numpy(float),month.to_numpy(float))]
     full["altitude_band"]=[elev_band(x) for x in full.wc2_elev_2p5m]
-    full["vapour_quintile"],vapr_all_cut=q5(p.wc2_annual_vapr_10m.to_numpy(float))
+    _,vapr_all_cut=q5(p.wc2_annual_vapr_10m.to_numpy(float))
     thresholds=np.asarray(vapr_all_cut,dtype=float)
     values=full.wc2_annual_vapr_10m.to_numpy(float)
     full["vapour_quintile"]=np.where(np.isfinite(values),
@@ -172,7 +172,7 @@ def run(pixel_dir,climate,geography,geo_receipt,output):
     summaries=[]
     for label,cols in groups:
         if not cols:
-            summaries.append(show(full,label,"all"))
+            summaries.append(show("all",label,full))
         else:
             for k,v in full.groupby(cols,dropna=False,observed=True):
                 if not isinstance(k,tuple):k=(k,)
