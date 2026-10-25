@@ -191,17 +191,64 @@ jobs:
       - name: Publish immutable signed original photo ROI group without source photo re-inference
         run: |
           set -euo pipefail
-          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
-            gh release download "$TAG" --repo "$REPO" --dir previous \
-              --pattern original_group_receipt.json
-            cmp previous/original_group_receipt.json sealed/original_group_receipt.json
-          else
-            gh release create "$TAG" \
-              sealed/original_group_receipt.json \
-              sealed/original_photo_ROIs.parquet \
-              sealed/original_photo_hue_counts.csv \
-              sealed/original_photo_source_coverage.json \
-              --repo "$REPO" --target "$GITHUB_SHA" \
-              --title "MOIS FCP5 genuine new original photo pixel group $GROUP" \
-              --notes 'SHA-pinned original full-resolution FCP YOLO11 and EfficientSAM ROI-v4 image worker; per-photo original terminal SHA and photo ID verified. Technical access failure and colour-unclassifiable outcomes retained. Original nested 5/N/M inclusion probabilities retained; no raw image fetch, repeat inference, wild/native flowering assumptions or unbiased worldwide colour estimate.'
+          if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            # Retry only metadata/Parquet publishing on transient GitHub 403s.
+            # Real original photo acquisition and FCP ROI-v4 are NEVER repeated.
+            for attempt in 1 2 3; do
+              if gh release create "$TAG" \
+                sealed/original_group_receipt.json \
+                sealed/original_photo_ROIs.parquet \
+                sealed/original_photo_hue_counts.csv \
+                sealed/original_photo_source_coverage.json \
+                --repo "$REPO" --target "$GITHUB_SHA" \
+                --title "MOIS FCP5 genuine new original photo pixel group $GROUP" \
+                --notes 'SHA-pinned original full-resolution FCP YOLO11 and EfficientSAM ROI-v4 image worker; per-photo original terminal SHA and photo ID verified. Technical access failure and colour-unclassifiable outcomes retained. Original nested 5/N/M inclusion probabilities retained; no raw image fetch, repeat inference, wild/native flowering assumptions or unbiased worldwide colour estimate.'; then
+                break
+              fi
+              echo "FCP5 group $GROUP source-signed release attempt $attempt failed" >&2
+              # A partially created tag is never overwritten. Instead the
+              # independent four-asset SHA audit below fails closed.
+              if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo 'FCP5 original ROI releases inaccessible; immutable image-worker and sealed artifacts retained in Actions.' >&2
+                exit 1
+              fi
+              sleep $((attempt * 5))
+            done
           fi
+          gh api "repos/$REPO/releases/tags/$TAG" > FCP5-published-original-photo-assets.json
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          release=json.loads(Path('FCP5-published-original-photo-assets.json').read_text())
+          assert release['tag_name']==os.environ['TAG'] and not release['draft'], (
+              'FCP5 original ROI release identity or publication status invalid'
+          )
+          expected={
+              'original_group_receipt.json',
+              'original_photo_ROIs.parquet',
+              'original_photo_hue_counts.csv',
+              'original_photo_source_coverage.json',
+          }
+          assets={a['name']:a for a in release['assets']}
+          assert len(assets)==len(release['assets']) and set(assets)==expected, (
+              'Missing, duplicated or extra FCP5 original ROI release asset'
+          )
+          for name in sorted(expected):
+              source=Path('sealed')/name
+              assert source.is_file() and source.stat().st_size>0, (
+                  'Source original FCP5 pixel/terminal evidence missing: '+name
+              )
+              asset=assets[name]
+              digest='sha256:'+hashlib.sha256(source.read_bytes()).hexdigest()
+              assert asset['digest']==digest and asset['size']==source.stat().st_size, (
+                  'Published original FCP5 ROI source asset SHA/size mismatch: '+name
+              )
+          print('MOIS_FCP5_ORIGINAL_ROI_PUBLISHED_FOUR_ASSETS_SHA_VERIFIED',
+                json.dumps({'original_worker_group':int(os.environ['GROUP']),
+                            'published_original_photo_assets':len(expected),
+                            'source_pixels_re_downloaded_or_re_inferred':0},
+                           sort_keys=True),flush=True)
+          PY
