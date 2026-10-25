@@ -74,7 +74,7 @@ class SourceNinePaletteTests(unittest.TestCase):
         x=self.fixture()
         x.loc[0,"measurement_status"]="not_evaluable_roi_or_flip_gate"
         x.to_parquet(self.file,index=False)
-        with self.assertRaisesRegex(ValueError,"terminal"):
+        with self.assertRaisesRegex(ValueError,"status contradicts 4-hue"):
             read_nine(self.file,source_arm="BAD",original_four_hues=2)
 
 if __name__=="__main__":
