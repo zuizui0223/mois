@@ -27,7 +27,8 @@ def require(cond, msg):
 
 def run(chunks, output, chunk_index, *, detector,
         download, workers=8, batch_size=512, max_packets=None,
-        io_executor=None, prefetch_next_packet=False):
+        io_executor=None, prefetch_next_packet=False,
+        feature_mode="legacy_hsv"):
     chunks, output = Path(chunks), Path(output)
     report = json.loads((chunks / "chunk_receipt.json").read_text())
     require(report.get("schema") == CHUNK_SCHEMA
@@ -79,6 +80,7 @@ def run(chunks, output, chunk_index, *, detector,
         workers=workers, batch_size=batch_size, max_packets=max_packets,
         io_executor=io_executor,
         prefetch_next_packet=prefetch_next_packet,
+        feature_mode=feature_mode,
     )
     complete = bool(result["all_original_input_photos_attempted"])
     require(result["source_role"] == "full93m_chunk"
@@ -123,6 +125,8 @@ def main():
     p.add_argument("--device",default="cpu")
     p.add_argument("--workers",type=int,default=8)
     p.add_argument("--batch-size",type=int,default=512)
+    p.add_argument("--colour-feature-mode",default="legacy_hsv",
+                   choices=("legacy_hsv","floral_box_lab_v2"))
     p.add_argument("--requests-per-second",type=float,default=2.5)
     p.add_argument("--max-packets",type=int)
     a=p.parse_args()
@@ -135,7 +139,8 @@ def main():
             detector=detector,
             download=lambda url:download_medium(url,pacer),
             workers=a.workers,batch_size=a.batch_size,
-            max_packets=a.max_packets)
+            max_packets=a.max_packets,
+            feature_mode=a.colour_feature_mode)
     print("MOIS_REAL_SIGNED_PARENT_93M_SOURCE_CHUNK_PIXEL_PROGRESS",
           json.dumps(res,sort_keys=True))
 
