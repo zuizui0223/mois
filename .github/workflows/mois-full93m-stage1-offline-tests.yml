@@ -106,3 +106,65 @@ jobs:
             pilot_pixels/
           if-no-files-found: warn
           retention-days: 90
+  source-93m-exact-1792-scan-jobs:
+    if: github.event_name == 'push' && github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass' && contains(github.event.head_commit.message, '[plan1792]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-complete-93209351-original-photo-target-tiers-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download ONLY signed 93m source receipt and 16 group receipts, NOT image data
+        run: |
+          set -euo pipefail
+          mkdir -p source_receipts
+          gh release download "$TAG" --repo "$REPO" --dir source_receipts \
+            --pattern mois_all_original_photo_target_tiers_receipt.json \
+            --pattern 'group-??-receipt.json'
+          python - <<'PY'
+          from pathlib import Path
+          root=Path('source_receipts')
+          group=sorted(root.glob('group-??-receipt.json'))
+          assert len(group)==16, (len(group),group)
+          assert (root/'mois_all_original_photo_target_tiers_receipt.json').exists()
+          print('MOIS_AUTHENTIC_93M_16_GROUPS_RESTORED_WITHOUT_ORIGINAL_PIXELS',len(group))
+          PY
+      - name: Execute exact complete-source job manifest (128 signed parts x 14 hash tiers)
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_full93m_every_photo_scan_manifest \
+            --registry source_receipts/mois_all_original_photo_target_tiers_receipt.json \
+            --group-receipt source_receipts/group-??-receipt.json \
+            --output full93m_plan
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          p=Path('full93m_plan')
+          receipt=json.loads((p/'plan_receipt.json').read_text())
+          with (p/'all_original_photos_stage1_jobs.csv').open() as f:
+            job=list(csv.DictReader(f))
+          assert receipt['source_original_photo_ID_count']==93209351
+          assert receipt['source_original_partitions']==128
+          assert receipt['source_disjoint_tiers']==14
+          assert receipt['all_disjoint_scan_jobs_including_empty']==1792
+          assert len(job)==1792
+          assert sum(int(x['expected_photo_rows']) for x in job)==93209351
+          assert all(x['photo_level_sampling_probability']=='1' for x in job)
+          assert receipt['actual_images_downloaded_or_scanned']==0
+          assert receipt['scan_complete'] is False
+          print('MOIS_GENUINE_COMPLETE_ALL93M_STAGE1_SOURCE_JOB_MANIFEST_VERIFIED',
+                json.dumps({k:receipt[k] for k in
+                  ('source_original_photo_ID_count','all_disjoint_scan_jobs_including_empty',
+                   'actual_images_downloaded_or_scanned','manifest_sha256')},sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-all-93209351-source-photo-stage1-1792-signed-jobs-v1
+          path: full93m_plan/
+          retention-days: 90
+          if-no-files-found: error
