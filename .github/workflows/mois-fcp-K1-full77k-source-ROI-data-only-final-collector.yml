@@ -1,0 +1,179 @@
+name: MOIS finalize K1 genuine 76753 original photo ROI Parquet from all finished workers
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/acquisition/mois_full_index_real_original_photo_measure.py
+      - tests/test_mois_full_index_K1_balanced_completed_collector.py
+      - .github/workflows/mois-fcp-K1-full77k-source-ROI-data-only-final-collector.yml
+  pull_request:
+    paths:
+      - scripts/acquisition/mois_full_index_real_original_photo_measure.py
+      - tests/test_mois_full_index_K1_balanced_completed_collector.py
+      - .github/workflows/mois-fcp-K1-full77k-source-ROI-data-only-final-collector.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-all-75-K1-frozen-source-pixels-data-only-Parquet-restore
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reject fabricated source photo ID dedup while permitting signed K1 80035 selection
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1 PyYAML==6.0.2
+          python -m py_compile scripts/acquisition/mois_full_index_real_original_photo_measure.py
+          python -m unittest discover -s tests -p test_mois_full_index_K1_balanced_completed_collector.py -v
+          python - <<'PY'
+          import subprocess,yaml
+          wf=yaml.safe_load(open('.github/workflows/mois-fcp-K1-full77k-source-ROI-data-only-final-collector.yml'))
+          blocks=[s['run'] for j in wf['jobs'].values() for s in j['steps'] if 'run' in s]
+          assert len(blocks)>=5
+          for script in blocks:
+              p=subprocess.run(['bash','-n'],input=script,text=True,capture_output=True)
+              assert p.returncode==0,p.stderr
+          print('MOIS_FULL_K1_ORIGINAL_SOURCE_ROI_COLLECTOR_SHELL_VALID',len(blocks))
+          PY
+  recover-full-actual-source-pixel-parquet:
+    needs: tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      K1_RUN: 40066261878
+      FINAL_TAG: mois-full93m-tier06-balanced-onephoto-K1-new-original-warm8-RGB-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip duplicate full-K1 pixel export if immutable release already exists
+        id: gate
+        run: |
+          set -euo pipefail
+          if gh release view "$FINAL_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo ready=false >> "$GITHUB_OUTPUT"
+            echo 'Completed full K1 76753 original photo Parquet already published.'
+            exit 0
+          fi
+          succeeded=$(gh api "repos/$REPO/actions/runs/$K1_RUN/jobs?per_page=100" \
+            --jq '[.jobs[] | select(.name | startswith("warm-original-ROI (")) |
+                    select(.conclusion=="success")] | length')
+          test "$succeeded" -eq 75
+          gh release view mois-K1-genuine-completed-original-ROI-75groups-b4679ab3832b3a1f-v1 \
+            --repo "$REPO" --json isDraft --jq .isDraft | grep -qx false
+          echo ready=true >> "$GITHUB_OUTPUT"
+          echo 'All K1 75 genuine model groups are SHA-published, use stored outcomes only.'
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+      - name: Recover old original source packet manifests and ALL stored actual ROI worker results
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          gh run download "$K1_RUN" --repo "$REPO" \
+            --name mois-full93m-balanced-onephoto-K1-new-precolour-original-ROI-source \
+            --dir source
+          echo '4da66dc0d34f440269c2202f95b0f39ad369531fd625676e8ec69df4ae939f1c  source/manifest.json' | sha256sum -c -
+          gh run download "$K1_RUN" --repo "$REPO" \
+            --pattern 'mois-balanced-onephoto-K1-real-RGB-group-*' --dir workers
+          python - <<'PY'
+          from pathlib import Path
+          a=[p for p in Path('workers').iterdir() if p.is_dir()
+             and p.name.startswith('mois-balanced-onephoto-K1-real-RGB-group-')]
+          assert len(a)==75 and {p.name for p in a}=={
+              f'mois-balanced-onephoto-K1-real-RGB-group-{x}' for x in range(75)}
+          print('MOIS_K1_ALL75_COMPLETE_SOURCE_IMAGE_WORKER_ZIPS_RECOVERED',len(a))
+          PY
+      - name: Re-audit full 76753 image terminal SHAs, probability and original outcome statuses
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.acquisition.mois_completed_pixel_checkpoint import collect_wave
+          from scripts.analysis.mois_reassemble_original_new4096_measurements import METHOD
+          info=json.loads(Path('source/manifest.json').read_text())
+          records,receipt=collect_wave(Path('source'),Path('workers'),METHOD)
+          assert receipt['wave_complete']
+          assert len(records)==receipt['attempted']==info['new_photo_attempts_planned']==76753
+          assert receipt['classifiable']==27689
+          assert receipt['acquisition_failed']==203
+          assert receipt['unclassifiable_acquired']==48861
+          assert len({r['photo_id'] for r in records})==76753
+          assert len({r['observation_id'] for r in records})==76753
+          assert all(r['source_arm']==info['source_arm'] for r in records)
+          assert all(0<float(r['selection_probability'])<=1 for r in records)
+          Path('independent_full_K1_original_terminal_SHA_audit.json').write_text(
+              json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          print('MOIS_K1_ALL75_INDEPENDENT_REAL_IMAGE_TERMINAL_REAUDIT_PASS',
+                receipt['attempted'],receipt['classifiable'],flush=True)
+          PY
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure collect \
+            --source source --workers workers --output frozen
+          cp independent_full_K1_original_terminal_SHA_audit.json frozen/
+          cp source/manifest.json frozen/original_K1_source_manifest.json
+          python - <<'PY'
+          import json,pandas as pd
+          from pathlib import Path
+          receipt=json.loads(Path('frozen/receipt.json').read_text())
+          assert receipt['attempted']==76753
+          assert receipt['classifiable']==27689
+          assert receipt['acquisition_failed']==203
+          assert receipt['unclassifiable_acquired']==48861
+          assert receipt['matching_prior_measured_photos_reused']==3280
+          assert receipt['K1_original_joint_photo_selection_probability_per_individual_photo']
+          assert receipt['botanical_flower_native_status_unreviewed']
+          data=pd.read_parquet('frozen/measured_photos.parquet',
+                               columns=['photo_id','observation_id','selection_probability','morph'])
+          assert len(data)==data.photo_id.nunique()==76753
+          assert len(data.observation_id.unique())==76753
+          assert data.selection_probability.notna().all()
+          assert pd.to_numeric(data.selection_probability).gt(0).all()
+          print('MOIS_K1_TRUE_ORIGINAL_SOURCE_FULL75_PARQUET_DONE',
+                len(data),data.morph.isin(('white','yellow_orange','red_pink','blue_purple')).sum())
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-all75-real-K1-original-photo-ROI-source-id-full-Parquet
+          path: frozen/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish fully signed genuine ROI-v4 source original photo Parquet without re-inference
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if gh release view "$FINAL_TAG" --repo "$REPO" >/dev/null 2>&1; then
+              gh release download "$FINAL_TAG" --repo "$REPO" --dir published \
+                --pattern receipt.json
+              cmp published/receipt.json frozen/receipt.json
+              echo 'Source-original full K1 release already published and idempotent.'
+              exit 0
+            fi
+            if gh release create "$FINAL_TAG" frozen/*.json frozen/*.parquet \
+                --repo "$REPO" --target "$GITHUB_SHA" \
+                --title 'MOIS full actual K1 76753 never-previously-pixel-measured source ROIs' \
+                --notes 'All 75 original source photo ROI-v4 image worker groups completed, exact source+terminal photo ID/observation/probability+SHA reaudited. Preserves 3280 already measured photo reuse outside this immutable 76753-row Parquet. Source-isolated full-real-RGB Parquet, unchanged YOLO11/EfficientSAM, 27689 four-hue automatic ROI labels, 203 image acquisition failures and 48861 acquired-but-unclassifiable originals. No photo pixels downloaded or ROI model executed by this recovery action; no globally unbiased native blooming white-flower estimate.'; then
+              echo 'MOIS_ALL75_K1_FROZEN_GENUINE_ORIGINAL_PHOTO_PARQUET_PUBLISHED'
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then sleep 8; fi
+          done
+          echo 'Failed to publish immutable K1 original photo evidence after bounded retries' >&2
+          exit 1
