@@ -81,7 +81,7 @@ def nine_palette_from_frame(df):
     finite=np.isfinite(raw).all(axis=1)
     nonnegative=(raw>=0).all(axis=1)
     finite_bound=(raw<=1+1e-6).all(axis=1)
-    total=np.where(finite,raw,0).sum(axis=1)
+    total=np.where(finite[:,None],raw,0).sum(axis=1)
     valid=finite & nonnegative & finite_bound & (total>0)
     mixture=np.full(raw.shape,np.nan,dtype=float)
     mixture[valid]=raw[valid]/total[valid,None]
