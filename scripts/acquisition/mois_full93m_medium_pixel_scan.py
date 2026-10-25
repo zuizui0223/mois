@@ -218,7 +218,8 @@ def packets(reader, n):
             return
         yield part
 
-def process_packet(rows, *, part, tier, detector, download, workers):
+def process_packet(rows, *, part, tier, detector, download, workers,
+                   source_role="full93m"):
     """Bounded parallel fetch; single warm-batch inference on decoded images."""
     from PIL import Image
     def one(row):
@@ -229,7 +230,9 @@ def process_packet(rows, *, part, tier, detector, download, workers):
             latitude=row["latitude"], longitude=row["longitude"],
             source_part=str(part), source_tier=str(tier),
             photo_license=row["photo_license"],
-            source_arm=SOURCE_ARM, source_photo_inclusion_probability="1",
+            source_arm=(SOURCE_ARM if source_role == "full93m" else
+                        "K1_signature_verified_calibration_only"),
+            source_photo_inclusion_probability=("1" if source_role == "full93m" else ""),
             audit_stratum=audit_stratum(row["latitude"], row["observed_on"]),
             screen_status="error",
         )
@@ -307,7 +310,7 @@ def write_packet_csv(path, rows):
 def scan_source(source, output, *, expected_source_sha256,
                 expected_count, part, tier,
                 detector=None, download=None, workers=8, batch_size=512,
-                max_packets=None):
+                max_packets=None, source_role="full93m"):
     """Actually scan pixels. No complete receipt for a limited pilot."""
     source, output = Path(source), Path(output)
     require(sha_file(source) == expected_source_sha256,
@@ -319,6 +322,10 @@ def scan_source(source, output, *, expected_source_sha256,
     require(1 <= batch_size <= 8192 and 1 <= workers <= 64,
             "Unbounded pixel packet or download concurrency")
     require(max_packets is None or max_packets > 0, "Invalid pilot limit")
+    require(source_role in ("full93m", "K1_calibration"),
+            "Only a complete 93m source or separately labelled K1 calibration is accepted")
+    require(source_role != "K1_calibration" or max_packets is not None,
+            "K1 benchmark is never a full-source photo census")
     require(output.exists() is False or output.is_dir(), "Output is not a directory")
     output.mkdir(parents=True, exist_ok=True)
     if download is None:
@@ -368,7 +375,8 @@ def scan_source(source, output, *, expected_source_sha256,
                 started = time.monotonic()
                 result = process_packet(rows, part=part, tier=tier,
                                         detector=detector, download=download,
-                                        workers=workers)
+                                        workers=workers,
+                                        source_role=source_role)
                 write_packet_csv(dest, result)
                 counts = dict(Counter(r["screen_status"] for r in result))
                 proof = {
@@ -401,7 +409,7 @@ def scan_source(source, output, *, expected_source_sha256,
             first = ids[0] if first is None else first
             last = ids[-1]
     total = sum(stats.values())
-    full = max_packets is None and total == expected_count
+    full = source_role == "full93m" and max_packets is None and total == expected_count
     if max_packets is None:
         require(total == expected_count,
                 "Signed full source input photo count does not match true attempts")
@@ -409,6 +417,8 @@ def scan_source(source, output, *, expected_source_sha256,
         "schema": SCHEMA,
         "source_gzip_sha256": expected_source_sha256,
         "source_part": part, "source_tier": tier,
+        "source_role": source_role,
+        "calibration_subset_not_global_census": source_role != "full93m",
         "expected_photo_ids": expected_count,
         "actual_unique_source_photo_ids_attempted": total,
         "packets_sealed": completed_packets,
