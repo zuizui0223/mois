@@ -1,0 +1,62 @@
+name: MOIS publish 1m original photo dominant floral nine-colour proxy dataset
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - .github/workflows/mois-publish-major-floral-colour-1043930.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-signed-main-floral-ROI-colour-1043930-once
+  cancel-in-progress: false
+jobs:
+  preserve-source-backed-major-colour:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: mois-real1043930-original-floral-dominant-ROI9-proxy-20261025-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore real 1043930-photo-ID dominant-colour source with strict SHA verification
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh run download 40197966700 --repo zuizui0223/mois \
+            --name mois-real1043930-floral-ROI-major-colour-percent-secondary-mixed-proxy \
+            --dir source
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('source')
+          report=json.loads((root/'mois_main_petal_colour_proxy_1043930_receipt.json').read_text())
+          original=root/'mois_main_petal_colour_proxy_1043930_original_photo_IDs.parquet'
+          assert report['schema']=='mois_original_flower_ROI9_dominant_as_main_petal_colour_proxy_v1'
+          assert report['source_original_photo_attempts']==1043930
+          assert report['strict_dominant_9colour_source_photo_ROIs']==390541
+          assert report['ambiguous_dominant_9colour_exploration_only']==36224
+          assert report['petal_calyx_stamen_bract_instance_separation_required'] is False
+          assert report['original_four_hue_labels_unchanged'] is True
+          assert report['new_images_downloaded']==0
+          assert hashlib.sha256(original.read_bytes()).hexdigest()==report['main_colour_photo_table_SHA256']
+          print('MOIS_MAIN_FLORAL_COLOUR_ALL1043930_ORIGINAL_PHOTO_IDS_SHA_ATTESTED',flush=True)
+          PY
+      - name: Create immutable photo-ID level major colour proxy release, not fake petal CIELAB
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo zuizui0223/mois >/dev/null 2>&1; then
+            mkdir -p old
+            gh release download "$TAG" --repo zuizui0223/mois --dir old \
+              --pattern mois_main_petal_colour_proxy_1043930_receipt.json
+            cmp old/mois_main_petal_colour_proxy_1043930_receipt.json \
+                source/mois_main_petal_colour_proxy_1043930_receipt.json
+            echo 'Immutable main-floral-colour original ROI proxy receipt unchanged.'
+          else
+            gh release create "$TAG" source/* --repo zuizui0223/mois \
+              --target "$GITHUB_SHA" \
+              --title 'MOIS 1,043,930 original photographs: major floral-region colour and runner-up fractions' \
+              --notes 'One SHA-conserved photo-ID per original measured image. Original ROI 9-part palette argmax is an operational estimated main petal colour, not a verified separated petal or calibrated Lab reflectance: 390541 strict measured vectors, 36224 explicitly ambiguous sensitivity-only, all unclassifiable photo IDs retained as blank. Preserve major fraction, second colour and fraction, mixed-photo source QC and original unchanged historical 4-hue labels. No new source photo download/YOLO/SAM. The new device-sRGB-derived floral-region CIELAB Stage1 v2 remains a separate image-pixel protocol and is not inferred from this original 9-bin source.'
+          fi

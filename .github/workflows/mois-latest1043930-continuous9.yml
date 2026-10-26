@@ -1,0 +1,128 @@
+name: MOIS real 1.04m originals continuous 9-component colour recovery and coverage
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_real1043930_continuous9_source_lake.py
+      - tests/test_mois_real1043930_continuous9_source_lake.py
+      - .github/workflows/mois-latest1043930-continuous9.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-20261025-1043930-original-photo-nine-fraction-source-recovery
+  cancel-in-progress: false
+jobs:
+  original-continuous-palette-restoration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install data-only original-image photo ROI parquet engine
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_real1043930_continuous9_source_lake.py
+          python -m unittest discover -s tests -p test_mois_real1043930_continuous9_source_lake.py -v
+      - name: Download genuine original 929138 historical, K1 76753 and depth1 3141 photo rows
+        run: |
+          set -euo pipefail
+          mkdir -p source/historical/main source/historical/group00 source/historical/r1 source/historical/r2 source/k1 source/fcp source/fcp5/cumulative
+          gh release download mois-real-pixel-checkpoint-39969920310-v1 \
+            --repo zuizui0223/mois --dir source/historical/main \
+            --pattern combined_actual_photo_checkpoint.parquet --pattern checkpoint_receipt.json
+          gh release download mois-tier06-group00-first64bucket-warm-original-RGB-v1 \
+            --repo zuizui0223/mois --dir source/historical/group00 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-tier06-all16-first4bucket-broad-warm-original-RGB-v1 \
+            --repo zuizui0223/mois --dir source/historical/r1 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-tier06-all16-buckets004to011-broad-warm-original-RGB-v1 \
+            --repo zuizui0223/mois --dir source/historical/r2 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-full93m-tier06-balanced-onephoto-K1-new-original-warm8-RGB-v1 \
+            --repo zuizui0223/mois --dir source/k1 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-full93m-FCP-U100-depth1-only3141-new-original-RGB-v1 \
+            --repo zuizui0223/mois --dir source/fcp \
+            --pattern new_FCP_depth1_original_photo_ROIs.parquet --pattern receipt.json
+          gh release download mois-FCP5-source-signed-new-original-ROI-35groups-27b5196268881393-v1 \
+            --repo zuizui0223/mois --dir source/fcp5/cumulative \
+            --pattern mois_FCP5_partial_genuine_original_pixel_cumulative.json
+          echo '0d3de3374a06b1e7b9ad0281e2ab7844632ed139db871488524061191c8f34c1  source/k1/measured_photos.parquet' | sha256sum -c -
+          echo 'ee79c60671dda65a3d2f4f9319af952dbe81ab805ce269fe32b3bb3448b0d6b8  source/fcp/new_FCP_depth1_original_photo_ROIs.parquet' | sha256sum -c -
+      - name: Restore all 35 already SEALED original FCP5 image-group ROIs, 8 concurrent HTTPS release requests
+        run: |
+          set -euo pipefail
+          seq 0 34 | xargs -P 8 -I '{}' bash -c '
+            set -euo pipefail
+            g="$1"
+            dir="source/fcp5/group-$(printf %02d "$g")"
+            mkdir -p "$dir"
+            gh release download "mois-FCP-U100-nested5-34898-original-ROI-append-group-$g-v1" \
+              --repo zuizui0223/mois --dir "$dir" \
+              --pattern original_photo_ROIs.parquet \
+              --pattern original_group_receipt.json
+            test -s "$dir/original_photo_ROIs.parquet"
+            test -s "$dir/original_group_receipt.json"
+          ' _ '{}'
+          test "$(find source/fcp5 -name original_photo_ROIs.parquet | wc -l)" -eq 35
+          echo 'MOIS_ALL_35_SHA_SEALED_ACTUAL_FCP5_IMAGE_GROUP_PARQUETS_RESTORED'
+      - name: Reuse signed 1,043,930 original photo-ID spine without new photo acquisition
+        run: |
+          set -euo pipefail
+          mkdir -p latest_original
+          gh run download 40187688390 --repo zuizui0223/mois \
+            --name mois-1043930-latest-original-photo-four-hue-fully-signed-union \
+            --dir latest_original
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          root=Path("latest_original")
+          r=json.loads((root/"mois_latest_1043930_photo_union_receipt.json").read_text())
+          f=root/"mois_latest_1043930_true_original_photo_hue_observation.parquet"
+          assert r["source_pixel_attempts"]==1043930 and r["source_four_hue_classified"]==459235
+          assert hashlib.sha256(f.read_bytes()).hexdigest()==r["photo_parquet_sha256"]
+          assert r["latest_fcp5_genuine_complete_groups"]==35
+          print("MOIS_1043930_SHA_ORIGINAL_PHOTO_SPINE_READY_NO_ORIGINAL_IMAGE_DOWNLOAD",flush=True)
+          PY
+      - name: Recover genuine nine source palette fractions and preserve all ROI failures
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real1043930_continuous9_source_lake \
+            --source source \
+            --latest latest_original/mois_latest_1043930_true_original_photo_hue_observation.parquet \
+            --latest-receipt latest_original/mois_latest_1043930_photo_union_receipt.json \
+            --output continuous9
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          r=json.loads(Path("continuous9/mois_real1043930_continuous9_coverage_receipt.json").read_text())
+          assert r["source_real_original_photo_attempts"]==1043930
+          assert r["source_original_four_hue_classified"]==459235
+          assert r["source_technical_four_hue_unknown"]==584695
+          assert r["all_photo_IDs_kept_even_if_no_valid_roi"] is True
+          assert r["new_image_downloads"]==r["new_roi_inferences"]==0
+          assert (r["strict_plus_ambiguous_nine_component_vectors"] >=
+                  r["strict_9component_real_colour_vectors"])
+          k1=r["per_original_source_arm"]["K1"]
+          assert k1["original_photo_attempts"]==76753
+          assert k1["source_four_hue_labels"]==27689
+          assert k1["strict_original_4hue_ROIs_with_all_9_fractions"]>=20000
+          assert k1["ambiguous_explicit_palette_usable_exploratory"]==2510
+          print("MOIS_1043930_GENUINE_NINE_PALETTE_RECOVERY_VALIDATED",flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real1043930-original-ROI-continuous9-palette-lake
+          path: continuous9/
+          if-no-files-found: warn
+          retention-days: 90

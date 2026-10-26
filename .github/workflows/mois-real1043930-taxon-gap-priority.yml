@@ -1,0 +1,86 @@
+name: MOIS source-verified 42111-taxon missing colour and additional-photo priorities
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_real1043930_taxon_gap_priority.py
+      - tests/test_mois_real1043930_taxon_gap_priority.py
+      - .github/workflows/mois-real1043930-taxon-gap-priority.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-real1043930-full-frame-42111taxon-ROI9-data-structure-priority
+  cancel-in-progress: false
+jobs:
+  all-source-taxon-original-image-colour-gap-priority:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 23
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Source plan no-image prerequisites and no invented new-photo queue tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_real1043930_taxon_gap_priority.py
+          python -m unittest discover -s tests -p test_mois_real1043930_taxon_gap_priority.py -v
+      - name: Restore original 1043930 exact photo pixels, original source population audit and frozen 42k taxa counts
+        run: |
+          set -euo pipefail
+          mkdir -p source audit frame
+          gh release download mois-original1043930-recovered-continuous9-426765-and-ecology-20261025-v1 \
+            --repo zuizui0223/mois --dir source \
+            --pattern mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --pattern mois1043930_FCP447500_nine_palette_restoration_receipt.json
+          gh run download 40258731262 --repo zuizui0223/mois \
+            --name mois-real1043930-full-93m-taxon-source-ROI9-composition-audit \
+            --dir audit
+          gh run download 38749681793 --repo zuizui0223/fcp \
+            --name fcp-42111-real-source-photo-opportunity-counts-20260927-complete-not-colours \
+            --dir frame
+          source_counts=$(find frame -name all_42111_species_photo_opportunity_counts.csv -print -quit)
+          test -s "$source_counts"
+          printf '%s\n' \
+            'b20bbefe15020c21c3b5b0f7edf3f8e08148a4ee7dda8bf772a89bf6b126f447  source/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet' \
+            "ef26c16252dd785f2d08bde3b18938c7624d73a54386fa3d3974dceb09ed97a9  $source_counts" \
+            | sha256sum -c -
+      - name: Rank actual 42111 source taxa by absent nine ROI, source rarity, and prior image attempts
+        run: |
+          set -euo pipefail
+          source_counts=$(find frame -name all_42111_species_photo_opportunity_counts.csv -print -quit)
+          python -m scripts.analysis.mois_real1043930_taxon_gap_priority \
+            --photo source/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --receipt source/mois1043930_FCP447500_nine_palette_restoration_receipt.json \
+            --upstream "$source_counts" \
+            --structure audit/mois_1043930_actual_data_structure_and_bias_audit.json \
+            --output priorities
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('priorities/mois_real1043930_taxon_gap_and_next_acquisition_decision.json').read_text())
+          assert d['source_frame_taxa']==42111
+          assert d['original_source_photo_ID_candidates']==93209351
+          assert d['strict9_photo_source']==390541
+          assert d['taxa_with_at_least_one_valid9']==21227
+          assert d['source_taxa_without_any_valid9']==20884
+          assert d['source_taxa_with_photos_but_no_valid9']==20868
+          assert d['source_photo_opportunities_in_taxa_with_photos_but_no_valid9']==2290570
+          assert d['source_attempted_photos_but_outside_42111_taxon_frame']==32710
+          assert not d['individual_source_photo_ID_queues_created']
+          assert d['new_photo_downloads']==0 and d['new_image_ROI_inferences']==0
+          print('MOIS_REAL_1043930_TAXON_PRIORITY_NO_BLIND_PHOTO_EXPANSION_READY',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-original-42111-taxon-93m-photo-ROI9-gap-priority-source-register
+          path: priorities/
+          retention-days: 90
+          if-no-files-found: error

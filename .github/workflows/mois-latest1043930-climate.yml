@@ -1,0 +1,113 @@
+name: MOIS new real1043930 original photo WorldClim moisture heat altitude join
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_latest1043930_climate.py
+      - .github/workflows/mois-latest1043930-climate.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-real1043930-all-original-photo-worldclim-annual-climate-20261025
+  cancel-in-progress: false
+jobs:
+  latest-one-million-annual-environment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install original WorldClim sampling libraries, not photographic neural nets
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 rasterio==1.4.3
+          python -m py_compile scripts/analysis/mois_latest1043930_climate.py
+      - name: Restore completed latest 1043930 actual ROI source and 350399 older immutable environmental rows
+        run: |
+          set -euo pipefail
+          mkdir -p latest old_env original_core
+          gh run download 40187688390 --repo zuizui0223/mois \
+            --name mois-1043930-latest-original-photo-four-hue-fully-signed-union --dir latest
+          gh release download mois-real350399-original-photo-all19-incremental-climate-v1 \
+            --repo zuizui0223/mois --dir old_env \
+            --pattern mois350399_all19_annual_vapr_solar_terrain_source_photoids.parquet \
+            --pattern mois350399_immutable_annual_climate_source_receipt.json
+          gh release download mois-primary-real317631-next4096-incremental-all19-featurelake-v3 \
+            --repo zuizui0223/mois --dir original_core \
+            --pattern mois_317631_new4096_incremental_climate_feature_lake_receipt.json
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          m=json.loads(Path('latest/mois_latest_1043930_photo_union_receipt.json').read_text())
+          assert m['source_pixel_attempts']==1043930 and m['source_four_hue_classified']==459235
+          assert m['photo_parquet_sha256']=='9a4f3dae6fbcee967b71cb29576e71d52c48e1f1f790b7d3ea4750c4bcb0e6d4'
+          a=json.loads(Path('old_env/mois350399_immutable_annual_climate_source_receipt.json').read_text())
+          e=Path('old_env/mois350399_all19_annual_vapr_solar_terrain_source_photoids.parquet')
+          assert a['source_photo_attempts']==350399
+          assert hashlib.sha256(e.read_bytes()).hexdigest()==a['sha256'][e.name]
+          print('MOIS_TRUE_1043930_ORIGINAL_RGB_AND_350399_OLD_ANNUAL_GEO_SOURCE_SHA_CONFIRMED',flush=True)
+          PY
+      - name: Download exactly previously SHA-frozen WorldClim BIO SRAD VAPR DEM original raster sources
+        timeout-minutes: 30
+        run: |
+          set -euo pipefail
+          mkdir -p rasters/{bio,srad,vapr,elev}
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_bio.zip \
+            -o rasters/bio/wc2.1_10m_bio.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_srad.zip \
+            -o rasters/srad/wc2.1_10m_srad.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_vapr.zip \
+            -o rasters/vapr/wc2.1_10m_vapr.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_2.5m_elev.zip \
+            -o rasters/elev/wc2.1_2.5m_elev.zip
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          r=json.loads(Path('original_core/mois_317631_new4096_incremental_climate_feature_lake_receipt.json').read_text())
+          for k,f in [('bio','wc2.1_10m_bio.zip'),('srad','wc2.1_10m_srad.zip'),('vapr','wc2.1_10m_vapr.zip'),('elev','wc2.1_2.5m_elev.zip')]:
+              p=Path('rasters')/k/f
+              digest=hashlib.sha256(p.read_bytes()).hexdigest()
+              assert digest==r['source_original_raster_sha256'][k],('OFFICIAL_WORLDCLIM_RASTER_SHA_MISMATCH',k,digest)
+          print('MOIS_4_PREVIOUS_ORIGINAL_WORLDCLIM_SHA_BYTES_VERIFIED',flush=True)
+          PY
+          for k in bio srad vapr elev; do unzip -q "rasters/$k/"*.zip -d "rasters/$k"; done
+      - name: Sample official raster at every new genuine photo ID, preserve earlier 350399 climate values
+        timeout-minutes: 35
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_latest1043930_climate \
+            --photo latest/mois_latest_1043930_true_original_photo_hue_observation.parquet \
+            --photo-receipt latest/mois_latest_1043930_photo_union_receipt.json \
+            --old-env old_env/mois350399_all19_annual_vapr_solar_terrain_source_photoids.parquet \
+            --old-receipt old_env/mois350399_immutable_annual_climate_source_receipt.json \
+            --worldclim rasters --output annual_latest1043930
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('annual_latest1043930/mois_latest1043930_photo_climate_receipt.json').read_text())
+          assert r['original_exact_photo_attempts']==1043930
+          assert r['four_hue_classified']==459235
+          assert r['original_photo_climate_complete']>=300000
+          assert r['four_hue_classified_climate_complete']>=150000
+          assert r['all_photo_ids_preserved']
+          assert r['unknowns_never_imputed_as_petal_colour']
+          print('MOIS_LATEST_1043930_FULL_WORLDCLIM_SOURCE_COUNT_PASSED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real-latest1043930-photoid-original-worldclim-humidity-elevation
+          path: annual_latest1043930/
+          retention-days: 90
+          if-no-files-found: error
