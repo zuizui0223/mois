@@ -140,12 +140,13 @@ def run(photo,receipt,upstream,structure,output):
     frame["known_source_observation_cluster_eligibility_from_taxon_totals"]=False
     frame["number_of_strict9_photo_ROIs_to_reach_5"]=(
         5-frame.n_strict_roi9).clip(lower=0)
-    outside=measured.loc[~measured.inat_taxon_id.isin(frame.index)]
+    outside=measured.loc[~measured.inat_taxon_id.isin(frame.index)].copy()
+    outside["known_four_hue"]=outside.original_four_hue.isin(
+        ("white","yellow_orange","red_pink","blue_purple"))
     out_by_arm=outside.groupby("source_arm_original",dropna=False,observed=True).agg(
         n_images=("photo_id","size"),
         strict9=("continuous9_strict","sum"),
-        old_four=("n_four_hue","sum") if "n_four_hue" in outside else
-        ("continuous9_strict","sum"),
+        old_four=("known_four_hue","sum"),
     ).reset_index()
     require(int(len(outside))==
             audited["source_photo_attempts_OUTSIDE_42111_upstream_taxon_frame"],
