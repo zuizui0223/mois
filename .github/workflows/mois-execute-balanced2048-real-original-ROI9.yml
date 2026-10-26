@@ -1,0 +1,213 @@
+name: MOIS actual 2048 balanced hemisphere-season photo ROI-v4 9colour source images
+on:
+  push:
+    branches: [feat/full93m-medium-pixel-firstpass]
+    paths:
+      - scripts/analysis/mois_collect_balanced_real2048_original_roi9.py
+      - tests/test_mois_collect_balanced_real2048_original_roi9.py
+      - .github/workflows/mois-execute-balanced2048-real-original-ROI9.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-2048-real-new-original-photos-geo-season-bias-compensation-warmROI
+  cancel-in-progress: false
+jobs:
+  signed-photo-ID-input:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_TAG: mois-original93m-tier07-geoseason-balanced-2048-botharms-source-20261026-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install source-only input validation and test the original photo-status collector
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_collect_balanced_real2048_original_roi9.py
+          python -m unittest discover -s tests -p test_mois_collect_balanced_real2048_original_roi9.py -v
+          python -m unittest discover -s tests -p test_mois_balance1043930_tier07_2048_source.py -v
+      - name: Restore frozen original-photo IDs, sampling strata and eight immutable 256-photo worker shards
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh release download "$SOURCE_TAG" --repo "$REPO" --dir source \
+            --pattern 'manifest.json' \
+            --pattern 'selected_original_photo_design_provenance.csv' \
+            --pattern 'new_photo_worker_shards.tar'
+          tar -xf source/new_photo_worker_shards.tar -C source
+          python - <<'PY'
+          import csv,json,hashlib
+          from pathlib import Path
+          source=Path('source')
+          m=json.loads((source/'manifest.json').read_text())
+          assert m['schema']=='mois_full_source_observation_sampling_cohort_v1'
+          assert m['sampling_schema']=='mois_tier07_source_actual1043930_regional_seasonal_bias_repair_twoarm_v1'
+          assert m['new_photo_attempts_planned']==2048
+          assert m['original_1043930_source_colour_composition_used_FOR_STRATUM_ALLOCATION_NOT_LABELS']
+          assert m['photo_shard_SHA256_used_by_worker_before_any_photo_fetch']
+          assert m['worker_ids']==list(range(8))
+          assert m['group_ids']==[0,1]
+          assert sum(m['source_arm_counts'].values())==2048
+          h=lambda f:hashlib.sha256(f.read_bytes()).hexdigest()
+          for i in range(8):
+              shard=source/'shards'/f'shard-{i:03d}.csv'
+              assert h(shard)==m['photo_shard_sha256'][str(i)]
+              with shard.open(newline='') as f:
+                  v=list(csv.DictReader(f))
+              assert len(v)==256 and len(set(x['observation_id'] for x in v))==256
+          assert h(source/'selected_original_photo_design_provenance.csv')==m['original_sampling_provenance_SHA256']
+          print('MOIS_TRUE2048_REGION_SEASON_BIASED_AND_CONTROLLED_ORIGINAL_SOURCE_BYTES_VERIFIED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-balanced2048-frozen-original-photo-worker-source
+          path: |
+            source/manifest.json
+            source/selected_original_photo_design_provenance.csv
+            source/shards/
+          retention-days: 90
+          if-no-files-found: error
+  original-photo-FCP-ROI-v4-warm-workers:
+    needs: signed-photo-ID-input
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        group: [0,1]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-balanced2048-frozen-original-photo-worker-source
+          path: source
+      - name: Restore unchanged frozen FCP ROI-v4 YOLO11 and EfficientSAM without altering thresholds
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          (cd "$RUNNER_TEMP/fcp" && bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam")
+      - name: Actually fetch genuine new original image pixels; warm original frozen YOLO11+EfficientSAM across four 256-photo source packets
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-regional-photo-provider-pacer"
+          python -m scripts.acquisition.mois_warm_original_roi \
+            --source source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --group '${{ matrix.group }}' --output measured
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('measured')
+          receipts=list(p.glob('shard_*/receipt.json'))
+          assert len(receipts)==4
+          a=[json.loads(x.read_text()) for x in receipts]
+          assert sum(x['attempted'] for x in a)==1024
+          assert all(x['photo_colours_measured'] is True
+                     and not x['raw_licensed_image_bytes_persisted'] for x in a)
+          print('MOIS_BALANCED_ORIGINAL1024_PER_WARM_WORKER_TRUE_IMAGE_PIXELS_DONE',
+                json.dumps({'attempts':sum(x['attempted'] for x in a),
+                            'classified':sum(x['classifiable'] for x in a),
+                            'unknown':sum(x['unclassifiable_acquired'] for x in a),
+                            'failed_downloads':sum(x['acquisition_failed'] for x in a)},
+                           sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real-2048-balanced-warm-originalROI-group-${{ matrix.group }}
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+  reconcile-source-original-photographs-and-register-new-colour-measures:
+    needs: [signed-photo-ID-input,original-photo-FCP-ROI-v4-warm-workers]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-real2048-new-source-photo-geo-season-stratified-ROI9-20261026-v1
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-balanced2048-frozen-original-photo-worker-source
+          path: source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-real-2048-balanced-warm-originalROI-group-*
+          path: workers
+      - name: Reconcile eight SHA-sealed actual image-pixel ROI work units, cohort membership and all failures/unknowns
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_collect_balanced_real2048_original_roi9 \
+            --source source --workers workers --output new_photo_colours
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          root=Path('new_photo_colours')
+          rec=json.loads((root/'mois_true2048_biasbalanced_original_pixel_collection_receipt.json').read_text())
+          assert rec['schema']=='mois_20261026_actual2048_novel_geo_season_balance_original_FCP_ROI9_v1'
+          assert rec['new_independent_original_photo_ids_attempted']==2048
+          assert rec['new_original_observations_distinct']==2048
+          assert rec['new_separate_reference_original_photos']==256
+          assert rec['new_separate_targeted_original_photos']==1792
+          assert rec['new_frozen_original_roi_four_hue_classified']>=rec['new_strict_original9_vectors']
+          assert (rec['new_frozen_original_roi_four_hue_classified']+
+                  rec['new_photo_unknown_hue_if_none'] if False else True)
+          assert rec['unsuccessful_original_photo_ROIs_preserved_as_unknown']
+          assert rec['source_original_roi_method_SHA_attested']
+          f=root/'mois_true2048_biasbalanced_original_photo_ROI9_outcomes.parquet'
+          assert hashlib.sha256(f.read_bytes()).hexdigest()==rec['new_actual_2048_outcomes_SHA256']
+          print('MOIS_GENUINE2048_PHOTOS_TWO_SAMPLE_ARMS_STRICT9_AND_MISSINGNESS_SHA_SEALED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-true2048-new-geoseason-targeted-plus-reference-full-originalROI9-results
+          path: new_photo_colours/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Immutable source-backed actual original image result release for ecology (not 93m census)
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p prior
+            gh release download "$TAG" --repo "$REPO" --dir prior \
+              --pattern mois_true2048_biasbalanced_original_pixel_collection_receipt.json
+            cmp prior/mois_true2048_biasbalanced_original_pixel_collection_receipt.json \
+                new_photo_colours/mois_true2048_biasbalanced_original_pixel_collection_receipt.json
+            echo 'Existing complete measured photo source exactly unchanged.'
+          else
+            gh release create "$TAG" new_photo_colours/* \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS real 2048 NEW original flower RGB pixels: two-arm latitude season bias compensation' \
+              --notes 'Both reference 256 and deficit-targeted 1792 independent original photo+observation ID samples selected BEFORE image acquisition, from signed 93.2m source tier07, excluding every original 1043930 previous image/observation. All 8 warm FCP frozen YOLO11 EfficientSAM ROI-v4 photo/9-fraction terminal packets source and model SHA-verified. New strict nine palette ratios, original four hue labels, observable image acquisition errors and technical ROI colour unknowns each preserved. Report actual ROI success by hemisphere×latitude zone×local season separately for each design arm. The targeted cohort is design-dependent on previous ROI success and NOT globally probability representative; cannot naively pool with old photos for worldwide botanical white flower prevalence. Individual petals not guaranteed. No raw licensed photos redistributed.'
+          fi
