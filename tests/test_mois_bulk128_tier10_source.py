@@ -5,6 +5,7 @@ from scripts.acquisition.mois_bulk128_tier10_source import (
     choose_part,take_priority,rank,add_original_photo,photo_worker,
     NO_COLOUR_PRIORITY,THIN_PRIORITY,P5,GAP_ARM,REFERENCE_ARM,
     TARGET_PER_SHARD,REFERENCE_PER_SHARD,SHARDS,TIER,
+    source_five_degree_cell,
 )
 from scripts.acquisition.mois_onepass_full93m_target_tiers import obs_draw
 
@@ -80,6 +81,13 @@ class Bulk128PhotoSourceContractTests(unittest.TestCase):
         row["inat_taxon_id"]="258"
         with self.assertRaisesRegex(ValueError,"modulo128"):
             add_original_photo({},row,part=1)
+
+    def test_unverified_geographic_coordinate_does_not_invent_5degree_cell(self):
+        self.assertEqual(source_five_degree_cell("-18.3","130.2"),"14:62")
+        self.assertEqual(source_five_degree_cell("", "120"),"unknown")
+        self.assertEqual(source_five_degree_cell("44", "not-coordinate"),"unknown")
+        self.assertEqual(source_five_degree_cell("95", "140"),"unknown")
+        self.assertEqual(source_five_degree_cell("10", "inf"),"unknown")
 
     def test_priority_caps_do_not_reset_across_multiple_passes(self):
         cand=[]
