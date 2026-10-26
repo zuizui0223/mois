@@ -1,11 +1,9 @@
 name: MOIS actual 2048 balanced hemisphere-season photo ROI-v4 9colour source images
+# Photo inference for all 2048 originals was completed in run 40289009421.
+# Keep this as a manual workflow only: collector-only fixes must NEVER rerun
+# original-photo downloads or FCP segmentation. Replay sealed pixel artifacts
+# using mois-recover-balanced2048-sealed-originalROI9.yml instead.
 on:
-  push:
-    branches: [feat/full93m-medium-pixel-firstpass]
-    paths:
-      - scripts/analysis/mois_collect_balanced_real2048_original_roi9.py
-      - tests/test_mois_collect_balanced_real2048_original_roi9.py
-      - .github/workflows/mois-execute-balanced2048-real-original-ROI9.yml
   workflow_dispatch:
 permissions:
   contents: read
