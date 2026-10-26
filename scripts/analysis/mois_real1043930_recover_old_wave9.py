@@ -183,9 +183,7 @@ def restore(trait,trait_receipt,paths,out):
             and int(updated.continuous9_strict.sum())==NEW_STRICT
             and int(updated.continuous9_exploratory_ambiguous.sum())==AMBIGUOUS,
             "Recovered colour trait lake changed source original IDs/labels/unknowns")
-    require(updated.loc[ids,"continuous9_white"].notna().all()
-             if ids and all(i in updated.index for i in ids) else
-             updated.loc[updated.photo_id.isin(ids),"continuous9_white"].notna().all(),
+    require(updated.loc[updated.photo_id.isin(ids),"continuous9_white"].notna().all(),
              "Recovered original nine-colour white fraction missing")
     out.mkdir(parents=True)
     target=out/"mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet"
