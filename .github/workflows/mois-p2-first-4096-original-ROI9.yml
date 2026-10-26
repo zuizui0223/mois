@@ -1,0 +1,234 @@
+name: MOIS P2-only original photo 4096 strict9 ROI-v4 acquisition
+on:
+  push:
+    branches: [feat/mois-p2-first-4096-20261026]
+    paths:
+      - .github/workflows/mois-p2-first-4096-original-ROI9.yml
+      - scripts/analysis/mois_collect_p2_first4096_original_roi9.py
+      - tests/test_mois_collect_p2_first4096_original_roi9.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-P2-original-ROI9-4096-append-only
+  cancel-in-progress: false
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore exact frozen P2 4096 original source photo-ID file (no 93m scan)
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh release download mois-P2-first4096-tier07-one-taxon-one-photo-source-20261026-v1 \
+            --repo "$REPO" --dir source --pattern manifest.json \
+            --pattern selected_P2_photo_source_provenance.csv \
+            --pattern P2_photo_worker_shards.tar
+          echo '85c5f665632980cc1d91934fd256c9f13936c1acece848a6a23266c87fcacf35  source/manifest.json' | sha256sum -c -
+          echo '1f7b146a98d31b3f465f7b8deec6ac42cc644f877372885833461aedf8f1b806  source/selected_P2_photo_source_provenance.csv' | sha256sum -c -
+          echo 'caee91114a25316ce0bae41cb2eb777f01bfaebffebe5b804fe526ce8d1a565d  source/P2_photo_worker_shards.tar' | sha256sum -c -
+          tar -xf source/P2_photo_worker_shards.tar -C source
+      - name: Validate 32 source photo shards and individual taxa
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,csv
+          from pathlib import Path
+          p=Path('source');m=json.loads((p/'manifest.json').read_text())
+          assert m['new_photo_attempts_planned']==4096
+          assert m['distinct_original_plant_taxa']==4096
+          assert m['distinct_original_observations']==4096
+          assert m['source_P5_high_colour_taxa_targeted']==0
+          assert m['worker_ids']==list(range(32)) and m['group_ids']==list(range(8))
+          assert m['P2_only_no_existing_strict9_source_taxa']
+          with (p/'selected_P2_photo_source_provenance.csv').open(newline='') as f:
+              rows=list(csv.DictReader(f))
+          assert len(rows)==len(set(x['photo_id'] for x in rows))==len(set(x['inat_taxon_id'] for x in rows))==len(set(x['original_observation_id'] for x in rows))==4096
+          for u in range(32):
+              f=p/'shards'/f'shard-{u:03d}.csv'
+              assert hashlib.sha256(f.read_bytes()).hexdigest()==m['photo_shard_sha256'][str(u)]
+          print('MOIS_REAL_4096_P2_PHOTO_SOURCE_SHA_PROVED_NO_DUPLICATES')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-P2-4096-source-lock
+          path: |
+            source/manifest.json
+            source/selected_P2_photo_source_provenance.csv
+            source/shards/
+          retention-days: 90
+          if-no-files-found: error
+  image-workers:
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 160
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        group: [0,1,2,3,4,5,6,7]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      GROUP: ${{ matrix.group }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-P2-4096-source-lock
+          path: source
+      - name: Prefer previously SHA-sealed measured original-photo group over any re-inference
+        id: gate
+        run: |
+          set -euo pipefail
+          tag="mois-P2-original-ROI9-measured-group-$GROUP-20261026-v1"
+          echo "TAG=$tag" >> "$GITHUB_ENV"
+          echo 'compute=true' >> "$GITHUB_OUTPUT"
+          if gh release view "$tag" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p cached measured
+            gh release download "$tag" --repo "$REPO" --dir cached \
+              --pattern original_P2_worker.tar.gz \
+              --pattern original_P2_worker.sha256
+            (cd cached && sha256sum -c original_P2_worker.sha256)
+            tar -xzf cached/original_P2_worker.tar.gz -C measured
+            echo 'compute=false' >> "$GITHUB_OUTPUT"
+            echo "MOIS_ALREADY_SOURCE_SIGNED_P2_WORKER_NO_REINFERENCE $GROUP"
+          fi
+      - name: Bootstrap original frozen YOLO11 EfficientSAM full-resolution ROI once
+        if: steps.gate.outputs.compute == 'true'
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          (cd "$RUNNER_TEMP/fcp" && bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam")
+      - name: Measure 512 genuinely NEW original P2 photo pixels without changing frozen ROI-v4
+        if: steps.gate.outputs.compute == 'true'
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-source-P2-pacer"
+          python -m scripts.acquisition.mois_warm_original_roi \
+            --source source --runtime "$RUNNER_TEMP/fcp" \
+            --sam "$RUNNER_TEMP/sam" --group "$GROUP" --output measured
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          g=int(os.environ['GROUP'])
+          paths=[Path('measured')/f'shard_{u:03d}'/'receipt.json'
+                 for u in range(g*4,(g+1)*4)]
+          assert all(p.is_file() for p in paths)
+          docs=[json.loads(p.read_text()) for p in paths]
+          assert sum(x['attempted'] for x in docs)==512
+          assert all(x['photo_colours_measured'] and not x['raw_licensed_image_bytes_persisted'] for x in docs)
+          print('MOIS_TRUE_P2_WORKER_512_ORIGINAL_PHOTOS_ROI_COMPLETE',g,
+                sum(x['classifiable'] for x in docs),flush=True)
+          PY
+      - name: Seal original ROI terminal CSVs by 512-photo group (idempotent immutable release)
+        if: steps.gate.outputs.compute == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p signed
+          tar -czf signed/original_P2_worker.tar.gz -C measured .
+          (cd signed && sha256sum original_P2_worker.tar.gz > original_P2_worker.sha256)
+          for retry in 1 2 3; do
+            if gh release create "$TAG" signed/original_P2_worker.tar.gz signed/original_P2_worker.sha256 \
+                 --repo "$REPO" --target "$GITHUB_SHA" \
+                 --title "MOIS genuine P2 original ROI9 photo group $GROUP" \
+                 --notes '512 genuine source photos from distinct previously zero-colour P2 taxa. Frozen FCP YOLO11 EfficientSAM full original ROI-v4, all image/photo source SHAs and failures preserved. Only numerical originals, not raw licensed image files. Retry collectors from immutable signed worker release rather than redownloading images.'; then
+              echo "MOIS_COMPLETED_P2_ORIGINAL_ROI_SHA_SEALED $GROUP"
+              break
+            fi
+            if [[ "$retry" -eq 3 ]]; then exit 1; fi
+            sleep $((retry*10))
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-P2-actualROI-group-${{ matrix.group }}
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+  collector:
+    needs: [source,image-workers]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-P2-first4096-actual-originalROI9-newtaxa-20261026-v1
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test all strict nine-colour classifications and technical unknowns
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_collect_p2_first4096_original_roi9.py -v
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-P2-4096-source-lock
+          path: source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-P2-actualROI-group-*
+          path: workers
+      - name: Real exact original photo ID/observation source ROI9 collection - no image inference
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_collect_p2_first4096_original_roi9 \
+            --source source --workers workers --output results
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('results/mois_realP2_source_colours_and_taxon_coverage_receipt.json').read_text())
+          assert r['new_P2_photo_IDs_and_unique_original_observations_attempted']==4096
+          assert r['new_P2_nominal_original_taxa_attempted']==4096
+          assert r['new_P2_strict9_original_ROIs']==r['new_P2_taxa_first_nine_palette_colours']
+          assert r['new_P2_original_images_downloaded']+r['new_P2_failed_downloads']==4096
+          assert r['targeted_P5_old_supported_source_taxa']==0
+          print('MOIS_P2_4096_REAL_ORIGINAL_9PALETTE_FIRST_TAXA_GAIN_SEALED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-P2-4096-real9-taxonomic-firstcolour-results
+          path: results/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish only genuine new original ROI9 P2 taxon gains
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p older
+            gh release download "$TAG" --repo "$REPO" --dir older \
+              --pattern mois_realP2_source_colours_and_taxon_coverage_receipt.json
+            cmp older/mois_realP2_source_colours_and_taxon_coverage_receipt.json \
+                results/mois_realP2_source_colours_and_taxon_coverage_receipt.json
+          else
+            gh release create "$TAG" results/* --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS P2-only 4096 actual original nine-hue photos and newly coloured taxa' \
+              --notes 'Full original FCP frozen YOLO11 EfficientSAM image ROI-v4. Each novel photo/observation from one previously uncoloured P2 taxon. Unknowns and all SHAs preserved, no prior photo re-inference, and no P5 targeted. Original visible hue is not independently confirmed wild/native flower petals, and targeted data are not worldwide flora proportions.'
+            echo 'MOIS_TRUE4096_ORIGINAL_P2_NEW_COLOUR_TAXA_SOURCE_PUBLISHED'
+          fi
