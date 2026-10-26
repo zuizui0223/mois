@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from scripts.analysis.mois_collect_balanced_real2048_original_roi9 import (
     summarize, SCHEMA, normalize_source_design_provenance,
+    source_design_identity_matches_pixels,
 )
 
 class MeasurementSeparateBiasCohortsTests(unittest.TestCase):
@@ -58,6 +59,19 @@ class MeasurementSeparateBiasCohortsTests(unittest.TestCase):
                          ["reference", "targeted"])
         self.assertEqual(joined["taxon_id_provenance"].tolist(), ["11", "22"])
         self.assertEqual(joined["original_observation_id"].tolist(), ["a", "b"])
+
+    def test_pixel_source_arm_must_match_signed_precolour_design_cohort(self):
+        from scripts.acquisition.mois_balance1043930_tier07_2048_source import SOURCE_ARMS
+        correct = pd.DataFrame({
+            "source_arm": [SOURCE_ARMS["targeted"], SOURCE_ARMS["reference"]],
+            "sampling_design_cohort": ["targeted", "reference"],
+        })
+        self.assertTrue(source_design_identity_matches_pixels(correct))
+        wrong = correct.copy()
+        wrong.loc[0, "sampling_design_cohort"] = "reference"
+        self.assertFalse(source_design_identity_matches_pixels(wrong))
+        with self.assertRaisesRegex(ValueError, "cohort lost"):
+            source_design_identity_matches_pixels(correct.drop(columns=["sampling_design_cohort"]))
 
     def test_missing_or_ambiguous_signed_source_design_is_not_silently_guessed(self):
         input_rows = pd.DataFrame({
