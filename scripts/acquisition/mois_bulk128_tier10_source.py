@@ -272,6 +272,18 @@ def choose_part(observations,priority,part,*,quota=TARGET_PER_SHARD,
             "|".join(k):v for k,v in sorted(served.items())},
     }
 
+def source_five_degree_cell(latitude,longitude):
+    """A missing/offshore/bad point is unknown, never a fabricated geocell."""
+    try:
+        lat=float(latitude);lon=float(longitude)
+        if not (math.isfinite(lat) and math.isfinite(lon)
+                and -90<=lat<=90 and -180<=lon<=180):
+            return "unknown"
+    except (TypeError,ValueError):
+        return "unknown"
+    return f"{min(35,int(math.floor((lat+90)/5)))}:{min(71,int(math.floor((lon+180)/5)))}"
+
+
 def photo_worker(o,role,part,unit,source_count):
     pid=o["photo_id"]
     image_id="MOIS-"+rank("measurement",pid).upper()[:24]
@@ -359,10 +371,8 @@ def select_and_write_part(part,source_gz,proof,priorities,used_photo,used_obs,ou
                     "acquisition_design_cohort":role,
                     "original_source_priority":pri,
                     "latitude_region":o["zone"],"recorded_local_season":o["season"],
-                    "source_5degree_cell":(
-                       f"{int(math.floor((float(o['latitude'])+90)/5))}:"
-                       f"{int(math.floor((float(o['longitude'])+180)/5))}"
-                       if o["zone"]!="unknown" and o["longitude"] else "unknown"),
+                    "source_5degree_cell":source_five_degree_cell(
+                        o["latitude"],o["longitude"]),
                     "source_photo_group":part,"source_worker_unit":unit,
                     "photos_per_observation_in_new_source_part":o["nphotos"],
                     "frame_photo_probability_component":SOURCE_WIDTH,
