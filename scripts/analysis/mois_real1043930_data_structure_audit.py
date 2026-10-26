@@ -165,9 +165,13 @@ def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,geography,g
                          "continuous9_strict"]].set_index("photo_id")
     sample=fcp_src.set_index("photo_id").join(fcp_subset,
                                               how="left",rsuffix="_MOIS")
-    require(sample.inat_taxon_id.eq(sample.inat_taxon_id_MOIS).all()
-            and sample.continuous9_strict.notna().all(),
-            "FCP source photo taxa do not match MOIS actual photo outcomes")
+    require(sample.continuous9_strict.notna().all(),
+            "FCP exact source photo ID has no original MOIS photo identity")
+    # Legacy MOIS and FCP may have different ACCEPTED TAXON assignments
+    # for the same photo ID. Count discrepancies, do not silently overwrite
+    # either classification or discard 447,500 genuine image observations.
+    fcp_original_taxon_disagreements=int(
+        (~sample.inat_taxon_id.eq(sample.inat_taxon_id_MOIS)).sum())
     require(int(sample.continuous9_strict.sum())==227107,
             "Source FCP photo 9-vector success is inconsistent")
     d["collection_source"]=np.where(d.original_FCP447500_member,
@@ -312,6 +316,8 @@ def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,geography,g
              taxa.loc[taxa.strict9_photo_ROIs.eq(0),"n_unique_source_photo_ids"].sum()),
        "source_photo_attempts_OUTSIDE_42111_upstream_taxon_frame":int(
              (~d.upstream_frame_member).sum()),
+       "FCP_447500_same_photo_accepted_taxon_ID_disagreements":
+             fcp_original_taxon_disagreements,
        "source_strict9_OUTSIDE_upstream_taxon_frame":int(
              (d.strict&~d.upstream_frame_member).sum()),
        "taxa_with_exactly_one_strict9_photo":int(per_taxon.eq(1).sum()),
