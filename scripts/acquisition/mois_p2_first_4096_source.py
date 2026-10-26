@@ -288,9 +288,10 @@ def select_one_per_taxon(db,allowed,target=TARGET):
             len(set(v["uuid"] for v in selected))==selected_n and
             len(set(v["photo_id"] for v in selected))==selected_n,
             "At most one original photo, observation and accepted source taxon per P2 slot")
-    require(not any(v["prior_image_attempts"]>=5 for v in selected)
-            or selcounts["E0_1"]+selcounts["E2_4"]<selected_n,
-            "Repeated ROI-failure taxa received photos before scarce easy P2 strata")
+    require(sum(selcounts.values())==selected_n,
+            "Source selection effort bins lost original P2 taxa")
+    # Source-specific geography/season quotas are filled in low-failure
+    # effort order. A scarce geography may still require >=5-failure taxa.
     selected.sort(key=lambda o:stable_rank("worker_shuffle",o["uuid"]))
     return selected,summary,dict(selcounts),total_available,n_db
 
