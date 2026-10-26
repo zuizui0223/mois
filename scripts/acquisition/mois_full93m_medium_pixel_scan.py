@@ -383,7 +383,7 @@ def scan_source(source, output, *, expected_source_sha256,
             (io_executor is not None and batch_size <= 256),
             "Prefetch must use one shared I/O executor and <=256 photos per packet")
     require(max_packets is None or max_packets > 0, "Invalid pilot limit")
-    require(source_role in ("full93m", "full93m_chunk", "K1_calibration"),
+    require(source_role in ("full93m", "full93m_chunk", "K1_calibration", "bias_controlled_pilot"),
             "A full source part, verified bounded source chunk, or K1 calibration is required")
     chunk_role = source_role == "full93m_chunk"
     require((chunk_role and type(chunk_index) is int and chunk_index >= 0
@@ -393,8 +393,8 @@ def scan_source(source, output, *, expected_source_sha256,
             or (not chunk_role and chunk_index is None
                 and parent_source_sha256 is None),
             "A signed original parent SHA and chunk index must accompany every bounded chunk")
-    require(source_role != "K1_calibration" or max_packets is not None,
-            "K1 benchmark is never a full-source photo census")
+    require(source_role not in ("K1_calibration","bias_controlled_pilot") or max_packets is not None,
+            "A bounded outcome-conditioned sample must never be a full-source census")
     require(output.exists() is False or output.is_dir(), "Output is not a directory")
     output.mkdir(parents=True, exist_ok=True)
     if download is None:
@@ -548,7 +548,8 @@ def scan_source(source, output, *, expected_source_sha256,
         "source_gzip_sha256": expected_source_sha256,
         "source_part": part, "source_tier": tier,
         "source_role": source_role,
-        "calibration_subset_not_global_census": source_role == "K1_calibration",
+        "calibration_subset_not_global_census": source_role in ("K1_calibration", "bias_controlled_pilot"),
+        "outcome_conditioned_supplement_not_population_unbiased":source_role=="bias_controlled_pilot",
         **({"source_parent_sha256": parent_source_sha256,
             "source_chunk_index": chunk_index,
             "entire_original_source_part_completed": False,
