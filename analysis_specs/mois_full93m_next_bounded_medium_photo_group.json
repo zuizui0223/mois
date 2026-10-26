@@ -1,0 +1,19 @@
+{
+  "schema": "mois_full93m_one_bounded_actual_medium_pixel_source_group_v1",
+  "source_release": "mois-complete-93209351-original-photo-target-tiers-v1",
+  "full_original_photo_ids": 93209351,
+  "tier": 0,
+  "group": 2,
+  "expected_source_photo_ids": 1074,
+  "max_real_image_attempts_this_run": 1200,
+  "provider_medium_requests_per_second": 3,
+  "bounded_parallel_downloads": 8,
+  "frozen_yolo_original_weight_sha256": "f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5",
+  "frozen_yolo_class_id": 0,
+  "frozen_yolo_class_name": "item",
+  "original_pixels_reprocessed_from_previous_source": false,
+  "no_photographic_native_or_taxon_exclusions": true,
+  "requires_source_group_sha_and_original_photo_count": true,
+  "full_93m_census_complete": false,
+  "scope": "new_genuine_tier0_source_group2_testing_3rps"
+}

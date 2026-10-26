@@ -1,0 +1,114 @@
+name: MOIS real 2048 ROI9 global 42111-taxon coverage gain and missingness audit
+
+on:
+  push:
+    branches: [feat/full93m-medium-pixel-firstpass]
+    paths:
+      - scripts/analysis/mois_audit2048_taxon_gap_gain_after400710.py
+      - tests/test_mois_audit2048_taxon_gap_gain_after400710.py
+      - .github/workflows/mois-audit2048-realROI9-taxon-gap-after400710.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: mois-true2048-ROI9-42111taxa-priority-source-data-only
+  cancel-in-progress: false
+
+jobs:
+  signed-taxonomic-bias-delta:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OLD_TAG: mois-original1043930-400710-source-taxon-coverage-priority-20261026-v2
+      NEW_TAG: mois-real2048-new-source-photo-geo-season-stratified-ROI9-20261026-v1
+      PILOT_TAG: mois-real20261026-novel64-source-geobalanced-original500px-floralLab-v1
+      RESULT_TAG: mois-original1045978-real401392-ROI9-42111taxon-bias-gap-delta-20261026-v1
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run numeric original photo/taxon gap and technical unknown regression
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_audit2048_taxon_gap_gain_after400710.py
+          python -m unittest discover -s tests -p test_mois_audit2048_taxon_gap_gain_after400710.py -v
+      - name: Reuse signed 42111 source taxon register, real 2048 original pixel ROI9 and independent prior 64-photo audit
+        run: |
+          set -euo pipefail
+          mkdir -p input/old input/new input/pilot
+          gh release download "$OLD_TAG" --repo "$REPO" --dir input/old \
+            --pattern mois_42111_taxon_priority_AFTER_400710_original9.csv.gz \
+            --pattern mois_real1043930_updated_400710_taxon_gap_decision.json
+          gh release download "$NEW_TAG" --repo "$REPO" --dir input/new \
+            --pattern mois_true2048_biasbalanced_original_photo_ROI9_outcomes.parquet \
+            --pattern mois_true2048_biasbalanced_original_pixel_collection_receipt.json
+          gh release download "$PILOT_TAG" --repo "$REPO" --dir input/pilot \
+            --pattern mois_bounded_new_taxon_original_photo_sampling_provenance.csv
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.analysis.mois_audit2048_taxon_gap_gain_after400710 import sha
+          expected={
+             'input/old/mois_42111_taxon_priority_AFTER_400710_original9.csv.gz':
+                 '2dcc365c3b771a83477f1885703a2f573568bb3a7c996dcc11a194182068e8cc',
+             'input/new/mois_true2048_biasbalanced_original_photo_ROI9_outcomes.parquet':
+                 'dea4699566430aa8fe33802e20d997646357ef46fd3429454959ba54fbd535a9',
+             'input/pilot/mois_bounded_new_taxon_original_photo_sampling_provenance.csv':
+                 'c8b9be91bb27edbe66b52725e34fba0eab8dd5ec5617bca1b99bdaf893ab36ed'}
+          for k,v in expected.items():
+              assert sha(Path(k))==v,k
+          print('MOIS_BEFORE_AFTER_REAL9_TAXON_INPUT_BYTE_SHAS_VERIFIED',flush=True)
+          PY
+      - name: Compute exact source-frame taxa newly measured, ROI9 unknowns and geographical/seasonal gains
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_audit2048_taxon_gap_gain_after400710 \
+            --old-priority input/old/mois_42111_taxon_priority_AFTER_400710_original9.csv.gz \
+            --old-receipt input/old/mois_real1043930_updated_400710_taxon_gap_decision.json \
+            --new-parquet input/new/mois_true2048_biasbalanced_original_photo_ROI9_outcomes.parquet \
+            --new-receipt input/new/mois_true2048_biasbalanced_original_pixel_collection_receipt.json \
+            --pilot64 input/pilot/mois_bounded_new_taxon_original_photo_sampling_provenance.csv \
+            --output bias_delta
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('bias_delta/real2048_taxon_coverage_gap_delta_receipt.json').read_text())
+          assert r['schema']=='mois_original2048_trueROI9_bias_first_taxon_coverage_gain_v1'
+          assert r['new_actual_strict9_photo_ROIs']==682
+          assert r['after_original_photo_attempts_excluding_separate64Lab']==1045978
+          assert r['after_source_original_strict9_outcomes_excluding_separate64Lab']==401392
+          assert r['source_frame_taxa_with_strict9_after']>=r['source_frame_taxa_with_strict9_before']
+          assert r['new_original_observation_ID_overlap_with_prior_64_real_Lab_pilot']==0
+          print('MOIS_REAL2048_SOURCE_42111_TAXON_GAP_DELTA_CHECKED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real2048-source42111-before-after-strict9-coverage-gain
+          path: bias_delta/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish reproducible real-image sample-bias mitigation results without image inference
+        run: |
+          set -euo pipefail
+          if gh release view "$RESULT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p prior
+            gh release download "$RESULT_TAG" --repo "$REPO" --dir prior \
+              --pattern real2048_taxon_coverage_gap_delta_receipt.json
+            cmp prior/real2048_taxon_coverage_gap_delta_receipt.json \
+                bias_delta/real2048_taxon_coverage_gap_delta_receipt.json
+            echo "MOIS_42111_TRUE_9ROI_COVERAGE_AUDIT_ALREADY_IMMUTABLE"
+          else
+            gh release create "$RESULT_TAG" bias_delta/* \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title "MOIS real-image 2048 bias-gap improvement: 42111 source taxa and four seasons" \
+              --notes "Original SHA-authenticated 1043930 photo attempts / 400710 strict9 plus 2048 never-prior-attempted source original photographs / 682 strict9 (256 reference, 1792 gap-targeted), excluding 64 method-distinct Lab-box pilot. Exact source 42111 taxa, before-after priority transitions, newly colour-supported nominal source taxa, region-season measurements and technical ROI failures retained. No image download or inference in this audit. No global native-flora representativeness claim."
+            echo "MOIS_REAL_SOURCE_TAXONIC_AND_GEOSEASON_GAP_DELTA_PUBLISHED"
+          fi

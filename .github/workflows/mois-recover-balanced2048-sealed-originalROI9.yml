@@ -1,0 +1,155 @@
+# Recover already measured 2048 original photos, WITHOUT any image download
+# or YOLO/EfficientSAM ROI inference. This replaces collector retries that
+# previously re-ran expensive original image jobs.
+name: MOIS recover 2048 sealed real original photo ROI9 results data-only
+
+on:
+  push:
+    branches: [feat/full93m-medium-pixel-firstpass]
+    paths:
+      - .github/workflows/mois-recover-balanced2048-sealed-originalROI9.yml
+      - scripts/analysis/mois_collect_balanced_real2048_original_roi9.py
+      - tests/test_mois_collect_balanced_real2048_original_roi9.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: mois-original2048-source-sealed-data-only-recovery
+  cancel-in-progress: false
+
+jobs:
+  restore-completed-photo-colour-results:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PHOTO_RUN: "40289009421"
+      PHOTO_RUN_HEAD: "4875854cbadd417b5688bacbb4c7dfbc924a925e"
+      RELEASE_TAG: mois-real2048-new-source-photo-geo-season-stratified-ROI9-20261026-v1
+      PYTHONUNBUFFERED: "1"
+      OPENBLAS_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test original signed source cohort fix without downloading photos
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_collect_balanced_real2048_original_roi9.py
+          python -m unittest discover -s tests -p test_mois_collect_balanced_real2048_original_roi9.py -v
+          python -m unittest discover -s tests -p test_mois_balance1043930_tier07_2048_source.py -v
+      - name: Authenticate the exact old original-photo run and immutable source / worker artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p signed
+          gh api "repos/$REPO/actions/runs/$PHOTO_RUN" > signed/actual_photo_run.json
+          gh api "repos/$REPO/actions/runs/$PHOTO_RUN/jobs?per_page=100" > signed/jobs.json
+          gh api "repos/$REPO/actions/runs/$PHOTO_RUN/artifacts?per_page=100" > signed/artifacts.json
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          run=json.loads(Path('signed/actual_photo_run.json').read_text())
+          jobs=json.loads(Path('signed/jobs.json').read_text())['jobs']
+          available=json.loads(Path('signed/artifacts.json').read_text())['artifacts']
+          assert run['id']==int(os.environ['PHOTO_RUN'])
+          assert run['head_sha']==os.environ['PHOTO_RUN_HEAD']
+          assert run['repository']['full_name']==os.environ['REPO']
+          assert run['conclusion']=='failure', "Prior run status changed; re-audit before reuse"
+          workers=[j for j in jobs if j['name'].startswith('original-photo-FCP-ROI-v4-warm-workers (')]
+          assert len(workers)==2 and all(j['conclusion']=='success' for j in workers), (
+              'Missing a genuinely completed original 1024-photo worker')
+          expected={
+            'mois-balanced2048-frozen-original-photo-worker-source':
+                (12634364753,'sha256:5c323d6278ab6b40ae3ca8e88f83dbe498b45eff4af0e73a6f16220dc431948f'),
+            'mois-real-2048-balanced-warm-originalROI-group-0':
+                (12637151288,'sha256:6990c833223d3199413876de52ac123c74b73166007ac2d903bd63b1737ef22d'),
+            'mois-real-2048-balanced-warm-originalROI-group-1':
+                (12638033090,'sha256:e81d29e1725c06d67bae2355472cdaa88e49c50b74d3b34a2b2499506546f493'),
+          }
+          assert len(available)>=3
+          indexed={a['name']:a for a in available}
+          for name,(artifact_id,digest) in expected.items():
+              a=indexed[name]
+              assert a['id']==artifact_id and a['digest']==digest and not a['expired'],(
+                  'Source or measured original photo artifact provenance changed: '+name)
+          print('MOIS_TRUE2048_PRIOR_REAL_IMAGE_ROI_GROUPS_BOTH_SUCCEEDED',flush=True)
+          print('MOIS_SOURCE_AND_WORKER_ARTIFACT_SHA256_VERIFIED',flush=True)
+          PY
+      - name: Restore original 2048 SHA-sealed photo terminals - no original image pixels requested
+        run: |
+          set -euo pipefail
+          mkdir -p source workers
+          gh run download "$PHOTO_RUN" --repo "$REPO" \
+            --name mois-balanced2048-frozen-original-photo-worker-source \
+            --dir source
+          for group in 0 1; do
+            gh run download "$PHOTO_RUN" --repo "$REPO" \
+              --name "mois-real-2048-balanced-warm-originalROI-group-$group" \
+              --dir "workers/mois-real-2048-balanced-warm-originalROI-group-$group"
+          done
+          test -s source/manifest.json
+          test -s source/selected_original_photo_design_provenance.csv
+          test -f workers/mois-real-2048-balanced-warm-originalROI-group-0/shard_000/receipt.json || \
+            test -n "$(find workers/mois-real-2048-balanced-warm-originalROI-group-0 -name receipt.json -print -quit)"
+          echo "MOIS_2048_ORIGINAL_IMAGE_TERMINALS_RESTORED_DATA_ONLY"
+      - name: Reconcile source photo IDs, strict original nine palette, unknowns and regional seasons
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_collect_balanced_real2048_original_roi9 \
+            --source source --workers workers --output new_photo_colours
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('new_photo_colours')
+          rec=json.loads((root/'mois_true2048_biasbalanced_original_pixel_collection_receipt.json').read_text())
+          assert rec['schema']=='mois_20261026_actual2048_novel_geo_season_balance_original_FCP_ROI9_v1'
+          assert rec['new_independent_original_photo_ids_attempted']==2048
+          assert rec['new_original_observations_distinct']==2048
+          assert rec['new_separate_reference_original_photos']==256
+          assert rec['new_separate_targeted_original_photos']==1792
+          assert rec['new_frozen_original_roi_four_hue_classified']==682
+          assert rec['new_image_acquisition_failures']==8
+          assert rec['new_genuine_original_photo_image_bytes_downloaded']==2040
+          assert 0<=rec['new_strict_original9_vectors']<=682
+          assert (rec['new_original_photo_unknown_hue_without_strict9']+
+                  rec['new_strict_original9_vectors']==2048)
+          assert rec['unsuccessful_original_photo_ROIs_preserved_as_unknown']
+          assert rec['two_reference_and_targeted_design_arms_not_naively_poolable']
+          p=root/'mois_true2048_biasbalanced_original_photo_ROI9_outcomes.parquet'
+          assert hashlib.sha256(p.read_bytes()).hexdigest()==rec['new_actual_2048_outcomes_SHA256']
+          print('MOIS_2048_BIAS_STRATA_ORIGINAL_PIXEL_ROI9_DATA_ONLY_PUBLICATION_READY',json.dumps({
+            k:rec[k] for k in ('new_frozen_original_roi_four_hue_classified',
+              'new_strict_original9_vectors','new_separate_reference_original_photos',
+              'new_separate_targeted_original_photos','new_image_acquisition_failures')
+          },sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-recovered2048-authentic-original-pixel-regional-season-ROI9
+          path: new_photo_colours/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Seal real 2048 originals without additional photo retrieval or inference
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p prior
+            gh release download "$RELEASE_TAG" --repo "$REPO" --dir prior \
+              --pattern mois_true2048_biasbalanced_original_pixel_collection_receipt.json
+            cmp prior/mois_true2048_biasbalanced_original_pixel_collection_receipt.json \
+                new_photo_colours/mois_true2048_biasbalanced_original_pixel_collection_receipt.json
+            echo "MOIS_2048_FROZEN_ORIGINAL_ROI9_RELEASE_ALREADY_SEALED_IDENTICALLY"
+          else
+            gh release create "$RELEASE_TAG" new_photo_colours/* \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title "MOIS real 2048 original photo ROIs, bias-targeted 1792 versus source reference 256" \
+              --notes "Recovered from source SHA-pinned SUCCESSFUL original-photo workers of run 40289009421; no image refetch or ROI model rerun. The original provenance design_cohort key is normalized without guessing any missing colour. 256 source-reference and 1792 intentionally gap-targeted independent observation/photo IDs remain separated. Strict nine-palette photo vectors, four-hue states, technical unknowns and season/latitude strata are retained. This targeted sample cannot estimate a worldwide flora white fraction unweighted; these are unverified photographic flower-organ ROIs."
+            echo "MOIS_2048_REAL_IMAGE_MEASUREMENTS_IMMUTABLY_PUBLISHED_DATA_ONLY"
+          fi

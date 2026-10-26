@@ -1,0 +1,152 @@
+name: MOIS real 4096 new photos pipelined S3 and YOLO overlap benchmark
+on:
+  push:
+    branches: [feat/full93m-medium-pixel-firstpass]
+    paths:
+      - .github/workflows/mois-93m-prefetch-tier12-next4096.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-93m-exact-tier12-p0-chunk1-overlap-4096-after4096-completed
+  cancel-in-progress: false
+jobs:
+  signed-next4096-onepass-overlap:
+    if: github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: "1"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      ULTRALYTICS_OFFLINE: "True"
+      WEIGHT_SHA: f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install once for entire actual 500px next4096 original photo run
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 Pillow==11.3.0 ultralytics==8.4.112 urllib3==2.5.0
+          python -m unittest discover -s tests -p 'test_mois_full93m_medium_pixel_scan.py' -v
+          python -m unittest discover -s tests -p 'test_mois_93m_persistent_worker.py' -v
+      - name: Retrieve signed 363920 parent and prior completed 4096 photos without image reacquisition
+        run: |
+          set -euo pipefail
+          mkdir -p signed original4096 persistent_results/tier-12/part-000/chunk-00000 weights
+          gh run download 40166855425 --repo zuizui0223/mois \
+            --name mois-full93m-real-tier12-part000-363920-source-89-sha-bounded-photo-chunks \
+            --dir signed
+          gh run download 40169285106 --repo zuizui0223/mois \
+            --name mois-93m-4096-source-photos-persistent-pooled8-reuse1536-2560new \
+            --dir original4096
+          cp -a original4096/tier-12/part-000/chunk-00000/. persistent_results/tier-12/part-000/chunk-00000/
+          printf 'signed\n' > roots.txt
+          python - <<'PY'
+          import csv,hashlib,json
+          from pathlib import Path
+          src=Path("signed")
+          root=Path("persistent_results/tier-12/part-000/chunk-00000")
+          r=json.loads((src/"chunk_receipt.json").read_text())
+          assert r["schema"]=="mois_93m_exact_full_source_part_to_bounded_photo_chunks_v1"
+          assert r["actual_original_photo_IDs"]==363920 and r["chunks"]==89
+          assert r["original_source_part_sha256"]=="2601e901d31cb1aac65ac94ce3d2e6e3cce9aef45cacd137a4213cd81b2c53eb"
+          assert hashlib.sha256((src/"chunk_manifest.csv").read_bytes()).hexdigest()==r["manifest_sha256"]
+          with (src/"chunk_manifest.csv").open(newline="") as f: rows=list(csv.DictReader(f))
+          for i in (0,1):
+              row=rows[i]
+              assert int(row["chunk_index"])==i and int(row["expected_photo_ids"])==4096
+              assert hashlib.sha256((src/row["chunk_relative_path"]).read_bytes()).hexdigest()==row["chunk_gzip_sha256"]
+          previous=json.loads((root/"complete_receipt.json").read_text())
+          assert previous["source_role"]=="full93m_chunk"
+          assert previous["actual_unique_source_photo_ids_attempted"]==4096
+          assert previous["source_chunk_index"]==0 and previous["source_tier"]==12
+          assert previous["all_original_input_photos_attempted"] is True
+          for i in range(previous["packets_sealed"]):
+              packet=root/("packet-%07d.csv.gz"%i)
+              receipt=json.loads((root/("packet-%07d.receipt.json"%i)).read_text())
+              assert hashlib.sha256(packet.read_bytes()).hexdigest()==receipt["output_sha256"]
+          assert not (Path("persistent_results/tier-12/part-000/chunk-00001")).exists()
+          print("MOIS_ORIGINAL_TIER12_CHUNK0_4096_IMMUTABLE_REUSED_NEW_CHUNK1_UNSCANNED",flush=True)
+          PY
+      - name: Restore frozen FCP original item-class YOLO weight by pinned commit and SHA
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp-model"
+          git -C "$RUNNER_TEMP/fcp-model" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp-model" fetch --no-tags --depth=1 origin 9fae6ccdf684a46026f72ba12e98de2c5c54bf2a
+          git -C "$RUNNER_TEMP/fcp-model" show FETCH_HEAD:data/atlas/qualification/roi_v4_training/jrc_yolo11n_last_v4.pt > weights/jrc_yolo11n_last_v4.pt
+          echo "$WEIGHT_SHA  weights/jrc_yolo11n_last_v4.pt" | sha256sum -c -
+      - name: Actual next4096, pooled S3 8/sec with next256-photo prefetch overlapping warm YOLO
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_93m_persistent_worker \
+            --chunks-roots-file roots.txt --output persistent_results \
+            --weights weights/jrc_yolo11n_last_v4.pt \
+            --weights-sha256 "$WEIGHT_SHA" \
+            --worker-slot 0 --worker-slots 1 \
+            --approved-aggregate-rps 8 --download-workers 16 \
+            --batch-size 256 --max-chunks 2 --device cpu \
+            --overlap-next-packet --execute
+      - name: Independently verify disjoint 8192 real-image source attempts and overlapping performance fields
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          base=Path("persistent_results/tier-12/part-000")
+          reused=json.loads((base/"chunk-00000/complete_receipt.json").read_text())
+          fresh=json.loads((base/"chunk-00001/complete_receipt.json").read_text())
+          assert reused["actual_unique_source_photo_ids_attempted"]==4096
+          assert fresh["actual_unique_source_photo_ids_attempted"]==4096
+          assert fresh["medium_image_pixels_decoded"]+fresh["medium_image_pixels_unavailable"]==4096
+          assert fresh["source_role"]=="full93m_chunk"
+          assert fresh["source_chunk_index"]==1
+          assert fresh["source_scan_prefetch_overlapped"] is True
+          assert fresh["prefetched_photo_packet_size"]==256
+          assert fresh["actual_medium_pixel_source_wall_seconds"]>0
+          assert fresh["actual_photo_ids_per_second_after_prefetch"]>0
+          assert fresh["aggregate_medium_image_access_and_decode_wall_seconds"]>0
+          assert fresh["aggregate_flower_box_inference_and_proxy_wall_seconds"]>0
+          assert len(list((base/"chunk-00001").glob("packet-*.csv.gz")))==16
+          status=json.loads(Path("persistent_results/slot-0000-status.json").read_text())
+          assert status["chunks_source_sha_verified_complete"]==2
+          assert status["previously_finished_original_source_photo_pixels_reused"]==4096
+          assert status["new_source_photo_attempts_this_process"]==4096
+          assert status["next_packet_transfer_overlapped_with_yolo"] is True
+          assert status["full_93m_pixel_census_complete"] is False
+          summary={
+             "source_signed_photo_ids_scanned_total":8192,
+             "previously_completed_photo_ids_reused":4096,
+             "new_medium_photos_attempted":4096,
+             "new_decoded":fresh["medium_image_pixels_decoded"],
+             "new_candidates":fresh["screen_counts"].get("candidate",0),
+             "new_negatives":fresh["screen_counts"].get("negative",0),
+             "new_errors":fresh["screen_counts"].get("error",0),
+             "pipelined_true_wall_seconds":fresh["actual_medium_pixel_source_wall_seconds"],
+             "new_real_attempts_per_second":fresh["actual_photo_ids_per_second_after_prefetch"],
+             "logical_download_decode_seconds":fresh["aggregate_medium_image_access_and_decode_wall_seconds"],
+             "logical_model_proxy_seconds":fresh["aggregate_flower_box_inference_and_proxy_wall_seconds"],
+             "without_overlap_estimated_serial_component_seconds":(
+                 fresh["aggregate_medium_image_access_and_decode_wall_seconds"]+
+                 fresh["aggregate_flower_box_inference_and_proxy_wall_seconds"]
+             ),
+             "source_all93m_scan_completed":False
+          }
+          print("MOIS_REAL_93M_OVERLAPPED_4096_PHOTO_PIPELINE_BENCHMARK",
+                json.dumps(summary,sort_keys=True),flush=True)
+          Path("persistent_results/next4096_overlap_benchmark.json").write_text(
+              json.dumps(summary,sort_keys=True,indent=2)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-93m-real-source-tier12-next4096-500px-prefetch8-benchmark
+          path: persistent_results/
+          retention-days: 90
+          if-no-files-found: warn
