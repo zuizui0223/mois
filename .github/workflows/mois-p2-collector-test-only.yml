@@ -23,3 +23,5 @@ jobs:
           python -m py_compile scripts/analysis/mois_collect_p2_first4096_original_roi9.py
           python -m unittest discover -s tests -p test_mois_collect_p2_first4096_original_roi9.py -v
           echo 'MOIS_P2_4096_NO_REINFERENCE_BIAS_COLLECTOR_TESTS_PASS'
+
+# Recheck photo-ID + original taxon-ID provenance after fail-closed join fix.
