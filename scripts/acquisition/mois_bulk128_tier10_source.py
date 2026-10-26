@@ -171,7 +171,7 @@ def add_original_photo(table,row,part):
             o.update(photo_id=pid,extension=row["image_extension"],
                      license=row["photo_license"],photorank=photorank)
 
-def take_priority(candidates,already,limit,served,weight,per_taxon_cap):
+def take_priority(candidates,already,limit,served,weight,per_taxon_cap,taxon_selected):
     """Prefer 1st observation of a taxon before 2nd, across supported cells."""
     if limit<=0:return []
     by_taxon=collections.defaultdict(list)
@@ -181,7 +181,8 @@ def take_priority(candidates,already,limit,served,weight,per_taxon_cap):
     bins=collections.defaultdict(list)
     for taxon,items in by_taxon.items():
         items.sort(key=lambda x:(x["target_rank"],x["uuid"]))
-        for depth,o in enumerate(items[:per_taxon_cap]):
+        remaining=max(0,per_taxon_cap-taxon_selected[taxon])
+        for depth,o in enumerate(items[:remaining]):
             cell=(o["zone"],o["season"])
             bins[(depth,cell)].append(o)
     for (depth,cell),items in bins.items():
@@ -202,6 +203,7 @@ def take_priority(candidates,already,limit,served,weight,per_taxon_cap):
             o=nexts.pop(cell)
             if o["uuid"] not in already:
                 selected.append(o);already.add(o["uuid"]);served[cell]+=1
+                taxon_selected[o["taxon"]]+=1
             try:nexts[cell]=next(active[cell])
             except StopIteration:pass
         if len(selected)>=limit:break
@@ -217,6 +219,7 @@ def choose_part(observations,priority,part,*,quota=TARGET_PER_SHARD,
     references=sorted(allobs,key=lambda o:(o["ref_rank"],o["uuid"]))[:reference]
     chosen={o["uuid"] for o in references}
     served=collections.Counter()
+    taxon_selected=collections.Counter()
     weight={(z,s):ZONE_WEIGHT.get(z,.9)*SEASON_WEIGHT.get(s,1)
             for z in ZONE_WEIGHT for s in SEASON_WEIGHT}
     targeted_budget=quota-reference
@@ -234,12 +237,12 @@ def choose_part(observations,priority,part,*,quota=TARGET_PER_SHARD,
     for status in NO_COLOUR_PRIORITY:
         part_candidates=bypriority[status]
         new=take_priority(part_candidates,chosen,urgent_cap-len(targets),
-                          served,weight,CAP[status])
+                          served,weight,CAP[status],taxon_selected)
         targets.extend((status,o) for o in new)
     for status in THIN_PRIORITY:
         space=targeted_budget-len(targets)
         new=take_priority(bypriority[status],chosen,space,
-                          served,weight,CAP[status])
+                          served,weight,CAP[status],taxon_selected)
         targets.extend((status,o) for o in new)
     if len(targets)<targeted_budget:
         # Use supported P1/P2 observations beyond their initial 65% quota
@@ -247,7 +250,7 @@ def choose_part(observations,priority,part,*,quota=TARGET_PER_SHARD,
         for status in (*NO_COLOUR_PRIORITY,*THIN_PRIORITY):
             space=targeted_budget-len(targets)
             new=take_priority(bypriority[status],chosen,space,
-                              served,weight,CAP[status])
+                              served,weight,CAP[status],taxon_selected)
             targets.extend((status,o) for o in new)
             if len(targets)==targeted_budget:break
     result=[("reference",priority.get(o["taxon"],"unknown"),o) for o in references]
