@@ -51,7 +51,7 @@ jobs:
           assert d['sampling_schema']=='mois_original93m_tier10_bulk128_probability_reference_plus_gap_v1'
           assert d['source_128_compute_shards']==128 and d['work_units']==512
           assert d['P5_targeted_photo_attempts']==0
-          assert d['source_original_photo_IDs_and_observation_UUIDs_all_unique']
+          assert d['original_source_photo_IDs_and_observation_UUIDs_all_unique']
           print('MOIS_128_SHARDS_ALREADY_PUBLISHED_SOURCE_NOT_RESELECTED',d['new_photo_attempts_planned'])
           PY
             echo 'needed=false' >> "$GITHUB_OUTPUT"
