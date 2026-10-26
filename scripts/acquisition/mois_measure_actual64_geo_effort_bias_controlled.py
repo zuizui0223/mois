@@ -169,14 +169,14 @@ def run(source,receipt,provenance,weights,output,*,rps=2.0,workers=8):
     ndecoded=int(p.image_pixel_sha256.notna().sum())
     require(ndecoded==receipt_scan["medium_image_pixels_decoded"],
             "Real photo download count differs from authentic receipt")
-    p=p.merge(design,on="photo_id",how="left",validate="one_to_one",sort=False)
+    p=p.merge(design,on="photo_id",how="left",validate="one_to_one",
+              sort=False,suffixes=("", "_source_design"))
     require(len(p)==SOURCE_PHOTOS and p.taxon_id.notna().all()
             and p.inat_taxon_id.astype(str).tolist()==p.taxon_id.astype(str).tolist()
-            and p.observation_id.astype(str).tolist()==p.observation_id_y.astype(str).tolist()
-            if "observation_id_y" in p else False,
+            and p.observation_id.astype(str).tolist()==p.observation_id_source_design.astype(str).tolist(),
             "Selected source taxon or observed original UUID changed in image inference")
-    # The original packet has observation_id; the sampling sidecar provides
-    # the same observation_id suffixed _provenance on merge.
+    # The original packet retains observation_id; precolour provenance uses
+    # observation_id_source_design and must match every individual photo.
     p.to_csv(output/"mois_actual64_photoID_original_RGB_Lab_and_sampling.csv.gz",
              index=False,compression="gzip")
     stats=describe_scan(p)
@@ -204,7 +204,6 @@ def run(source,receipt,provenance,weights,output,*,rps=2.0,workers=8):
         "genuine_original_nine_fraction_full_roi_reinferred":0,
         "no_unknown_photo_declared_negative_or_nonwhite":True,
         "technical_unknown_source_photo_ids_preserved":True,
-        "source_64_photo_prior_method=": "none",
         "source_and_selector_receipt_sha256":sha_file(receipt),
         "source_selection_provenance_sha256":PROVENANCE_SHA,
         "source_photo_ID_csv_gz_sha256":SOURCE_SHA,
