@@ -89,9 +89,9 @@ def source_rows(frame,grouping,label="source_group"):
         })
     return rows
 
-def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,out):
-    photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,out=map(
-        Path,(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,out))
+def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,geography,geo_receipt,out):
+    photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,geography,geo_receipt,out=map(
+        Path,(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,geography,geo_receipt,out))
     require(not out.exists(),"Refuse overwrite source population composition audit")
     a=json.loads(receipt.read_text(encoding="utf-8"))
     u=json.loads(union_receipt.read_text(encoding="utf-8"))
@@ -130,6 +130,16 @@ def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,out):
     d["photo_id"]=d.photo_id.astype(str)
     d["observation_id"]=prior.observation_id.fillna("").astype(str)
     d["genus"]=d.species.fillna("").astype(str).str.split().str[0]
+    geom=json.loads(geo_receipt.read_text(encoding="utf-8"))
+    require(geom.get("real_original_source_photo_attempts")==TARGET
+            and geom.get("output_geography_photo_ID_parquet_SHA256")==sha(geography),
+            "Actual source GSHHG landmass pixel/photo-ID SHA changed")
+    land=pd.read_parquet(geography,columns=["photo_id","land_type","landmass"])
+    require(len(land)==TARGET
+            and land.photo_id.astype(str).tolist()==d.photo_id.tolist(),
+            "GSHHG original photo geographic IDs not exactly aligned")
+    d["land_type"]=land.land_type.fillna("unassigned").astype(str).to_numpy()
+    d["landmass"]=land.landmass.fillna("").astype(str).to_numpy()
     d["original_four_hue"]=d.original_four_hue.fillna("").astype(str)
     d["inat_taxon_id"]=d.inat_taxon_id.fillna("").astype(str)
     d["strict"]=d.continuous9_strict.astype(bool)
@@ -210,6 +220,11 @@ def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,out):
     geographic=source_rows(d,"lat_zone","latitude_zone")
     time=source_rows(d,"season","meteorological_season")
     hemisphere=source_rows(d,"hemisphere","hemisphere")
+    island=source_rows(d,"land_type","island_mainland")
+    cohort_hemi=source_rows(d,
+       d["collection_source"]+"|"+d["hemisphere"],"source_by_hemisphere")
+    cohort_island=source_rows(d,
+       d["collection_source"]+"|"+d["land_type"],"source_by_island")
     within_genus=d[d.strict].groupby("genus").size()
     per_taxon=valid.groupby("inat_taxon_id").size()
     all_obs=d.observation_id.replace("",np.nan)
@@ -233,6 +248,7 @@ def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,out):
     # Count controls by independent units of analysis rather than photos.
     matched={
       "strict_taxon_in_both_hemispheres_min2_each":0,
+      "strict_taxon_in_both_island_and_mainland_min2_each":0,
       "strict_taxon_in_both_hemispheres_min5_each":0,
       "strict_taxon_region_5deg_source_arm_summer_winter_min2_each":0,
       "strict_source_arm_genus_5deg_multi_taxa_count":0,
@@ -242,6 +258,11 @@ def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,out):
         for n in (2,5):
             matched[f"strict_taxon_in_both_hemispheres_min{n}_each"]=int(
                 (hh.north.ge(n)&hh.south.ge(n)).sum())
+    landpair=valid[valid.land_type.isin(("island","mainland"))]
+    landtax=landpair.groupby(["inat_taxon_id","land_type"]).size().unstack(fill_value=0)
+    if {"island","mainland"}.issubset(landtax.columns):
+        matched["strict_taxon_in_both_island_and_mainland_min2_each"]=int(
+            (landtax.island.ge(2)&landtax.mainland.ge(2)).sum())
     cond=valid[valid.season.isin(("summer","winter"))]
     level=["inat_taxon_id","source_arm_original","lat5","lon5"]
     ss=cond.groupby(level+["season"],dropna=False).size().unstack(fill_value=0)
@@ -329,6 +350,9 @@ def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,out):
        "original_latitude_zones":geographic,
        "original_photo_meteorological_seasons":time,
        "original_photo_hemispheres":hemisphere,
+       "island_mainland_composition":island,
+       "original_source_by_hemisphere":cohort_hemi,
+       "original_source_by_island_mainland":cohort_island,
        "upstream_taxon_opportunity_bins":opportunity,
        "source_photo_observation_years":year_table,
        "nine_palette_and_photo_metadata_joins_conserve_1043930_exact_photo_IDs":True,
@@ -339,7 +363,8 @@ def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,out):
        "source_SHA256":{
           "original_nine_source":sha(photo),"original_observation_union":sha(union),
           "FCP447500_photo_ID_source":sha(fcp),
-          "complete_93m_upstream_taxon_counts":sha(upstream)},
+          "complete_93m_upstream_taxon_counts":sha(upstream),
+          "highres_GSHHG_landmass":sha(geography)},
     }
     out.mkdir(parents=True)
     bysource=out/"mois_1043930_photo_source_composition.csv"
@@ -352,6 +377,12 @@ def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,out):
        out/"mois_1043930_upstream_taxon_opportunity_coverage.csv",index=False)
     pd.DataFrame(year_table).to_csv(
        out/"mois_1043930_photo_capture_year_coverage.csv",index=False)
+    pd.DataFrame(cohort_hemi).to_csv(
+       out/"mois_1043930_source_by_hemisphere_stratified_ROI.csv",index=False)
+    pd.DataFrame(cohort_island).to_csv(
+       out/"mois_1043930_source_by_island_stratified_ROI.csv",index=False)
+    pd.DataFrame(island).to_csv(
+       out/"mois_1043930_island_mainland_photo_ROI.csv",index=False)
     (out/"mois_1043930_actual_data_structure_and_bias_audit.json").write_text(
         json.dumps(report,indent=2,sort_keys=True,allow_nan=False)+"\n")
     print("MOIS_REAL1043930_AUDIT_SOURCE_COMPOSITION",json.dumps({
@@ -369,6 +400,8 @@ def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,out):
           "source_photo_attempts_OUTSIDE_42111_upstream_taxon_frame")},
         "source_arms":photo_cohorts,
         "geographic_source":geographic,
+        "source_by_hemisphere":cohort_hemi,
+        "source_by_island":cohort_island,
         "source_cross_comparison":matched,
         },sort_keys=True,allow_nan=False),flush=True)
     return report
@@ -376,10 +409,10 @@ def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,out):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for k in ("photo","receipt","union","union-receipt",
-              "fcp","fcp-receipt","upstream","output"):
+              "fcp","fcp-receipt","upstream","geography","geo-receipt","output"):
         p.add_argument("--"+k,type=Path,required=True)
     z=p.parse_args()
     audit(z.photo,z.receipt,z.union,z.union_receipt,
-          z.fcp,z.fcp_receipt,z.upstream,z.output)
+          z.fcp,z.fcp_receipt,z.upstream,z.geography,z.geo_receipt,z.output)
 
 if __name__=="__main__":main()
