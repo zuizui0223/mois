@@ -1,0 +1,132 @@
+name: MOIS audit genuine 1m original photo composition and 93m taxon sampling bias
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_real1043930_data_structure_audit.py
+      - tests/test_mois_real1043930_data_structure_audit.py
+      - .github/workflows/mois-real1043930-data-structure-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-genuine1043930-originalphoto-source-composition-v1
+  cancel-in-progress: false
+jobs:
+  audit-sampling-frame-photo-taxon-cohort-and-missingness:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install source-only parquet analysis and run population-grain unit tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_real1043930_data_structure_audit.py
+          python -m unittest discover -s tests -p test_mois_real1043930_data_structure_audit.py -v
+      - name: Restore SHA-signed actual 1m full pixel attempts and old original photo/observation IDs
+        run: |
+          set -euo pipefail
+          mkdir -p originals census coast FCP original_source
+          gh release download mois-original1043930-recovered-continuous9-426765-and-ecology-20261025-v1 \
+            --repo zuizui0223/mois --dir originals \
+            --pattern mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --pattern mois1043930_FCP447500_nine_palette_restoration_receipt.json
+          gh run download 40187688390 --repo zuizui0223/mois \
+            --name mois-1043930-latest-original-photo-four-hue-fully-signed-union \
+            --dir census
+          gh run download 40188478245 --repo zuizui0223/mois \
+            --name mois-real-latest1043930-island-mainland-elevation-gshhg \
+            --dir coast
+          printf '%s\n' \
+            'b20bbefe15020c21c3b5b0f7edf3f8e08148a4ee7dda8bf772a89bf6b126f447  originals/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet' \
+            '9a4f3dae6fbcee967b71cb29576e71d52c48e1f1f790b7d3ea4750c4bcb0e6d4  census/mois_latest_1043930_true_original_photo_hue_observation.parquet' \
+            | sha256sum -c -
+      - name: Restore complete original uncapped 93209351-photo source taxon opportunity counts
+        run: |
+          set -euo pipefail
+          gh run download 38749681793 --repo zuizui0223/fcp \
+            --name fcp-42111-real-source-photo-opportunity-counts-20260927-complete-not-colours \
+            --dir original_source
+          find original_source -name all_42111_species_photo_opportunity_counts.csv -print
+          csv=$(find original_source -name all_42111_species_photo_opportunity_counts.csv -print -quit)
+          test -s "$csv"
+          echo "ef26c16252dd785f2d08bde3b18938c7624d73a54386fa3d3974dceb09ed97a9  $csv" | sha256sum -c -
+      - name: Restore exact original FCP447500 fixed 100/taxon photo IDs to distinguish its bias
+        run: |
+          set -euo pipefail
+          gh release download fcp-all4730-original-method-actual-colour-results-20261017 \
+            --repo zuizui0223/fcp --dir FCP \
+            --pattern fcp_all4730_actual_colour_results_receipt.json \
+            --pattern fcp_all4730_original_method_actual_measured_data_and_inference.tar.gz
+          python - <<'PY'
+          import tarfile,shutil,hashlib,json
+          from pathlib import Path
+          root=Path('FCP')
+          rec=json.loads((root/'fcp_all4730_actual_colour_results_receipt.json').read_text())
+          archive=root/'fcp_all4730_original_method_actual_measured_data_and_inference.tar.gz'
+          name='fcp_all4730_original_method_measured_photos.csv.gz'
+          with tarfile.open(archive,'r:gz') as t:
+              matches=[m for m in t.getmembers()
+                       if m.isfile() and m.name.endswith(name)]
+              assert len(matches)==1
+              with t.extractfile(matches[0]) as src, (root/name).open('wb') as dst:
+                  shutil.copyfileobj(src,dst,4<<20)
+          digest=hashlib.sha256((root/name).read_bytes()).hexdigest()
+          assert rec['genuinely_measured_photo_rows']==447500
+          assert rec['genuinely_four_state_classified_photos']==227107
+          assert digest=='8e7f10f0427927208485b2da6fa9c46bb681d6f3611e53b8dfdc606cfc8dabe6'
+          assert rec['source_archive_sha256']==digest
+          print('SOURCE_FCP447500_EXACT_ORIGINAL_PHOTOIDS_SHA_VERIFIED',flush=True)
+          PY
+      - name: Actual photo ID / observation / genus / upstream taxon frame composition and ROI success
+        run: |
+          set -euo pipefail
+          csv=$(find original_source -name all_42111_species_photo_opportunity_counts.csv -print -quit)
+          python -m scripts.analysis.mois_real1043930_data_structure_audit \
+            --photo originals/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --receipt originals/mois1043930_FCP447500_nine_palette_restoration_receipt.json \
+            --union census/mois_latest_1043930_true_original_photo_hue_observation.parquet \
+            --union-receipt census/mois_latest_1043930_photo_union_receipt.json \
+            --fcp FCP/fcp_all4730_original_method_measured_photos.csv.gz \
+            --fcp-receipt FCP/fcp_all4730_actual_colour_results_receipt.json \
+            --upstream "$csv" \
+            --geography coast/latest1043930_all_original_photo_GSHHG_landmass.parquet \
+            --geo-receipt coast/mois_latest1043930_island_altitude_result.json \
+            --output sample_structure
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          f=Path('sample_structure/mois_1043930_actual_data_structure_and_bias_audit.json')
+          r=json.loads(f.read_text())
+          assert r['schema']=='mois_real1043930_original_photo_population_structure_and_missingness_v1'
+          assert r['source_metadata_total_photoIDs']==93209351
+          assert r['source_metadata_distinct_taxa']==42111
+          assert r['original_image_photo_attempts']==1043930
+          assert r['strict9_original_flower_ROI_photos']==390541
+          assert r['exploratory_ambiguous9_photo_ROIs']==36224
+          assert r['original_photo_IDs_sharing_source_observation']>=0
+          cohorts=r['true_source_cohort_separating_FCP_and_nonFCP']
+          assert sum(x['photo_attempts'] for x in cohorts)==1043930
+          assert sum(x['strict_nine_component_success'] for x in cohorts)==390541
+          assert next(x['photo_attempts'] for x in cohorts
+              if x['source_group']=='FCP_447500_fixed100taxon')==447500
+          assert len(r['original_latitude_zones'])>=5
+          print('MOIS_DATA_STRUCTURE_1043930_93209351_SOURCE_LINKED_AUDIT_COMPLETE',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real1043930-full-93m-taxon-source-ROI9-composition-audit
+          path: sample_structure/
+          if-no-files-found: warn
+          retention-days: 90
