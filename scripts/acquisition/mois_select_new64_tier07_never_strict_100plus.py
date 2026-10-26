@@ -75,7 +75,6 @@ def effort_class(attempts):
     return None
 
 def read_taxa(register,old_new):
-    import zipfile
     # per-species source counts are frozen in earlier ID-level original audit.
     with gzip.open(register,"rt",encoding="utf-8") as f:
         taxa=pd.read_csv(f,dtype={"inat_taxon_id":str})
@@ -224,6 +223,7 @@ def design(groups,registry,register,atlas,atlas_receipt,union,union_receipt,out,
             "All 16 signed original source tier07 archive IDs not fully visited")
     # One independent original observation and PHOTO per target taxon. Source
     # taxon/photo ID selection uses deterministic salt unrelated to colour.
+    eligible_distinct_new_observations=len(candidates)
     by_species=defaultdict(list)
     for _,row in candidates.values():
         by_species[row["inat_taxon_id"]].append(row)
@@ -327,7 +327,7 @@ def design(groups,registry,register,atlas,atlas_receipt,union,union_receipt,out,
         "source_tier_photos_authenticated_and_visited":total,
         "source_tier_probability_width":TIER_ENDS[TIER]-TIER_ENDS[TIER-1],
         "eligible_taxa_100plus_source_photo_and_nine_Roi0_prior1to4":len(eligible),
-        "eligible_source_distinct_observations_post_existing_dedup":len(photo_by_obs) if False else len(candidates),
+        "eligible_source_distinct_observations_post_existing_dedup":eligible_distinct_new_observations,
         "eligible_target_taxa_with_one_original_source_observation":len(one_by_species),
         "actual_new_original_photo_IDs_SELECTED_not_yet_image_downloaded":len(source_rows),
         "one_photo_one_source_observation_one_taxon_in_minimal_pilot":True,
