@@ -70,9 +70,10 @@ def candidate_patch(atlas,source,arm):
     infer from the categorical morphology. A source classified photo without
     its original nine fractions is explicitly NOT recoverable.
     """
-    require(set(("photo_id","original_four_hue","continuous9_strict",
+    require(atlas.index.name=="photo_id" and
+            set(("original_four_hue","continuous9_strict",
                  "source_arm_original")).issubset(atlas.columns),
-            "Expected exact source atlas columns")
+            "Expected exact original photo-ID indexed source atlas")
     require(set(("photo_id","morph",*FRACTIONS)).issubset(source.columns),
             "Old real image source lacks full numerical 9component colour")
     ids=source.photo_id.astype(str)
