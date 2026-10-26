@@ -70,7 +70,7 @@ def evaluate_inputs(source,receipt,provenance):
             and s.observation_uuid.tolist()==p.observation_id.tolist(),
             "Exact original precolour source photo, taxon or observation IDs drifted")
     require(s.tier.astype(int).eq(TIER).all()
-            and s.frozen_loader_supported.eq("true").all()
+            and s.frozen_loader_supported.astype(str).str.lower().eq("true").all()
             and s.image_extension.isin(["jpg","jpeg","png"]).all()
             and s.photo_id.str.fullmatch(r"\d+").all(),
             "Original source image is unsupported, malformed or wrong tier")
