@@ -1,0 +1,113 @@
+name: MOIS publish genuine 1043930 photo source taxon coverage and ROI failure audit
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - docs/MOIS_20261026_1043930_DATA_STRUCTURE_AND_EXPANSION_DECISION.md
+      - .github/workflows/mois-publish-real1043930-data-structure-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-data-structure-1043930-20261026-source-verified-release-v1
+  cancel-in-progress: false
+jobs:
+  preserve-composition-and-sampling-decision:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-real1043930-93m-frame-source-composition-acquisition-decision-20261026-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recover source photo structure audited against original 93m and 447500 FCP
+        run: |
+          set -euo pipefail
+          mkdir -p results/structure results/gaps
+          gh run download 40258731262 --repo "$REPO" \
+            --name mois-real1043930-full-93m-taxon-source-ROI9-composition-audit \
+            --dir results/structure
+          gh run download 40259190786 --repo "$REPO" \
+            --name mois-32710-outside-taxa-20884-no-palette-original-photo-source-diagnostic \
+            --dir results/gaps
+      - name: Reconcile taxonomy, source observations, source origin and failure strata to raw signed receipts
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          a=json.loads(Path('results/structure/mois_1043930_actual_data_structure_and_bias_audit.json').read_text())
+          b=json.loads(Path('results/gaps/mois_1043930_source_outside_frame_missing_colour_taxa.json').read_text())
+          assert a['schema']=='mois_real1043930_original_photo_population_structure_and_missingness_v1'
+          assert b['schema']=='mois_true_1043930_outside_93m_and_zero_colour_taxa_diagnostic_v1'
+          assert a['original_image_photo_attempts']==1043930
+          assert a['source_metadata_total_photoIDs']==93209351
+          assert a['source_metadata_distinct_taxa']==42111
+          assert a['strict9_original_flower_ROI_photos']==390541
+          assert a['strict9_source_taxa']==21227
+          assert a['upstream_frame_taxa_NO_valid_original_nine_colour']==20884
+          assert b['missing_original9_with_eligible_source_taxa']==20884
+          assert b['missing_original9_taxa_with_at_least100_upstream_photos']==6205
+          assert b['outside_42111_source_photo_ids']==32710
+          assert b['outside_42111_source_valid9_photo_ROIs']==0
+          assert a['source_photo_attempts_OUTSIDE_42111_upstream_taxon_frame']==32710
+          assert b['outside_42111_source_original_4hue_photo_labels']==11451
+          assert a['original_observation_ID_populated']==1043930
+          assert a['distinct_source_original_observation_IDs']==895666
+          assert a['source_photo_observer_ID_available_on_final_lake'] is False if 'source_photo_observer_ID_available_on_final_lake' in a else True
+          assert a['source_selection_inclusion_probability_available_on_final_lake'] is False
+          assert a['nine_palette_and_photo_metadata_joins_conserve_1043930_exact_photo_IDs']
+          assert sum(d['photo_attempts'] for d in a['true_source_cohort_separating_FCP_and_nonFCP'])==1043930
+          assert sum(d['strict_nine_component_success'] for d in a['true_source_cohort_separating_FCP_and_nonFCP'])==390541
+          assert a['no_photo_RGB_download_or_colour_remeasurement']
+          assert b['original_photo_pixels_posthoc_downloads']==0
+          checksum={}
+          for p in sorted(Path('results').rglob('*')):
+              if p.is_file():checksum[p.name]=hashlib.sha256(p.read_bytes()).hexdigest()
+          r={
+              'schema':'mois_original1043930_real_source_taxon_observation_roi_quality_expansion_decision_v1',
+              'source_photo_attempts':1043930,'original_observations':895666,
+              'strict_nine_palette_photo_ROIs':390541,
+              'upstream_photo_ID_frame':93209351,'upstream_nominal_taxa':42111,
+              'original_strict9_taxa':21227,'upstream_taxa_without_strict9':20884,
+              'target_no9_taxa_with_100plus_upstream_photo_opportunities':6205,
+              'photos_outside_upstream_taxon_register':32710,
+              'original_source_pixeldownloads_for_analysis':0,
+              'audit_source_file_sha256':checksum,
+              'absolute_original_photo_source_sha256':a['source_SHA256']}
+          Path('results/mois_real1043930_data_structure_release_receipt.json').write_text(
+              json.dumps(r,indent=2,sort_keys=True)+'\n')
+          print('MOIS_20261026_TRUE_SOURCE_FRAME_PHOTO_AND_TAXA_COMPOSITION_RECONCILED',
+                json.dumps(r,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real1043930-data-structure-and-ROI-sampling-decision-20261026
+          path: |
+            results/
+            docs/MOIS_20261026_1043930_DATA_STRUCTURE_AND_EXPANSION_DECISION.md
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish durable scientific input frame data-quality decision
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p existing
+            gh release download "$TAG" --repo "$REPO" --dir existing \
+              --pattern mois_real1043930_data_structure_release_receipt.json
+            cmp existing/mois_real1043930_data_structure_release_receipt.json \
+                results/mois_real1043930_data_structure_release_receipt.json
+            echo 'Published source frame data structure receipt unchanged.'
+          else
+            gh release create "$TAG" \
+              results/mois_real1043930_data_structure_release_receipt.json \
+              results/structure/* \
+              results/gaps/* \
+              docs/MOIS_20261026_1043930_DATA_STRUCTURE_AND_EXPANSION_DECISION.md \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS real 1m photographed photos vs 93m taxon frame: what to rescue before scaling' \
+              --notes 'No new image-pixel acquisition, ROI inference or licensed photo redistribution. Original source-checked 1043930 exact photo IDs, 390541 strict original nine vectors, 36224 sensitivity-only ambiguous, 42111 nominal upstream taxa across 93209351 photo-ID opportunities. A total of 21227 taxa have strict ROI9, 20884 do not, of which 6205 have 100+ upstream photo candidates. Separate 32710 original attempted photo IDs from taxa outside 42111 eligible taxon registry have no strict nine-vectors; this does not prove original photo ID nonmembership. Original fixed FCP447500 cohort contributes 58.15% of strict9 results; south tropic / island / source-arm nonresponse differs. 895666 original observations for 1043930 unique photo attempts. Conclusion: inspect source scope, salvage real recorded missing colour where possible and geographically/taxonomically targeted measurements before blindly enlarging the already biased and nonrandom full-photo corpus.'
+          fi
