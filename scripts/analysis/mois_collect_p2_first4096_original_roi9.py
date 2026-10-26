@@ -56,11 +56,13 @@ def attach_provenance(rows,source):
     df.inat_taxon_id=df.inat_taxon_id.astype(str)
     df.observation_id=df.observation_id.astype(str)
     df=df.merge(
-        p.drop(columns=["inat_taxon_id"]).rename(columns={
+        p.rename(columns={
+            "inat_taxon_id":"original_source_taxon_id",
             "original_observation_id":"original_observation_id_source"}),
         on="photo_id",how="left",validate="one_to_one",sort=False)
     require(df.photo_id.is_unique and df.observation_id.is_unique
             and df.inat_taxon_id.is_unique
+            and df.inat_taxon_id.eq(df.original_source_taxon_id.astype(str)).all()
             and df.observation_id.eq(df.original_observation_id_source).all()
             and df.source_arm.eq(ARM).all()
             and df.source_gap_priority.eq("P2").all()
