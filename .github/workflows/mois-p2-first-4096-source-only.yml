@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     env:
-      GH_TOKEN: \${{ github.token }}
+      GH_TOKEN: ${{ github.token }}
       REPO: zuizui0223/mois
       SOURCE_TAG: mois-P2-first4096-tier07-one-taxon-one-photo-source-20261026-v1
       OPENBLAS_NUM_THREADS: '1'
