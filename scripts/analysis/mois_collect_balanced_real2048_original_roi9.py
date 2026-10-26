@@ -41,6 +41,24 @@ def sha(path):
         for b in iter(lambda:f.read(4<<20),b""):h.update(b)
     return h.hexdigest()
 
+def normalize_source_design_provenance(p):
+    """Translate the signed tier07 `design_cohort` source field once.
+
+    Pixel-worker rows do not contain this pre-RGB source allocation. Keep it
+    coupled to the signed photo-ID provenance, never deduce cohort from hue.
+    """
+    require({"photo_id", "inat_taxon_id", "design_cohort"} <= set(p.columns)
+            and "sampling_design_cohort" not in p.columns,
+            "Signed original photo provenance design_cohort header changed")
+    result = p.rename(columns={
+        "inat_taxon_id": "taxon_id_provenance",
+        "design_cohort": "sampling_design_cohort",
+    }).copy()
+    require(result.sampling_design_cohort.isin(("reference", "targeted")).all(),
+            "Source provenance contains unrecognized or missing cohort labels")
+    return result
+
+
 def summarize(d):
     results=[]
     for (role,zone,season),g in d.groupby(
@@ -110,7 +128,7 @@ def collect(source,workers,out):
          "source_5degree_grid_cell",
          "source_original_tier07_probability_width",
          "conditional_stage2_observation_and_photo_probability"]].copy()
-    p=p.rename(columns={"inat_taxon_id":"taxon_id_provenance"})
+    p=normalize_source_design_provenance(p)
     d=d.merge(p,on="photo_id",validate="one_to_one",how="left",sort=False)
     require((d.inat_taxon_id.astype(str)==d.taxon_id_provenance.astype(str)).all()
             and (d.observation_id.astype(str)==
