@@ -391,25 +391,25 @@ def audit(photo,receipt,union,union_receipt,fcp,fcp_receipt,upstream,geography,g
        out/"mois_1043930_island_mainland_photo_ROI.csv",index=False)
     (out/"mois_1043930_actual_data_structure_and_bias_audit.json").write_text(
         json.dumps(report,indent=2,sort_keys=True,allow_nan=False)+"\n")
-    print("MOIS_REAL1043930_AUDIT_SOURCE_COMPOSITION",json.dumps({
-       k:report[k] for k in (
-          "original_image_photo_attempts","strict9_original_flower_ROI_photos",
-          "strict9_source_taxa","strict9_named_genera","any_processed_photo_taxa",
-          "upstream_frame_taxa_NO_valid_original_nine_colour",
-          "taxa_with_exactly_one_strict9_photo","taxa_with_at_least_10_strict9_photos",
-          "effective_taxon_count_inverse_simpson_of_strict_photo_distribution",
-          "top1000_taxa_pct_of_strict9_photo_ROIs",
-          "top1000_taxa_pct_of_UPSTREAM_photo_opportunities",
-          "original_observations_with_multiple_image_photos",
-          "source_photo_IDs_sharing_source_observation" if False else
-          "original_photo_IDs_sharing_source_observation",
-          "source_photo_attempts_OUTSIDE_42111_upstream_taxon_frame")},
-        "source_arms":photo_cohorts,
-        "geographic_source":geographic,
-        "source_by_hemisphere":cohort_hemi,
-        "source_by_island":cohort_island,
-        "source_cross_comparison":matched,
-        },sort_keys=True,allow_nan=False),flush=True)
+    preview_keys=(
+        "original_image_photo_attempts","strict9_original_flower_ROI_photos",
+        "strict9_source_taxa","strict9_named_genera","any_processed_photo_taxa",
+        "upstream_frame_taxa_NO_valid_original_nine_colour",
+        "taxa_with_exactly_one_strict9_photo","taxa_with_at_least_10_strict9_photos",
+        "effective_taxon_count_inverse_simpson_of_strict_photo_distribution",
+        "top1000_taxa_pct_of_strict9_photo_ROIs",
+        "top1000_taxa_pct_of_UPSTREAM_photo_opportunities",
+        "original_observations_with_multiple_image_photos",
+        "original_photo_IDs_sharing_source_observation",
+        "source_photo_attempts_OUTSIDE_42111_upstream_taxon_frame",
+        "FCP_447500_same_photo_accepted_taxon_ID_disagreements",
+    )
+    preview={k:report[k] for k in preview_keys}
+    preview.update(source_arms=photo_cohorts,geographic_source=geographic,
+                   source_by_hemisphere=cohort_hemi,source_by_island=cohort_island,
+                   source_cross_comparison=matched)
+    print("MOIS_REAL1043930_AUDIT_SOURCE_COMPOSITION",
+          json.dumps(preview,sort_keys=True,allow_nan=False),flush=True)
     return report
 
 def main():
