@@ -240,9 +240,17 @@ def fetch_decode_packet(rows, *, part, tier, download, workers,
             latitude=row["latitude"], longitude=row["longitude"],
             source_part=str(part), source_tier=str(tier),
             photo_license=row["photo_license"],
-            source_arm=(SOURCE_ARM if source_role != "K1_calibration" else
-                        "K1_signature_verified_calibration_only"),
-            source_photo_inclusion_probability=("1" if source_role != "K1_calibration" else ""),
+            source_arm=(
+                "bias_controlled_tier07_missing9_nonrepresentative_pilot"
+                if source_role=="bias_controlled_pilot"
+                else ("K1_signature_verified_calibration_only"
+                      if source_role=="K1_calibration" else SOURCE_ARM)),
+            # The tier07 precolour ledger holds its conditional phase
+            # probabilities; never mark an outcome-selected supplement
+            # as a unit-probability globally representative source.
+            source_photo_inclusion_probability=(
+                "" if source_role in ("K1_calibration","bias_controlled_pilot")
+                else "1"),
             audit_stratum=audit_stratum(row["latitude"], row["observed_on"]),
             screen_status="error",
         )
