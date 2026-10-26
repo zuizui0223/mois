@@ -132,6 +132,15 @@ class FastBulk128OriginalSourceTests(unittest.TestCase):
                          "bulk128_tier10_source_selected_reference_and_gap_SEPARATE")
         self.assertEqual(row["screen_status"],"candidate")
         self.assertTrue(bool(row["floral_box_main_L_star"]))
+        def forbidden_repeat_fetch(url):
+            raise AssertionError("Completed original photo pixels must never be fetched again")
+        receipt_again=run(self.src,self.output,0,self.root/"notloaded.pt",
+            detector_override=DummyFlowerBox(),
+            download_override=forbidden_repeat_fetch,
+            rps=.5,batch=256)
+        self.assertEqual(receipt_again,report)
+        self.assertEqual(sha_file(self.output/"photo_ID_matched_reference_vs_targeted_boxLab.csv.gz"),
+                         report["actual_pixel_terminal_photo_and_cohort_SHA256"])
 
 if __name__=="__main__":
     unittest.main()
