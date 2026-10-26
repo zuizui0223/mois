@@ -151,8 +151,10 @@ def collect(source,workers,out):
     known=int(d.morph.isin(HUES).sum())
     failed=int(d.photo_acquisition_failed.sum())
     require(nine<=known and known+int(d.technical_four_hue_unknown.sum())==n
-            and known+int(d.technical_four_hue_unknown.sum()&d.photo_acquisition_failed).sum()<=n
-            and failed+sealed["downloaded"]==n,
+            and failed<=n-known and failed+sealed["downloaded"]==n
+            and sealed["classifiable"]==known
+            and sealed["acquisition_failed"]==failed
+            and sealed["unclassifiable_acquired"]==n-known-failed,
             "Actual classified/technical P2 original image counts do not reconcile")
     # Exactly one photo / one observation / one prior-uncoloured original taxon.
     # Each valid colour thus adds a NEW observed source taxon, not another P5 image.
