@@ -59,6 +59,15 @@ def normalize_source_design_provenance(p):
     return result
 
 
+def source_design_identity_matches_pixels(d):
+    """Validate pre-colour source allocation against exact original image arm."""
+    require({"source_arm", "sampling_design_cohort"} <= set(d.columns),
+            "Signed sampling cohort lost during source-photo ID join")
+    return bool(d.sampling_design_cohort.isin(("reference", "targeted")).all()
+                and ((d.source_arm == SOURCE_ARMS["reference"]) ==
+                     d.sampling_design_cohort.eq("reference")).all())
+
+
 def summarize(d):
     results=[]
     for (role,zone,season),g in d.groupby(
@@ -133,8 +142,7 @@ def collect(source,workers,out):
     require((d.inat_taxon_id.astype(str)==d.taxon_id_provenance.astype(str)).all()
             and (d.observation_id.astype(str)==
                   d.original_observation_id.astype(str)).all()
-            and ((d.source_arm==SOURCE_ARMS["reference"])==
-                  d.design_cohort.eq("reference")).all(),
+            and source_design_identity_matches_pixels(d),
             "Same exact original photo ID must carry exact sampling taxon/observation provenance")
     require(set(FRACTIONS).issubset(d.columns),
             "Source-original YOLO/EfficientSAM terminal did not record measured numeric nine fractions")
