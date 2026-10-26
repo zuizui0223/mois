@@ -139,11 +139,19 @@ def build_signed_input(source,part,out):
             "Source photo roster, observation UUID and design arm counts not conserved")
     dest=out/"selected-original-photo-source.csv.gz"
     out.mkdir(parents=True,exist_ok=True)
-    with dest.open("wb") as binary:
+    temporary=out/"selected-original-photo-source.csv.gz.partial"
+    require(not temporary.exists(),"Interrupted previous metadata selection; diagnose before continuing")
+    with temporary.open("wb") as binary:
         with gzip.GzipFile(filename="",fileobj=binary,mode="wb",mtime=0,compresslevel=3) as zipped:
             with io.TextIOWrapper(zipped,encoding="utf-8",newline="") as writer:
                 w=csv.DictWriter(writer,fieldnames=COLUMNS,lineterminator="\n")
                 w.writeheader();w.writerows(ordered)
+    if dest.exists():
+        require(sha_file(dest)==sha_file(temporary),
+                "Previously scanned P1-P4/diagnostic source original photo bytes changed on resume")
+        temporary.unlink()
+    else:
+        temporary.replace(dest)
     return {
         "source_file":str(dest),
         "source_input_SHA256":sha_file(dest),
@@ -223,10 +231,11 @@ def reconcile_pixels(measured,roster,scan):
 def run(source,output,part,weights,*,model_sha=WEIGHT_SHA,rps=.5,
         workers=8,batch=256,detector_override=None,download_override=None):
     source,output,weights=Path(source),Path(output),Path(weights)
-    require(not output.exists(),"Never overwrite a prior original image scan")
+    require(not output.is_file(),
+            "Original scanned pixel output must be a directory, not a file")
     require(0<rps<=1 and 1<=workers<=12 and batch==256,
             "Provider rate, original S3 decode workers or fixed source packet altered")
-    output.mkdir(parents=True)
+    output.mkdir(parents=True,exist_ok=True)
     signed=build_signed_input(source,part,output)
     measured=output/"medium500"
     detector=(
@@ -256,9 +265,21 @@ def run(source,output,part,weights,*,model_sha=WEIGHT_SHA,rps=.5,
     require(set(roll).isdisjoint({"P5_existing_10plus_strict9","unknown"}),
             "Old well-measured P5 taxa entered missing-colour targeted original cohort")
     output_table=output/"photo_ID_matched_reference_vs_targeted_boxLab.csv.gz"
-    with gzip.open(output_table,"wt",encoding="utf-8",newline="") as f:
-        w=csv.DictWriter(f,fieldnames=list(rows[0]),lineterminator="\n")
-        w.writeheader();w.writerows(rows)
+    temp_output=output/"photo_ID_matched_reference_vs_targeted_boxLab.csv.gz.partial"
+    require(not temp_output.exists(),
+            "Interrupted old photo-status aggregation must be diagnosed")
+    with temp_output.open("wb") as binary:
+        with gzip.GzipFile(filename="",fileobj=binary,mode="wb",mtime=0,
+                           compresslevel=3) as zipped:
+            with io.TextIOWrapper(zipped,encoding="utf-8",newline="") as f:
+                w=csv.DictWriter(f,fieldnames=list(rows[0]),lineterminator="\n")
+                w.writeheader();w.writerows(rows)
+    if output_table.exists():
+        require(sha_file(output_table)==sha_file(temp_output),
+                "Existing original photo classifications would change on restart")
+        temp_output.unlink()
+    else:
+        temp_output.replace(output_table)
     report={
         "schema":SCHEMA,"source_tier":TIER,"original_source_part":part,
         "expected_original_photos":signed["original_photo_ID_count"],
@@ -284,8 +305,13 @@ def run(source,output,part,weights,*,model_sha=WEIGHT_SHA,rps=.5,
         "full93m_source_original_photo_census_complete":False,
         "prior_93m_original_upstream_frame_intact":True,
     }
-    (output/"bulk128_medium_photo_completion_receipt.json").write_text(
-        json.dumps(report,indent=2,sort_keys=True,allow_nan=False)+"\n")
+    final_receipt=output/"bulk128_medium_photo_completion_receipt.json"
+    encoded=json.dumps(report,indent=2,sort_keys=True,allow_nan=False)+"\n"
+    if final_receipt.exists():
+        require(final_receipt.read_text()==encoded,
+                "Original 500px photo outcomes or source provenance changed after completion")
+    else:
+        final_receipt.write_text(encoded)
     print("MOIS_BULK128_TRUE_500PX_ORIGINAL_PHOTOS_STAGE1_FINISHED",
           json.dumps({k:report[k] for k in ("original_source_part",
           "expected_original_photos","actually_medium_photo_IDs_attempted",
