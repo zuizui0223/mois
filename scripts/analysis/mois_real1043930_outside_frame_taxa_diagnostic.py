@@ -91,7 +91,8 @@ def examine(source,union,upstream,out):
         "outside_42111_source_valid9_photo_ROIs":int(outside.continuous9_strict.sum()),
         "outside_42111_source_ambiguous9_photo_ROIs":int(
             outside.continuous9_exploratory_ambiguous.sum()),
-        "outside_42111_source_frozen_photos_are_not_93m_frame_photo_observations":True,
+        "outside_42111_taxa_NOT_in_93209351_eligible_source_taxon_register":True,
+        "photo_ID_membership_in_93m_source_NOT_proven_from_taxon_lookups":True,
         "outside_42111_source_photo_characterization":detail,
         "missing_original9_with_eligible_source_taxa":len(missing),
         "missing_original9_taxa_with_at_least100_upstream_photos":int(
