@@ -65,3 +65,34 @@ Do not dispatch more full-res workers until a candidate queue is signed with:
 - immutable machine-readable `source_gap_matrix.csv`, `targeted_original_photo_queue.csv`, `selection_receipt.json`, `coverage_before_after.csv` and explicit `pending_not_measured` states.
 
 **Current deliverable:** evidence-based acquisition redirection and fail-closed queue contract. **Not yet executed:** full cross-tab source availability / new photo-ID roster / new strict9 ROI-v4 measurement. The 64-image pilot was already genuinely measured, but only with its explicitly different 500px YOLO flower-box method.
+
+
+## 7. Executed independent source/photo bias-repair trial, with actual postmeasurement effectiveness
+
+**New signed evidence available 26 October 2026:** [real 2,048 genuine original-source photo ROI9 outcomes](https://github.com/zuizui0223/mois/releases/tag/mois-real2048-new-source-photo-geo-season-stratified-ROI9-20261026-v1) and [42,111-source-taxon BEFORE/AFTER audit](https://github.com/zuizui0223/mois/releases/tag/mois-original1045978-real401392-ROI9-42111taxon-bias-gap-delta-20261026-v1). Original 256-reference and 1,792-gap-targeted source observations were selected before opening image colours; eight 256-photo terminal units were processed by two successful original YOLO11/EfficientSAM worker jobs. The original collector failed solely on mismatched signed `design_cohort` versus `sampling_design_cohort` field names. [Data-only fix and production rerun](https://github.com/zuizui0223/mois/actions/runs/40320974849) recovered the original image terminals without any extra photo download or ROI inferencing. The original expensive image worker workflow's auto-push trigger has been disabled on its feature branch.
+
+### Measured outcome
+
+| Distinct original cohort | Attempts | Strict original ROI9 | ROI9 success | Prior zero-colour P2 attempts | Newly strict9-supported P2 source taxa |
+|---|---:|---:|---:|---:|---:|
+| Independent reference | 256 | 88 | 34.38% | 2 | 0 |
+| Geo-season targeted | 1,792 | 594 | 33.15% | 258 | **85** |
+| Combined two designs (NOT a combined probability sample) | **2,048** | **682** | **33.30%** | 260 | **85** |
+
+Technical original photo outcomes: eight download failures, 1,358 acquired-but-4-hue unclassifiable, and 682 genuine strict9. Exactly zero 2,048-photo overlaps with the prior separate 64 genuinely new 500px-Lab pilot at both photo and observation UUID levels. The pilot method remains distinct and does **not** contribute an ROI9.
+
+The signed **1,043,930 original attempts / 400,710 strict9** baseline plus the 2,048 source-disjoint real attempts gives **1,045,978 original photo attempts / 401,392 strict ROI9** (excluding the method-distinct 64). Within the fixed upstream 42,111 nominal source taxa, strict9-covered taxa rose **21,235 → 21,320 (+85)**; still missing strict9 fell **20,876 → 20,791**. A further **43 taxa** newly reached five strict9 images and **nine taxa** newly reached ten. 85 of the gains occur in taxa with **>=10 original source-photo opportunities and previously zero strict9** (P2).
+
+### Important acquisition failure of the FIRST geographic balancing design
+
+The geographic balance worked in the targeting sense: the targeted acquisition includes **347 N-tropical and 410 S-tropical** original attempts, delivering **122 and 144** new strict9 respectively. But taxonomic gap balancing was far weaker: among the 1,792 targeted photos, **788 (44.0%)** went to **P5 taxa already holding >=10 strict9 images**. P2, the genuinely unmeasured but eligible long tail, received just **258 (14.4%)**. Those 258 attempts alone produced **85 newly covered taxa (32.9% per attempted P2 photo)**. P3 received 485 and P4 260 attempts; P1 received one photo with no strict9. This is a **measured deficiency in the previous sampler objective**, not a generic suggestion to gather more photos.
+
+### Next acquisition-policy gate: TAXON gap first, then region/season
+
+* Keep the original frozen 256 reference and 1,792 targeted pilot distinct; do not retrofit universal frame probabilities. Any new reference arm remains separately independently randomized before colour selection.
+* From the current **17,727 P2 still-uncoloured taxa**, rank *never-before-attempted observation UUIDs* within authenticated 93m source tier(s), stratified by **latitude zone × local season × source-taxon**; seek geographic and seasonal diversity among the P2 targets. Set **at least 60% of new targeted slots to P2** wherever independently sourced eligible P2 observations really exist, explicitly recording any shortfall from verified source shortages. Prefer taxa with 0–1 previous images attempted, and audit photo-specific ROI/flower-organ failures first for P2 taxa with >=5 historical failures.
+* Do **not** allocate additional P5 *targeted* photos merely for geographic balance; allow P5 only in the separate reference cohort or a documented matching-support design. Use P3/P4 remainder for independent taxon × geography × local-season evidence; P1 limited by its rare source opportunity set, do not manufacture candidate IDs.
+* Freeze one new independent observation per selected photo, stable before-image hash and source inclusion rules. Deduplicate against the **1,045,978 frozen image-attempt IDs**, the method-distinct 64 pilot, active FCP/K1 queues and any new reservations before downloading. Source-ID and observation-UUID disjointness require actual ID-level certificates, not simple arithmetic on prior group totals.
+* Optimize **newly strict9-covered taxa and previously absent joint region/season support per compute-hour**, not raw photo count or the nominal fraction of northern/southern images. Keep all unclassifiable outcomes in each arm, separately estimate technical missingness, and publish before/after receipts.
+
+**Execution boundary:** these are real executed 2,048-photo ROI and independently audited source-taxon improvements. The next >=60%-P2 source-only **photo-ID queue has NOT yet been selected or processed**, and no future ROI9 outcome for the next sample is claimed.
