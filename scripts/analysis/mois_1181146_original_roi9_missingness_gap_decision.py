@@ -156,8 +156,9 @@ def audit(source_photo,source_taxa,out,*,verify_sha=True,verify_census=True,
     for k in ("photo_id","observation_id","inat_taxon_id"):
         d[k]=d[k].fillna("").astype(str).str.strip()
     q.inat_taxon_id=q.inat_taxon_id.fillna("").astype(str).str.strip()
-    require(d.photo_id.is_unique and
-            d.photo_id.str.fullmatch(r"\d+").all() and
+    require(d.photo_id.is_unique,
+            "Duplicate photo IDs in authentic original ROI9 ledger")
+    require(d.photo_id.str.fullmatch(r"\d+").all() and
             q.inat_taxon_id.is_unique and
             d.source_design.isin(ARMS).all() and
             str(d.strict9.dtype) in ("bool","boolean") and
