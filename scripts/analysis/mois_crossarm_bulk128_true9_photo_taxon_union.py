@@ -210,6 +210,12 @@ def merge_arms(baseline,geo,p2,bulk,source_priority,*,verify_source_counts=True)
             observed_among_new.update(these)
         result.append(current)
     combined=pd.concat(result,ignore_index=True)
+    # The old 1m-photo atlas stores geocoordinates as floats while several
+    # newly measured original FCP packets preserve their exact source text.
+    # Canonicalize only numerical geographical fields; invalid/missing stays
+    # unknown rather than becoming a 0-degree invented position.
+    for coord in ("latitude","longitude"):
+        combined[coord]=pd.to_numeric(combined[coord],errors="coerce").astype("float32")
     require(combined.photo_id.is_unique and len(combined)==sum(len(v) for v in frames.values()),
             "Cross-arm append introduced duplicate original photo rows")
     priority=source_priority.copy()
