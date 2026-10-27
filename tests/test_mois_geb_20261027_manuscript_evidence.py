@@ -95,6 +95,25 @@ class SourceOriginalFloralEcologyPaperTests(unittest.TestCase):
         self.assertIn("ordinary whole-genus",self.paper)
         self.assertIn("at least",self.paper)
 
+    def test_executed_MNAR_tipping_is_a_source_conditioned_sensitivity_not_adjusted_climate(self):
+        m=self.ledger["fourhue_nonresponse_MNAR_313535"]
+        x=m["real_source_counts"]
+        self.assertEqual(x["hue_known"]+x["hue_unknown"],313204)
+        self.assertEqual(x["photo_attempts_parent"]-x["rain_solar_classifiable_site_photo_attempts"],331)
+        self.assertAlmostEqual(
+            m["precolour_attempt_standardized_wet_minus_dry_completecase_pp"],
+            4.550412063034302,places=6)
+        self.assertAlmostEqual(
+            m["precolour_attempt_standardized_wet_missing_deficit_under_dry_MAR_to_tie_pp"],
+            8.25060612687695,places=6)
+        self.assertLess(
+            m["if_symmetric_wet_missing_minus5pp_and_dry_missing_plus5pp_result_pp"],0)
+        self.assertFalse(m["photo_hue_unknown_reclassified_as_biological_white_or_nonwhite"])
+        self.assertEqual(m["source_original_image_pixels_downloaded_or_reanalysed"],0)
+        self.assertIn("−8.25-point departure",self.paper)
+        self.assertIn("NOT an alternative estimate",self.paper)
+        self.assertIn("MNAR",self.fig)
+
     def test_missingness_and_unverified_labels_never_upgraded(self):
         d=self.ledger["strict9_quality1181146"]
         p=d["extra_sampled_all_prior_roi9_failed"]
