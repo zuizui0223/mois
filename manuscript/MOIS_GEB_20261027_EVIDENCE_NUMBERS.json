@@ -1,0 +1,270 @@
+{
+  "schema": "mois_geb_20261027_verified_historical_results_and_figure_source_v1",
+  "document_scope": "Verified previously fitted ecological models plus separately measured present-day ROI9 availability; NOT one globally fitted 1.18m regression",
+  "freeze_date": "2026-10-27",
+  "study_frames": [
+    {
+      "id": "world_source",
+      "upstream_photo_opportunities": 93209351,
+      "nominal_source_taxa": 42111,
+      "original_photos_physically_measured": false,
+      "endpoint": "Source metadata only"
+    },
+    {
+      "id": "climate309439",
+      "measured_original_photo_ids": 309439,
+      "classifiable_four_hue": 149662,
+      "dated_classifiable": 149653,
+      "endpoint": "Genus-weighted six-axis annual climate"
+    },
+    {
+      "id": "geo313535",
+      "measured_original_photo_ids": 313535,
+      "classifiable_four_hue": 151239,
+      "endpoint": "Species-equal latitude/landmass cells, matched elevation/island and four hue composition"
+    },
+    {
+      "id": "composition350399",
+      "measured_original_photo_ids": 350399,
+      "classifiable_four_hue": 164297,
+      "nominal_four_hue_taxa": 37107,
+      "nominal_four_hue_genera": 7718,
+      "endpoint": "Photo hue prevalence, source arm selection, seasonal 4-term composition"
+    },
+    {
+      "id": "strictroi1181146",
+      "measured_original_photo_ids": 1181146,
+      "original_strict_nine_valid": 451643,
+      "original_strict_nine_unknown": 729503,
+      "covered_nominal_source_taxa": 30048,
+      "uncovered_nominal_source_taxa": 12063,
+      "endpoint": "Four-arm identity, photo-level strict9 coverage and MNAR diagnostic; no annual climate fit"
+    },
+    {
+      "id": "older_soil_complete",
+      "nominal_taxa": 16801,
+      "nominal_genera": 1665,
+      "source_photo_labels": 26163,
+      "endpoint": "Separate 13-variable exploratory in-sample genus vs environment attribution"
+    }
+  ],
+  "visible_four_hue_350399": {
+    "image_attempts": 350399,
+    "hue_known": 164297,
+    "hue_unknown": 186102,
+    "hue_counts": {
+      "white": 78026,
+      "yellow_orange": 51491,
+      "red_pink": 17382,
+      "blue_purple": 17398
+    },
+    "weighting_white_fraction_percent": {
+      "photo_equal": 47.4908,
+      "nominal_taxon_equal": 48.1891,
+      "nominal_genus_equal": 51.4631
+    },
+    "evidence": "docs/MOIS_REAL350399_ACTUAL_RGB_FOURTERM_SEASON_AND_TAXON_20261019.md"
+  },
+  "annual_moisture_genus_equal_309439": {
+    "estimate_unit": "percentage points of photographic-white fraction per source-specific original environmental SD",
+    "resamples": 999,
+    "within_model_simultaneous_family": 24,
+    "comparisons": [
+      {
+        "variable": "BIO12 annual precipitation",
+        "support": "worldwide genus-weighted",
+        "effect": 1.988424448731033,
+        "ci_low": 0.5524542251463824,
+        "ci_high": 3.4243946723156835
+      },
+      {
+        "variable": "annual atmospheric vapour",
+        "support": "worldwide genus-weighted",
+        "effect": 3.160569207875591,
+        "ci_low": 1.041961733160571,
+        "ci_high": 5.279176682590611
+      },
+      {
+        "variable": "BIO12 annual precipitation",
+        "support": "genus by coarse geographical cell",
+        "effect": 0.9033512430257508,
+        "ci_low": -2.634989062244256,
+        "ci_high": 4.441691548295758
+      },
+      {
+        "variable": "annual atmospheric vapour",
+        "support": "genus by coarse geographical cell",
+        "effect": 2.1545,
+        "ci_low": -2.6404,
+        "ci_high": 6.9494
+      }
+    ],
+    "evidence": "results/mois_real309439_fullFCP256_six_climate_maxT999_result_20261017.json"
+  },
+  "old_identical_taxa_betweengenus_withingenus": {
+    "taxa": 20694,
+    "genera": 1934,
+    "photo_source_is_identical_within_this_comparison": true,
+    "variable": "BIO12 annual precipitation",
+    "unit": "percentage points per within-study climate source SD",
+    "between_genus": 8.555,
+    "within_genus": 2.255,
+    "between_minus_within": 6.3,
+    "paired_difference_ordinary_bootstrap_95": [
+      3.666,
+      8.779
+    ],
+    "evidence": "docs/MOIS_INTEGRATED_ECOLOGICAL_FINDINGS_20261016.md in manuscript/geographic-conditional-moisture-research-20261014 branch, separately verified original source"
+  },
+  "old_soil13_in_sample": {
+    "taxa": 16801,
+    "genera": 1665,
+    "environmental_R2_percent_equal_genus": 2,
+    "environmental_R2_percent_equal_species": 1.282,
+    "genus_identity_in_sample_R2_percent": 44.315,
+    "source_taxon_size_permutation_mean_R2_percent": 19.063,
+    "notes": "The genus model includes 1665 categories; neither heritability nor environment independent causal contribution; separate older sample.",
+    "evidence": "docs/MOIS_GLOBAL_OVERALL_WHITE_13ENV_AND_GENUS_SCALES_20261016.md in manuscript/geographic-conditional-moisture-research-20261014 branch"
+  },
+  "elevation_and_island": {
+    "elevation": {
+      "nearby_neighbourhoods": 44,
+      "high_cut_m": 1500,
+      "low_below_m": 500,
+      "high_minus_low_white_pp": -5.085,
+      "nominal_95": [
+        -8.785,
+        -1.386
+      ],
+      "same_direction_neighbourhoods": 31
+    },
+    "island": {
+      "matched_pairs": 102,
+      "island_landmasses": 65,
+      "regions": 28,
+      "environmental_matched_white_island_minus_mainland_pp": 1.396,
+      "region_cluster_nominal_95": [
+        -1.553,
+        4.345
+      ],
+      "equal_region_white_pp": 0.092
+    },
+    "evidence": "docs/MOIS_ENVIRONMENT_OVERLAP_AND_REGIONAL_ELEVATION_20261018.md",
+    "caution": "Exploratory conditional source support, not replicated effects, no posthoc project-family simultaneous interval"
+  },
+  "source_arm_composition_350399": {
+    "earlier_core": {
+      "attempts": 317631,
+      "four_hue": 152827,
+      "white_fraction": 47.2266
+    },
+    "new_taxa_broad_arm": {
+      "attempts": 32768,
+      "four_hue": 11470,
+      "white_fraction": 51.0113
+    },
+    "raw_new_minus_core_white_pp": 3.7847,
+    "matched_genus_cell_10deg": {
+      "equal_genus_new_minus_core_white_pp": 0.635,
+      "bootstrap_95": [
+        -1.847,
+        3.07
+      ],
+      "matched_core_occurrence_fraction_percent": 6.05,
+      "matched_new_occurrence_fraction_percent": 24.9
+    },
+    "evidence": "docs/MOIS_REAL350399_GEOGENUS_SOURCE_SELECTION_BIAS_20261019.md",
+    "caution": "Raw contrast and genus/cell matching use different weighting and source support; not a causal taxon-turnover estimate"
+  },
+  "seasonal_350399": {
+    "geography": "extratropics only",
+    "summer_winter_by_hemisphere": {
+      "north": {
+        "summer_classifiable": 47282,
+        "winter_classifiable": 5077,
+        "summer_white_percent": 49.3528,
+        "winter_white_percent": 46.5235,
+        "four_term_components_pp": {
+          "within_taxon_photo_white": 3.26036,
+          "shared_taxon_photo_weight": -0.85749,
+          "summer_exclusive": 2.92067,
+          "winter_exclusive": -2.49426
+        },
+        "sum_white_difference_pp": 2.82928
+      },
+      "south": {
+        "summer_classifiable": 7796,
+        "winter_classifiable": 5409,
+        "summer_white_percent": 50.744,
+        "winter_white_percent": 40.2477,
+        "four_term_components_pp": {
+          "within_taxon_photo_white": 3.57058,
+          "shared_taxon_photo_weight": 8.03618,
+          "summer_exclusive": 4.15779,
+          "winter_exclusive": -5.26831
+        },
+        "sum_white_difference_pp": 10.49624
+      }
+    },
+    "taxon_cell_season_year_strict_at_least_two_distinct_obs_each_season": {
+      "north": 2,
+      "south": 2
+    },
+    "evidence": "docs/MOIS_REAL350399_ACTUAL_RGB_FOURTERM_SEASON_AND_TAXON_20261019.md",
+    "caution": "Decomposition of photographed source not physiology, phenology or observer-corrected causation"
+  },
+  "strict9_quality1181146": {
+    "all_source_photo_ids": 1181146,
+    "strict9_valid": 451643,
+    "strict9_unknown": 729503,
+    "source_taxa_with_valid9": 30048,
+    "source_taxa_with_zero9": 12063,
+    "remaining_unmeasured_source_taxa": {
+      "P0_no_source_photo": 16,
+      "P1_rare_source_photos": 2862,
+      "P2_ten_plus_source_photos": 9185
+    },
+    "source_reference_vs_targeted_are_not_pooled_as_world_community": true,
+    "matched_original_geocoded_meta_restored": 131072,
+    "original_coordinate_unknown": 195,
+    "original_local_season_unknown": 197,
+    "valid9_by_latitude_band": [
+      {
+        "region": "N_temperate",
+        "attempts": 726181,
+        "valid": 305289
+      },
+      {
+        "region": "S_temperate",
+        "attempts": 235974,
+        "valid": 79937
+      },
+      {
+        "region": "N_tropical",
+        "attempts": 106008,
+        "valid": 30579
+      },
+      {
+        "region": "S_tropical",
+        "attempts": 60707,
+        "valid": 14426
+      }
+    ],
+    "extra_sampled_all_prior_roi9_failed": {
+      "n": 512,
+      "YOLO_500px_flower_candidate": 495,
+      "negative": 14,
+      "error": 3,
+      "anatomical_flower_petal_truth_unknown": true
+    },
+    "evidence": "https://github.com/zuizui0223/mois/releases/tag/mois-1181146-originalROI9-128bulk-georestored-seasons-and-512QC-20261027-v2"
+  },
+  "inference_gates": {
+    "new_annual_climate_regression_on_1181146_pictures_performed": false,
+    "in_full_world_flora_meaning": "Selected photographed named taxa conditional on classification and sample design, not complete worldwide native blooming flowers",
+    "technical_unknown_imputed_as_nonwhite": false,
+    "anthocyanin_cost_or_fitness_tested": false,
+    "independent_anatomical_flower_or_petals_verified": false,
+    "photograph_level_photo_proxy_equals_strict9": false
+  }
+}

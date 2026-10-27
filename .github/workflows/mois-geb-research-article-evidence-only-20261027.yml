@@ -1,0 +1,53 @@
+name: MOIS GEB paper existing results provenance / no new photo science
+on:
+  push:
+    branches: [manuscript/mois-geb-ecological-synthesis-20261027]
+    paths:
+      - manuscript/MOIS_GEB_20261027_*
+      - manuscript/MOIS_GEB_RESEARCH_ARTICLE_20261027_MAIN_TEXT.md
+      - tests/test_mois_geb_20261027_manuscript_evidence.py
+      - .github/workflows/mois-geb-research-article-evidence-only-20261027.yml
+  pull_request:
+    paths:
+      - manuscript/MOIS_GEB_20261027_*
+      - manuscript/MOIS_GEB_RESEARCH_ARTICLE_20261027_MAIN_TEXT.md
+      - tests/test_mois_geb_20261027_manuscript_evidence.py
+      - .github/workflows/mois-geb-research-article-evidence-only-20261027.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-geb-20261027-manuscript-and-numeric-evidence-validation
+  cancel-in-progress: false
+jobs:
+  validate-paper-scientific-claims-and-source-cohorts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check source-labeled quantitative results, abstract, five-figure scope and unavailable botanical truth
+        run: |
+          set -euo pipefail
+          python -m py_compile tests/test_mois_geb_20261027_manuscript_evidence.py
+          python -m unittest discover -s tests -p test_mois_geb_20261027_manuscript_evidence.py -v
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          base=Path('manuscript')
+          paper=(base/'MOIS_GEB_RESEARCH_ARTICLE_20261027_MAIN_TEXT.md').read_text()
+          abstract=paper.split('## Structured abstract\n')[1].split('\n---')[0]
+          abstract_words=len(re.sub(r'\*\*','',abstract).split())
+          assert abstract_words<=300,abstract_words
+          text=paper.split('## 1 | Introduction')[1].split('## Data accessibility')[0]
+          main_words=len(re.sub(r'\*\*','',text).split())
+          assert main_words<=5000, main_words
+          data=json.loads((base/'MOIS_GEB_20261027_EVIDENCE_NUMBERS.json').read_text())
+          assert not data['inference_gates']['new_annual_climate_regression_on_1181146_pictures_performed']
+          assert not data['inference_gates']['anthocyanin_cost_or_fitness_tested']
+          print('MOIS_GEB_SOURCE_VALIDATION_NO_NEW_IMAGES_OR_MODELS',{
+            'abstract_words':abstract_words,'main_text_words':main_words,
+            'main_figures':5,'new_source_photo_pixels':0},flush=True)
+          PY
