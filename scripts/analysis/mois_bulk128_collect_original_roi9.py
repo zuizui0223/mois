@@ -141,7 +141,7 @@ def collect(source,workers,output):
             and m.get("work_units")==512
             and m.get("group_ids")==list(range(128))
             and m.get("P5_targeted_photo_attempts")==0
-            and m.get("source_original_photo_IDs_and_observation_UUIDs_all_unique"),
+            and m.get("original_source_photo_IDs_and_observation_UUIDs_all_unique"),
             "Not the frozen authentic bulk128 original photo acquisition roster")
     completed,receipt=collect_wave(source,workers,METHOD)
     require(receipt["wave_complete"] and receipt["pending_photo_attempts"]==0
