@@ -44,7 +44,7 @@ class RealPhotoBiasTests(unittest.TestCase):
                 "photo_id":str(90000+i),
                 "observation_id":"uu-"+str(i),
                 "inat_taxon_id":tax,
-                "source_design":("original_1043930","bulk128_131072",
+                "source_design":("historical_K1_FCP_source_heterogeneous","bulk128_131072",
                   "bias_refill_2048","p2_first_4096")[i%4],
                 "source_subarm":"targeted" if i%4 else "historical",
                 "observed_on":"2025-07-12",
