@@ -1,0 +1,89 @@
+name: MOIS 128 existing ROI9-unknown photo botanical QA annotation tool source
+on:
+  push:
+    branches: [analysis/mois-512-existing-ROI9-failures-diagnose-20261027]
+    paths:
+      - .github/workflows/mois-128-old-photo-botanical-review-app.yml
+      - scripts/analysis/mois_roi9_unknown_128_blind_botanical_review_app.py
+      - tests/test_mois_roi9_unknown_128_blind_botanical_review_app.py
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: mois-real512-oldphotos-128-blind-flower-petal-QA-source-app
+  cancel-in-progress: false
+jobs:
+  select-source-blind-128-botanical-truth-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      IN_TAG: mois-old512-realROI9unknown-technical-170cached342screen-20261027-v1
+      OUT_TAG: mois-real128-existingROI9-failure-botanical-review-browser-20261027-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline tests of 128 true original photo IDs and empty botanical labels
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/analysis/mois_roi9_unknown_128_blind_botanical_review_app.py
+          python -m unittest discover -s tests \
+            -p test_mois_roi9_unknown_128_blind_botanical_review_app.py -v
+      - name: Reuse 512 already screened old source photo statuses, no image bytes
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh release download "$IN_TAG" --repo "$REPO" --dir source \
+            --pattern all512_oldROI9_unknown_photoID_detector_status.csv
+          echo '4114dfc1642355dc7b1dc2e38527fe3a9ff6477b932fe84a6b69b9273f709218  source/all512_oldROI9_unknown_photoID_detector_status.csv' | sha256sum -c -
+      - name: Freeze source-ID sampled botanist review cases and downloadable local-HTML annotation app
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_roi9_unknown_128_blind_botanical_review_app \
+            --diagnosis-csv source/all512_oldROI9_unknown_photoID_detector_status.csv \
+            --output manual
+          python - <<'PY'
+          import csv,hashlib,json
+          from pathlib import Path
+          root=Path('manual');m=json.loads((root/'botanical128_review_design_receipt.json').read_text())
+          assert m['botanical_review_original_photo_IDs_selected']==128
+          assert m['distinct_original_taxa']==128
+          assert m['all_botanical_open_flower_or_petal_labels_still_blank']
+          assert m['new_photo_IDs_added_to_census']==0
+          assert m['image_bytes_persisted_or_redistributed_by_tool'] is False
+          assert m['HTML_only_displays_public_source_URLs_lazily_one_photo_at_a_time']
+          assert sum(m['case_type_counts'].values())==128
+          for file,digest in m['outputs_SHA256'].items():
+              assert hashlib.sha256((root/file).read_bytes()).hexdigest()==digest
+          with (root/'manual128_botanical_annotation_BLANK_not_yet_reviewed.csv').open(newline='') as stream:
+              rows=list(csv.DictReader(stream))
+          assert len(rows)==128 and all(
+              x['human_review_completed']=='False' and x['human_flower_visible']==''
+              for x in rows)
+          print('MOIS_128_SOURCE_VALID_BOTANICAL_PHOTO_REVIEW_READY_BUT_UNLABELED',m['case_type_counts'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois128-original-ROI9-blind-botanical-human-QA-html-and-CSV
+          path: manual/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish 128-photo HTML botanist annotation without inventing petal truth
+        run: |
+          set -euo pipefail
+          if gh release view "$OUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+             mkdir -p prior
+             gh release download "$OUT_TAG" --repo "$REPO" --dir prior \
+               --pattern botanical128_review_design_receipt.json
+             cmp prior/botanical128_review_design_receipt.json \
+                 manual/botanical128_review_design_receipt.json
+          else
+             gh release create "$OUT_TAG" manual/* --repo "$REPO" --target "$GITHUB_SHA" \
+               --title 'MOIS 128 already acquired ROI9 unknown original photos: blank botanist flower organ review' \
+               --notes 'Selected from 512 SHA-authenticated original nine-colour measurement failures. 128 distinct old photo IDs and distinct taxon IDs, purposeful technical detector-negative and prominent detector-box source/region/season coverage. HTML annotation opens original iNaturalist public medium images lazily one-at-a-time, saves responses in local browser only, and exports human botanical review CSV. All labels blank initially. No new original photo acquisition, no photo binary redistribution, no invented corolla or strict9 pigment rescue.'
+             echo MOIS_ORIGINAL_ROI9_128_ACTUAL_BOTANICAL_REVIEW_TOOL_RELEASED
+          fi
