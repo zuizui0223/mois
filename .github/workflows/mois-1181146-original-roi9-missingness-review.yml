@@ -1,0 +1,101 @@
+name: MOIS signed 1181146 original ROI9 geoseason missingness and P2 source review
+on:
+  push:
+    branches: [analysis/mois-1181146-roi-failure-and-gap-action-20261027]
+    paths:
+      - .github/workflows/mois-1181146-original-roi9-missingness-review.yml
+      - scripts/analysis/mois_1181146_original_roi9_missingness_gap_decision.py
+      - tests/test_mois_1181146_original_roi9_missingness_gap_decision.py
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-true1181146-strict9-source-bias-and-blindQC-review
+  cancel-in-progress: false
+jobs:
+  signed-source-regional-seasonal-roi9-quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 38
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      INPUT_TAG: mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1
+      RESULT_TAG: mois-original1181146-strict9-missingness-and-512-source-photo-review-20261027-v1
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test southern seasonal clock, technical ROI unknowns and source taxon priority decisions
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_1181146_original_roi9_missingness_gap_decision.py
+          python -m unittest discover -s tests \
+            -p test_mois_1181146_original_roi9_missingness_gap_decision.py -v
+      - name: Reuse exact real original photo-ID and source-taxon SHA source, no image reads
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          gh release download "$INPUT_TAG" --repo "$REPO" --dir evidence \
+            --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --pattern mois_42111_original_taxon_9palette_before_after.csv.gz
+          printf '%s\n' \
+            '3fbd0f0ec7eb347b3bbc7ab509ec9312ec6d797ed932dcf7bb425959898c3835  evidence/mois_1181146_unique_original_photo_continuous9_by_arm.parquet' \
+            'ea602238f3cd152fdd2e36e9ce4bcbc77b795a35dce802e9305f6f6cddd77fb8  evidence/mois_42111_original_taxon_9palette_before_after.csv.gz' | sha256sum -c -
+          echo 'MOIS_1181146_REAL_PHOTO_42111_SOURCE_TAXA_SHA_VERIFIED'
+      - name: Analyze 1.18m signed real numeric image failures by method/region/local season/taxon gap
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_1181146_original_roi9_missingness_gap_decision \
+            --photo-parquet evidence/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --taxon-register evidence/mois_42111_original_taxon_9palette_before_after.csv.gz \
+            --review-target 512 --output qc_review
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          r=Path('qc_review/mois_real1181146_original_roi9_bias_action_receipt.json')
+          a=json.loads(r.read_text())
+          assert a['schema']=='mois_real1181146_fourarm_strictroi9_geoseason_missingness_triage_v1'
+          assert a['exact_source_original_photo_IDs']==1181146
+          assert a['real_strict9_original_photos']==451643
+          assert a['original9_unknown_photo_attempts']==729503
+          assert a['source_nominal_taxa']==42111
+          assert a['source_nominal_taxa_strict9_supported']==30048
+          assert a['source_nominal_taxa_zero_strict9']==12063
+          assert a['source_P2_photo_supported_zero9_taxa']==9185
+          assert a['manual_unknown_original_photo_review_targets']==512
+          assert a['no_new_S3_image_downloads'] and a['no_original_ROI9_inferences']
+          for name,digest in a['output_SHAs'].items():
+              h=hashlib.sha256((Path('qc_review')/name).read_bytes()).hexdigest()
+              assert digest==h, name
+          print('MOIS_1181146_GEOSEASON_ROI9_FAILURE_AND_512_BLIND_EXISTING_IMAGE_REVIEW_VERIFIED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-signed1181146-original-strictROI9-missingness-and-biasQC
+          path: qc_review/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish immutable source photo missingness and rational next-work review queue
+        run: |
+          set -euo pipefail
+          if gh release view "$RESULT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p previous
+            gh release download "$RESULT_TAG" --repo "$REPO" --dir previous \
+              --pattern mois_real1181146_original_roi9_bias_action_receipt.json
+            cmp previous/mois_real1181146_original_roi9_bias_action_receipt.json \
+                qc_review/mois_real1181146_original_roi9_bias_action_receipt.json
+            echo 'MOIS_TRUE_ROI9_QC_EXISTING_RELEASE_REUSED_NO_DUPLICATE_REVIEW'
+          else
+            gh release create "$RESULT_TAG" qc_review/* \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS 1181146 actual original photo ROI9 missingness, taxon P2 action, 512 blind review' \
+              --notes 'Uses actual 1,181,146 source-disjoint SHA-pinned numerical original photos, with 451,643 real strict9 and technical unknowns untouched. Audits success separately by acquisition design, hemisphere-local season and real-source taxon gap. 512 existing unknown photo IDs are source-taxonomic and seasonal blind review targets, not extra original image acquisitions and not a world botanical flower colour sample. Never infer petals, native status or white/nonwhite from the 500px proxy or ROI9 technical unknown. Zero new photo S3 downloads or ROI inference.'
+            echo 'MOIS_STRICT9_REAL1181146_SOURCE_BIAS_AND_512_PHOTO_REVIEW_PUBLISHED'
+          fi

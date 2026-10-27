@@ -54,3 +54,35 @@
 - Primary future execution target: **9,185 source-rich nominal P2 taxa** still with zero strict9 and **2,862 rare P1**; improve organ-specific ROI classification and taxon/season/geography sampling support, and independently audit the 95 medium500 false negatives discovered in the same bulk128 dual-method images before excluding detector negatives.
 
 The cross-arm **data reassembly and publication work is complete for the four source-frozen arms**; subsequent main additions require independent source-photo/observation/taxon SHA delta verification, not a blind addition of new ROI or source target counts.
+
+
+## 2026-10-27 JST — 1.18m strict9 nonresponse and ORIGINAL geography restoration (newest)
+
+The [signed four-arm source union](https://github.com/zuizui0223/mois/releases/tag/mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1) remains correct for photo identities, 451,643 source-original strict9 ROI measurements and 42,111 source-taxon coverage, but **its initial Parquet omitted latitude, longitude and observed_on for all 131,072 bulk128 photos**, causing spurious geographical/seasonal UNKNOWNs in the first nonresponse-QC version.
+
+**This is now fixed:** [SHA-verified metadata-only restoration and corrected regional/seasonal QC run](https://github.com/zuizui0223/mois/actions/workflows/mois-1181146-bulk128-georestored-photo-QC-v2.yml) and [immutable corrected v2 release](https://github.com/zuizui0223/mois/releases/tag/mois-1181146-originalROI9-128bulk-georestored-seasons-and-512QC-20261027-v2). All **512 original tier10 source work-unit CSV SHA256 values** were checked; their photo_id, original observation UUID, iNat taxon ID and sampling cohort were matched before restoring signed latitude/longitude and original observed date to the **same 131,072 bulk photos**. **131,072/131,072 now have valid source coordinates and nonempty observed_on**; all existing 451,643 strict original ROI9 and 1,181,146 photo IDs were unchanged; no new S3 photo/image downloads or FCP segmentation. In the full 1.18m dataset, latitude unknown is now **195**, local season unknown **197** (rather than 131,267 and >131k in the superseded QC). Use the **v2 georestored Parquet** for geographical/climate/phenology analyses; do not use the initial missing-geography QC v1.
+
+### Real strict9 success by region in source-selected photo data
+
+| Latitude region | Attempted original photos | Genuine strict9 success | Measurement success |
+|---|---:|---:|---:|
+| N temperate | 726,181 | 305,289 | 42.0% |
+| S temperate | 235,974 | 79,937 | 33.9% |
+| N tropical | 106,008 | 30,579 | 28.8% |
+| S tropical | 60,707 | 14,426 | 23.8% |
+| N subpolar | 48,182 | 19,857 | 41.2% |
+| N arctic | 3,863 | 1,543 | 39.9% |
+| S subpolar | 36 | 8 | 22.2% |
+| Source coordinates unknown | 195 | 4 | — |
+
+The originally recorded hemisphere-local photo season has 434,211 spring, 420,689 summer, 190,316 autumn, and 135,733 winter original-photo attempts; **197** still have unknown season. Spring/summer original9 success is approximately 40%, autumn 34.5%, winter 30.6%. **This measures technical/pipeline classifiability, not plant flower colour ecology**; the observation effort, observer biases, source design, taxon composition and ROI failure differ across seasons and regions. No unweighted wild-native white-flora frequency is inferred.
+
+### Practical next-work triage from all 42,111 source taxa
+
+- In exact genuine source frames, 30,048 source taxa have at least one strict ROI9 and **12,063** do not. Among zero9 taxa: **16 P0** lack source photos, **2,862 P1** have only 1–9 source photo opportunities, and **9,185 P2** have ≥10 real original source photo opportunities.
+- **1,154** zero9 taxa have **≥5** previously attempted genuine photos and still zero strict9. This is the primary *already paid-for image* diagnosis cohort: audit whether images show open flowers, whether the detector/ROI flip and petal/flower box fails, and whether alternate organ segmentation can rescue truly measurable colours. Do **not** assume all 1,154 are purely model failures: a subset may show no flowers or no suitable petal regions.
+- **10,893** zero9 taxa have 1–4 existing attempted original photos. Review their existing examples first, then acquire previously unused photos if their original source opportunities permit it; do not blanket reacquire them.
+- A prespecified **512 existing original-photo-ID / 512 distinct taxon-ID** blind technical review roster is SHA-published in v2. It includes **343 P2 and 169 P1**, spread over all four acquisition designs and the actual regional/hemisphere-local-season support. It does **not** independently certify flowering petals, native status or represent a randomized global flora.
+- Out of 1,181,146 authentic original image attempts, **451,643 strict9 valid (38.2%) and 729,503 original numeric nine-palette unknown (61.8%)**. The 500px YOLO floral-region Lab proxy must not upgrade these unknown labels into original-ROI colour. Source cohort correction/unknown outcome selection bias remains essential.
+
+**Claim boundary:** the full four-arm union is signed and geographically restored, but does not automatically include any subsequent parallel `main`/FCP image waves without another exact photo-ID/observation/taxon source audit. The v2 restoration changes ONLY three metadata fields on existing same photo IDs. New botanical claims require manually reviewed anthesis/petal labels and independent missingness sensitivity analysis.
