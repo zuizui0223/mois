@@ -111,7 +111,7 @@ class SourceOriginalFloralEcologyPaperTests(unittest.TestCase):
         self.assertFalse(m["photo_hue_unknown_reclassified_as_biological_white_or_nonwhite"])
         self.assertEqual(m["source_original_image_pixels_downloaded_or_reanalysed"],0)
         self.assertIn("−8.25-point departure",self.paper)
-        self.assertIn("NOT an alternative estimate",self.paper)
+        self.assertIn("not a corrected coefficient",self.paper.lower())
         self.assertIn("MNAR",self.fig)
 
     def test_missingness_and_unverified_labels_never_upgraded(self):
