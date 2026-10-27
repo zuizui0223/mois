@@ -1,0 +1,137 @@
+name: MOIS restore 128 bulk original photo geoseason plus ROI9 technical missingness v2
+on:
+  push:
+    branches: [analysis/mois-1181146-roi-failure-and-gap-action-20261027]
+    paths:
+      - .github/workflows/mois-1181146-bulk128-georestored-photo-QC-v2.yml
+      - scripts/analysis/mois_restore_bulk128_photo_geography_from_original_source.py
+      - tests/test_mois_restore_bulk128_photo_geography_from_original_source.py
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-original1181146-128shard-photo-metadata-georestore-and-QC-v2
+  cancel-in-progress: false
+jobs:
+  authentic-original-photo-georestoration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      WORLD_TAG: mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1
+      SOURCE_TAG: mois-full93m-bulk128-tier10-131072-original-photo-source-v1
+      RESULT_TAG: mois-1181146-originalROI9-128bulk-georestored-seasons-and-512QC-20261027-v2
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate exact photo-ID/taxon/sampling probability metadata recovery tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile \
+            scripts/analysis/mois_restore_bulk128_photo_geography_from_original_source.py \
+            scripts/analysis/mois_1181146_original_roi9_missingness_gap_decision.py
+          python -m unittest discover -s tests \
+            -p test_mois_restore_bulk128_photo_geography_from_original_source.py -v
+          python -m unittest discover -s tests \
+            -p test_mois_1181146_original_roi9_missingness_gap_decision.py -v
+      - name: Reuse real 1.18m strict9 photo ledger and its exact 42,111 taxon frame
+        run: |
+          set -euo pipefail
+          mkdir -p world source
+          gh release download "$WORLD_TAG" --repo "$REPO" --dir world \
+            --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --pattern mois_42111_original_taxon_9palette_before_after.csv.gz
+          gh release download "$SOURCE_TAG" --repo "$REPO" --dir source \
+            --pattern manifest.json \
+            --pattern bulk128_source_photo_shards.tar.gz
+          printf '%s\n' \
+            '3fbd0f0ec7eb347b3bbc7ab509ec9312ec6d797ed932dcf7bb425959898c3835  world/mois_1181146_unique_original_photo_continuous9_by_arm.parquet' \
+            'ea602238f3cd152fdd2e36e9ce4bcbc77b795a35dce802e9305f6f6cddd77fb8  world/mois_42111_original_taxon_9palette_before_after.csv.gz' \
+            '7e975e701281ba812451acd48be7e91a7d17f2bbe6f9f53ad15ef4f8db9e557e  source/manifest.json' \
+            '61c0eee377f6edead471436d3f75b92700e54687e6b9dd0a417819a472c23dcb  source/bulk128_source_photo_shards.tar.gz' | sha256sum -c -
+      - name: Restore original lat lon observed day for same exact 131072 ROI9 photos from 512 source work shards
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_restore_bulk128_photo_geography_from_original_source \
+            --world-parquet world/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --source-manifest source/manifest.json \
+            --source-tar source/bulk128_source_photo_shards.tar.gz \
+            --output georestored
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('georestored/mois_1181146_true_original_source_georestoration_receipt.json')
+          r=json.loads(p.read_text())
+          assert r['schema']=='mois_signed1181146_trueROI9_bulk128_original_metadata_georestore_v2'
+          assert r['source_original_all_photo_rows']==1181146
+          assert r['new_bulk_original_photo_IDs_restored']==131072
+          assert r['photo_source_metadata_shard_count']==512
+          assert r['real_original_strict9_numerical_images']==451643
+          assert r['source_original_bulk_photo_geopoints_available']>100000
+          assert r['old_existing_other_photo_rows_modified']==0
+          assert r['original_nine_palette_photos_modified']==0
+          print('MOIS_REAL1181146_BULK128_ORIGINAL_PHOTO_GEO_METADATA_RESTORED_FROM_SHA512',flush=True)
+          PY
+      - name: Recompute real original-image technical missingness / region / local season using RESTORED coordinates
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_1181146_original_roi9_missingness_gap_decision \
+            --photo-parquet georestored/mois_1181146_true_original_strict9_geography_restored_v2.parquet \
+            --taxon-register world/mois_42111_original_taxon_9palette_before_after.csv.gz \
+            --restored-geo-receipt georestored/mois_1181146_true_original_source_georestoration_receipt.json \
+            --review-target 512 \
+            --output bias_qc_v2
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('bias_qc_v2/mois_real1181146_original_roi9_bias_action_receipt.json').read_text())
+          assert r['exact_source_original_photo_IDs']==1181146
+          assert r['real_strict9_original_photos']==451643
+          assert r['source_nominal_taxa_strict9_supported']==30048
+          assert r['source_P2_photo_supported_zero9_taxa']==9185
+          assert r['manual_unknown_original_photo_review_targets']==512
+          assert r['original_photos_with_unknown_latitude_zone']<5000
+          assert r['no_new_S3_image_downloads'] and r['no_original_ROI9_inferences']
+          print('MOIS_REAL1181146_GEOSEASON_BIAS_ROI9_AND_EXISTING_PHOTO_QC_V2_SUCCESS',
+                json.dumps({k:r[k] for k in (
+                   'original_photos_with_unknown_latitude_zone',
+                   'original_photos_with_unknown_local_season',
+                   'zero9_source_taxa_action_counts')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real1181146-strictROI9-original-geography-repaired-512-review-v2
+          path: |
+            georestored/
+            bias_qc_v2/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish new immutable 1.18m true-colour source with recovered site/day and valid bias audit
+        run: |
+          set -euo pipefail
+          if gh release view "$RESULT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p earlier
+            gh release download "$RESULT_TAG" --repo "$REPO" --dir earlier \
+              --pattern mois_1181146_true_original_source_georestoration_receipt.json \
+              --pattern mois_real1181146_original_roi9_bias_action_receipt.json
+            cmp earlier/mois_1181146_true_original_source_georestoration_receipt.json \
+                georestored/mois_1181146_true_original_source_georestoration_receipt.json
+            cmp earlier/mois_real1181146_original_roi9_bias_action_receipt.json \
+                bias_qc_v2/mois_real1181146_original_roi9_bias_action_receipt.json
+            echo MOIS_TRUE_PHOTO_GEORESTORED_V2_ALREADY_SEALED
+          else
+            gh release create "$RESULT_TAG" georestored/* bias_qc_v2/* \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS 1.18m strict9 real photos: recover bulk128 original site/date and QC 512 old unknown photos' \
+              --notes 'REAL source-only georepair: all 131072 FCP nine-component originally measured bulk128 photo IDs have their signed latitude/longitude and original observation day restored from 512 SHA-pinned source CSVs, not new photo pixels. Existing 451643 strict ROI9 values, photo IDs, observations and source-priority taxa preserved unchanged. Recompute local-hemisphere seasons and regional ROI unknown/valid contrasts and select 512 existing photo IDs for independent botanical/organ-stage review. No new S3 images, no re-inference and no extrapolated worldwide wild-native white frequency. Supersedes the prior v1 bias QC geographic UNKNOWN batch.'
+            echo MOIS_BULK128_TRUE_ORIGINAL_GEO_SEASON_AND_ROI9_BIAS_REPAIRED_V2
+          fi
