@@ -132,13 +132,29 @@ def review_queue(frame,quota=512):
     return output
 
 def audit(source_photo,source_taxa,out,*,verify_sha=True,verify_census=True,
-          review_size=512):
+          review_size=512,restored_geo_receipt=None):
     source_photo,source_taxa,out=map(Path,(source_photo,source_taxa,out))
     require(not out.exists() and 16<=review_size<=2048,
             "Immutable output exists or review quota unsupported")
     if verify_sha:
-        require(sha(source_photo)==PHOTO_SHA and sha(source_taxa)==TAXON_SHA,
-                "Frozen original-image 9-palette/taxon source SHA mismatch")
+        require(sha(source_taxa)==TAXON_SHA,
+                "Authoritative 42,111-source taxon gap register SHA changed")
+        if restored_geo_receipt is None:
+            require(sha(source_photo)==PHOTO_SHA,
+                    "Frozen original-image 9-palette source SHA changed")
+        else:
+            restored=json.loads(Path(restored_geo_receipt).read_text())
+            from scripts.analysis.mois_restore_bulk128_photo_geography_from_original_source import (
+                SCHEMA as RESTORED_SCHEMA, WORLD_SHA as OLD_WORLD_SHA,
+                SOURCE_MANIFEST_SHA, SOURCE_TAR_SHA)
+            require(restored.get("schema")==RESTORED_SCHEMA
+                    and restored.get("input_world_original_parquet_SHA256")==OLD_WORLD_SHA
+                    and restored.get("signed_tier10_source_worker_manifest_SHA256")==SOURCE_MANIFEST_SHA
+                    and restored.get("signed_tier10_source_worker_archive_SHA256")==SOURCE_TAR_SHA
+                    and restored.get("source_georestored_original_parquet_SHA256")==sha(source_photo)
+                    and restored.get("same_original_image_ID_and_original_9palette_unmodified")
+                    and restored.get("source_original_bulk_photo_geopoints_available",0)>0,
+                    "Restored bulk128 source photo geography lacks cryptographic original provenance")
     cols=["photo_id","observation_id","inat_taxon_id","source_design",
           "source_subarm","observed_on","latitude","longitude",
           "original_roi_four_hue","strict9","strict9_white"]
@@ -270,8 +286,10 @@ def main():
     p.add_argument("--taxon-register",required=True,type=Path)
     p.add_argument("--output",required=True,type=Path)
     p.add_argument("--review-target",type=int,default=512)
+    p.add_argument("--restored-geo-receipt",type=Path)
     a=p.parse_args()
-    audit(a.photo_parquet,a.taxon_register,a.output,review_size=a.review_target)
+    audit(a.photo_parquet,a.taxon_register,a.output,
+          review_size=a.review_target,restored_geo_receipt=a.restored_geo_receipt)
 
 if __name__=="__main__":
     main()
