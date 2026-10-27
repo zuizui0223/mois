@@ -17,7 +17,7 @@ import pandas as pd
 SCHEMA="mois_real1181146_fourarm_strictroi9_geoseason_missingness_triage_v1"
 PHOTO_SHA="3fbd0f0ec7eb347b3bbc7ab509ec9312ec6d797ed932dcf7bb425959898c3835"
 TAXON_SHA="ea602238f3cd152fdd2e36e9ce4bcbc77b795a35dce802e9305f6f6cddd77fb8"
-ARMS=("original_1043930","bias_refill_2048","p2_first_4096","bulk128_131072")
+ARMS=("historical_K1_FCP_source_heterogeneous","bias_refill_2048","p2_first_4096","bulk128_131072")
 ZERO_PRIORITIES=("P0_no_original_source_photo",
     "P1_source_rare_no_colour_1to9","P2_source_has_photos_no_colour_10plus")
 HUES=("white","yellow_orange","red_pink","blue_purple")
