@@ -1,0 +1,200 @@
+name: MOIS 512 old source ROI9 failures - genuine 342 medium flower-box screens
+on:
+  push:
+    branches: [analysis/mois-512-existing-ROI9-failures-diagnose-20261027]
+    paths:
+      - .github/workflows/mois-512-existing-roi9-342-medium-diagnostic.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-original-old512-342-lowres-box-diagnostic-once
+  cancel-in-progress: false
+jobs:
+  sealed-review-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline synthetic detector test and unknown safety assertions
+        run: |
+          set -euo pipefail
+          python -m pip install -q Pillow==11.3.0 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_existing_roi_unknown_342_medium_flower_diagnostic.py -v
+      - name: Recover 170 previously screened plus 342 never-screened OLD original photo IDs
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh release download mois-512-oldROI9unknown-medium170-reused-new342-bounded-screen-source-20261027-v1 \
+            --repo "$REPO" --dir source --pattern manifest.json \
+            --pattern already_screened_500px_170_no_refetch.csv \
+            --pattern needs_bounded_medium500_screen_old_photoIDs.csv \
+            --pattern selected512_screen_work_units.tar
+          printf '%s\n' \
+           '2f703ae8255c8e346c7d6251de61f098a310c5cf37320342f946889d2bf4232e  source/manifest.json' \
+           '9d360ac3035b1fe6883db1764d3fcf9ef53ffbec39eb21d8f5852898e1828a21  source/already_screened_500px_170_no_refetch.csv' \
+           '76f4f3e9bfc8635d3548d83d335678118fc2d8923f88d5bdab4e189dbf2d572b  source/needs_bounded_medium500_screen_old_photoIDs.csv' \
+           '0edf2990a36e87fb35345fb807996ac4f405c85ede68b9367fb33ccb8eca73f0  source/selected512_screen_work_units.tar' | sha256sum -c -
+          tar -xf source/selected512_screen_work_units.tar -C source
+          python - <<'PY'
+          import hashlib,json,csv
+          from pathlib import Path
+          p=Path('source');m=json.loads((p/'manifest.json').read_text())
+          assert m['source_review_photo_rows']==512
+          assert m['existing_500px_photo_screen_results_reused']==170
+          assert m['existing_unknown_photos_needing_small_bounded_500px_recheck']==342
+          assert m['eight_worker_photo_counts']==[43,43,43,43,43,43,42,42]
+          seen=set()
+          for i in range(8):
+              f=p/'workers'/f'shard_{i:02d}.csv'
+              assert hashlib.sha256(f.read_bytes()).hexdigest()==m['worker_source_SHA256'][str(i)]
+              with f.open(newline='') as stream:rows=list(csv.DictReader(stream))
+              assert len(rows)==m['eight_worker_photo_counts'][i]
+              for r in rows:
+                  assert r['photo_id'] not in seen
+                  seen.add(r['photo_id'])
+          assert len(seen)==342
+          print('MOIS_ONLY342_PREVIOUSLY_ATTEMPTED_SOURCE_PHOTOS_DIAGNOSIS_PROVEN')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-old512-source170cache342diagnose
+          path: source/
+          retention-days: 90
+          if-no-files-found: error
+  eight-small-real-image-workers:
+    needs: sealed-review-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        unit: [0,1,2,3,4,5,6,7]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      UNIT: ${{ matrix.unit }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      ULTRALYTICS_OFFLINE: 'True'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-old512-source170cache342diagnose
+          path: source
+      - name: Pin existing frozen YOLO11 flower detector (no EfficientSAM)
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 Pillow==11.3.0 ultralytics==8.4.112
+          mkdir -p weights
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 9fae6ccdf684a46026f72ba12e98de2c5c54bf2a
+          git -C "$RUNNER_TEMP/fcp" show FETCH_HEAD:data/atlas/qualification/roi_v4_training/jrc_yolo11n_last_v4.pt > weights/jrc_yolo11n_last_v4.pt
+          echo 'f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5  weights/jrc_yolo11n_last_v4.pt' | sha256sum -c -
+      - name: Inspect ONLY 42 or 43 old original photos in low-res 500px
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_existing_roi_unknown_342_medium_flower_diagnostic \
+            --source source --weights weights/jrc_yolo11n_last_v4.pt \
+            --shard "$UNIT" --rps 0.65 --output measured
+          python - <<'PY'
+          import json,hashlib,os
+          from pathlib import Path
+          i=int(os.environ['UNIT']);p=Path('measured')
+          r=json.loads((p/f'shard_{i:02d}_source_receipt.json').read_text())
+          assert r['original_old_photo_ids_attempted_for_first_medium_diagnostic'] in (42,43)
+          assert r['old_source_ROI9_unknown_statuses_preserved']==r['original_old_photo_ids_attempted_for_first_medium_diagnostic']
+          assert r['actual_new_source_photo_IDs_added_to_world_census']==0
+          f=p/f'shard_{i:02d}_original_medium_diagnostic.csv'
+          assert hashlib.sha256(f.read_bytes()).hexdigest()==r['measurement_CSV_SHA256']
+          print('MOIS_REAL_OLD_ROI9_PHOTO_BOX_DIAG_COMPLETE',i,r['statuses'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-oldROI9-medium-diagnostic-${{ matrix.unit }}
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+  integrate-512-real-technical-photo-findings:
+    needs: [sealed-review-source,eight-small-real-image-workers]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-old512-realROI9unknown-technical-170cached342screen-20261027-v1
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 Pillow==11.3.0
+          python -m py_compile scripts/analysis/mois_512_prior_roi9_unknown_technical_screen_integrate.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-old512-source170cache342diagnose
+          path: source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-oldROI9-medium-diagnostic-*
+          path: workers
+          merge-multiple: false
+      - name: Join old photo ID+observation/taxon technical screen states, never pigment labels
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_512_prior_roi9_unknown_technical_screen_integrate \
+            --source source --workers workers --output result
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('result/mois_512_oldROI9_unknown_detector_technical_diagnostic_receipt.json').read_text())
+          assert r['old_original_photo_IDs_with_all_strictROI9_unknown']==512
+          assert r['distinct_source_taxa_reviewed_technically_not_botanically']==512
+          assert r['old_photo_ID_500px_detector_outputs_reused_without_fetch']==170
+          assert r['old_photo_IDs_newly_diagnosed_500px_but_already_original_fullROI_failed']==342
+          assert sum(r['detector_statuses_512'].values())==512
+          assert r['genuine_new_strict9_ROI_labels_generated']==0
+          assert r['new_world_photo_IDs_or_plant_taxa_acquired']==0
+          print('MOIS_REAL512_OLD_UNKNOWN_FLOWER_BOX_DIAG_STRICT9_STILL_UNKNOWN',r['detector_statuses_512'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois512-oldROI9-two-source-detector-technical-join
+          path: result/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Release source-specific old ROI9 photo detector QC
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release download "$TAG" --repo "$REPO" --dir old --pattern mois_512_oldROI9_unknown_detector_technical_diagnostic_receipt.json
+            cmp old/mois_512_oldROI9_unknown_detector_technical_diagnostic_receipt.json \
+                result/mois_512_oldROI9_unknown_detector_technical_diagnostic_receipt.json
+          else
+            gh release create "$TAG" result/* --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS 512 failed ROI9 originals: real 500px box diagnostics; reuse170, bounded342' \
+              --notes '170 original-photo 500px detector outcomes were already captured within bulk128 and reused without image bytes. 342 previously attempted source photos were only re-screened at medium500, not new photo IDs and no original strict9 ROI inference. Raw photos not redistributed. All ROI9 unknowns remain unknown. Detector boxes unverified as true open petals; source arm, taxon, region, season and failure review status retained.'
+            echo MOIS_OLD512_REAL_PHOTO_MEDIUM_BOX_TECHNICAL_DIAG_PUBLISHED
+          fi
