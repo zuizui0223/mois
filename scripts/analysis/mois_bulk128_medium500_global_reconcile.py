@@ -39,6 +39,19 @@ def sha(path):
             h.update(chunk)
     return h.hexdigest()
 
+def part_artifact_directory(workers,part):
+    """Accept the ACTUAL matrix artifact names; refuse ambiguous duplicate attempts."""
+    root=Path(workers)
+    candidates=[
+        root/f"mois-bulk128-med500-part-{part}",
+        root/f"mois-bulk128-med500-part-{part:03d}",
+    ]
+    available={str(x):x for x in candidates if x.is_dir()}
+    require(len(available)==1,
+            f"Expected exactly one finished medium-photo artifact for part {part}; "
+            f"found {len(available)}")
+    return next(iter(available.values()))
+
 def audit(source_manifest,source_summary,workers,output,*,expected_parts=128,
           verify_sha=True):
     source_manifest,source_summary,workers,output=map(
@@ -74,7 +87,7 @@ def audit(source_manifest,source_summary,workers,output,*,expected_parts=128,
         writer=csv.DictWriter(dest,fieldnames=COLUMNS,lineterminator="\n")
         writer.writeheader()
         for part in range(expected_parts):
-            directory=workers/f"mois-bulk128-med500-part-{part:03d}"
+            directory=part_artifact_directory(workers,part)
             receipt=directory/"bulk128_medium_photo_completion_receipt.json"
             csv_file=directory/"photo_ID_matched_reference_vs_targeted_boxLab.csv.gz"
             require(receipt.is_file() and csv_file.is_file(),
