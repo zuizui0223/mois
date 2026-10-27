@@ -33,7 +33,7 @@ class SourceOriginalFloralEcologyPaperTests(unittest.TestCase):
             self.assertIn(heading,self.paper)
         self.assertTrue(all("Figure "+str(i) in self.fig for i in range(1,6)))
         self.assertIn("not submitted",self.paper)
-        self.assertIn("different eligibility criterion",self.fig)
+        self.assertIn("different eligibility criterion",self.fig.lower())
 
     def test_photo_hue_counts_match_real_source_instead_of_opportunity_ids(self):
         d=self.ledger
