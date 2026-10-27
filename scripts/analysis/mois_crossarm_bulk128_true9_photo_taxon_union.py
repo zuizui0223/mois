@@ -166,7 +166,7 @@ def validated_arm(frame,name,*,n=None,strict_n=None):
     finite=np.isfinite(f).all(axis=1)
     real=d.strict9.to_numpy(bool)
     valid=finite&(f>=0).all(axis=1)&(f<=1+1e-5).all(axis=1)&(
-        np.abs(np.where(finite,f,0).sum(axis=1)-1)<=.001)
+        np.abs(np.where(finite[:,None],f,0).sum(axis=1)-1)<=.001)
     require((~real|valid).all(),name+": real nine-palette numeric vector invalid")
     # Original ambiguous-palette vectors may be retained by source for
     # explorations, but they are NOT eligible as strict flower phenotypes.
