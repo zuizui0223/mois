@@ -79,7 +79,7 @@ class RealPhotoBiasTests(unittest.TestCase):
                         "manual_roi_failure_review_photoIDs.csv")
             self.assertEqual(review.photo_id.nunique(),16)
             self.assertEqual(review.inat_taxon_id.nunique(),16)
-            self.assertTrue(review.review_reason.eq(
+            self.assertTrue(review.reason.eq(
                         "FOUR_HUE_UNKNOWN_AND_NO_STRICT9").all())
             self.assertFalse(review.botanical_organ_or_flower_stage_verified.any())
             original=pd.read_parquet(p)
