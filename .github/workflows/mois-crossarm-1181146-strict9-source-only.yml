@@ -1,0 +1,157 @@
+name: MOIS exact 1181146 original-photo strict9 cross-arm source union (no S3)
+on:
+  push:
+    branches: [analysis/mois-crossarm-1181146-strict9-20261027]
+    paths:
+      - .github/workflows/mois-crossarm-1181146-strict9-source-only.yml
+      - scripts/analysis/mois_crossarm_bulk128_true9_photo_taxon_union.py
+      - tests/test_mois_crossarm_bulk128_true9_photo_taxon_union.py
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-photoID-numerical-original9-1181146-crossarm-data-only
+  cancel-in-progress: false
+jobs:
+  actual-numerical-original9-photo-and-taxon-union:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      RESULT_TAG: mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run photo grain, double-count and technical unknown regression before any materialization
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_crossarm_bulk128_true9_photo_taxon_union.py
+          python -m unittest discover -s tests \
+            -p test_mois_crossarm_bulk128_true9_photo_taxon_union.py -v
+          echo 'MOIS_CROSSARM_TRUE_PHOTO_STRICT9_AND_OBSERVATION_REGRESSION_PASS'
+      - name: Skip if exact immutable original photo and taxon union was already published
+        id: gate
+        run: |
+          set -euo pipefail
+          echo 'needed=true' >> "$GITHUB_OUTPUT"
+          if gh release view "$RESULT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p previous
+            gh release download "$RESULT_TAG" --repo "$REPO" --dir previous \
+              --pattern mois_crossarm_1181146_strict9_taxon_global_receipt.json
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('previous/mois_crossarm_1181146_strict9_taxon_global_receipt.json').read_text())
+          assert d['schema']=='mois_20261027_crossarm_original1181146_source_photo_strict9_taxon_union_v1'
+          assert d['actual_crossarm_unique_original_photo_IDs']==1181146
+          assert d['actual_crossarm_strict_original_roi9']==451643
+          assert d['photo_IDs_duplicated_across_source_arms']==0
+          print('MOIS_IMMUTABLE_GLOBAL_1181146_NO_RESURVEY_OR_RESUM',flush=True)
+          PY
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Restore exact existing 1043930 original photo strict9+observation identity, without photos
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p sources/base sources/obs
+          gh release download mois-original1043930-400710-strict9-with-oldwaves-restored-20261026-v1 \
+            --repo "$REPO" --dir sources/base \
+            --pattern mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet
+          gh run download 40187688390 --repo "$REPO" \
+            --name mois-1043930-latest-original-photo-four-hue-fully-signed-union \
+            --dir sources/obs
+          test -f sources/obs/mois_latest_1043930_true_original_photo_hue_observation.parquet
+      - name: Restore original photo/observation source-disjoint 2048, 4096 and bulk128 actual ROI9
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p sources/geo sources/p2 sources/bulk sources/taxa
+          gh release download mois-real2048-new-source-photo-geo-season-stratified-ROI9-20261026-v1 \
+            --repo "$REPO" --dir sources/geo \
+            --pattern mois_true2048_biasbalanced_original_photo_ROI9_outcomes.parquet
+          gh release download mois-P2-first4096-actual-originalROI9-newtaxa-20261026-v1 \
+            --repo "$REPO" --dir sources/p2 \
+            --pattern mois_realP2_original_photo_ROI9_and_unknowns.parquet
+          gh release download mois-128shards-131072-fullROI9-plus-500px-sourceID-joined-20261027-v1 \
+            --repo "$REPO" --dir sources/bulk \
+            --pattern bulk128_original_photo_ID_500px_and_strict_roi9_ONE_ROW.parquet
+          gh release download mois-original1043930-400710-source-taxon-coverage-priority-20261026-v2 \
+            --repo "$REPO" --dir sources/taxa \
+            --pattern mois_42111_taxon_priority_AFTER_400710_original9.csv.gz
+      - name: Validate six source byte SHAs, schema and all source-grain fields before photo union
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from scripts.analysis.mois_crossarm_bulk128_true9_photo_taxon_union import sha,SHAS
+          paths={
+            'baseline_nine':'sources/base/mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet',
+            'baseline_obs':'sources/obs/mois_latest_1043930_true_original_photo_hue_observation.parquet',
+            'geo2048':'sources/geo/mois_true2048_biasbalanced_original_photo_ROI9_outcomes.parquet',
+            'p2':'sources/p2/mois_realP2_original_photo_ROI9_and_unknowns.parquet',
+            'bulk128':'sources/bulk/bulk128_original_photo_ID_500px_and_strict_roi9_ONE_ROW.parquet',
+            'priority':'sources/taxa/mois_42111_taxon_priority_AFTER_400710_original9.csv.gz'
+          }
+          for label,file in paths.items():
+              assert sha(file)==SHAS[label],label
+          print('MOIS_SOURCE_SHA_AUTHENTICATED_SIX_TRUE_PHOTO_NUMERICAL_AND_TAXON_INPUTS',flush=True)
+          PY
+      - name: Strict actual photo-ID/observation/taxon 4-arm union; preserve 9component unknowns
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_crossarm_bulk128_true9_photo_taxon_union \
+            --baseline-nine sources/base/mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet \
+            --baseline-obs sources/obs/mois_latest_1043930_true_original_photo_hue_observation.parquet \
+            --new2048 sources/geo/mois_true2048_biasbalanced_original_photo_ROI9_outcomes.parquet \
+            --p2 sources/p2/mois_realP2_original_photo_ROI9_and_unknowns.parquet \
+            --bulk128 sources/bulk/bulk128_original_photo_ID_500px_and_strict_roi9_ONE_ROW.parquet \
+            --priority sources/taxa/mois_42111_taxon_priority_AFTER_400710_original9.csv.gz \
+            --output exact_union
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('exact_union/mois_crossarm_1181146_strict9_taxon_global_receipt.json').read_text())
+          assert d['schema']=='mois_20261027_crossarm_original1181146_source_photo_strict9_taxon_union_v1'
+          assert d['actual_crossarm_unique_original_photo_IDs']==1181146
+          assert d['actual_crossarm_strict_original_roi9']==451643
+          assert d['photo_IDs_duplicated_across_source_arms']==0
+          assert d['original_source_nominal_taxa_with_strict9_after']>=21235
+          assert d['nominal_source_taxa_without_any_strict9_after']+d['original_source_nominal_taxa_with_strict9_after']==42111
+          assert d['no_original_image_downloading_or_colour_inference_for_this_union']
+          print('MOIS_1181146_EXACT_PHOTO_ID_AND_TAXON_GLOBAL_ROI9_VERIFIED',
+            json.dumps({k:d[k] for k in (
+              'actual_crossarm_unique_original_photo_IDs',
+              'actual_crossarm_strict_original_roi9',
+              'original_source_nominal_taxa_with_strict9_after',
+              'net_newly_measured_nominal_source_taxa',
+              'nominal_source_taxa_without_any_strict9_after')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-source-authentic-original-1181146-photoID-451643-nineROIs-taxongap
+          path: exact_union/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish immutable source-wide 9ROI numeric/photo-ID and 42111-taxon breadth correction
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          if gh release create "$RESULT_TAG" exact_union/* \
+               --repo "$REPO" --target "$GITHUB_SHA" \
+               --title 'MOIS 1181146 unique original image photo IDs / 451643 strict ROI9 / 42111 source taxa, exact 4-arm union' \
+               --notes 'DATA-ONLY signed source join of frozen 1043930/400710 + independent2048/682 + P2 original4096/1467 + 128part131072/48784 original image FCP-v4 nine-component fractions, together with 42111 original source taxon opportunities. Exact one-row/photo-ID source, technical unknowns NaN, all source SHA and identity IDs independently verified; source observations with historic multiple photos explicitly documented. Separate 500px Lab pilot not a strict nine-ROI. The union is not an unbiased wild-native global floral proportion nor proof that concurrently running main branch completed waves are all included. ZERO original image downloading or re-inference.'; then
+              echo 'MOIS_TRUE_1181146_SOURCE_STRICT9_CROSSARM_42111_TAXON_RELEASE_PUBLISHED'
+          else
+              echo 'MOIS_RELEASE_WRITE_DENIED_OUTPUT_RETAINS_ORIGINAL_SHA_IN_ACTIONS_ARTIFACT'
+          fi
