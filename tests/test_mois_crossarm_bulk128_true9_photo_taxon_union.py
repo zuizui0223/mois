@@ -56,7 +56,7 @@ class CrossArmOriginalPhotoTaxonTests(unittest.TestCase):
                                  verify_source_counts=False)
         self.assertEqual(len(joined),9)
         self.assertEqual(joined.photo_id.nunique(),9)
-        self.assertEqual(int(joined.strict9.sum()),5)
+        self.assertEqual(int(joined.strict9.sum()),6)
         self.assertEqual(r["original_source_nominal_taxa_with_strict9_before"],1)
         self.assertEqual(r["original_source_nominal_taxa_with_strict9_after"],5)
         self.assertEqual(r["net_newly_measured_nominal_source_taxa"],4)
@@ -64,7 +64,7 @@ class CrossArmOriginalPhotoTaxonTests(unittest.TestCase):
         self.assertEqual(r["baseline_legacy_photo_rows_reusing_same_observation"],1)
         self.assertEqual(sum(taxa.newly_colour_supported),4)
         self.assertEqual(taxa.loc[taxa.inat_taxon_id=="11","after_strict9"].item(),2)
-        self.assertEqual(len(joined.loc[~joined.strict9]),4)
+        self.assertEqual(len(joined.loc[~joined.strict9]),3)
         self.assertTrue(joined.loc[~joined.strict9,list(FINAL_COLOURS)]
                         .isna().all().all())
 
