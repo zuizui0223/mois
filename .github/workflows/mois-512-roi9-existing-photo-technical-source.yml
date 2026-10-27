@@ -1,0 +1,115 @@
+name: MOIS 512 existing ROI9 unknowns - reuse 170 medium screens and shard only 342
+on:
+  push:
+    branches: [analysis/mois-512-existing-ROI9-failures-diagnose-20261027]
+    paths:
+      - .github/workflows/mois-512-roi9-existing-photo-technical-source.yml
+      - scripts/analysis/mois_512_prior_unknown_technical_screen_plan.py
+      - tests/test_mois_512_prior_unknown_technical_screen_plan.py
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-512-existing-ROI9-unknown-medium-stage0-reuse-source
+  cancel-in-progress: false
+jobs:
+  real-original-photo-source-reuse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      REVIEW_TAG: mois-1181146-originalROI9-128bulk-georestored-seasons-and-512QC-20261027-v2
+      BULK_TAG: mois-128shards-131072-fullROI9-plus-500px-sourceID-joined-20261027-v1
+      OUTPUT_TAG: mois-512-oldROI9unknown-medium170-reused-new342-bounded-screen-source-20261027-v1
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify independently unique photo/taxon and preservation of strict9 unknowns
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_512_prior_unknown_technical_screen_plan.py
+          python -m unittest discover -s tests \
+            -p test_mois_512_prior_unknown_technical_screen_plan.py -v
+      - name: Never rescan old 170 image pixels when frozen data-only selection release exists
+        id: prior
+        run: |
+          set -euo pipefail
+          echo 'needed=true' >> "$GITHUB_OUTPUT"
+          if gh release view "$OUTPUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p prior
+            gh release download "$OUTPUT_TAG" --repo "$REPO" --dir prior --pattern manifest.json
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('prior/manifest.json').read_text())
+          assert m['schema']=='mois_512_prior_strictROI9_unknown_existing_medium500_reuse_and_bounded_screen_v1'
+          assert m['source_review_photo_rows']==512
+          assert m['existing_500px_photo_screen_results_reused']==170
+          assert m['existing_unknown_photos_needing_small_bounded_500px_recheck']==342
+          assert m['new_photo_IDs_selected_for_world_census']==0
+          print('MOIS_PREVIOUS_MEDIUM_SCREEN_SOURCE_ALREADY_SAVED_NO_RELOAD')
+          PY
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Download immutable 512 ROI9 unknown source IDs and existing bulk128 500px statuses - NO IMAGES
+        if: steps.prior.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p input
+          gh release download "$REVIEW_TAG" --repo "$REPO" --dir input \
+            --pattern manual_roi_failure_review_photoIDs.csv
+          gh release download "$BULK_TAG" --repo "$REPO" --dir input \
+            --pattern bulk128_original_photo_ID_500px_and_strict_roi9_ONE_ROW.parquet
+          printf '%s\n' \
+            '03a36332e0475af3f5393c67fa0bf7fd5269c146455a4b174e9b36b4eb1d46c7  input/manual_roi_failure_review_photoIDs.csv' \
+            '2d648c832929f8ba59301906d5ea8d100bdfec6449c6e2828f6b9a910ddd0a02  input/bulk128_original_photo_ID_500px_and_strict_roi9_ONE_ROW.parquet' | sha256sum -c -
+      - name: Source photoID-taxonUUID matches and zero-repeat diagnostic work shards
+        if: steps.prior.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_512_prior_unknown_technical_screen_plan \
+            --review-csv input/manual_roi_failure_review_photoIDs.csv \
+            --bulk-parquet input/bulk128_original_photo_ID_500px_and_strict_roi9_ONE_ROW.parquet \
+            --output selected
+          python - <<'PY'
+          import csv,json,hashlib
+          from pathlib import Path
+          p=Path('selected');m=json.loads((p/'manifest.json').read_text())
+          assert m['source_review_photo_rows']==512
+          assert m['existing_500px_photo_screen_results_reused']==170
+          assert m['existing_unknown_photos_needing_small_bounded_500px_recheck']==342
+          assert sum(m['eight_worker_photo_counts'])==342
+          assert max(m['eight_worker_photo_counts'])-min(m['eight_worker_photo_counts'])<=1
+          assert m['new_photo_IDs_selected_for_world_census']==0
+          for i in range(8):
+              s=p/'workers'/f'shard_{i:02d}.csv'
+              assert hashlib.sha256(s.read_bytes()).hexdigest()==m['worker_source_SHA256'][str(i)]
+          print('MOIS_512_UNKNOWN_REUSE_170_AND_BOUND_342_SHA_WORKERS_FROZEN',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.prior.outputs.needed == 'true'
+        with:
+          name: mois512-roi9-unknown-medium-reuse170-bounded342-source
+          path: selected/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish photo-source-only bounded 342 technical screening, no new full ROI9
+        if: steps.prior.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          tar -cf selected512_screen_work_units.tar -C selected workers
+          gh release create "$OUTPUT_TAG" \
+            selected/manifest.json \
+            selected/already_screened_500px_170_no_refetch.csv \
+            selected/needs_bounded_medium500_screen_old_photoIDs.csv \
+            selected512_screen_work_units.tar \
+            --repo "$REPO" --target "$GITHUB_SHA" \
+            --title 'MOIS 512 old ROI unknowns: reuse 170 prior medium screens, diagnose 342 only' \
+            --notes 'Source original 512 existing photo IDs and 512 taxa manually unreviewed, strict9 unknown; exact 170 original image 500px detector results reused from SHA-signed prior bulk128 without new photo download, 342 previously measured original photo IDs freeze for bounded low-resolution detector-only diagnostic. NO new global-photo acquisition, NO artificial pigment label or botanical corolla claim, original ROI9 invalids remain unknown.'
+          echo 'MOIS_UNKNOWN512_SOURCE_170_CACHE_AND_342_BOUNDED_WORK_UNITS_PUBLISHED'
