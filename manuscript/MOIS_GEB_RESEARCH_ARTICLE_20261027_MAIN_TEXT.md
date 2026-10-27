@@ -8,17 +8,17 @@
 
 ## Structured abstract
 
-**Aim:** Associations between flower colour and climate may reflect environmental filtering, geographical differences among plant assemblages, or the taxa and photographs that observers sample. We asked whether moisture-related variation in photographed floral colour is globally consistent, and whether apparent colour differences among elevations, islands and seasons remain interpretable across their distinct sampling supports.
+**Aim:** Flower-colour–climate associations may reflect environmental filtering, plant-assemblage turnover and photographic selection. We tested global moisture associations and compared their geographical, elevation, island and seasonal support.
 
-**Location:** Worldwide photographed flowering-plant assemblages.
+**Location:** Worldwide georeferenced plant photographs.
 
 **Time period:** Historically heterogeneous community-science observations; long-term WorldClim 1970–2000 climatic normals for the annual environmental models.
 
 **Major taxa studied:** Named flowering-plant taxa represented in source-audited iNaturalist photographs; 37,107 nominal taxa with classifiable four-hue photographs in the 350,399-photo descriptive cohort.
 
-**Methods:** We synthesized separately authenticated original-image studies: a 309,439-photo six-climate-axis analysis with whole-genus resampling; a 350,399-photo four-hue and seasonal composition analysis; geographically matched elevation and island–mainland photographic assemblage comparisons; and a later 1,181,146-photo, four-acquisition-arm audit of nine-component colour measurability. We explicitly separated photo-, taxon- and genus-weighted results and retained technically unclassifiable images as missing outcomes.
+**Methods:** We synthesized source-audited image analyses: a 309,439-photo six-climate-axis analysis with whole-genus resampling; a 350,399-photo four-hue and seasonal composition analysis; geographically matched elevation and island–mainland photographic assemblage comparisons; and a later 1,181,146-photo, four-acquisition-arm audit of nine-component colour measurability. We separated photo-, taxon- and genus-weighted results and preserved unclassifiable outcomes.
 
-**Results:** White comprised 47.49% of classifiable four-hue photographs, versus 48.19% and 51.46% when sampled taxa and genera were weighted equally. Photographed-white frequency was positively associated with annual precipitation (+1.99 percentage points per source SD, simultaneous 95% interval +0.55 to +3.42) and atmospheric vapour (+3.16, +1.04 to +5.28), but geographically conditioned intervals included zero. In 44 nearby elevation comparisons, white was 5.09 points lower at high elevation, whereas an environmentally matched island–mainland difference (+1.40 points) was uncertain. Southern summer photographs were 10.50 points more often white-labelled than winter photographs, with large contributions from changing photographic weights of taxa.
+**Results:** White comprised 47.49% of classifiable four-hue photographs, versus 48.19% and 51.46% when sampled taxa and genera were weighted equally. Photographed-white frequency was positively associated with annual precipitation (+1.99 percentage points per source SD, simultaneous 95% interval +0.55 to +3.42) and atmospheric vapour (+3.16, +1.04 to +5.28), but geographically conditioned intervals included zero. In 44 nearby elevation comparisons, white was 5.09 points lower at high elevation, whereas an environmentally matched island–mainland difference (+1.40 points) was uncertain. Southern summer photographs were 10.50 points more often white-labelled than winter photographs, largely influenced by changing photographic weights of taxa.
 
 **Main conclusions:** Broad climatic and topographic gradients coexist with taxonomic and photographic assemblage structure. They do not imply one universal locally transferable floral-pigmentation response, or an inferred pigment fitness trade-off. Separately audited original-image nonresponse places important limits on generalization.
 
@@ -47,6 +47,16 @@ The original four-hue global moisture model was re-fitted after measuring **309,
 To audit phenotype availability independently of the fitted environmental models, a later four-acquisition-arm union reconciled **1,181,146 distinct genuine original photo IDs** with **451,643 valid strict nine-component original ROIs**. It preserves the heterogeneous 1,043,930-photo historical/FCP/K1 source and the separate 2,048, 4,096 and 131,072-photo replenishment arms. The large-source geo- and observation-date fields were corrected from 512 SHA-signed source work units after detection of missing source metadata, without changing any previously measured image colour. For analyses of geographic nonresponse the corrected geography release, not the preceding geography-incomplete export, is used. This expanded union supplies a data-quality assessment, **not updated environmental regression coefficients**. A distinct 64-photo 500-pixel flower-box pilot is omitted from the strict original-ROI denominator.
 
 The principal identity unit in all image analyses is a unique original photo ID. Photos sharing an original observation UUID are not separate ecological visits. Models and summary comparisons average by source taxon or by geographical cell where described; a photo-level denominator must not be confused with the number of independent botanical individuals or taxa. Sampling arms selected specifically to enrich unmeasured taxa remain distinct from source-reference cohorts.
+
+**Table 1 | Distinct source-frozen analysis populations.** Photos, classifier outcomes and statistical populations should never be blindly added across rows.
+
+| Analytical subset | Genuine original photo ID attempts | Image-derived colour eligibility | Estimand |
+|---|---:|---|---|
+| Global annual-climate model | 309,439 | 149,662 classifiable four-hue photos | Annual moisture response among sampled taxa |
+| Elevation and climate-matched island geography | 313,535 | 151,239 classifiable four-hue photos | Assemblage contrasts among geographical cells |
+| Descriptive world-colour and summer/winter mixture | 350,399 | 164,297 classifiable four-hue photos | Conditional photo/taxon/genus composition and seasonal photo weights |
+| Later strict nine-component quality union | 1,181,146 | 451,643 strict9 valid photos; 729,503 strict9 unknown | Photo-ID/taxon breadth and measurement missingness, **not** new annual-climate slopes |
+| Soil-complete exploratory 13-environment model | Separate older sample | 16,801 taxa, 1,665 genera, 26,163 classified photo records | In-sample genotype-free taxonomic/environmental descriptive association |
 
 ### 2.2 | Image-derived floral colour and technical missingness
 
