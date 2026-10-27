@@ -1,0 +1,27 @@
+name: MOIS P2 real ROI9 collector QC without new photo model inference
+on:
+  push:
+    branches: [feat/mois-p2-first-4096-20261026]
+    paths:
+      - .github/workflows/mois-p2-collector-test-only.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  strict-source-unknown-and-source-breadth-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test actual source P2 receipt and numeric nine-colour unknown propagation
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_collect_p2_first4096_original_roi9.py
+          python -m unittest discover -s tests -p test_mois_collect_p2_first4096_original_roi9.py -v
+          echo 'MOIS_P2_4096_NO_REINFERENCE_BIAS_COLLECTOR_TESTS_PASS'
+
+# Recheck photo-ID + original taxon-ID provenance after fail-closed join fix.
