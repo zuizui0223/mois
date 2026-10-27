@@ -22,7 +22,7 @@ class CrossArmOriginalPhotoTaxonTests(unittest.TestCase):
                 strict9=bool(strict),
                 original_roi_four_hue="white" if strict else "mixed_uncertain")
             for k in PALETTE:
-                d["strict9_"+k]=1.0 if strict and k=="white" else np.nan
+                d["strict9_"+k]=1.0 if strict and k=="white" else (0.0 if strict else np.nan)
             data.append(d)
         return pd.DataFrame(data)
 
