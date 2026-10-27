@@ -158,12 +158,17 @@ def audit(source_photo,source_taxa,out,*,verify_sha=True,verify_census=True,
     q.inat_taxon_id=q.inat_taxon_id.fillna("").astype(str).str.strip()
     require(d.photo_id.is_unique,
             "Duplicate photo IDs in authentic original ROI9 ledger")
-    require(d.photo_id.str.fullmatch(r"\d+").all() and
-            q.inat_taxon_id.is_unique and
-            d.source_design.isin(ARMS).all() and
-            str(d.strict9.dtype) in ("bool","boolean") and
-            d.strict9.notna().all(),
-            "Source original photo/taxon IDs, design or boolean measurement invalid")
+    require(d.photo_id.str.fullmatch(r"\d+").all(),
+            "Exact original photo IDs were malformed or nonnumeric")
+    require(q.inat_taxon_id.is_unique,
+            "Nominal source taxon IDs duplicated in authoritative source register")
+    require(d.source_design.isin(ARMS).all(),
+            "Original source acquisition-arm labels unexpected: "+
+            repr(d.loc[~d.source_design.isin(ARMS),"source_design"].value_counts(dropna=False).head(8).to_dict()))
+    require(str(d.strict9.dtype) in ("bool","boolean"),
+            "Original valid-nine-palette column is not boolean: "+str(d.strict9.dtype))
+    require(d.strict9.notna().all(),
+            "Original strict9 photo success column contains undefined booleans")
     ok=d.strict9.astype(bool)
     whites=pd.to_numeric(d.strict9_white,errors="coerce")
     require((~ok|d.original_roi_four_hue.isin(HUES)).all() and
