@@ -1,0 +1,154 @@
+name: MOIS bulk128 real ROI9 data-only checkpoint and immutable collector
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [MOIS bulk128 one-shot acquisition of 131072 real original photo ROIs]
+    types: [completed]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-bulk128-real-photo-collector-data-only
+  cancel-in-progress: false
+jobs:
+  collect-finished-original-photographs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_TAG: mois-full93m-bulk128-tier10-131072-original-photo-source-v1
+      COMPLETE_TAG: mois-bulk128-all131072-real-originalROI9-taxongap-v1
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mois-bulk128-131072-20261026
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Source-locked palette and missingness test without any image inferencing
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_bulk128_collect_original_roi9.py
+          python -m unittest discover -s tests -p test_mois_bulk128_collect_original_roi9.py -v
+      - name: Download signed ORIGINAL photo-ID source shards ONLY ONCE
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh release download "$SOURCE_TAG" --repo "$REPO" --dir source \
+            --pattern manifest.json --pattern bulk128_source_photo_shards.tar.gz \
+            --pattern bulk128_source_photo_shards.sha256
+          echo '7e975e701281ba812451acd48be7e91a7d17f2bbe6f9f53ad15ef4f8db9e557e  source/manifest.json' | sha256sum -c -
+          echo '61c0eee377f6edead471436d3f75b92700e54687e6b9dd0a417819a472c23dcb  source/bulk128_source_photo_shards.tar.gz' | sha256sum -c -
+          (cd source && sha256sum -c bulk128_source_photo_shards.sha256)
+          tar -xzf source/bulk128_source_photo_shards.tar.gz -C source
+      - name: Reuse only SEALED original 1024-photo releases, never call an image model
+        id: snapshot
+        run: |
+          set -euo pipefail
+          mkdir -p workers progress
+          echo 'part,status,tar_sha256' > progress/shards.csv
+          have=0
+          for i in $(seq 0 127); do
+            printf -v part '%03d' "$i"
+            tag="mois-bulk128-real-original-ROI9-shard-$part-v1"
+            if gh release view "$tag" --repo "$REPO" >/dev/null 2>&1; then
+              dest="workers/group-$part"
+              mkdir -p "$dest"
+              for trial in 1 2 3; do
+                if gh release download "$tag" --repo "$REPO" --dir "$dest" \
+                  --pattern bulk128_completed_original_roi.tar.gz \
+                  --pattern bulk128_completed_original_roi.sha256; then
+                  break
+                fi
+                if [ "$trial" -eq 3 ]; then exit 1; fi
+                sleep "$((trial*6))"
+              done
+              (cd "$dest" && sha256sum -c bulk128_completed_original_roi.sha256)
+              tar -xzf "$dest/bulk128_completed_original_roi.tar.gz" -C "$dest"
+              digest=$(sha256sum "$dest/bulk128_completed_original_roi.tar.gz" | awk '{print $1}')
+              echo "$i,complete,$digest" >> progress/shards.csv
+              have=$((have+1))
+            else
+              echo "$i,pending," >> progress/shards.csv
+            fi
+          done
+          echo "count=$have" >> "$GITHUB_OUTPUT"
+          echo "MOIS_BULK128_AUTHENTIC_SHARD_RELEASES_DONE $have OF 128 ; NO PENDING COLOURS IMPUTED"
+      - name: Save exact partial checkpoint without falsely claiming unfinished photos as classified
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import csv,json
+          rows=list(csv.DictReader(Path('progress/shards.csv').open()))
+          count=sum(x['status']=='complete' for x in rows)
+          assert len(rows)==128 and len(set(x['part'] for x in rows))==128
+          r={
+           'schema':'mois_bulk128_completed_real_photo_model_shards_checkpoint_v1',
+           'source_target_original_photo_IDs':131072,
+           'total_128_photo_shards':128,
+           'completed_sha_sealed_genuine_model_shards':count,
+           'verified_completed_original_image_photo_attempts':count*1024,
+           'pending_shards_not_assumed_white_or_pigmented':128-count,
+           'new_original_photo_images_downloaded_or_reinferred_by_collector':0,
+           'per_shard_SHA256':{
+               x['part']:x['tar_sha256'] for x in rows if x['status']=='complete'},
+          }
+          Path('progress/receipt.json').write_text(json.dumps(r,indent=2,sort_keys=True)+'\n')
+          print('MOIS_BULK128_REAL_PICTURE_PARTIAL_COVERAGE',json.dumps({
+              'finished':count,'attempted_original_images_in_signed_groups':count*1024},sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-bulk128-genuine-photo-checkpoint-${{ github.run_id }}
+          path: progress/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Only when ALL 128 true image workers sealed, verify global original-photo ROI9
+        if: steps.snapshot.outputs.count == '128'
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_bulk128_collect_original_roi9 \
+            --source source --workers workers --output complete
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('complete/bulk128_actual_original_photo_ROI9_receipt.json').read_text())
+          assert r['schema']=='mois_bulk128_real_original_photo_ROI9_complete_signed_v1'
+          assert r['number_source_compute_shards']==128
+          assert r['number_completed_original_photo_model_units']==512
+          assert r['attempted_new_original_photos']==131072
+          assert r['distinct_original_observations']==131072
+          assert r['reference_photo_attempts']==32768
+          assert r['gap_targeted_photo_attempts']==98304
+          assert r['targeted_previous_P5_source_taxa']==0
+          print('MOIS_BULK128_REAL_131072_ORIGINAL_PHOTO_HUES_SOURCE_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.snapshot.outputs.count == '128'
+        with:
+          name: mois-bulk128-all131072-genuine-original-photo-colours
+          path: complete/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish immutable true finished photo results - data-only without re-downloading photos
+        if: steps.snapshot.outputs.count == '128'
+        run: |
+          set -euo pipefail
+          if gh release view "$COMPLETE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p prior
+            gh release download "$COMPLETE_TAG" --repo "$REPO" --dir prior \
+              --pattern bulk128_actual_original_photo_ROI9_receipt.json
+            cmp prior/bulk128_actual_original_photo_ROI9_receipt.json \
+                complete/bulk128_actual_original_photo_ROI9_receipt.json
+          else
+            gh release create "$COMPLETE_TAG" complete/* \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS authentic 131072 original photos: 128 full RGB ROI9 shards with bias-aware taxa' \
+              --notes 'Signed 128 original source photo workers, 512 original FCP ROI-v4 numeric terminals, strict nine-component colours and technical unknown failures retained, 32768 reference + 98304 P1/P2/P3/P4 gap-selected; P5 targeted=0. No source image download or inference in this collector, and no native wild flower petal prevalence claim.'
+            echo 'MOIS_ALL128_REAL_PHOTO_SHARDS_NUMERIC_ROI9_SOURCE_SAFELY_PUBLISHED'
+          fi

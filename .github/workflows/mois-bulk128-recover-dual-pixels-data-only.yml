@@ -1,0 +1,211 @@
+name: MOIS recover and JOIN all 128 genuine fullROI9 and 500px photo products without downloads
+on:
+  push:
+    branches: [feat/mois-bulk128-131072-20261026]
+    paths:
+      - .github/workflows/mois-bulk128-recover-dual-pixels-data-only.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-bulk128-131072-signed-join-both-image-methods-data-only
+  cancel-in-progress: false
+jobs:
+  restore-both-measured-128-shard-image-products:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      MEDIUM_RUN: '40341341397'
+      ORIGINAL_RUN: '40340338433'
+      MEDIUM_HEAD: 6e47c81bc14e3786177094d36e3e13b44c17b624
+      ORIGINAL_HEAD: 77c20f19fb450588b3e0488a2afe4ac99589668f
+      SOURCE_TAG: mois-full93m-bulk128-tier10-131072-original-photo-source-v1
+      OUT_TAG: mois-128shards-131072-fullROI9-plus-500px-sourceID-joined-20261027-v1
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run data-only tests for exact 131072 photo-ID/observation and both pixel methods
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile \
+            scripts/analysis/mois_bulk128_medium500_global_reconcile.py \
+            scripts/analysis/mois_bulk128_integrate_original_roi9_and_medium_lab.py
+          python -m unittest discover -s tests \
+            -p test_mois_bulk128_integrate_original_roi9_and_medium_lab.py -v
+      - name: Prove all 256 old photo workers really measured their original images
+        run: |
+          set -euo pipefail
+          mkdir -p source_attestation
+          for stream in MEDIUM ORIGINAL; do
+            if [ "$stream" = MEDIUM ]; then id=$MEDIUM_RUN; else id=$ORIGINAL_RUN; fi
+            for page in 1 2; do
+              gh api "repos/$REPO/actions/runs/$id/jobs?per_page=100&page=$page" > "source_attestation/$stream-jobs-$page.json"
+              gh api "repos/$REPO/actions/runs/$id/artifacts?per_page=100&page=$page" > "source_attestation/$stream-artifacts-$page.json"
+            done
+            gh api "repos/$REPO/actions/runs/$id" > "source_attestation/$stream-run.json"
+          done
+          python - <<'PY'
+          import json,os,re
+          from pathlib import Path
+          root=Path('source_attestation')
+          for kind,nrun,head,jobprefix,artprefix,count in (
+              ('MEDIUM',int(os.environ['MEDIUM_RUN']),os.environ['MEDIUM_HEAD'],
+               'medium-photo-shards (','mois-bulk128-med500-part-',129),
+              ('ORIGINAL',int(os.environ['ORIGINAL_RUN']),os.environ['ORIGINAL_HEAD'],
+               'original-photo-shards (','mois-bulk128-real-originalROI9-part-',128)):
+              run=json.loads((root/f'{kind}-run.json').read_text())
+              assert run['id']==nrun and run['head_sha']==head
+              assert run['repository']['full_name']==os.environ['REPO']
+              assert run['status']=='completed' and run['conclusion']=='failure'
+              jobs=[x for p in (1,2) for x in json.loads(
+                  (root/f'{kind}-jobs-{p}.json').read_text())['jobs']]
+              workers=[j for j in jobs if j['name'].startswith(jobprefix)]
+              assert len(workers)==128
+              ids={int(j['name'].removeprefix(jobprefix).rstrip(')')) for j in workers}
+              assert ids==set(range(128)),(kind,len(ids))
+              expected_step=('Actually acquire and decode all 1024 source original medium RGB photos'
+                  if kind=='MEDIUM' else
+                  'ONE genuine 1024-photo S3 download pass and warm original full-resolution ROI')
+              for j in workers:
+                  steps=j.get('steps') or []
+                  valid=[s for s in steps if s['name'].startswith(expected_step)
+                            and s['conclusion']=='success']
+                  assert len(valid)==1,(kind,j['name'],j['conclusion'])
+                  if kind=='MEDIUM':
+                      assert j['conclusion']=='success'
+                  else:
+                      fail=[s for s in steps if s['conclusion']=='failure']
+                      assert len(fail)==1 and fail[0]['name'].startswith('Publish immutable full')
+              artifacts=[a for p in (1,2) for a in json.loads(
+                  (root/f'{kind}-artifacts-{p}.json').read_text())['artifacts']]
+              assert len(artifacts)==count
+              items={a['name']:a for a in artifacts}
+              for part in range(128):
+                  a=items[f'{artprefix}{part}']
+                  assert not a['expired'] and a['digest'].startswith('sha256:') and a['size_in_bytes']>0
+              print('MOIS_AUTHENTIC_ALL128_PIXEL_WORKERS_SUCCESS_AND_SHA_ARTIFACTS',
+                  kind,len(workers),len(artifacts),flush=True)
+          PY
+      - name: Reuse original 131072 source SHA and 512 units from immutable source release
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh release download "$SOURCE_TAG" --repo "$REPO" --dir source \
+            --pattern manifest.json \
+            --pattern bulk128_source_summary.csv \
+            --pattern bulk128_source_photo_shards.tar.gz
+          printf '%s\n' \
+            '7e975e701281ba812451acd48be7e91a7d17f2bbe6f9f53ad15ef4f8db9e557e  source/manifest.json' \
+            'efe19bb147c439d14c9342b5a70a4ada6d4cb00da0494a8882653ec30520425d  source/bulk128_source_summary.csv' \
+            '61c0eee377f6edead471436d3f75b92700e54687e6b9dd0a417819a472c23dcb  source/bulk128_source_photo_shards.tar.gz' | sha256sum -c -
+          tar -xzf source/bulk128_source_photo_shards.tar.gz -C source
+          test "$(find source/shards -maxdepth 1 -name 'shard-*.csv' | wc -l)" -eq 512
+          echo 'MOIS_ALL_512_SOURCE_PHOTO_UNITS_RESTORED_WITHOUT_RGB_DOWNLOAD'
+      - name: Download exactly already completed medium 128 worker artifacts, NO S3
+        run: |
+          set -euo pipefail
+          mkdir -p medium_workers
+          gh run download "$MEDIUM_RUN" --repo "$REPO" \
+            --pattern 'mois-bulk128-med500-part-*' --dir medium_workers
+          test "$(find medium_workers -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 128
+          echo 'MOIS_ALL_128_SOURCE_MEDIUM500_RGB_PIXEL_TERMINALS_LOCAL_FOR_JOIN'
+      - name: Reconcile genuine 500px box Lab and technical negatives to a single photo-ID census
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_bulk128_medium500_global_reconcile \
+            --source-manifest source/manifest.json \
+            --source-summary source/bulk128_source_summary.csv \
+            --workers medium_workers \
+            --output medium_join
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('medium_join/bulk128_real_medium_boxLab_completion_receipt.json')
+          a=json.loads(p.read_text())
+          assert a['new_real_medium_picture_attempts']==131072
+          assert a['128_frozen_original_taxon_photo_partitions_authenticated']==128
+          assert a['new_original_strict9_color_ROI_count']==0
+          print('MOIS_500PX_ALL131072_REAL_PHOTO_RECONCILED_NO_REINFERENCE',json.dumps({
+            'attempted':a['new_real_medium_picture_attempts'],
+            'decoded':a['real_medium_RGB_downloaded_decoded'],
+            'flower_boxes':a['actual_original_photo_flower_candidate_boxes']},
+            sort_keys=True),flush=True)
+          PY
+      - name: Restore all original full-size FCP YOLO11 EfficientSAM ROI9 numerical image terminals
+        run: |
+          set -euo pipefail
+          mkdir -p roi_workers
+          gh run download "$ORIGINAL_RUN" --repo "$REPO" \
+            --pattern 'mois-bulk128-real-originalROI9-part-*' --dir roi_workers
+          test "$(find roi_workers -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 128
+          echo 'MOIS_ALL128_AUTHENTIC_ORIGINAL_FULL_ROI9_SEALED_UNITS_LOCAL_NO_S3'
+      - name: Integrate SAME original photo UUID/taxon 500px Lab and genuine numeric 9palette FCP ROI9
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_bulk128_integrate_original_roi9_and_medium_lab \
+            --source source --roi-workers roi_workers \
+            --medium-photo-file medium_join/bulk128_true_medium_boxLab_photo_IDs.csv.gz \
+            --medium-receipt medium_join/bulk128_real_medium_boxLab_completion_receipt.json \
+            --output integrated
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          f=Path('integrated/bulk128_original_roi9_plus_medium500_integrated_receipt.json')
+          a=json.loads(f.read_text())
+          assert a['schema']=='mois_bulk128_131072_one_photo_two_pixel_methods_strict9_mediumLab_integrated_v1'
+          assert a['true_original_photo_IDs_measured_once_by_both_methods']==131072
+          assert a['fullROI9_unknown_without_strict']+a['genuine_original_fullROI9_strict_vectors']==131072
+          assert a['reference_and_targeted_photo_counts']=={'reference':32768,'targeted':98304}
+          assert a['new_image_downloads_or_model_inferences_by_integration']==0
+          assert a['500px_box_colour_does_not_certify_actual_petals']
+          print('MOIS_131072_FULL_ORIGINAL_ROI9_AND_MEDIUM500_LAB_INTEGRATED_ONE_ROW_PER_SOURCE_PHOTO',
+                json.dumps({k:a[k] for k in (
+                  'genuine_original_fullROI9_strict_vectors',
+                  'fullROI9_unknown_without_strict',
+                  'real_medium500_RGB_decoded',
+                  '500px_negative_but_fullROI9_strict',
+                  'previously_no9_P1P2_targeted_taxa_with_new_strict9_from_bulk128')},
+                  sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-131072-real-original-ROI9-and-mediumLab-photo-id-integrated
+          path: |
+            source_attestation/
+            medium_join/
+            integrated/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish integrated real-pixel data when GitHub release permission permits
+        run: |
+          set -euo pipefail
+          if gh release view "$OUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p previous
+            gh release download "$OUT_TAG" --repo "$REPO" --dir previous \
+              --pattern bulk128_original_roi9_plus_medium500_integrated_receipt.json
+            cmp previous/bulk128_original_roi9_plus_medium500_integrated_receipt.json \
+                integrated/bulk128_original_roi9_plus_medium500_integrated_receipt.json
+            echo 'MOIS_BULK128_DUAL_PIXEL_MEASUREMENTS_ALREADY_RELEASED_BYTE_IDENTICAL'
+          elif gh release create "$OUT_TAG" \
+                 medium_join/bulk128_real_medium_boxLab_completion_receipt.json \
+                 medium_join/bulk128_true_medium_boxLab_photo_IDs.csv.gz \
+                 medium_join/bulk128_picture_success_by_source_part.csv \
+                 medium_join/bulk128_true_photo_regions_and_seasons.csv \
+                 integrated/* \
+                 --repo "$REPO" --target "$GITHUB_SHA" \
+                 --title 'MOIS 131072 genuine source photo IDs, merged real 500px Lab and original strict9 ROI' \
+                 --notes 'DATA-ONLY recovery. All 128 separate medium and 128 full original-image worker outputs were successfully measured and authenticated by Actions artifact digests and all 512 source work unit terminal SHAs. Every original photo/observation/taxon joined once. 500px screen negative versus genuine strict9 FCP disagreements audited, unknowns preserved, no new downloads/re-inference. Source-reference and bias-gap-targeted sets must not be naively pooled for botanical prevalence. Non-petal box Lab separately identified from strict9, wild/native status unverified.'; then
+            echo 'MOIS_AUTHENTIC_131072_TWO_METHOD_IMAGE_DATA_PUBLISHED'
+          else
+            echo 'MOIS_RELEASE_WRITE_NOT_PERMITTED_BUT_ALL_INTEGRATED_BYTES_PRESERVED_IN_ACTIONS_ARTIFACT'
+          fi
