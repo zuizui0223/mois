@@ -68,11 +68,11 @@ class Human128PhotoReviewTests(unittest.TestCase):
     def test_duplicate_photo_or_source_taxon_rejected(self):
         cases=self.data()
         cases[1]["photo_id"]=cases[0]["photo_id"]
-        with self.assertRaisesRegex(ValueError,"independent"):
+        with self.assertRaisesRegex(ValueError,"unique original source identities"):
             choose(cases)
         cases=self.data()
         cases[2]["inat_taxon_id"]=cases[0]["inat_taxon_id"]
-        with self.assertRaisesRegex(ValueError,"independent"):
+        with self.assertRaisesRegex(ValueError,"unique original source identities"):
             choose(cases)
 
 if __name__=="__main__":
