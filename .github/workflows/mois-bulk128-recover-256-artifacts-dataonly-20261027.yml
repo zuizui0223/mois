@@ -4,6 +4,7 @@ on:
     branches: [feat/mois-bulk128-131072-20261026]
     paths:
       - .github/workflows/mois-bulk128-recover-256-artifacts-dataonly-20261027.yml
+      - scripts/analysis/mois_bulk128_collect_original_roi9.py
   workflow_dispatch:
 permissions:
   contents: read
