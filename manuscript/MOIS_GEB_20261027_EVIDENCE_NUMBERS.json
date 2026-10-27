@@ -266,5 +266,37 @@
     "anthocyanin_cost_or_fitness_tested": false,
     "independent_anatomical_flower_or_petals_verified": false,
     "photograph_level_photo_proxy_equals_strict9": false
+  },
+  "fourhue_nonresponse_MNAR_313535": {
+    "population": "Exactly 313535 source original photo attempts; 313204 with both rainfall and solar bins; 151107 four-hue classified and 162097 unknown in 3x3. Does NOT use strict9 or the separate 309439-photo genus model",
+    "analytical_target": "Counterfactual wet minus dry photographed WHITE-label fraction standardized across three source-solar thirds by PRE-HUE attempted photo support; not botanically true flower prevalence",
+    "source_release": "https://github.com/zuizui0223/mois/releases/tag/mois-original313535-four-hues-water-solar-genus-20261018-v1",
+    "analysis_release": "https://github.com/zuizui0223/mois/releases/tag/mois-real313535-white-solar-wetdry-MNAR-tipping-source-20261027-v1",
+    "real_source_counts": {
+      "photo_attempts_parent": 313535,
+      "rain_solar_classifiable_site_photo_attempts": 313204,
+      "hue_known": 151107,
+      "hue_unknown": 162097,
+      "hue_known_white": 71368,
+      "photos_missing_rain_solar_joint_support": 331
+    },
+    "wet_minus_dry_complete_case_pp_by_solar": {
+      "low": 3.9290350347684244,
+      "middle": 5.3273620498219545,
+      "high": 4.373798359555902
+    },
+    "wet_unknown_hypothetical_white_deficit_to_exact_tie_under_dry_MAR_pp_by_solar": {
+      "low": 7.679914674426907,
+      "middle": 9.744762318477768,
+      "high": 7.444496359688502
+    },
+    "precolour_attempt_standardized_wet_minus_dry_completecase_pp": 4.550412063034302,
+    "precolour_attempt_standardized_wet_missing_deficit_under_dry_MAR_to_tie_pp": 8.25060612687695,
+    "if_symmetric_wet_missing_minus5pp_and_dry_missing_plus5pp_result_pp": -0.6662467668018599,
+    "if_wet_missing_minus10pp_and_dry_missing_MAR_result_pp": -0.964833717771,
+    "boundary": "Unmeasured photo hue fractions are made-up sensitivity PARAMETERS not the colour of any observed missing photo. Many technically missing images may contain no assessable flower/petals, thus counterfactual colour eligibility itself is unverified. The result challenges naive complete-case wet/dry descriptive support, NOT an estimate of the 309439 model's bias or a corrected global causal rainfall coefficient.",
+    "separate_observation_and_ROI_selection_steps_required": true,
+    "photo_hue_unknown_reclassified_as_biological_white_or_nonwhite": false,
+    "source_original_image_pixels_downloaded_or_reanalysed": 0
   }
 }
