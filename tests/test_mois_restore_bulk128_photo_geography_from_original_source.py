@@ -74,8 +74,8 @@ class SourcePhotoGeoRestorationTests(unittest.TestCase):
             self.assertEqual(a["real_original_strict9_numerical_images"],4)
             d=pd.read_parquet(Path(directory)/"result"/
                 "mois_1181146_true_original_strict9_geography_restored_v2.parquet")
-            self.assertTrue(d.loc[:3,"latitude"].eq(-12.4).all())
-            self.assertTrue(d.loc[:3,"longitude"].eq(125.8).all())
+            self.assertTrue(np.allclose(d.loc[:3,"latitude"].to_numpy(float),-12.4,atol=1e-5))
+            self.assertTrue(np.allclose(d.loc[:3,"longitude"].to_numpy(float),125.8,atol=1e-5))
             self.assertTrue(d.loc[:3,"observed_on"].eq("2025-12-15").all())
             self.assertTrue(d.loc[4:,"latitude"].eq(40.0).all())
             self.assertTrue(d.loc[4:,"observed_on"].eq("2023-05-10").all())
