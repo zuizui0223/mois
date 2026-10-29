@@ -11,7 +11,7 @@ import pandas as pd
 from scripts.analysis.mois_observation_roi9_auto_bias_20261029 import (
     SCHEMA, logit_tilt, group_summary, source_groups, run,
 )
-from scripts.analysis.mois_observation_probability_audit_20261029 import (
+from scripts.analysis.mois_roi9_observation_frame_20261029 import (
     sha_file,
 )
 
