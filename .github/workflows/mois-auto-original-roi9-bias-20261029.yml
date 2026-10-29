@@ -10,7 +10,7 @@ on:
       - tests/test_mois_observation_roi9_auto_bias_20261029.py
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: mois-auto-original-roi9-selection-bias-20261029
   cancel-in-progress: false
@@ -81,6 +81,24 @@ jobs:
              "MNAR_bounds":bounds
           },sort_keys=True),flush=True)
           PY
+      - name: Publish immutable automatic source-bias machine results (no photo pixels)
+        run: |
+          set -euo pipefail
+          RESULT_TAG=mois-original1181146-nohuman-auto-roi9-bias-20261029-v1
+          if gh release view "$RESULT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p prior
+            gh release download "$RESULT_TAG" --repo "$REPO" --dir prior \
+              --pattern mois_auto_roi9_bias_receipt.json
+            cmp prior/mois_auto_roi9_bias_receipt.json \
+                bias_auto/mois_auto_roi9_bias_receipt.json
+            echo MOIS_AUTO_ROI9_BIAS_EXISTING_IMMUTABLE_RELEASE_MATCHED
+          else
+            gh release create "$RESULT_TAG" bias_auto/* --repo "$REPO" \
+              --target "$GITHUB_SHA" \
+              --title 'MOIS genuine 1.18m photo / 1.03m observation automatic ROI9 bias audit' \
+              --notes 'No manual labels, no new S3 photograph requests, no original ROI re-inference. Four-arm original photo-source selected frame, canonical observation UUIDs, exact strict9 success and technical unknown status, arm/region/season MAR-conditional standardization, identified support bounds and explicitly hypothetical MNAR sensitivity. NOT native world flora prevalence, open floral petal ground truth, pigment content or ecological climate causality. Output SHA records are self contained. Real code and unit tests are in PR #196.'
+            echo MOIS_AUTO_ROI9_BIAS_NEW_IMMUTABLE_RELEASE_PUBLISHED
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
