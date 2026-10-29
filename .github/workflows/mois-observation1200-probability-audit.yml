@@ -1,0 +1,79 @@
+name: MOIS freeze 1200 existing-photo observation-level probability audit
+on:
+  push:
+    branches: [design/mois-observation-bias-audit-20261029]
+    paths:
+      - .github/workflows/mois-observation1200-probability-audit.yml
+      - scripts/analysis/mois_observation_probability_audit_20261029.py
+      - tests/test_mois_observation_probability_audit_20261029.py
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-observation1200-source-probability-audit
+  cancel-in-progress: false
+jobs:
+  audited-source-observation-sampling:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_TAG: mois-1181146-originalROI9-128bulk-georestored-seasons-and-512QC-20261027-v2
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check audit selection tests and syntax without any image downloads
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_observation_probability_audit_20261029.py
+          python -m unittest discover -s tests -p test_mois_observation_probability_audit_20261029.py -v
+      - name: Retrieve existing SHA-verified 1.18m original-photo ROI9 ledger
+        run: |
+          set -euo pipefail
+          mkdir -p frozen
+          gh release download "$SOURCE_TAG" --repo "$REPO" --dir frozen \
+            --pattern mois_1181146_true_original_strict9_geography_restored_v2.parquet \
+            --pattern mois_1181146_true_original_source_georestoration_receipt.json
+          test -s frozen/mois_1181146_true_original_strict9_geography_restored_v2.parquet
+          test -s frozen/mois_1181146_true_original_source_georestoration_receipt.json
+      - name: Freeze real observation-ID canonical photo then stratum-specific probability audit
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_observation_probability_audit_20261029 \
+            --photo-parquet frozen/mois_1181146_true_original_strict9_geography_restored_v2.parquet \
+            --georestored-receipt frozen/mois_1181146_true_original_source_georestoration_receipt.json \
+            --output bias_audit1200
+          python - <<'PY'
+          import json, pandas as pd
+          from pathlib import Path
+          d=Path("bias_audit1200")
+          r=json.loads((d/"audit1200_frozen_design_receipt.json").read_text())
+          assert r["schema"]=="mois_original1181146_observation_two_phase_botanical_audit_v1"
+          assert (r["sample_success_count"],r["sample_unknown_count"],r["sample_total"])==(400,800,1200)
+          assert r["frozen_photo_summary"]["source_original_photo_attempts"]==1181146
+          assert r["frozen_photo_summary"]["additional_photos_of_already_represented_observations"]>=148264
+          assert r["audit_status_all_human_labels_blank"]
+          assert r["new_ROI_inferences"]==0 and r["photo_pixels_downloaded"]==0
+          t=pd.read_csv(d/"audit1200_source_observation_roster.csv",dtype={"photo_id":str,"observation_id":str})
+          assert len(t)==1200 and t.photo_id.is_unique and t.observation_id.is_unique
+          assert t["audit_inclusion_q"].between(0,1,inclusive="right").all()
+          print("MOIS_1200_REAL_OBSERVATION_AUDIT_PASS",json.dumps({
+             "source_observations":r["frozen_photo_summary"]["distinct_represented_observations"],
+             "nonempty_strata":r["nonempty_strata"],
+             "success":r["sample_success_count"],"unknown":r["sample_unknown_count"],
+             "roster_sha256":r["output_sha256"]["audit1200_source_observation_roster.csv"]
+          },sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real1181146-existing-photo-observation1200-bias-audit-source-only
+          path: bias_audit1200/
+          retention-days: 90
+          if-no-files-found: warn
