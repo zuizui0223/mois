@@ -1,6 +1,18 @@
 # MOIS: 画像枚数を増やさずに観察・ROI欠測バイアスを識別するための設計（2026-10-29）
 
-Status: **prespecified design proposal only**. Not a new ecological result, not an approved annotation, not an active image-acquisition job. Keep the existing 27 Oct GEB single-paper frozen evidence intact. No replacement of strict9 unknown with a proxy.
+Status: **probabilistic observation-level sample and its blinded reviewer interface actually executed 29 Oct 2026**; human botanical review and ecological bias correction **NOT yet performed**. Keep the existing 27 Oct GEB single-paper frozen evidence intact. No replacement of strict9 unknown with a proxy.
+
+### Executed source-only freeze (not biological estimates)
+
+- [Authenticated 1.18m-source sampling run](https://github.com/zuizui0223/mois/actions/runs/40839008744), [blinded 1200+240 viewer run](https://github.com/zuizui0223/mois/actions/runs/40839599535); implemented in PR #196 without changing `main` or original colours.
+- Exactly **1,181,146** original attempted photo IDs, all with observation UUID; **1,032,882** distinct observations after choosing a canonical original photo by preregistered SHA rank (independent of any hue or technical success); **148,264** extra photos of already represented observations suppressed from inference *without deleting the original photo QC ledger*.
+- Among the canonical photos **401,703 original strict9 successes** and **631,179 strict9 unknown**. These differ from photo-level 451,643/729,503 precisely because photos are not independent observations.
+- Exact review draw: **400 strict9 successes and 800 strict9 unknown**, **160 nonempty probability strata**, stratified on **source arm × broad latitude zone × recorded local season × original strict9 status**. 79 success strata, 81 unknown strata. Every nonempty audit frame stratum has `q_h = n_h/N_h > 0`; the observed frame is a mixed selected acquisition population, not globally probability-representative flora.
+- Output **source-locked** roster SHA256 `01d882f9e7964a2573baea722523bf361495a44c0e8d73485e58053c94288d79`, original-photo-v2 Parquet SHA256 `faf6951505f1002a1327f64a2ced13431b562cf13893707125fafff918160f62`. Audit original labels are BLANK.
+- An offline HTML review interface exists with **1,200 primary blinded images and 240 stratified reviewer-overlap images** (80 ROI successes, 160 unknown), loading only public medium images when displayed. It hides ROI status, estimated colours, source arm, region and season. NO human-verified flower presence, colour distribution or bias-corrected moisture slope has been obtained by building this interface.
+- Estimator implementation is a separate **fail-closed** stage: refuse the point estimate if any human labels remain unfinished, use partial-identification bounds for uncertain flower/colour records, only estimate a source-observation-frame E1 ratio if completed labels allow it. No correction to the full 93m source or natural wild/native flora is identified.
+
+
 
 ## 0. Frozen source and what is actually identified
 
@@ -33,7 +45,7 @@ A probabilistic audit design must be **separate** from the existing 512/128 purp
 ### 2.2 Fixed first calibration sample: 1,200 already-attempted observations
 
 - Select **400 strict9-success** and **800 strict9-unknown** original images, conditional on the observation-level frame above, with outcome-blind random within-stratum sampling. The deliberate failure oversample is permitted **only because its sampling probabilities are recorded**.
-- Primary strata: original source-design × broad latitude region (N/S tropical, N/S extratropical; preserve polar regions as a separately recorded sparse category) × strict9 status. Within each stratum distribute across recorded local seasons where support exists; do not manufacture empty source×region×season cells. Use predeclared counts N_h, integers n_h, deterministic independent pseudorandom order, and **q_i=n_h/N_h** for simple random draws in the final strata. If sparse strata are pooled, freeze their pooling rules *before* human annotation.
+- **Implemented strata:** original source-design × broad latitude zone (N/S tropical, N/S extratropical, or a predeclared pooled polar/unknown category) × recorded local season (including an explicit unknown) × strict9 status. For the 160 empirically nonempty strata, allocate at least two cases when frame size and target budget permit; one case is only permitted in a one-observation census cell. Assign remaining cases by capped proportional allocation to reach exact 400/800 totals. Record source counts N_h and review counts n_h; the conditional **q_i=n_h/N_h** is nonzero for every represented source stratum. No new stratum allocation can be chosen after human outcomes are inspected.
 - Do **not** force one per taxon/observer within a stratum after the draw: that breaks simple q_h. Instead record taxon, genus and observer clustering for subsequent uncertainty and coverage diagnostics. Avoid drawing more than one image from any original observation by construction.
 - Retain unretrievable photos as a distinct inaccessible status; redraw only according to a recorded, probability-preserving replacement protocol (ideally no redraw; report access loss). Report accessible-denominator coverage.
 - 1,200 is a **starting design budget**, not a claimed power guarantee for 32+ interactions. The reference arm alone needs enough eligible observations and label variation for its estimates. Release cell counts and uncertainty; borrow strength or aggregate where sparse rather than pretending fine geographic precision.
