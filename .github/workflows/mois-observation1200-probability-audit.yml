@@ -8,6 +8,8 @@ on:
       - tests/test_mois_observation_probability_audit_20261029.py
       - scripts/analysis/mois_1200_blind_human_review_ui_20261029.py
       - tests/test_mois_1200_blind_human_review_ui_20261029.py
+      - scripts/analysis/mois_1200_two_phase_white_estimator_20261029.py
+      - tests/test_mois_1200_two_phase_white_estimator_20261029.py
   workflow_dispatch:
 permissions:
   contents: read
@@ -37,6 +39,8 @@ jobs:
           python -m unittest discover -s tests -p test_mois_observation_probability_audit_20261029.py -v
           python -m py_compile scripts/analysis/mois_1200_blind_human_review_ui_20261029.py
           python -m unittest discover -s tests -p test_mois_1200_blind_human_review_ui_20261029.py -v
+          python -m py_compile scripts/analysis/mois_1200_two_phase_white_estimator_20261029.py
+          python -m unittest discover -s tests -p test_mois_1200_two_phase_white_estimator_20261029.py -v
       - name: Retrieve existing SHA-verified 1.18m original-photo ROI9 ledger
         run: |
           set -euo pipefail
@@ -86,6 +90,23 @@ jobs:
           assert r["human_labels_added"]==0 and r["machine_hue_hidden_in_UI"]
           assert not r["photo_binary_embedded_or_distributed"]
           print("MOIS_BLINDED_1200_240_HUMAN_REVIEW_SOURCE_ONLY_VERIFIED",flush=True)
+          PY
+      - name: Enforce real human-label absence (no automatic white-rate estimates)
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_1200_two_phase_white_estimator_20261029 \
+            --roster bias_audit1200/audit1200_source_observation_roster.csv \
+            --source-receipt bias_audit1200/audit1200_frozen_design_receipt.json \
+            --human-annotations bias_audit1200/audit1200_human_annotation_BLANK.csv \
+            --output bias_audit1200/audit1200_human_estimation_GATE.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("bias_audit1200/audit1200_human_estimation_GATE.json").read_text())
+          assert r["status"]=="BLOCKED_PENDING_HUMAN_REVIEW"
+          assert r["n_review_pending"]==1200
+          assert r["design_corrected_white_fraction"] is None
+          print("MOIS_HUMAN_WHITE_CORRECTION_NOT_FABRICATED_PENDING_1200",flush=True)
           PY
       - uses: actions/upload-artifact@v4
         if: always()
