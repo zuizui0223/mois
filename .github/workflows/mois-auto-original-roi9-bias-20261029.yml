@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     env:
-      GH_TOKEN: \${{ github.token }}
+      GH_TOKEN: ${{ github.token }}
       REPO: zuizui0223/mois
       SOURCE_TAG: mois-1181146-originalROI9-128bulk-georestored-seasons-and-512QC-20261027-v2
       OPENBLAS_NUM_THREADS: '1'
