@@ -50,7 +50,9 @@ def compute(roster_path, source_receipt, annotation_path, output):
     if "review_role" in r.columns:
         require(r.review_role.eq("R1").all(),
                 "Only primary blinded reviewer R1 may enter population estimator")
-    require(set(r.photo_id)==set(d.photo_id),"Annotation set must be exactly 1200 IDs")
+    require(set(zip(r.photo_id,r.observation_id)) ==
+            set(zip(d.photo_id,d.observation_id)),
+            "Human annotation source observation identities mismatched the frozen 1200 IDs")
     require((d.audit_inclusion_q>0).all() and (d.audit_inclusion_q<=1).all() and
             ((d.stratum_n/d.stratum_N-d.audit_inclusion_q).abs()<1e-11).all(),
             "Invalid frozen review selection probabilities")
@@ -80,6 +82,9 @@ def compute(roster_path, source_receipt, annotation_path, output):
         result["design_corrected_white_fraction"]=None
         result["note"]="Do not use complete-case reviewed subset; it can bias the weighted result."
     else:
+        require("reviewer_id" in a.columns and
+                a.reviewer_id.fillna("").astype(str).str.strip().ne("").all(),
+                "Completed human labels require a nonempty reviewer identifier")
         require(a.human_open_corolla_visible.isin(FLOWER).all(),
                 "Open-flower human review contains invalid/blank category")
         yes=a.human_open_corolla_visible.eq("yes")
