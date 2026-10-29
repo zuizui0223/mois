@@ -62,6 +62,7 @@ No human-review requirement is included in this PR. Further work, if any, should
 ## Machine-readable outputs
 
 - Actual output tests + source gate: [Actions run](https://github.com/zuizui0223/mois/actions/runs/40856639794).
+- Immutable four-file source-analysis release: [MOIS original ROI9 fully automatic selection/MNAR result v1](https://github.com/zuizui0223/mois/releases/tag/mois-original1181146-nohuman-auto-roi9-bias-20261029-v1). All GitHub release asset SHA256 digests match the generated source receipt. [Sealing Actions run 40857151162](https://github.com/zuizui0223/mois/actions/runs/40857151162) succeeded.
 - SHA-frozen generated files: \`mois_auto_roi9_bias_receipt.json\`, \`mois_auto_roi9_bias_by_scope.json\`, \`mois_auto_roi9_source_geoseason_strata.csv\`, \`mois_auto_roi9_taxon_supported_only_summary.json\`.
 - Data-source script: \`scripts/analysis/mois_observation_roi9_auto_bias_20261029.py\`.
 - Pure observation identity: \`scripts/analysis/mois_roi9_observation_frame_20261029.py\`.
