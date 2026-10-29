@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from scripts.analysis.mois_observation_probability_audit_20261029 import (
+from scripts.analysis.mois_roi9_observation_frame_20261029 import (
     ARMS, COLS, EXPECTED_PHOTOS, EXPECTED_SUCCESS, sha_file,
     observation_frame, coarse_zone, require,
 )
