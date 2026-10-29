@@ -124,7 +124,7 @@ def compute(roster_path, source_receipt, annotation_path, output):
                 if n==N:
                     continue
                 require(n>=2,"Non-census singletons cannot estimate sampling variance")
-                s2=float(g._linearized_z.var(ddof=1))
+                s2=float(g["_linearized_z"].var(ddof=1))
                 total_var+=(N*N*(1-n/N)*s2/n)
             se=math.sqrt(max(0.0,total_var))/(W+C)
             result["status"]="DESIGN_BASED_FULLY_OBSERVED_HUMAN_E1"
