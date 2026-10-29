@@ -98,10 +98,8 @@ def observation_frame(photo):
             "Original photo IDs must be nonempty unique numeric strings")
     require(d.source_design.isin(ARMS).all(), "Unknown source arm")
     require(d.strict9.notna().all() and
-            d.strict9.map(lambda x: isinstance(x, (bool,))).all(),
-            "strict9 must be explicit boolean; unknown is not False")
-    # Accept numpy.bool_ from Arrow/Pandas without accepting 'False' strings.
-    # The dtype check above also catches silent strings in production sources.
+            pd.api.types.is_bool_dtype(d.strict9.dtype),
+            "strict9 must have a boolean dtype and no missing values")
     missing_obs = int(d.observation_id.eq("").sum())
     eligible = d.loc[d.observation_id.ne("")].copy()
     require(not eligible.empty, "No source observations with identity")
