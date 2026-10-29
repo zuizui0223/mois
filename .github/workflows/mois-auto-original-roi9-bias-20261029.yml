@@ -5,7 +5,8 @@ on:
     paths:
       - .github/workflows/mois-auto-original-roi9-bias-20261029.yml
       - scripts/analysis/mois_observation_roi9_auto_bias_20261029.py
-      - scripts/analysis/mois_observation_probability_audit_20261029.py
+      - scripts/analysis/mois_roi9_observation_frame_20261029.py
+      - tests/test_mois_roi9_observation_frame_nohuman_20261029.py
       - tests/test_mois_observation_roi9_auto_bias_20261029.py
   workflow_dispatch:
 permissions:
@@ -34,8 +35,10 @@ jobs:
           set -euo pipefail
           python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
           python -m py_compile \
-            scripts/analysis/mois_observation_probability_audit_20261029.py \
+            scripts/analysis/mois_roi9_observation_frame_20261029.py \
             scripts/analysis/mois_observation_roi9_auto_bias_20261029.py
+          python -m unittest discover -s tests \
+            -p test_mois_roi9_observation_frame_nohuman_20261029.py -v
           python -m unittest discover -s tests \
             -p test_mois_observation_roi9_auto_bias_20261029.py -v
       - name: Reuse SHA-signed ORIGINAL numeric photo ROI9 source (no photos fetched)
