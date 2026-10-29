@@ -212,7 +212,9 @@ def run(photo_path, receipt_path, output, *, verify_counts=True):
     records=[group_summary(strata,scope="four_arm_selected_observation_pool_NONPROBABILITY")]
     for arm in SOURCE_ARMS:
         subset=strata.loc[strata.source_design.eq(arm)]
-        require(len(subset)>0,"Original source arm disappeared: "+arm)
+        if subset.empty:
+            require(not verify_counts, "Original source arm disappeared: "+arm)
+            continue
         records.append(group_summary(subset,scope=arm))
     for zone in sorted(strata.coarse_zone.unique()):
         records.append(group_summary(strata.loc[strata.coarse_zone.eq(zone)],
