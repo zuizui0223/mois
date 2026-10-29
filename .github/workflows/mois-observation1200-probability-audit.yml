@@ -6,6 +6,8 @@ on:
       - .github/workflows/mois-observation1200-probability-audit.yml
       - scripts/analysis/mois_observation_probability_audit_20261029.py
       - tests/test_mois_observation_probability_audit_20261029.py
+      - scripts/analysis/mois_1200_blind_human_review_ui_20261029.py
+      - tests/test_mois_1200_blind_human_review_ui_20261029.py
   workflow_dispatch:
 permissions:
   contents: read
@@ -33,6 +35,8 @@ jobs:
           python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
           python -m py_compile scripts/analysis/mois_observation_probability_audit_20261029.py
           python -m unittest discover -s tests -p test_mois_observation_probability_audit_20261029.py -v
+          python -m py_compile scripts/analysis/mois_1200_blind_human_review_ui_20261029.py
+          python -m unittest discover -s tests -p test_mois_1200_blind_human_review_ui_20261029.py -v
       - name: Retrieve existing SHA-verified 1.18m original-photo ROI9 ledger
         run: |
           set -euo pipefail
@@ -69,6 +73,19 @@ jobs:
              "success":r["sample_success_count"],"unknown":r["sample_unknown_count"],
              "roster_sha256":r["output_sha256"]["audit1200_source_observation_roster.csv"]
           },sort_keys=True))
+          PY
+      - name: Freeze blind HTML interface for 1200 primary and 240 overlapping review IDs
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_1200_blind_human_review_ui_20261029 --audit-dir bias_audit1200
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("bias_audit1200/audit1200_blind_review_UI_receipt.json").read_text())
+          assert r["n_primary_photo_IDs"]==1200 and r["n_second_reviewer_photo_IDs"]==240
+          assert r["human_labels_added"]==0 and r["machine_hue_hidden_in_UI"]
+          assert not r["photo_binary_embedded_or_distributed"]
+          print("MOIS_BLINDED_1200_240_HUMAN_REVIEW_SOURCE_ONLY_VERIFIED",flush=True)
           PY
       - uses: actions/upload-artifact@v4
         if: always()
