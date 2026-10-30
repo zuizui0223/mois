@@ -1,0 +1,108 @@
+name: MOIS automatic no-human ROI9 selection-bias and MNAR bounds
+on:
+  push:
+    branches: [design/mois-observation-bias-audit-20261029]
+    paths:
+      - .github/workflows/mois-auto-original-roi9-bias-20261029.yml
+      - scripts/analysis/mois_observation_roi9_auto_bias_20261029.py
+      - scripts/analysis/mois_roi9_observation_frame_20261029.py
+      - tests/test_mois_roi9_observation_frame_nohuman_20261029.py
+      - tests/test_mois_observation_roi9_auto_bias_20261029.py
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: mois-auto-original-roi9-selection-bias-20261029
+  cancel-in-progress: false
+jobs:
+  automatic-existing-observation-bias:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_TAG: mois-1181146-originalROI9-128bulk-georestored-seasons-and-512QC-20261027-v2
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate no-human bias estimator, bounded missingness, source fail-closed tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile \
+            scripts/analysis/mois_roi9_observation_frame_20261029.py \
+            scripts/analysis/mois_observation_roi9_auto_bias_20261029.py
+          python -m unittest discover -s tests \
+            -p test_mois_roi9_observation_frame_nohuman_20261029.py -v
+          python -m unittest discover -s tests \
+            -p test_mois_observation_roi9_auto_bias_20261029.py -v
+      - name: Reuse SHA-signed ORIGINAL numeric photo ROI9 source (no photos fetched)
+        run: |
+          set -euo pipefail
+          mkdir -p frozen
+          gh release download "$SOURCE_TAG" --repo "$REPO" --dir frozen \
+            --pattern mois_1181146_true_original_strict9_geography_restored_v2.parquet \
+            --pattern mois_1181146_true_original_source_georestoration_receipt.json
+          test -s frozen/mois_1181146_true_original_strict9_geography_restored_v2.parquet
+          test -s frozen/mois_1181146_true_original_source_georestoration_receipt.json
+      - name: Real source 1032882-observation automatic classification selection and MNAR sensitivity
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_observation_roi9_auto_bias_20261029 \
+            --photo-parquet frozen/mois_1181146_true_original_strict9_geography_restored_v2.parquet \
+            --georestored-receipt frozen/mois_1181146_true_original_source_georestoration_receipt.json \
+            --output bias_auto
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("bias_auto/mois_auto_roi9_bias_receipt.json").read_text())
+          assert r["schema"]=="mois_real1181146_observation_roi9_automatic_bias_bounds_v1"
+          assert r["source_photo_attempts"]==1181146
+          assert r["source_distinct_observations"]==1032882
+          assert r["frozen_roi9_success_observations"]==401703
+          assert r["frozen_roi9_unknown_observations"]==631179
+          assert r["suppressed_same_observation_extra_photos"]==148264
+          assert r["strict9_unknowns_upgraded_to_known"]==0
+          assert r["actual_human_labels"]==0
+          assert r["new_image_downloads"]==0 and r["new_image_inferences"]==0
+          assert r["MNAR_true_missing_colour_not_identified"]
+          bounds=r["overall"]["nonparametric_white_fraction_identification_bounds"]
+          assert 0<=bounds[0]<=bounds[1]<=1
+          assert r["geography_season_strata"]>0
+          print("MOIS_REAL_NOHUMAN_SOURCE_BIAS_AND_MNAR_RESULTS_VERIFIED",json.dumps({
+             "photo_label_success":r["frozen_roi9_success_observations"],
+             "observation_frame":r["source_distinct_observations"],
+             "MAR_assumption_conditional":r["overall"]["MAR_stratum_poststandardized_photo_white_rate"],
+             "MNAR_bounds":bounds
+          },sort_keys=True),flush=True)
+          PY
+      - name: Publish immutable automatic source-bias machine results (no photo pixels)
+        run: |
+          set -euo pipefail
+          RESULT_TAG=mois-original1181146-nohuman-auto-roi9-bias-20261029-v1
+          if gh release view "$RESULT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p prior
+            gh release download "$RESULT_TAG" --repo "$REPO" --dir prior \
+              --pattern mois_auto_roi9_bias_receipt.json
+            cmp prior/mois_auto_roi9_bias_receipt.json \
+                bias_auto/mois_auto_roi9_bias_receipt.json
+            echo MOIS_AUTO_ROI9_BIAS_EXISTING_IMMUTABLE_RELEASE_MATCHED
+          else
+            gh release create "$RESULT_TAG" bias_auto/* --repo "$REPO" \
+              --target "$GITHUB_SHA" \
+              --title 'MOIS genuine 1.18m photo / 1.03m observation automatic ROI9 bias audit' \
+              --notes 'No manual labels, no new S3 photograph requests, no original ROI re-inference. Four-arm original photo-source selected frame, canonical observation UUIDs, exact strict9 success and technical unknown status, arm/region/season MAR-conditional standardization, identified support bounds and explicitly hypothetical MNAR sensitivity. NOT native world flora prevalence, open floral petal ground truth, pigment content or ecological climate causality. Output SHA records are self contained. Real code and unit tests are in PR #196.'
+            echo MOIS_AUTO_ROI9_BIAS_NEW_IMMUTABLE_RELEASE_PUBLISHED
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real1181146-originalROI9-auto-nohuman-bias-and-MNAR-20261029
+          path: bias_auto/
+          if-no-files-found: warn
+          retention-days: 90

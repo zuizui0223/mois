@@ -1,0 +1,76 @@
+name: MOIS no-human moisture missingness refit 20261030
+on:
+  push:
+    branches: [design/mois-observation-bias-audit-20261029]
+    paths:
+      - .github/workflows/mois-nohuman-moisture-refit-20261030.yml
+      - scripts/analysis/mois_moisture_bias_refit_20261030.py
+      - tests/test_mois_moisture_bias_refit_20261030.py
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-nohuman-moisture-refit-20261030
+  cancel-in-progress: false
+jobs:
+  original-data-refit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Verify source, missingness weights and fixed-effects regression contracts
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_moisture_bias_refit_20261030.py
+          python -m unittest discover -s tests -p test_mois_moisture_bias_refit_20261030.py -v
+          python -m unittest discover -s tests -p test_mois_roi9_observation_frame_nohuman_20261029.py -v
+          python -m unittest discover -s tests -p test_mois_observation_roi9_auto_bias_20261029.py -v
+      - name: Reuse original photo-ID climate join; no new images or environments
+        run: |
+          set -euo pipefail
+          mkdir -p joined
+          gh run download 41007444495 --repo zuizui0223/mois --name mois-nohuman-canonical-climate-joined-20261030 --dir joined
+      - name: Refit rainfall and vapour associations with nominal spatial uncertainty
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_moisture_bias_refit_20261030 --joined joined/canonical_observations_climate.csv.gz --receipt joined/join_receipt.json --output moisture_refit
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          out=Path('moisture_refit');r=json.loads((out/'moisture_bias_refit_receipt.json').read_text())
+          assert r['schema']=='mois_existing_observation_moisture_MAR_refit_20261030_v1'
+          assert r['canonical_observations']==1032882 and r['canonical_roi9_success']==401703
+          assert r['analysis_eligible_observations']==893253 and r['analysis_roi9_success']==350081
+          assert r['new_images']==0 and r['human_labels']==0 and r['unknown_colours_imputed'] is False
+          assert r['bootstrap_replicates']==999 and len(r['within_environment_slopes'])==8
+          assert r['MAR_assumption_not_tested'] and not r['native_world_flora_estimand_identified']
+          for name,digest in r['output_sha256'].items():assert hashlib.sha256((out/name).read_bytes()).hexdigest()==digest
+          print('MOIS_NOHUMAN_MOISTURE_SOURCE_AND_OUTPUT_VERIFIED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-nohuman-moisture-refit-20261030
+          path: moisture_refit/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Archive numerical inputs and results without photograph RGB
+        run: |
+          set -euo pipefail
+          TAG=mois-nohuman-moisture893253-strict350081-20261030-v1
+          if gh release view "$TAG" --repo zuizui0223/mois >/dev/null 2>&1; then
+            mkdir -p earlier
+            gh release download "$TAG" --repo zuizui0223/mois --dir earlier --pattern moisture_bias_refit_receipt.json
+            cmp earlier/moisture_bias_refit_receipt.json moisture_refit/moisture_bias_refit_receipt.json
+          else
+            gh release create "$TAG" joined/* moisture_refit/* --repo zuizui0223/mois --target "$GITHUB_SHA" --title 'MOIS no-human moisture: 893253 source observations, 350081 strict ROI9 results' --notes 'No new photograph pixels, manual labels, or automatic promotion of ROI unknowns. Exact canonical source-photo and existing annual WorldClim join; rainfall/vapour in separate models with region/source/season fixed effects, BIO5/solar/elevation adjustment, MAR-conditional technical-response weights, and 999 nominal spatial block resamples. Source-specific observed photographic composition, not native flora, within-species plasticity, biochemical pigment or causality. All output SHA checks and numerical input source checks passed. Unsupported climate and technical-response strata are explicitly reported.'
+          fi
