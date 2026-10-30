@@ -1,0 +1,81 @@
+name: MOIS source-locked Kew family vs genus regional heldout ROI9
+on:
+  push:
+    branches: [analysis/mois-composition-environment-20261030]
+    paths:
+      - .github/workflows/mois-family-region-holdout-20261030.yml
+      - scripts/analysis/mois_family_palette_holdout_20261030.py
+      - tests/test_mois_family_palette_holdout_20261030.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-wcvp-original-family-versus-genus-region-holdout-20261030
+  cancel-in-progress: false
+jobs:
+  family-source-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+      ORIGINAL_WCVP: https://sftp.kew.org/pub/data-repositories/WCVP/wcvp.zip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify accepted-family, genus-mismatch and heldout identity tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_family_palette_holdout_20261030.py -v
+          python -m py_compile scripts/analysis/mois_family_palette_holdout_20261030.py
+      - name: Download only prior signed numeric region/genus outputs; never photographs
+        run: |
+          set -euo pipefail
+          mkdir -p prior
+          gh run download 41042569706 --repo zuizui0223/mois \
+            --name mois-accepted-WCVP-genus-six-direction-heldout-realROI9 --dir prior
+          echo '8fef269fba22e084e4ff859ca43629ce5cb1a87e3fa781ce39e9e060d342c150  prior/accepted_species_region.csv.gz' | sha256sum -c -
+          echo '3c13b98b9d9c589da0ecfad3a14c52b173cbc7d0ed94adab62114627c7f4850f  prior/region_heldout_predictions.csv.gz' | sha256sum -c -
+      - name: Verify original frozen Kew WCVP family source SHA (not photo source)
+        run: |
+          set -euo pipefail
+          mkdir -p official
+          curl --fail --location --silent --show-error \
+            --connect-timeout 30 --max-time 900 \
+            "$ORIGINAL_WCVP" -o official/wcvp.zip
+          echo 'd32ea2b3a85e489b14e83bcc9eae7274532e1d113753f7be290d4b2dfde573fa  official/wcvp.zip' | sha256sum -c -
+          unzip -t -q official/wcvp.zip
+      - name: Parse exact accepted species families and compare predictions on IDENTICAL heldout species
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_family_palette_holdout_20261030 \
+            --accepted-species prior/accepted_species_region.csv.gz \
+            --genus-predictions prior/region_heldout_predictions.csv.gz \
+            --wcvp-zip official/wcvp.zip --out family_holdout
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path('family_holdout')
+          d=json.loads((p/'family_holdout_receipt.json').read_text())
+          assert d['schema']=='mois_original_WCVP_accepted_family_vs_genus_region_heldout_v1'
+          assert len(d['six_directional_heldout'])==6 and d['family_composition_terms']==15
+          assert d['family_region_coverage']['family_resolved_species_sector_rows']>26000
+          assert d['WCVP_official_accepted_family_source']['official_WCVP_name_rows_scanned']>100000
+          assert d['no_photo_download_or_roi_reinference'] and d['MNAR_scenario_not_run']
+          assert d['no_native_island_photo_status_assigned']
+          for name,digest in d['out_SHA256'].items():
+              assert hashlib.sha256((p/name).read_bytes()).hexdigest()==digest
+          print('MOIS_WCVP_ORIGINAL_ACCEPTED_FAMILY_SOURCE_AND_PREDICTIONS_SHA_PASS',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-original-WCVP-family-vs-genus-six-region-ROI9
+          path: family_holdout/
+          retention-days: 90
+          if-no-files-found: error
