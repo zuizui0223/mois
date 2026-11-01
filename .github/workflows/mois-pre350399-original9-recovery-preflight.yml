@@ -1,0 +1,147 @@
+name: MOIS pre350399 original pixel nine-fraction recovery feasibility before new acquisitions
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - .github/workflows/mois-pre350399-original9-recovery-preflight.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect-signed-pre350399-original-ROI-fraction-field-preservation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Restore five ORIGINAL pre350399 photo terminal Parquets and existing 1043930 trait lake, no image files
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          mkdir -p old/core old/broad old/wave2 old/cached8192 old/tail16384 atlas
+          gh release download mois-primary-real317631-next4096-incremental-all19-featurelake-v3 \
+            --repo zuizui0223/mois --dir old/core \
+            --pattern primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --pattern mois_317631_new4096_incremental_climate_feature_lake_receipt.json
+          gh release download mois-broad-world-angiosperm-newtaxa4096-real-RGB-ROI-v1 \
+            --repo zuizui0223/mois --dir old/broad \
+            --pattern primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --pattern mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json
+          gh release download mois-broad-wave2-4096-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir old/wave2 \
+            --pattern wave2_measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-next8192-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir old/cached8192 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-tail16384-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir old/tail16384 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-original1043930-recovered-continuous9-426765-and-ecology-20261025-v1 \
+            --repo zuizui0223/mois --dir atlas \
+            --pattern mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --pattern mois1043930_FCP447500_nine_palette_restoration_receipt.json
+      - name: Verify source original SHA receipts and determine how many 9-component vectors can be rescued from 68694 old four-hue-only photographs
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          import numpy as np,pandas as pd,pyarrow.parquet as pq
+          dig=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          root=Path('old')
+          arms=[
+           ("core",root/'core/primary317631_actual_photo_hue_RGB_attempts.parquet',
+            root/'core/mois_317631_new4096_incremental_climate_feature_lake_receipt.json',
+            'photo_ID_aligned_Zstd_files_sha256','primary317631_actual_photo_hue_RGB_attempts.parquet',317631),
+           ("broad",root/'broad/primary313535_plus_broad4096_genuine_original_hue_photos.parquet',
+            root/'broad/mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json',
+            'new_combined_photo_parquet_SHA256',None,317631),
+           ("wave2",root/'wave2/wave2_measured_photos.parquet',root/'wave2/receipt.json',
+            'photo_data_sha256',None,4096),
+           ("cached8192",root/'cached8192/measured_photos.parquet',root/'cached8192/receipt.json',
+            'photo_data_sha256',None,8192),
+           ("tail16384",root/'tail16384/measured_photos.parquet',root/'tail16384/receipt.json',
+            'photo_data_sha256',None,16384)]
+          names=["white","yellow","orange","red","pink","magenta","purple","blue","bronze"]
+          frac=["flower_fraction_"+s for s in names]
+          HUE=("white","yellow_orange","red_pink","blue_purple")
+          photo=Path('atlas/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet')
+          receipt=json.loads(Path('atlas/mois1043930_FCP447500_nine_palette_restoration_receipt.json').read_text())
+          assert receipt['latest_real_photo_ID_attempts']==1043930
+          assert receipt['strict_original9_vectors_now']==390541
+          assert dig(photo)==receipt['output_photo_lake_SHA256']
+          atlas=pd.read_parquet(photo,columns=['photo_id','original_four_hue','continuous9_strict','source_arm_original'])
+          atlas.photo_id=atlas.photo_id.astype(str)
+          assert len(atlas)==1043930 and atlas.photo_id.is_unique
+          where=atlas.set_index('photo_id')
+          stats=[];possible={};conflicts=0
+          for name,filepath,receiptfile,key,subkey,expected in arms:
+              rec=json.loads(receiptfile.read_text())
+              expected_hash=(rec[key][subkey] if subkey is not None else rec[key])
+              assert dig(filepath)==expected_hash, 'original archive differs:'+name
+              pqfile=pq.ParquetFile(filepath)
+              columns=set(pqfile.schema.names)
+              assert {'photo_id','morph'}<=columns
+              has9=set(frac)<=columns
+              subsetcols=['photo_id','morph']+[s for s in frac if s in columns]
+              a=pd.read_parquet(filepath,columns=subsetcols)
+              a.photo_id=a.photo_id.astype(str)
+              assert len(a)==expected and a.photo_id.is_unique
+              overlap=where.reindex(a.photo_id.tolist())
+              assert overlap.original_four_hue.notna().all(),name+' original photo not accounted in complete atlas'
+              recognized=a.morph.fillna('').astype(str).isin(HUE).to_numpy(bool)
+              old4=overlap.original_four_hue.astype(str).to_numpy()
+              source4=a.morph.fillna('').astype(str).to_numpy()
+              agree=recognized&(old4==source4)
+              previously9=overlap.continuous9_strict.to_numpy(bool)
+              if has9:
+                  P=a[frac].apply(pd.to_numeric,errors='coerce').to_numpy(dtype=float)
+                  valid=np.isfinite(P).all(axis=1)&(P>=0).all(axis=1)&(P.sum(axis=1)>0)
+              else:
+                  valid=np.zeros(len(a),dtype=bool)
+              eligible=valid&agree&~previously9
+              ids=a.loc[eligible,'photo_id'].tolist()
+              for i in ids:possible.setdefault(i,[]).append(name)
+              summary={
+               'source':name,'n_original_photo_rows':len(a),
+               'photo_roi_source_sha256':dig(filepath),
+               'existing_nine_fraction_columns':sorted(set(frac)&columns),
+               'all_nine_fraction_columns_present':has9,
+               'source_four_hue_photo_count':int(recognized.sum()),
+               'source_to_latest_4hue_agreement_count':int(agree.sum()),
+               'latest_missing9_but_source_has_real9_hue_count':len(ids),
+               'source_four_hue_known_but_latest_missing9_count':int((agree&~previously9).sum()),
+               'already_in_new_1043930_strict9_count':int(previously9.sum()),
+              }
+              stats.append(summary)
+          result={
+            'schema':'mois_pre350399_signed_original_frozen9_recovery_source_probe_v1',
+            'latest_original_photo_IDs':1043930,
+            'latest_source_four_hue_recognized':459235,
+            'latest_strict9_ROIs':390541,
+            'old_four_hue_but_no_real9_in_latest':68694,
+            'archived_original_photo_sources_examined':len(arms),
+            'signed_source_rows':stats,
+            'unique_old_four_hue_photos_potentially_recoverable_9_from_frozen_archives':len(possible),
+            'no_new_image_downloads':True,
+            'no_original_ROI_inferences':True,
+            'no_legacy_hues_changed':True,
+            'do_not_extrapolate_from_4hue_without_numeric_source_fractions':True,
+            'photo_IDs_not_exported':True,
+          }
+          Path('out/mois_pre350399_source_original9_recovery_audit.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print('MOIS_PRE350399_REAL_NINE_PALETTE_ORIGINAL_SOURCE_AVAILABILITY',json.dumps(result,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-genuine-pre350399-remaining68694-fourhue-original9-source-recovery-feasibility
+          path: out/
+          if-no-files-found: warn
+          retention-days: 90

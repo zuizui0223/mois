@@ -1,0 +1,78 @@
+name: MOIS durable original-photo continuous9 trait atlas and ecological results
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - .github/workflows/mois-publish-original-1043930-continuous9-atlas.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-genuine-original-photo-continuous9-1043930-final-palette-atlas-v1
+  cancel-in-progress: false
+jobs:
+  permanent-source-photo-trait-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-original1043930-recovered-continuous9-426765-and-ecology-20261025-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore exact signed source-trait 1m Parquet and executed real continuous ecology
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/traits evidence/ecology
+          gh run download 40193903770 --repo "$REPO" \
+            --name mois-1043930-original-photo-continuous9-restored-from-fcp447500 \
+            --dir evidence/traits
+          gh run download 40194348714 --repo "$REPO" \
+            --name mois-real1043930-continuous9-white-entropy-geographic-macroecology \
+            --dir evidence/ecology
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          r=Path('evidence/traits')
+          receipt=json.loads((r/'mois1043930_FCP447500_nine_palette_restoration_receipt.json').read_text())
+          data=r/'mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet'
+          assert receipt['latest_real_photo_ID_attempts']==1043930
+          assert receipt['four_hue_original_labels_unchanged']==459235
+          assert receipt['strict_original9_vectors_now']==390541
+          assert receipt['ambiguous_original9_vectors_now']==36224
+          assert receipt['strict_and_exploratory_total_photo9_now']==426765
+          assert hashlib.sha256(data.read_bytes()).hexdigest()==receipt['output_photo_lake_SHA256']
+          e=Path('evidence/ecology')
+          proof=json.loads((e/'mois1043930_continuous9_primary_results_receipt.json').read_text())
+          assert proof['strict']==390541 and proof['source']==1043930
+          for name,field in [
+            ('mois1043930_continuous9_ecological_gradients.json','ecology_source_SHA256'),
+            ('mois1043930_continuous9_genus_climate_slopes.csv','ecology_model_slopes_SHA256')]:
+              assert hashlib.sha256((e/name).read_bytes()).hexdigest()==proof[field]
+          print('MOIS_PERMANENT_REAL1043930_9COMP_PALETTE_AND_ECOLOGY_SHAS_ATTESTED',flush=True)
+          PY
+      - name: Publish versioned source and source-linked ecological output without reproducing licensed raw photos
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p original_published
+            gh release download "$TAG" --repo "$REPO" --dir original_published \
+              --pattern mois1043930_FCP447500_nine_palette_restoration_receipt.json \
+              --pattern mois1043930_continuous9_primary_results_receipt.json
+            cmp original_published/mois1043930_FCP447500_nine_palette_restoration_receipt.json \
+                evidence/traits/mois1043930_FCP447500_nine_palette_restoration_receipt.json
+            cmp original_published/mois1043930_continuous9_primary_results_receipt.json \
+                evidence/ecology/mois1043930_continuous9_primary_results_receipt.json
+            echo 'Existing immutable original palette9 source + ecology receipts remain identical.'
+          else
+            gh release create "$TAG" \
+              evidence/traits/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+              evidence/traits/mois1043930_FCP447500_nine_palette_restoration_receipt.json \
+              evidence/ecology/mois1043930_continuous9_ecological_gradients.json \
+              evidence/ecology/mois1043930_continuous9_genus_climate_slopes.csv \
+              evidence/ecology/mois1043930_continuous9_primary_results_receipt.json \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS real1,043,930 photo original ROI: restored 426,765 continuous palette9 and four ecological gradients' \
+              --notes 'SHA-attested fixed original photo IDs and YOLO/EfficientSAM ROI-v4 nine color fractions recovered from FCP447500 and historical checkpoint without one photo download or inferential model rerun. 390541 valid four-hue ROI continuous9 vectors; 36224 explicitly ambiguous palette ROIs retained only for exploratory quality review; 584695 technical four-hue unknowns never imputed. Source-matched long-term climate and GSHHG colour composition white-fraction, entropy, annual atmospheric moisture/elevation, island and observational season gradients. Nine palette bins are not calibrated CIELAB or true petal pigments; global plant abundance, fitness, anthesis, historical causal adaptation and every 93m image already measured are NOT claimed.'
+          fi

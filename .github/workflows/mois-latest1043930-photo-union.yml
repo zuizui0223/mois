@@ -1,0 +1,98 @@
+name: MOIS latest 1043930 actual original photos complete 35group census
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_latest1043930_photo_union.py
+      - .github/workflows/mois-latest1043930-photo-union.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-20261025-latest-1043930-global-actual-original-photo-census
+  cancel-in-progress: false
+jobs:
+  latest-real-pixels-source-union:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install data-only original-image photo ROI parquet engine
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_latest1043930_photo_union.py
+      - name: Download genuine original 929138 historical, K1 76753 and depth1 3141 photo rows
+        run: |
+          set -euo pipefail
+          mkdir -p source/historical/main source/historical/group00 source/historical/r1 source/historical/r2 source/k1 source/fcp source/fcp5/cumulative
+          gh release download mois-real-pixel-checkpoint-39969920310-v1 \
+            --repo zuizui0223/mois --dir source/historical/main \
+            --pattern combined_actual_photo_checkpoint.parquet --pattern checkpoint_receipt.json
+          gh release download mois-tier06-group00-first64bucket-warm-original-RGB-v1 \
+            --repo zuizui0223/mois --dir source/historical/group00 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-tier06-all16-first4bucket-broad-warm-original-RGB-v1 \
+            --repo zuizui0223/mois --dir source/historical/r1 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-tier06-all16-buckets004to011-broad-warm-original-RGB-v1 \
+            --repo zuizui0223/mois --dir source/historical/r2 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-full93m-tier06-balanced-onephoto-K1-new-original-warm8-RGB-v1 \
+            --repo zuizui0223/mois --dir source/k1 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-full93m-FCP-U100-depth1-only3141-new-original-RGB-v1 \
+            --repo zuizui0223/mois --dir source/fcp \
+            --pattern new_FCP_depth1_original_photo_ROIs.parquet --pattern receipt.json
+          gh release download mois-FCP5-source-signed-new-original-ROI-35groups-27b5196268881393-v1 \
+            --repo zuizui0223/mois --dir source/fcp5/cumulative \
+            --pattern mois_FCP5_partial_genuine_original_pixel_cumulative.json
+          echo '0d3de3374a06b1e7b9ad0281e2ab7844632ed139db871488524061191c8f34c1  source/k1/measured_photos.parquet' | sha256sum -c -
+          echo 'ee79c60671dda65a3d2f4f9319af952dbe81ab805ce269fe32b3bb3448b0d6b8  source/fcp/new_FCP_depth1_original_photo_ROIs.parquet' | sha256sum -c -
+      - name: Restore all 35 already SEALED original FCP5 image-group ROIs, 8 concurrent HTTPS release requests
+        run: |
+          set -euo pipefail
+          seq 0 34 | xargs -P 8 -I '{}' bash -c '
+            set -euo pipefail
+            g="$1"
+            dir="source/fcp5/group-$(printf %02d "$g")"
+            mkdir -p "$dir"
+            gh release download "mois-FCP-U100-nested5-34898-original-ROI-append-group-$g-v1" \
+              --repo zuizui0223/mois --dir "$dir" \
+              --pattern original_photo_ROIs.parquet \
+              --pattern original_group_receipt.json
+            test -s "$dir/original_photo_ROIs.parquet"
+            test -s "$dir/original_group_receipt.json"
+          ' _ '{}'
+          test "$(find source/fcp5 -name original_photo_ROIs.parquet | wc -l)" -eq 35
+          echo 'MOIS_ALL_35_SHA_SEALED_ACTUAL_FCP5_IMAGE_GROUP_PARQUETS_RESTORED'
+      - name: Actually build latest fully source-verified photo ID + classified hue + observed date universe
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_latest1043930_photo_union \
+            --source source --output latest
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('latest/mois_latest_1043930_photo_union_receipt.json').read_text())
+          assert a['source_pixel_attempts']==1043930
+          assert a['source_original_unique_photo_ids']==1043930
+          assert a['latest_fcp5_genuine_complete_groups']==35
+          assert a['new_photo_image_downloads']==0
+          assert a['new_ROI_photo_inferences']==0
+          assert sum(a['four_hue_counts'].values())==a['source_four_hue_classified']
+          print('MOIS_NEWEST_1043930_INDIVIDUAL_PHOTOS_READY_FOR_FOUR_ECOLOGICAL_AXES',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-1043930-latest-original-photo-four-hue-fully-signed-union
+          path: latest/
+          retention-days: 90
+          if-no-files-found: error

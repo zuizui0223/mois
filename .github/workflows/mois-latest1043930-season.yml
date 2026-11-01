@@ -1,0 +1,41 @@
+name: MOIS actual latest1043930 season summer winter reanalysis
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_latest1043930_season.py
+      - .github/workflows/mois-latest1043930-season.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  true-most-recent-seasons:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          mkdir -p latest
+          gh run download 40187688390 --repo zuizui0223/mois \
+            --name mois-1043930-latest-original-photo-four-hue-fully-signed-union \
+            --dir latest
+          python -m scripts.analysis.mois_latest1043930_season \
+            --photo latest/mois_latest_1043930_true_original_photo_hue_observation.parquet \
+            --receipt latest/mois_latest_1043930_photo_union_receipt.json \
+            --output latest1043930_season.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real-latest1043930-exact-season-taxon-turnover-20261025
+          path: latest1043930_season.json
+          retention-days: 90
+          if-no-files-found: error

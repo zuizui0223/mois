@@ -1,0 +1,115 @@
+name: MOIS reclaim FCP447500 frozen original nine colour data into 1m photos
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_real1043930_recover_FCP447500_original9.py
+      - .github/workflows/mois-recover-fcp447500-original9-into1043930.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reclaim-fcp447500-original9-into-latest-photo-spine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Read existing original FCP full-source measured ROI results, never image pixels
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_real1043930_recover_FCP447500_original9.py
+          mkdir -p fcp-source
+          gh release download fcp-all4730-original-method-actual-colour-results-20261017 \
+            --repo zuizui0223/fcp --dir fcp-source \
+            --pattern fcp_all4730_original_method_actual_measured_data_and_inference.tar.gz \
+            --pattern fcp_all4730_actual_colour_results_receipt.json
+          python - <<'PY'
+          import tarfile,json,hashlib,shutil,gzip
+          from pathlib import Path
+          import pandas as pd
+          folder=Path('fcp-source')
+          receipt=json.loads((folder/'fcp_all4730_actual_colour_results_receipt.json').read_text())
+          archive=folder/'fcp_all4730_original_method_actual_measured_data_and_inference.tar.gz'
+          filename='fcp_all4730_original_method_measured_photos.csv.gz'
+          with tarfile.open(archive,'r:gz') as t:
+              matching=[m for m in t.getmembers() if m.isfile() and m.name.endswith(filename)]
+              assert len(matching)==1,[(m.name,m.size) for m in matching]
+              member=matching[0]
+              with t.extractfile(member) as inp, (folder/filename).open('wb') as out:
+                  shutil.copyfileobj(inp,out,4<<20)
+          inner=folder/filename
+          h=hashlib.sha256(inner.read_bytes()).hexdigest()
+          assert receipt['genuinely_measured_photo_rows']==447500
+          assert h==receipt['source_archive_sha256']
+          with gzip.open(inner,'rt',encoding='utf-8') as f:
+              cols=pd.read_csv(f,nrows=0).columns.tolist()
+          PALETTE='white yellow orange red pink magenta purple blue bronze'.split()
+          names=['flower_fraction_'+n for n in PALETTE]
+          d=pd.read_csv(inner,compression='gzip',usecols=[
+              c for c in ['photo_id','morph','global_classifiable',
+                          'measurement_status',*names] if c in cols],
+                        low_memory=False)
+          assert len(d)==447500 and d.photo_id.astype(str).is_unique
+          reported=d.global_classifiable.astype(str).str.lower().isin(('true','1'))
+          if all(n in d for n in names):
+              num=d[names].apply(pd.to_numeric,errors='coerce')
+              v=num.notna().all(axis=1)&num.ge(0).all(axis=1)&num.le(1.000001).all(axis=1)&num.sum(axis=1).gt(0)
+          else:
+              v=pd.Series(False,index=d.index)
+          summary={
+              "schema":"mois_source_only_FCP447500_original9_proof_v1",
+              "source_photo_IDs":len(d),
+              "source_photo_ROI_CSV_SHA256":h,
+              "source_raw_original_palette_fraction_columns_present":all(n in d for n in names),
+              "available_original9_fraction_columns":[x for x in names if x in d],
+              "source_global_classifiable_photos":int(reported.sum()),
+              "strict_original9_vectors":int((reported&v).sum()),
+              "additional_palette_nonclassifiable_photo_candidates":int((~reported&v).sum()),
+              "image_downloads":0,
+              "photo_colour_reinferences":0
+          }
+          (folder/'fcp447500_original9_schema_and_counts.json').write_text(
+              json.dumps(summary,indent=2,sort_keys=True)+'\n')
+          print('MOIS_FCP447500_ORIGINAL9_SOURCE_RECOVERY_POTENTIAL',
+                json.dumps(summary,sort_keys=True),flush=True)
+          PY
+      - name: Recover saved 9-colour source features for only same exact photo-ID and hue from FCP
+        run: |
+          set -euo pipefail
+          mkdir -p already_restored
+          gh run download 40193213585 --repo zuizui0223/mois \
+            --name mois-real1043930-restored-original-historical-checkpoint-continuous9 \
+            --dir already_restored
+          python -m scripts.analysis.mois_real1043930_recover_FCP447500_original9 \
+            --prior-lake already_restored/mois_real1043930_original_ROI9_with_recovered_historical_checkpoint.parquet \
+            --prior-receipt already_restored/mois_1043930_historical_full9_restoration_receipt.json \
+            --fcp-csv fcp-source/fcp_all4730_original_method_measured_photos.csv.gz \
+            --fcp-receipt fcp-source/fcp_all4730_actual_colour_results_receipt.json \
+            --output fcp9_recovered
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('fcp9_recovered/mois1043930_FCP447500_nine_palette_restoration_receipt.json')
+          s=json.loads(p.read_text())
+          assert s["latest_real_photo_ID_attempts"]==1043930
+          assert s["four_hue_original_labels_unchanged"]==459235
+          assert s["FCP_original_ROI_photo_IDs"]==447500
+          assert s["FCP_source_globally_four_hue_classifiable"]==227107
+          assert s["strict_original9_vectors_now"]>=163434
+          assert s["new_original_RGB_images_downloaded"]==0
+          assert s["new_flower_detection_or_EfficientSAM_inference"]==0
+          print("MOIS_1043930_ORIGINAL9_FCP447500_FULL_RESTORATION_COMPLETE",flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-1043930-original-photo-continuous9-restored-from-fcp447500
+          path: fcp9_recovered/
+          retention-days: 90
+          if-no-files-found: warn

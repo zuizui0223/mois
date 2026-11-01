@@ -1,0 +1,65 @@
+name: MOIS source-locked real 390541 ROI9 dominant-colour versus full composition
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_1043930_dominant9_petal_feasibility.py
+      - .github/workflows/mois-real1043930-dominant9-vs-composition.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-ROI9-dominant-not-petal-mask:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install data-only nine-component photo summary libraries
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_1043930_dominant9_petal_feasibility.py
+      - name: Use immutable original flower-ROI nine-vectors, no RGB image access
+        run: |
+          set -euo pipefail
+          mkdir -p prior
+          gh release download mois-original1043930-recovered-continuous9-426765-and-ecology-20261025-v1 \
+            --repo zuizui0223/mois --dir prior \
+            --pattern mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --pattern mois1043930_FCP447500_nine_palette_restoration_receipt.json
+          echo 'b20bbefe15020c21c3b5b0f7edf3f8e08148a4ee7dda8bf772a89bf6b126f447  prior/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet' | sha256sum -c -
+      - name: Compute continuous ROI9 principal-component purity and loss from choosing only a major colour
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_1043930_dominant9_petal_feasibility \
+            --source prior/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --source-receipt prior/mois1043930_FCP447500_nine_palette_restoration_receipt.json \
+            --output dominance
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('dominance/real1043930_originalROI9_dominant_palette_diagnostic.json').read_text())
+          assert d['strict_nine_fraction_ROI_photos']==390541
+          assert d['ambiguous_nine_fraction_ROI_photos_exploratory_only']==36224
+          assert d['no_photo_downloads'] is True
+          assert d['no_image_ROI_inferences'] is True
+          assert d['major_palette_is_not_an_independently_verified_major_petal_colour'] is True
+          x=d['strict_source_measurements']
+          assert sum(x['dominant_palette_counts'].values())==390541
+          assert 0<=x['argmax_9_to_four_original_machine_label_agreement_percent']<=100
+          print('MOIS_REAL1043930_ORIGINALROI9_DOMINANCE_NOT_BOTANICAL_PETALS_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real1043930-sourceROI9-main-colour-and-continuous-fractions-diagnostics
+          path: dominance/
+          retention-days: 90
+          if-no-files-found: warn

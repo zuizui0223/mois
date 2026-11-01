@@ -1,0 +1,135 @@
+name: MOIS published global1043930 white dominant north south polar seasons all axes
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - docs/MOIS_20261025_GLOBAL_WHITE_DOMINANT_POLAR_SOUTH_SEASON_CLIMATE_REPORT.md
+      - .github/workflows/mois-publish-global1043930-white-all-axes.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-durable-original1043930-white-dominant-global-polar-hemisphere-v1
+  cancel-in-progress: false
+jobs:
+  reconcile-and-release:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-original1043930-white-maincolour-south-arctic-seasons-allaxes-20261025-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recover actual full 1m source region profiles and 251 actual photo Lab diagnostics
+        run: |
+          set -euo pipefail
+          mkdir -p proof/zonal proof/slopes proof/Lab proof/ROIcheck
+          gh run download 40199676045 --repo "$REPO" \
+            --name mois-real1043930-worldwide-white-main9-Arctic-South-season-wet-high-island \
+            --dir proof/zonal
+          gh run download 40200494636 --repo "$REPO" \
+            --name mois-real1043930-north-south-polar-white-dominant-genus-climate-effects \
+            --dir proof/slopes
+          gh run download 40200158879 --repo "$REPO" \
+            --name mois-256-real-floral-box-Lab-white-green-brown-across-global-gradients \
+            --dir proof/Lab
+          gh run download 40201132433 --repo "$REPO" \
+            --name mois-real256-ROI9-vs-YOLO-box-Lab-same-photo-validity \
+            --dir proof/ROIcheck
+      - name: Reconcile strict original photo IDs and support limitations across all gradients
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('proof')
+          z=json.loads((p/'zonal/mois1043930_global_zonal_white_colour_result.json').read_text())
+          s=json.loads((p/'slopes/mois1043930_zonal_white_dominant_climate_effects.json').read_text())
+          l=json.loads((p/'Lab/mois_real256_flower_box_Lab_all_axes_result.json').read_text())
+          q=json.loads((p/'ROIcheck/mois_K1_source_ROI9_vs_500px_flower_box_Lab_result.json').read_text())
+          source='b20bbefe15020c21c3b5b0f7edf3f8e08148a4ee7dda8bf772a89bf6b126f447'
+          assert z['schema']=='mois_genuine1043930_global_zonal9_maincolour_white_first_v1'
+          assert z['source_original_photo_IDs_attempted']==1043930
+          assert z['original_strict_nine_colour_ROIs']==390541
+          assert z['ambiguity_nine_colour_sensitivity_only']==36224
+          assert z['source_pins']['input_9roi_sha256']==source
+          assert z['northern_arctic_original_strict9']==1131
+          assert z['southern_antarctic_original_strict9']==0
+          assert len(z['all_crossed_geographic_climate_zone_profiles'])==175
+          assert s['schema']=='mois_real1043930_white_colour_hemisphere_latitude_regional_abiotic_slopes_v1'
+          assert s['source9_SHA']==source
+          assert len(s['zonal_genus_geocell_cohort_source_slopes'])==144
+          assert len(s['all_sectors_including_polar_even_when_insufficient'])==12
+          assert l['schema']=='mois_real_K1_256_251_flower_box_CIELAB_all_ecological_axes_source_diagnostic_v1'
+          assert l['actual_CIELAB_flower_box_photos']==251
+          assert l['sample_not_random_global_or_island_color_study']
+          assert q['schema']=='mois_source_frozen_K1_same_photo_9palette_vs_500px_box_Lab_proxy_diagnostic_v1'
+          assert q['nine_colour_original_ROI_lake_SHA256']==source
+          assert q['known_ROI9_box_overlap']==128
+          assert q['box_actual_colour_assays']==251
+          assert q['photo_bytes_downloaded_this_analytic_join']==0
+          r={'schema':'mois_convergent_real1043930_original_photo_white_dominant_all_global_gradients_v1',
+              'original_photo_attempts':1043930,'strict_photo_9component_ROIs':390541,
+              'explicit_ambiguous_9component_only':36224,
+              'zonal_profiles':175,'regional_within_genus_climate_coefficients':144,
+              'K1_real_srgb_Lab_500px_box_photos':251,
+              'same_original_photo_ROI9_to_BOX_Lab_comparisons':128,
+              'arctic_66p56N_original_strict_colour_photos':1131,
+              'antarctic_66p56S_original_strict_colour_photos':0,
+              '9colour_not_semantically_verified_petals':True,
+              'green_not_a_component_of_original9_palette':True,
+              'original_9palette_not_measured_image_CIELAB':True,
+              'small_251_Lab_sample_is_NOT_global_latitude_or_island_prevalence':True,
+              'ROI_success_and_taxon_observation_effort_separate':True,
+              'original_photo_downloads_for_integrated_analysis':0,
+              'input_source_SHA256':source,
+              'evidence_source_file_sha256':{
+                 q:hashlib.sha256(Path(f).read_bytes()).hexdigest()
+                 for q,f in {
+                  'original_zonal_profiles_json':p/'zonal/mois1043930_global_zonal_white_colour_result.json',
+                  'original_genus_climate_json':p/'slopes/mois1043930_zonal_white_dominant_climate_effects.json',
+                  'real_K1_Lab_pilot_json':p/'Lab/mois_real256_flower_box_Lab_all_axes_result.json',
+                  'same_original_photo_ROI_vs_box_json':p/'ROIcheck/mois_K1_source_ROI9_vs_500px_flower_box_Lab_result.json',
+                 }.items()}}
+          out=Path('proof/mois1043930_global_white_allaxis_integrated_receipt.json')
+          out.write_text(json.dumps(r,indent=2,sort_keys=True)+'\n')
+          print('MOIS_INDEPENDENT_GENUINE_1043930_WHITE_DOMINANT_ALL_WORLD_AXES_SHA_RECONCILED',
+                json.dumps(r,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-1043930-actual-white-dominant-all-global-zones-and-Lab-limitations
+          path: |
+            proof/
+            docs/MOIS_20261025_GLOBAL_WHITE_DOMINANT_POLAR_SOUTH_SEASON_CLIMATE_REPORT.md
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish one immutable evidence-backed global flower colour atlas result release
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p old
+            gh release download "$TAG" --repo "$REPO" --dir old \
+              --pattern mois1043930_global_white_allaxis_integrated_receipt.json
+            cmp old/mois1043930_global_white_allaxis_integrated_receipt.json \
+                proof/mois1043930_global_white_allaxis_integrated_receipt.json
+            echo 'Original global result release already sealed and identical.'
+          else
+            gh release create "$TAG" \
+              proof/mois1043930_global_white_allaxis_integrated_receipt.json \
+              proof/zonal/mois1043930_global_zonal_run_receipt.json \
+              proof/zonal/mois1043930_global_zonal_white_colour_result.json \
+              proof/zonal/mois1043930_global_zonal_white_dominant_palette_profiles.csv \
+              proof/slopes/mois1043930_zonal_white_dominant_climate_effects.json \
+              proof/slopes/mois1043930_zonal_white_dominant_genus_local_slopes.csv \
+              proof/Lab/mois_real256_flower_box_Lab_all_axes_result.json \
+              proof/Lab/mois_real256_flower_box_Lab_all_axes_descriptive.csv \
+              proof/ROIcheck/mois_K1_source_ROI9_vs_500px_flower_box_Lab_result.json \
+              docs/MOIS_20261025_GLOBAL_WHITE_DOMINANT_POLAR_SOUTH_SEASON_CLIMATE_REPORT.md \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS genuine 1043930-photo global floral colour: polar, hemisphere, summer winter, humidity, altitude and islands' \
+              --notes 'White fraction is the focal trait, nine-component dominant colours and source ROI entropy are retained concurrently. Actual 1043930 source photo IDs, 390541 original strict ROI palette vectors; 175 crossed ecological profiles, 144 within-genus 5deg-cohort weather/altitude coefficients. Arctic 1131, Antarctic zero measured strict ROI9. Separate 251 true 500px photo CIELAB box pilot; 128 original photo pair comparisons demonstrate large raw-box vs source ROI differences and lack of verified petal identity. Green is NOT contained in old nine palette, bronze is NOT confirmed brown flowers, Lab cannot be reconstructed from nine categorical fractions. Original ROI success/missingness, source observation/taxon/season bias and differing photograph quality retained. No new image acquisition/inference for this ecological report, no fabricated globally estimated L/C/h, no wild/native botanical or causal adaptation claims.'
+          fi
