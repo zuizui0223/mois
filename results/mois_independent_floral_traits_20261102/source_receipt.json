@@ -1,0 +1,50 @@
+{
+  "MOIS_sector_species_rows": 30054,
+  "MOIS_unique_accepted_species": 22712,
+  "SHA256_original_artifacts": {
+    "Island_34191508045": "5e9c887e093c42eb720f3abd2dc85701ce123fb7fe888c916dc4098ac898ccdd",
+    "MOIS_41043422845": "3eb62f10607c13893e410dc1b7abdf9f90d4f1e730b08edecb245669823d1c63"
+  },
+  "SHA256_original_inner": {
+    "Island_direct_species_trait_ledger": "7e86170218814abe2845da9a0282aecfdc930819b9d0c439bae8df4a0679c577",
+    "MOIS_accepted_species_region": "a138ab56c0233b769f41c56c7eee7df82f09365d052983c1460f74f8cbf881f0"
+  },
+  "geographic_contrasts_are_descriptive": true,
+  "island_trait_frozen": "2026-10-04 scientific direct High/Medium only, not whole database and not rights-filtered public derivative",
+  "island_trait_source_106295_species": 106295,
+  "island_trait_total_resolved_cells_222688": 222688,
+  "native_island_not_established": true,
+  "no_MNAR_sensitivity_or_scenarios": true,
+  "no_calibrated_dullness_or_background_contrast": true,
+  "no_green_photo_mass_in_ROI9": true,
+  "no_new_image_download_or_RGB_reinference": true,
+  "no_pollination_guild_from_trait_frozen_source": true,
+  "only_aggregate_results_published": true,
+  "output_SHA256": {
+    "colour_small_joint_support.csv": "54351f6847f26c903ab514b8ba11c380840f116bfe6a5a38fd38bcde5fc59930",
+    "independent_traits_by_region.csv": "c6409700e46a71dfc5e67dac6158f0635bf341d65c934d0d77c9e57b17cc506e",
+    "independent_traits_region_contrasts.csv": "6dc4d737bd1d1a3899380f88b8cd920f2603ddb198973a86bf1bbfac806a4b8f",
+    "photo_ROI_vs_literature_colour_aggregate.csv": "d0dadf17b731ce537e66e1f19b9b00975330d42d57cd465f4aba127572f08115"
+  },
+  "restricted_source_lineages_not_redistributed": true,
+  "schema": "mois_island_direct_highmedium_floral_traits_source_lock_20261102_v1",
+  "sector_names": [
+    "arctic",
+    "island_cached",
+    "mainland_cached",
+    "north_subpolar",
+    "north_temperate",
+    "south_temperate"
+  ],
+  "species_traits_not_photo_labels": true,
+  "trait_source_counts": {
+    "binary_evaluable_rows": 71095,
+    "eligible_high_medium_rows": 89491,
+    "excludes_unreviewed_low_or_cultivar": true,
+    "literature_description_not_image_anatomical_truth": true,
+    "mixed_variable_or_unspecified_rows": 18396,
+    "source_direct_trait_rows": 134268,
+    "species_with_any_eligible_trait": 47976
+  },
+  "unknown_and_multistate_trait_not_imputed": true
+}
