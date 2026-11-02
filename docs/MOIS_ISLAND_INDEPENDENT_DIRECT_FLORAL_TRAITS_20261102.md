@@ -70,4 +70,4 @@
 
 ## 成果物
 
-局所の検証済み [解析コード＋12テスト＋4集計CSV＋SHA台帳 ZIP](sandbox:/mnt/data/MOIS_Island_independent_floral_traits_20261102.zip)。このZIPは会話内のデータ専用成果で、原科学的種形質の再配布は含まない。
+計算コード・12単体テスト・独立再集計スクリプト・4集計CSV・SHA台帳は今回の会話で提供したデータ専用ZIPに保管。GitHub側の固定した入力元は上記2件の既存Actions artifactである。制限のある元の種×形質記録は再配布していない。
