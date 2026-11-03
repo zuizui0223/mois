@@ -1,0 +1,99 @@
+name: MOIS original128 human-gated petal background visible colour measurement tool
+on:
+  push:
+    branches: [analysis/mois-composition-environment-20261030]
+    paths:
+      - .github/workflows/mois-botanical128-petal-background-contrast-review-only.yml
+      - scripts/analysis/mois_petal_background_contrast_review_v1.py
+      - tools/review/mois_petal_background_manual_template.html
+      - tests/test_mois_petal_background_contrast_review_v1.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-manual128-botanical-petal-background-contrast-v1
+  cancel-in-progress: false
+jobs:
+  build-two-independent-reviewers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify no botanical invention, true ID preservation and local colour metrics
+        run: |
+          set -euo pipefail
+          python -m pip install -q pytest==8.4.2
+          python -m pytest -q tests/test_mois_petal_background_contrast_review_v1.py
+          python -m py_compile scripts/analysis/mois_petal_background_contrast_review_v1.py
+      - name: Reuse only original 128 photo-ID metadata and EMPTY botanical forms
+        run: |
+          set -euo pipefail
+          mkdir -p frozen
+          gh release download mois-real128-existingROI9-failure-botanical-review-browser-20261027-v1 \
+            --repo zuizui0223/mois --dir frozen \
+            --pattern manual128_existing_original_photoID_review_roster.csv \
+            --pattern manual128_botanical_annotation_BLANK_not_yet_reviewed.csv \
+            --pattern botanical128_review_design_receipt.json
+          echo '5fef860e4d2d0ff4b2dfec850253e4a08c8dc87878647d6712bc61e4b75dcb56  frozen/manual128_existing_original_photoID_review_roster.csv' | sha256sum -c -
+          echo 'd75ec591d954d230b66e9b9b74765a5bbab123dc6d5ae39897e9aae263033234  frozen/manual128_botanical_annotation_BLANK_not_yet_reviewed.csv' | sha256sum -c -
+          echo '4cbcdfa4615fdb94982b99b48b0e17c36a5ff89254d9f591546a31ae304d6437  frozen/botanical128_review_design_receipt.json' | sha256sum -c -
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          f=Path('frozen')
+          receipt=json.loads((f/'botanical128_review_design_receipt.json').read_text())
+          assert receipt['botanical_review_original_photo_IDs_selected']==128
+          assert receipt['all_botanical_open_flower_or_petal_labels_still_blank']
+          with (f/'manual128_botanical_annotation_BLANK_not_yet_reviewed.csv').open(newline='') as stream:
+              rows=list(csv.DictReader(stream))
+          assert len(rows)==128 and len(set(r['photo_id'] for r in rows))==128
+          for row in rows:
+              assert all(not row[x].strip() for x in (
+                  'human_flower_visible','human_corolla_colour_evaluable',
+                  'human_failure_reason','human_notes'))
+          print('MOIS128_EXISTING_BOTANICAL_SOURCE_STILL_ALL_BLANK',flush=True)
+          PY
+      - name: Generate two manually operated BLINDED local HTML reviewers, no image fetch
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_petal_background_contrast_review_v1 build \
+            --roster frozen/manual128_existing_original_photoID_review_roster.csv \
+            --template tools/review/mois_petal_background_manual_template.html \
+            --output optical128
+          python - <<'PY'
+          import json,hashlib,re
+          from pathlib import Path
+          out=Path('optical128')
+          report=json.loads((out/'mois128_optical_review_blank_packet_receipt.json').read_text())
+          assert report['n_original_unknown_ROI9_photo_ids']==128
+          assert report['independent_reviewers_needed']==2
+          assert report['botanical_confirmed_count']==0 and report['optical_contrast_valid_count']==0
+          assert report['original_strict9_unchanged'] and report['no_new_image_acquisition_by_generator']
+          for name,digest in report['outputs_sha256'].items():
+              file=out/name
+              assert hashlib.sha256(file.read_bytes()).hexdigest()==digest
+              html=file.read_text()
+              assert 'fetch(' not in html and 'MOIS_MANUAL_ROSTER_JSON' in html
+              js=re.findall(r'<script>(.*?)</script>',html,re.S)
+              assert len(js)==1
+              (out/(name+'.js')).write_text(js[0])
+          print('MOIS128_MANUAL_BOTANICAL_OPTICAL_REVIEW_READY_0_VERIFIED',flush=True)
+          PY
+          node --check optical128/mois_manual_contrast_reviewer_A.html.js
+          node --check optical128/mois_manual_contrast_reviewer_B.html.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois128-two-independent-botanical-contrast-OFFLINE-no-photo-pixels
+          path: |
+            optical128/mois_manual_contrast_reviewer_A.html
+            optical128/mois_manual_contrast_reviewer_B.html
+            optical128/mois128_optical_review_blank_packet_receipt.json
+          retention-days: 90
+          if-no-files-found: error
