@@ -99,14 +99,18 @@ def test_empty_real_reviews_do_not_create_flower_or_contrast():
 
 
 def test_private_positive_pair_passes_through_original_numeric_integrity_gate():
-    from tests.test_mois_petal_background_contrast_review_v1 import completed
     original=roster()
-    # Test helper constructs a measured synthetically black/white image case.
-    # The 3 original test sample rows use different IDs, so substitute matching fixture IDs.
-    a=completed(original,"A","botanist-A",positive=("120",))
-    b=completed(original,"B","botanist-B",positive=("120",))
-    form_a=[{k:z[k] for k in new.BLIND_COLUMNS} for z in a]
-    form_b=[{k:z[k] for k in new.BLIND_COLUMNS} for z in b]
+    form_a=new.blank_form(original,"A","botanist-A")
+    form_b=new.blank_form(original,"B","botanist-B")
+    contrast=base.colour_contrast((255,255,255),(0,0,0))
+    for form in (form_a,form_b):
+        form[0].update(flower_visible="yes",petal_visible="yes",
+                       background_visible="yes",photo_file_sha256="a"*64,
+                       image_width="600",image_height="400",image_file_name="test.jpeg",
+                       fg_points_json=json.dumps([[20,20,255,255,255],[30,30,255,255,255],[40,40,255,255,255]]),
+                       bg_points_json=json.dumps([[100,100,0,0,0],[120,120,0,0,0],[140,140,0,0,0]]),
+                       fg_r="255",fg_g="255",fg_b="255",bg_r="0",bg_g="0",bg_b="0",
+                       **{key:str(value) for key,value in contrast.items()})
     result=new.reconcile_blind(original,form_a,form_b,source_sha=base.ROSTER_SHA)
     assert result["confirmed_optical_photo_ids"]==1
     assert result["confirmed_records"][0]["deltaE76_mean"]==pytest.approx(100,abs=.3)
