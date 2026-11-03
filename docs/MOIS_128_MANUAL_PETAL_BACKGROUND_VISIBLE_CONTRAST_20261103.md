@@ -29,3 +29,13 @@
 ソースroster SHA256: `5fef860e4d2d0ff4b2dfec850253e4a08c8dc87878647d6712bc61e4b75dcb56`。空欄評価CSV SHA256: `d75ec591d954d230b66e9b9b74765a5bbab123dc6d5ae39897e9aae263033234`。ソース設計receipt SHA256: `4cbcdfa4615fdb94982b99b48b0e17c36a5ff89254d9f591546a31ae304d6437`。
 
 合成3写真fixtureで独立評価者A/Bに同一写真bytesを与えたUI実測スモークを行い、ローカル写真の3点＋3点選択、CSV出力、Python色差独立再計算、完全同一でない評価をunknownへ留保する手順を確認済み。テストfixtureは現実の花写真ではなく、植物学的真値0件の状態を維持する。GitHub上の本物128件出力は別途source-frozen Actionsで生成・監査する。
+
+
+## 実運用準備のSHA監査（2026-11-03追加）
+
+- [GitHub Actions run 41553903796](https://github.com/zuizui0223/mois/actions/runs/41553903796): **SUCCESS**。元rosterのSHAと空欄人手評価のSHAを検証し、評価者A/Bブラウザを生成。GitHub上で9件のPythonテストと両HTMLのJavaScript構文検査に成功。
+- [artifact 13193830159](https://github.com/zuizui0223/mois/actions/runs/41553903796/artifacts/13193830159) ZIP SHA256: a3538f7a4e812d3c907b7ce3bbd8e7695e5468479a29704fb0a26ed296b054dd。
+- 凍結したphotoID・observationUUID・taxonIDを128枚すべて保持。A/Bとも128異なる元写真ID、元strict9技術的unknown=128、植物学的確認0、実画像色差実測0。
+- A HTML SHA256: 5b0d862d80449f05ff15e9878afed0dcc1932e57105aa7aefc3c0a252a9e20dd。B HTML SHA256: c374b5589c4d4197eedbb2da873a39e85401c1e6119825d3977d269856c694e3。
+- 画面は写真を自動取得せず、手動リンクから閲覧者が自分で保存して読み込む方式。生態地理・取得系列・過去のYOLO技術状態は画面には表示しない。ただしHTML内のrosterには識別メタデータが含まれ、ソースコードを閲覧すると分かるため完全盲検とは呼ばない。
+- ローカルの合成写真だけで2名分のクリック測定→CSV保存→RGB/CIELAB再計算/写真SHA比較まで確認。**合成画像の検証は、本物の128花写真の植物学的確認ではない**。
