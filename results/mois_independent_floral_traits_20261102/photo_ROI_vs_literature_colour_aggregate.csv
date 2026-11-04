@@ -1,0 +1,13 @@
+sector,binary_state,n_species,n_photo_ROIs,mean_photoROI_white_mass,mean_photoROI_bronze_mass,label_is_species_description_not_verified_image_flower,bronze_not_green_or_calibrated_background_contrast
+arctic,inconspicuous_green_brown,22,48,0.450251637579,0.302632658584,True,True
+arctic,other_single_colour,114,267,0.468919938828,0.106360981246,True,True
+island_cached,inconspicuous_green_brown,36,230,0.51555449749,0.177498221583,True,True
+island_cached,other_single_colour,573,4817,0.464453916454,0.101949136008,True,True
+mainland_cached,inconspicuous_green_brown,55,961,0.417022759937,0.20920483612,True,True
+mainland_cached,other_single_colour,999,30641,0.430167294082,0.102286095368,True,True
+north_subpolar,inconspicuous_green_brown,109,498,0.484381618802,0.209416371388,True,True
+north_subpolar,other_single_colour,574,5799,0.458525844074,0.0973886186003,True,True
+north_temperate,inconspicuous_green_brown,423,3787,0.520518029535,0.19603688718,True,True
+north_temperate,other_single_colour,3586,81929,0.455864676892,0.122942299513,True,True
+south_temperate,inconspicuous_green_brown,154,757,0.509909023241,0.174527522508,True,True
+south_temperate,other_single_colour,2342,22599,0.464480344836,0.149694052358,True,True

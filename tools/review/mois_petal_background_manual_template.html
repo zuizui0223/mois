@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>MOIS 花被と背景の可視色差 — 独立評価 __REVIEWER_SLOT__</title>
+<style>
+:root{font-family:system-ui,"Noto Sans JP",sans-serif;color:#203344;background:#f4f7fa}
+*{box-sizing:border-box}
+body{margin:0}main{max-width:1200px;margin:0 auto;padding:1.1rem}
+h1{font-size:1.45rem;margin:.2rem 0}.muted{font-size:.87rem;line-height:1.65;color:#526779}
+.panes{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.9fr);gap:1rem;margin-top:1rem}
+@media(max-width:900px){.panes{grid-template-columns:1fr}}
+.panel{background:white;padding:1rem;border:1px solid #d0d9e2;border-radius:12px}
+button,input,select,textarea{font:inherit}button{cursor:pointer;padding:.62rem .8rem;background:#e8eff5;border:1px solid #bccad4;border-radius:8px}
+button:disabled{cursor:not-allowed;opacity:.45}
+fieldset{border:1px solid #d6e0e8;border-radius:9px;margin:.7rem 0;padding:.65rem}
+legend{font-weight:700}label{display:block;margin:.45rem 0}.blockinput{width:100%;padding:.55rem;border:1px solid #b8c8d5;border-radius:8px}
+.actions{display:flex;gap:.55rem;flex-wrap:wrap;margin:.8rem 0}.small{font-size:.85rem}
+canvas{max-width:100%;max-height:62vh;border:2px solid #c9d7e3;border-radius:9px;display:block;margin:auto;background:#eff2f6;cursor:crosshair}
+.stage{min-height:260px;display:grid;place-items:center;background:#f7f9fb;border-radius:9px;overflow:hidden}
+#canvas{display:none}#notice{min-height:1.3em;font-size:.86rem;color:#644d31}
+code{word-break:break-all}.two{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.pill{display:inline-block;background:#edf2f7;border-radius:50px;padding:.2rem .7rem;margin:.3rem 0}
+.warn{color:#894c14}.ok{color:#086d5e;font-weight:700}
+#results{font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<main data-reviewer="reviewer___REVIEWER_SLOT__">
+<h1>MOIS — 花被・背景の可視色差 <span class="pill">評価者 __REVIEWER_SLOT__</span></h1>
+<p class="muted">対象は既存のstrict9判定不能128枚（128分類群）で、世界の開花植物の無作為標本ではありません。<strong>自動で写真を取得せず、植物学的に確認した開花花被と隣接背景から、非校正sRGBのCIE 1976色差を計算します。</strong> UV反射率・ハチ視覚・生態学的「地味さ」を測ったものではありません。</p>
+<div class="actions">
+<label>評価者ID（AとBは別の仮名を使用） <input id="reviewerId" class="blockinput" placeholder="reviewer-A-pseudonym"/></label>
+<button id="prev">前の写真</button><button id="next">次の写真</button>
+<button id="export">この評価者のCSVを保存</button>
+<button id="clearCurrent">この写真の測定点を消す</button>
+</div>
+<p id="progress" aria-live="polite"></p>
+<div class="panes">
+<section class="panel">
+ <div id="photoDetails" class="muted"></div>
+ <p class="small"><a id="photoLink" target="_blank" rel="noopener noreferrer">元写真の公開URLを手動で開く</a>（自動取得しません）</p>
+ <label>上の写真IDと同じ画像を選択（ローカルのみ）
+ <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/tiff" class="blockinput"/></label>
+ <label><input type="checkbox" id="sourceConfirmed"/> 表示写真のIDが元写真と一致することを目視で確認した</label>
+ <div class="stage"><canvas id="canvas"></canvas><p id="emptyImg" class="muted">画像を読み込むと、ここに表示されます。</p></div>
+ <p id="notice"></p>
+ <p class="muted">画像バイト列はブラウザ内でのみ扱われ、GitHubに送信しません。CSVには画像SHA256・3点ずつの座標と画素RGB・計算結果のみ保存。元写真と同じかどうかは、画像SHAだけでは自動証明できません。</p>
+</section>
+<section class="panel">
+ <fieldset><legend>植物学的な開花・器官の確認（必須）</legend>
+  <label>① 開花中の花が写る？ <select id="flowerVisible" class="blockinput"><option value="">未確認</option><option value="yes">はい</option><option value="no">いいえ</option><option value="uncertain">不明</option></select></label>
+  <label>② 実際の花被（花弁・萼片状花被）を識別できる？ <select id="petalVisible" class="blockinput"><option value="">未確認</option><option value="yes">はい</option><option value="no">いいえ</option><option value="uncertain">不明</option></select></label>
+  <label>③ 花被に局所的に隣接する背景を識別できる？ <select id="backgroundVisible" class="blockinput"><option value="">未確認</option><option value="yes">はい</option><option value="no">いいえ</option><option value="uncertain">不明</option></select></label>
+ </fieldset>
+ <fieldset><legend>写真上の独立した3点×2部位</legend>
+ <p class="muted">①～③全て「はい」の場合のみ有効。花被内3点と、同一写真で隣接した葉・茎・地面などの背景3点を選択。萼や葉を花弁として選ばないこと。画像の端から2画素以内は無効。各点は5×5画素のチャンネル中央値です。</p>
+ <div class="actions"><button id="choosePetal">花被を3点指定</button><button id="chooseBackground">背景を3点指定</button></div>
+ <p id="pointStatus" class="small">花被 0/3 ／ 背景 0/3</p>
+ </fieldset>
+ <fieldset><legend>測定値（写真内の非校正sRGB）</legend>
+ <p id="results">3点ずつの指定が終わるまで数値はありません。</p>
+ <p class="muted">ΔE76はCIE Lab(D65,sRGB)のユークリッド距離。luminance ratioはモニター用sRGB相対輝度の比率で送粉者視覚のコントラストではありません。値に生態的なしきい値を設けません。</p>
+ </fieldset>
+ <label>植物学的判断・背景の選定根拠等（任意）<textarea id="notes" rows="3" class="blockinput"></textarea></label>
+</section>
+</div>
+<p class="muted"><strong>研究上の状態：</strong>既存128枚の元strict9はすべてunknownのままです。2名の評価が独立に一致するまでは、花の「真値確認」や視覚的顕示率の結果としてカウントしません。</p>
+</main>
+<script type="application/json" id="MOIS_MANUAL_ROSTER_JSON">__SOURCE_ROWS__</script>
+<script>
+"use strict";
+const roster=JSON.parse(document.getElementById("MOIS_MANUAL_ROSTER_JSON").textContent);
+const slot="__REVIEWER_SLOT__", sourceRosterSHA="__SOURCE_SHA__";
+const storageKey="MOIS_128_PETAL_BG_MANUAL_V1|"+sourceRosterSHA+"|reviewer_"+slot;
+const fields=["photo_id","observation_id","inat_taxon_id","source_design","latitude_zone","local_season", "postoutcome_source_gap","screen_status","technical_diagnostic_class","review_priority"];
+let all={}; try{all=JSON.parse(localStorage.getItem(storageKey)||"{}");}catch(e){all={};}
+let current=0,mode="petal",imageLoaded=false,photoBitmap=null,loadedDigest="";
+let sourceCanvas=document.createElement("canvas"),sourceCtx=sourceCanvas.getContext("2d",{willReadFrequently:true});
+const $=id=>document.getElementById(id);
+function persist(){try{localStorage.setItem(storageKey,JSON.stringify(all));}catch(e){}}
+function state(){const id=roster[current].photo_id;if(!all[id])all[id]={flower_visible:"",petal_visible:"",background_visible:"",notes:"",fg:[],bg:[],photo_file_sha256:"",image_width:"",image_height:"",image_file_name:"",file_identity_confirmed:false};return all[id];}
+function choose(){return roster[current];}
+function gate(s){return s.flower_visible==="yes"&&s.petal_visible==="yes"&&s.background_visible==="yes";}
+function draw(){const cn=$('canvas');if(!imageLoaded){cn.style.display='none';$('emptyImg').style.display='block';return;}
+ cn.style.display='block';$('emptyImg').style.display='none';const ctx=cn.getContext('2d');ctx.clearRect(0,0,cn.width,cn.height);ctx.drawImage(sourceCanvas,0,0);
+ for(const [name,colour] of [['fg','#ec427d'],['bg','#00b8d7']])for(const p of state()[name]){ctx.beginPath();ctx.strokeStyle=colour;ctx.fillStyle='white';ctx.lineWidth=Math.max(2,cn.width/600);ctx.arc(p[0],p[1],Math.max(5,cn.width/135),0,Math.PI*2);ctx.fill();ctx.stroke();}}
+function rgbMedian(points){return [2,3,4].map(i=>median(points.map(p=>p[i])));}
+function median(values){const v=[...values].sort((a,b)=>a-b);return v[Math.floor(v.length/2)];}
+function linear(v){v=v/255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4);}
+function lab(rgb){const [r,g,b]=rgb.map(linear);const x=(.4124564*r+.3575761*g+.1804375*b)/.95047,y=.2126729*r+.7151522*g+.072175*b,z=(.0193339*r+.119192*g+.9503041*b)/1.08883;
+ const delta=6/29,f=t=>t>delta**3?Math.pow(t,1/3):t/(3*delta**2)+4/29;return [116*f(y)-16,500*(f(x)-f(y)),200*(f(y)-f(z))];}
+function colourMetrics(a,b){const x=lab(a),y=lab(b);const deltaE76=Math.sqrt(x.reduce((s,v,i)=>s+(v-y[i])**2,0));
+ const lum=v=>v.map(linear).reduce((acc,c,i)=>acc+c*[.2126,.7152,.0722][i],0),la=lum(a),lb=lum(b);
+ return {deltaE76,deltaLstar:x[0]-y[0],sRGB_luminance_ratio:(Math.max(la,lb)+.05)/(Math.min(la,lb)+.05)};}
+function currentMetrics(){const s=state();if(!gate(s)||!s.file_identity_confirmed||s.fg.length!==3||s.bg.length!==3)return null;
+ const coords=p=>p[0]+','+p[1]; if(s.fg.some(p=>s.bg.some(q=>coords(p)===coords(q))))return null;
+ const fg=rgbMedian(s.fg),bg=rgbMedian(s.bg),m=colourMetrics(fg,bg);return {fg,bg,...m};}
+function displayMetrics(){const s=state(),m=currentMetrics();$('pointStatus').textContent=`花被 ${s.fg.length}/3 ／ 背景 ${s.bg.length}/3`;
+ $('results').textContent=m?`ΔE76 = ${m.deltaE76.toFixed(3)} | ΔL* = ${m.deltaLstar.toFixed(3)} | sRGB輝度比 = ${m.sRGB_luminance_ratio.toFixed(3)}`:'3点ずつの有効な指定が終わるまで数値はありません。';}
+function setNotice(msg){$('notice').textContent=msg;}
+function view(i){current=Math.min(roster.length-1,Math.max(0,i));imageLoaded=false;photoBitmap=null;loadedDigest='';sourceCanvas.width=0;sourceCanvas.height=0;$('fileInput').value='';
+ const r=choose(),s=state();$('flowerVisible').value=s.flower_visible;$('petalVisible').value=s.petal_visible;$('backgroundVisible').value=s.background_visible;$('notes').value=s.notes;
+ $('sourceConfirmed').checked=!!s.file_identity_confirmed;
+ $('photoDetails').textContent=`${current+1}/${roster.length} | Photo ID ${r.photo_id} | 判定前に地域・分類群・自動検出結果は表示しません`;
+ $('photoLink').href=`https://inaturalist-open-data.s3.amazonaws.com/photos/${r.photo_id}/medium.jpeg`;
+ $('progress').textContent=`評価者 ${slot} | ${roster.length}写真中、植物学的に全項目判定済み ${roster.filter(x=>{const s=all[x.photo_id];return s&&s.flower_visible&&s.petal_visible&&s.background_visible;}).length}枚`;draw();displayMetrics();setNotice('画像は自動取得しません。対応する写真ファイルを選択してください。');}
+function patch(x,y){const area=sourceCtx.getImageData(x-2,y-2,5,5).data;return [0,1,2].map(ch=>median(Array.from({length:25},(_,i)=>area[4*i+ch])));}
+$('canvas').addEventListener('click',e=>{const s=state();if(!gate(s)||!s.file_identity_confirmed||!imageLoaded||s.photo_file_sha256!==loadedDigest){setNotice('器官3項目の確認、ファイルID確認、正しい画像の読込が必要です。');return;}
+ const rect=e.target.getBoundingClientRect(),x=Math.round((e.clientX-rect.left)*sourceCanvas.width/rect.width),y=Math.round((e.clientY-rect.top)*sourceCanvas.height/rect.height);
+ if(x<2||y<2||x>=sourceCanvas.width-2||y>=sourceCanvas.height-2){setNotice('画像の端は5x5パッチが欠けるため無効です。');return;}
+ const name=mode==='petal'?'fg':'bg';if(s[name].length>=3){setNotice('この部位は既に3点です。再設定は「測定点を消す」を使用してください。');return;}
+ if([...s.fg,...s.bg].some(p=>p[0]===x&&p[1]===y)){setNotice('同じ画素位置を繰り返し使用できません。');return;}
+ s[name].push([x,y,...patch(x,y)]);persist();draw();displayMetrics();setNotice('点を記録しました。花被・背景それぞれ3点必要です。');});
+$('fileInput').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;imageLoaded=false;setNotice('ローカル写真を読み込んでいます。');
+ try{const data=await file.arrayBuffer();const digest=await crypto.subtle.digest('SHA-256',data);loadedDigest=[...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('');
+ const image=new Image(),uri=URL.createObjectURL(file);await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=uri;});URL.revokeObjectURL(uri);
+ if(image.width<10||image.height<10||image.width>12000||image.height>12000)throw new Error('サイズが対象外の画像です');
+ const s=state();if(s.photo_file_sha256!==loadedDigest){s.fg=[];s.bg=[];s.file_identity_confirmed=false;$('sourceConfirmed').checked=false;}
+ sourceCanvas.width=image.width;sourceCanvas.height=image.height;sourceCtx.drawImage(image,0,0);const cn=$('canvas');cn.width=image.width;cn.height=image.height;
+ s.photo_file_sha256=loadedDigest;s.image_width=image.width;s.image_height=image.height;s.image_file_name=file.name;imageLoaded=true;persist();draw();displayMetrics();setNotice(`読み込み成功（${image.width}×${image.height}）。元写真のID一致を目視確認してください。`);
+ }catch(err){imageLoaded=false;setNotice('画像読込・SHA計算エラー：'+String(err));}});
+$('sourceConfirmed').addEventListener('change',e=>{const s=state();if(!imageLoaded){e.target.checked=false;setNotice('まず写真を選択してください。');return;}s.file_identity_confirmed=!!e.target.checked;persist();displayMetrics();});
+for(const [control,key] of [['flowerVisible','flower_visible'],['petalVisible','petal_visible'],['backgroundVisible','background_visible']])$(control).addEventListener('change',e=>{const s=state();s[key]=e.target.value;if(!gate(s)){s.fg=[];s.bg=[];}persist();draw();displayMetrics();viewWithoutReload();});
+function viewWithoutReload(){$('progress').textContent=`評価者 ${slot} | ${roster.length}写真中、全項目判定済み ${roster.filter(x=>{const s=all[x.photo_id];return s&&s.flower_visible&&s.petal_visible&&s.background_visible;}).length}枚`;}
+$('notes').addEventListener('input',e=>{state().notes=e.target.value;persist();});
+let savedReviewerId='';try{savedReviewerId=localStorage.getItem(storageKey+'|reviewerId')||'';}catch(e){}$('reviewerId').value=savedReviewerId;
+$('reviewerId').addEventListener('change',e=>{try{localStorage.setItem(storageKey+'|reviewerId',e.target.value.trim());}catch(x){}});
+$('choosePetal').onclick=()=>{mode='petal';setNotice('花被の中で、異なる3箇所を選択してください。');};
+$('chooseBackground').onclick=()=>{mode='background';setNotice('対象花に局所的に隣接する背景の異なる3箇所を指定してください。');};
+$('clearCurrent').onclick=()=>{const s=state();s.fg=[];s.bg=[];persist();draw();displayMetrics();};
+$('prev').onclick=()=>view(current-1);$('next').onclick=()=>view(current+1);
+function csvEscape(s){return '"'+String(s==null?'':s).replace(/"/g,'""')+'"';}
+$('export').onclick=()=>{const reviewer=$('reviewerId').value.trim();if(!reviewer){setNotice('評価者IDを入力してください。');return;}
+ const heads=[...fields,'source_roster_sha256','reviewer_slot','reviewer_id','flower_visible','petal_visible','background_visible','photo_file_sha256','image_width','image_height','image_file_name','fg_points_json','bg_points_json','fg_r','fg_g','fg_b','bg_r','bg_g','bg_b','deltaE76','deltaLstar','sRGB_luminance_ratio','notes'];
+ const data=[heads];for(const r of roster){const s=all[r.photo_id]||{}, m=(s.fg?.length===3&&s.bg?.length===3&&gate(s)&&s.file_identity_confirmed)?(()=>{const fg=rgbMedian(s.fg),bg=rgbMedian(s.bg);return {fg,bg,...colourMetrics(fg,bg)};})():null;
+ const row=[...fields.map(k=>r[k]||''),sourceRosterSHA,slot,reviewer,s.flower_visible||'',s.petal_visible||'',s.background_visible||'',s.photo_file_sha256||'',s.image_width||'',s.image_height||'',s.image_file_name||'',m?JSON.stringify(s.fg):'',m?JSON.stringify(s.bg):'',...(m?[...m.fg,...m.bg,m.deltaE76.toFixed(8),m.deltaLstar.toFixed(8),m.sRGB_luminance_ratio.toFixed(8)]:Array(9).fill('')),s.notes||''];data.push(row);}
+ const content='\ufeff'+data.map(row=>row.map(csvEscape).join(',')).join('\r\n'),file=new Blob([content],{type:'text/csv;charset=utf-8'});
+ const u=URL.createObjectURL(file),link=document.createElement('a');link.href=u;link.download=`mois128_petal_background_reviewer_${slot}.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(u),2500);setNotice('この評価者のCSVをローカルに保存しました。元画像は含みません。');};
+view(0);
+</script>
+</body>
+</html>

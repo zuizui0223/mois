@@ -1,0 +1,91 @@
+name: MOIS source-signed direct floral colour co-trait composition (data only)
+on:
+  push:
+    branches: [analysis/mois-composition-environment-20261030]
+    paths:
+      - .github/workflows/mois-island-direct-cotrait-20261102.yml
+      - scripts/analysis/mois_island_direct_cotrait_20261102.py
+      - tests/test_mois_island_direct_cotrait_20261102.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-independent-island-direct-colour-cotrait-20261102
+  cancel-in-progress: false
+jobs:
+  direct-species-cotrait:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify tests and published definitions before reading source data
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m unittest discover -s tests -p test_mois_island_direct_cotrait_20261102.py -v
+          python -m py_compile scripts/analysis/mois_island_direct_cotrait_20261102.py
+      - name: Download ONLY the existing original signed numeric trait artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          curl --fail --location --silent --show-error \
+            --connect-timeout 20 --max-time 160 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/zuizui0223/island/actions/artifacts/10042377593/zip' \
+            -o source/island_source.zip
+          curl --fail --location --silent --show-error \
+            --connect-timeout 20 --max-time 160 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/zuizui0223/mois/actions/artifacts/12970763367/zip' \
+            -o source/mois_source.zip
+          echo '5e9c887e093c42eb720f3abd2dc85701ce123fb7fe888c916dc4098ac898ccdd  source/island_source.zip' | sha256sum -c -
+          echo '3eb62f10607c13893e410dc1b7abdf9f90d4f1e730b08edecb245669823d1c63  source/mois_source.zip' | sha256sum -c -
+      - name: Count only direct documented states and taxon-constrained co-trait support
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_island_direct_cotrait_20261102 \
+            --island-zip source/island_source.zip \
+            --mois-zip source/mois_source.zip \
+            --output result
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd,json,hashlib
+          d=pd.read_csv('result/floral_colour_cotrait_direct_summary.csv')
+          rec=json.loads(Path('result/floral_cotrait_receipt.json').read_text())
+          assert rec['original_MOIS_accepted_species']==22712
+          assert len(d)==35 and d.scope.nunique()==7
+          r=d.set_index(['scope','trait'])
+          pairs={
+           'small_flower':(1247,61,46,689),
+           'self_compatible':(1547,194,155,943),
+           'open_radial_form':(1756,77,30,432),
+           'predominantly_selfing':(615,151,33,110),
+           'cleistogamy_present':(375,38,9,18),
+          }
+          for name,values in pairs.items():
+              z=r.loc[('global_unique_accepted_species',name)]
+              actual=tuple(int(z[k]) for k in (
+                  'jointly_evaluable_accepted_species','green_brown_evaluable',
+                  'green_brown_and_positive','other_colour_and_positive'))
+              assert actual==values,(name,actual,values)
+          assert rec['no_new_photo_download_inference_or_MNAR_scenarios']
+          for name,digest in rec['output_sha256'].items():
+              assert hashlib.sha256((Path('result')/name).read_bytes()).hexdigest()==digest
+          print('MOIS_DIRECT_COTRAIT_REAL_SOURCE_CENSUS_SHA_VERIFIED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-direct-colour-size-reproductive-35aggregate-source-verified
+          path: result/
+          retention-days: 90
+          if-no-files-found: error
