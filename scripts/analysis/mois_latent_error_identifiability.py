@@ -138,6 +138,7 @@ def audit_frozen_bulk128(parquet,output):
     require(sha(path)==SOURCE_SHA256,"Bulk128 actual measured joined source SHA mismatch")
     source=pd.read_parquet(path)
     require(len(source)==SOURCE_N,"Real bulk128 source count differs")
+    print("MOIS_HW_SIGNED_SOURCE_COLUMN_NAMES",json.dumps(list(map(str,source.columns)),sort_keys=True),flush=True)
     require({"photo_id","observation_id","strict9"} <= set(source.columns),
             "Original paired same-source photo identity columns changed")
     for key in ("photo_id","observation_id"):
