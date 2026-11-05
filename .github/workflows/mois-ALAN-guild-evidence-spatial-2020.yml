@@ -1,0 +1,79 @@
+name: MOIS ALAN 2020 true GloBI evidence × ROI9 source audit (not DDD)
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-ALAN-guild-evidence-spatial-2020.yml
+      - scripts/analysis/mois_alan_globi_exclusive_guild_roi_2020.py
+      - tests/test_mois_alan_globi_exclusive_guild_roi_2020.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-2020-GloBI-moth-butterfly-exclusive-evidence-no-false-DDD
+  cancel-in-progress: false
+jobs:
+  source-verified-guild-support:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 23
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests for exclusivity, unknown and documentary evidence
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 scipy==1.15.2 statsmodels==0.14.5
+          python -m unittest discover -s tests -p test_mois_alan_globi_exclusive_guild_roi_2020.py -v
+          python -m py_compile scripts/analysis/mois_alan_globi_exclusive_guild_roi_2020.py
+      - name: Recover only previously source-locked NUMERIC data (NO images or new provider calls)
+        run: |
+          set -euo pipefail
+          mkdir -p prior
+          gh run download 41007444495 --repo zuizui0223/mois --name mois-nohuman-canonical-climate-joined-20261030 --dir prior
+          gh run download 39225659840 --repo zuizui0223/mois --name mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status --dir prior
+          gh run download 34191508045 --repo zuizui0223/island --name source-scale-batch-integration-34191508045 --dir prior
+          gh run download 41946071715 --repo zuizui0223/mois --name mois-2020-VIIRS4month-WorldPop2020-taxonequal-source-cells --dir prior
+          gh run download 41960275560 --repo zuizui0223/mois --name mois-ALAN-globi-moth-butterfly-species-source-coverage-NO-PHOTOS --dir prior
+      - name: Signed original ROI9 and documented moth/butterfly evidence support
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_alan_globi_exclusive_guild_roi_2020 \
+            --canonical prior/canonical_observations_climate.csv.gz \
+            --names prior/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+            --accepted prior/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz \
+            --direct prior/direct_species_trait_ledger.csv.gz \
+            --globi prior/GloBI_bounded_interaction_source_cache.csv.gz \
+            --viirs prior/viirs_population_source_matched_cells_2020.csv \
+            --output result
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path('result');d=json.loads((p/'receipt.json').read_text())
+          assert d['original_VIIRS_2020_source_cells']==1044
+          assert d['distinct_cells_with_both_exclusive_evidence_groups_ROI9']==108
+          assert d['cells_with_at_least_2_distinct_species_in_each_group']==4
+          assert d['cells_with_at_least_3_distinct_species_in_each_group']==0
+          assert d['cells_with_direct_species_white_both_evidence_groups']==1
+          assert d['cells_with_direct_white_nonwhite_by_both_evidence_groups']==0
+          assert d['third_difference_model_fit'] is False
+          assert len(d['results'])==3
+          assert d['MNAR_sensitivity_scenarios_run'] is False
+          assert d['new_original_image_downloads_or_inferences']==0
+          filename=p/'ROI9_guild_evidence_spatial_exploratory_models.csv'
+          assert hashlib.sha256(filename.read_bytes()).hexdigest()==d['output_sha256']
+          print('MOIS_2020_GLOBI_EXCLUSIVE_SOURCE_ONLY_108CELLS_4DEEP_1DIRECTWHITE_0DDD')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-ALAN-2020-genuine-GloBI-white-ROI9-exclusive-evidence-no-causal-DDD
+          path: result/
+          retention-days: 90
+          if-no-files-found: error
