@@ -26,6 +26,8 @@ Same-year climate addition uses NOAA PSL NCEP/DOE Reanalysis II monthly 2 m temp
 
 ## Completion contract
 
+Nested experimental design frozen before environmental coefficients: the source has 441,793 precise 2015–2024 observations across the experimental taxa. Within broad-primary cells, require >=20 distinct cells and >=3 years; 65 species and 124,157 species-cell-years qualify. Fit log1p ALAN as the response to documented white colour, continuous night/(night+day) treatment outcome centered at 0.5, their interaction, same-year population/temperature/precipitation, and all-plant effort, with region/year fixed effects, equal total species weight, and species/spatial two-way clustered uncertainty. This is an association of sampled habitat light with literature traits, not a model of local pollination or reproductive fitness; night ratios do not subtract complete-exclusion outcomes. No claim of full phylogenetic correction. Preserve exclusions after environmental matching.
+
 New published experimental and trait data downloaded with hashes; eligible species and exclusions enumerated; new same-year environmental data actually retrieved with year/quality checks; an identified macro model fit on the selected real cohort; tests and independent numerical checks; source-linked report and reproducible outputs. Unsupported models remain explicitly unestimated. No automatic merge or external communication.
 
 ## Scale amendment after explicit user correction
