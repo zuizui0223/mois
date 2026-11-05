@@ -139,18 +139,24 @@ def audit_frozen_bulk128(parquet,output):
     source=pd.read_parquet(path)
     require(len(source)==SOURCE_N,"Real bulk128 source count differs")
     print("MOIS_HW_SIGNED_SOURCE_COLUMN_NAMES",json.dumps(list(map(str,source.columns)),sort_keys=True),flush=True)
-    require({"photo_id","observation_id","strict9"} <= set(source.columns),
+    require({"photo_id","observation_id","strict_original_roi9",
+             "screen_status","floral_box_main_L_star","medium_box_proxy_not_strict9",
+             "unverified_floral_box_not_petal_ROI"} <= set(source.columns),
             "Original paired same-source photo identity columns changed")
     for key in ("photo_id","observation_id"):
         vals=source[key].dropna().astype(str)
         require(len(vals)==SOURCE_N and vals.is_unique and vals.ne("").all(),
                 "Exact "+key+" identity duplicates or missing values")
-    strict=source.strict9.astype(str).str.lower()
+    strict=source.strict_original_roi9.astype(str).str.lower()
     require(strict.isin(("true","false")).all(),"Strict9 state must be binary success/unknown")
     n_success=int(strict.eq("true").sum())
     require(n_success==SOURCE_STRICT9,"Original strict9 success count drift")
     # Critical distinction: successful white palette measurement !=
     # second independently generated anatomical WHITE label.
+    independent_columns={"independent_VLM_white","independent_OWLv2_petal_white",
+                         "second_white_classifier_label"}
+    require(not (independent_columns & set(source.columns)),
+            "Unexpected second white classifier requires new signed method provenance")
     report={
         "schema":"mois_bulk128_original_two_methods_hui_walter_source_eligibility_v1",
         "input_sha256":SOURCE_SHA256,
