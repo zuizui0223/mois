@@ -76,8 +76,13 @@ jobs:
           y24,m24=v.select_cells(df)
           require(len(y24)>2000 and m24['strict9_measurements_before_cell_gate']>40000,
                   'No actual 2024 original photo support')
-          sub=h.loc[h.source_complete].merge(y24,on='cell_id',how='inner',
-                   validate='one_to_one',suffixes=('_2020','_2024'))
+          y24_names=y24[['cell_id','n_attempted','n_strict9','white_taxon_equal',
+                     'strict9_yield','longitude','latitude']].rename(columns={
+                     'n_attempted':'attempts2024','n_strict9':'strict2024',
+                     'white_taxon_equal':'white2024','strict9_yield':'yield2024',
+                     'longitude':'longitude2024','latitude':'latitude2024'})
+          sub=h.loc[h.source_complete].merge(y24_names,on='cell_id',how='inner',
+                   validate='one_to_one')
           require(len(sub)>=250,'Insufficient exact matched 2020-2024 source cell overlap')
           # Same-taxon species support is a separate target from changing whole-assemblage means.
           t=df.loc[df.source_subarm.eq('historical_main') & df.climate_complete &
@@ -116,22 +121,23 @@ jobs:
               result['VIIRS_2024_n_valid_months']=len(values)
               result['VIIRS_2024_quarter_median']=float(np.median(values)) if len(values)>=3 else np.nan
               return result
-          require(np.allclose(sub.longitude_2020,sub.longitude_2024) and
-                  np.allclose(sub.latitude_2020,sub.latitude_2024),
+          require(np.allclose(sub.longitude,sub.longitude2024) and
+                  np.allclose(sub.latitude,sub.latitude2024),
                   'Original grid cell centres changed across two years')
-          site_coordinates=sub[['cell_id','longitude_2020','latitude_2020']].rename(
-                  columns={'longitude_2020':'longitude','latitude_2020':'latitude'})
+          site_coordinates=sub[['cell_id','longitude','latitude']].copy()
           with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
               future=list(pool.map(sample,site_coordinates.to_dict('records')))
-          x=sub.merge(pd.DataFrame(future),on='cell_id',how='left',validate='one_to_one')
+          raw2024=pd.DataFrame(future)
+          raw2024.to_csv('result/viirs_2024_raw_month_cells_checkpoint.csv',index=False)
+          x=sub.merge(raw2024,on='cell_id',how='left',validate='one_to_one')
           require(x.cell_id.is_unique and len(x)==len(sub),'2024 VIIRS join lost ID')
           x=x.loc[x.VIIRS_2024_n_valid_months.ge(3)].copy()
           require(len(x)>=180,'Insufficient genuine 2024 cloud-free monthly VIIRS')
           x['delta_log1p_VIIRS']=np.log1p(x.VIIRS_2024_quarter_median.clip(lower=0))\
                                  -np.log1p(x.viirs_quarterly_median.clip(lower=0))
-          x['delta_white_pp']=100*(x.white-x.white_taxon_equal)
-          x['delta_ROI_yield_pp']=100*(x['strict9'].astype(float)/x.attempts-x.strict9_yield)
-          x['delta_log_attempts']=np.log(x.attempts/x.n_attempted)
+          x['delta_white_pp']=100*(x.white2024-x.white_taxon_equal)
+          x['delta_ROI_yield_pp']=100*(x.yield2024-x.strict9_yield)
+          x['delta_log_attempts']=np.log(x.attempts2024/x.n_attempted)
           require(x.delta_white_pp.between(-100,100).all(),'Unexpected white component change')
           # Fixed exogenous baseline conditions, sampling effort change,
           # and change in upward satellite radiance. Not a causal correction
@@ -165,9 +171,9 @@ jobs:
              'year2020_2024_valid_both_VIIRS_cells':len(x),
              'repeated_geographic_blocks':int(x.block_id.nunique()),
              'photo_attempts_2020':int(x.n_attempted.sum()),
-             'photo_attempts_2024':int(x.attempts.sum()),
+             'photo_attempts_2024':int(x.attempts2024.sum()),
              'strictROI9_success_2020':int(x.n_strict9.sum()),
-             'strictROI9_success_2024':int(x.strict9.sum()),
+             'strictROI9_success_2024':int(x.strict2024.sum()),
              'shared_nominal_taxa_cellyear_pairs':int(x.n_shared_nominal_taxa.sum()),
              'cells_with_at_least_1_shared_measured_taxon':int(x.n_shared_nominal_taxa.ge(1).sum()),
              'cells_with_at_least_3_shared_measured_taxa':int(x.n_shared_nominal_taxa.ge(3).sum()),
@@ -195,15 +201,14 @@ jobs:
              'not_causal_population_turnover_or_ALAN_extinction':True
           }
           out=Path('result')
-          x[['cell_id','block_id','longitude_2020','latitude_2020','population_density',
+          x[['cell_id','block_id','longitude','latitude','population_density',
              'viirs_quarterly_median','VIIRS_2024_quarter_median',
              'VIIRS_2024_n_valid_months','delta_log1p_VIIRS','delta_white_pp',
-             'delta_ROI_yield_pp','n_attempted','attempts','n_strict9',
-             'strict9','n_shared_nominal_taxa','same_taxon_white_change_pp']].to_csv(
+             'delta_ROI_yield_pp','n_attempted','attempts2024','n_strict9',
+             'strict2024','n_shared_nominal_taxa','same_taxon_white_change_pp']].to_csv(
                   out/'repeated_area_2020_2024_cell_aggregate.csv',index=False)
-          report['output_SHA256']={
-             'repeated_area_2020_2024_cell_aggregate.csv':hashlib.sha256(
-              (out/'repeated_area_2020_2024_cell_aggregate.csv').read_bytes()).hexdigest()}
+          report['output_SHA256']={file.name:hashlib.sha256(file.read_bytes()).hexdigest()
+                 for file in out.iterdir() if file.is_file()}
           (out/'repeat_area_2020_2024_receipt.json').write_text(
                json.dumps(report,indent=2,sort_keys=True,allow_nan=False)+'\n')
           print('MOIS_ALAN_2020_TO_2024_TRUE_REPEATED_CELL_RESULT',
@@ -216,6 +221,7 @@ jobs:
              'nominal_block_cluster_95ci_high_pp')},sort_keys=True),flush=True)
           PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: mois-ALAN-2020-2024-source-locked-original-photo-repeated-cell-numeric
           path: result/
