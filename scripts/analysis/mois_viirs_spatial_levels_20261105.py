@@ -95,6 +95,7 @@ def run(path2020,path2024,out):
              "2020_input_SHA256":SHA_2020,"2024_input_SHA256":SHA_2024,
              "analysis":"cross_sectional_level_not_temporal_change",
              "2020_population_density_used_for_2024_baseline_only":True,
+             "population2024_measured":False,
              "2024_population_density_or_urbanization_change_measured":False,
              "photo_and_observation_from_frozen_source_only":True,
              "unknown_ROI9_not_white_nonwhite":True,
