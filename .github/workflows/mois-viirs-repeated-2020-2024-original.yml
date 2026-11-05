@@ -116,8 +116,13 @@ jobs:
               result['VIIRS_2024_n_valid_months']=len(values)
               result['VIIRS_2024_quarter_median']=float(np.median(values)) if len(values)>=3 else np.nan
               return result
+          require(np.allclose(sub.longitude_2020,sub.longitude_2024) and
+                  np.allclose(sub.latitude_2020,sub.latitude_2024),
+                  'Original grid cell centres changed across two years')
+          site_coordinates=sub[['cell_id','longitude_2020','latitude_2020']].rename(
+                  columns={'longitude_2020':'longitude','latitude_2020':'latitude'})
           with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-              future=list(pool.map(sample,sub[['cell_id','longitude','latitude']].to_dict('records')))
+              future=list(pool.map(sample,site_coordinates.to_dict('records')))
           x=sub.merge(pd.DataFrame(future),on='cell_id',how='left',validate='one_to_one')
           require(x.cell_id.is_unique and len(x)==len(sub),'2024 VIIRS join lost ID')
           x=x.loc[x.VIIRS_2024_n_valid_months.ge(3)].copy()
@@ -190,7 +195,7 @@ jobs:
              'not_causal_population_turnover_or_ALAN_extinction':True
           }
           out=Path('result')
-          x[['cell_id','block_id','longitude','latitude','population_density',
+          x[['cell_id','block_id','longitude_2020','latitude_2020','population_density',
              'viirs_quarterly_median','VIIRS_2024_quarter_median',
              'VIIRS_2024_n_valid_months','delta_log1p_VIIRS','delta_white_pp',
              'delta_ROI_yield_pp','n_attempted','attempts','n_strict9',
