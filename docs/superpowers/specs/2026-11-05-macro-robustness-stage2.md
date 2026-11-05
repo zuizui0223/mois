@@ -19,3 +19,11 @@ Control-adjusted index: (night - complete exclusion)/(night + day), with a posit
 ## Completion
 
 Actual sensitivity fits, audited data support and source linkage, meaningful numerical verification, all attempted-model results, and a saved stage-2 report separating robust association, conditional association, and unsupported mechanism. Failure of robustness is a valid scientific outcome; obtaining significance is not the objective.
+
+## Completed evidence
+
+All 28 prelisted influence models, four matched-control definition models, and six comparative/phylogenetic models estimated successfully. Southern baseline +2.279 [0.671,3.887] attenuates to +0.163 [-0.821,1.146] when the >=60E sector is omitted; single-year and top-ten-genus omissions retain positive individual intervals. This is geographically limited robustness, not proof of zero elsewhere. Formal hemisphere interaction +1.998 [0.300,3.695] remains an exploratory conditional comparison.
+
+Control definitions use 105 comparisons/46 species, retaining all ten negative net-night contrasts. All 65 species map uniquely to the published tree. First-stage species-profile model is full rank249 over122548 rows; full spatial-cluster sampling covariance is positive definite. Only verified roundoff asymmetry6.7e-15 was symmetrized. All white-by-diel interactions remain uncertain with and without phylogeny; conditional white contrasts at index0.5 are retained rather than discarded.
+
+Independent explicit-dummy hemisphere WLS agrees within1.11e-13. Independent GLS given the fitted variance components agrees with all six metafor fits within3.34e-15; this does not independently reoptimize REML. Two focused new tests passed, all attempted-model labels and control aggregation/source hashes audited, and two figures visually verified. Stage-2 report, exact inputs, code, support/variance tables and verification are saved under outputs/mois_global_macro_stage2_20261105. Single-tree and literature-index measurement uncertainty remain limits, not completed corrections.
