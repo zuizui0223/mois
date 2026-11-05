@@ -13,8 +13,8 @@ class TestSourceDirectWhite(unittest.TestCase):
             'resolution_status':['resolved']*6,
             'classification':['species_direct']*5+['cultivar_contamination']})
         x=s.exact_direct_species_labels(d)
-        self.assertEqual(x.accepted_species.tolist(),['a','b'])
-        self.assertEqual(x.white_direct.tolist(),[1.,0.])
+        self.assertEqual(x.accepted_species.tolist(),['a','b','e'])
+        self.assertEqual(x.white_direct.tolist(),[1.,0.,1.])
     def test_one_accepted_id_multiple_nominal_synonyms(self):
         name=pd.DataFrame({'inat_taxon_id':['1','2','3'],
             'wcvp_match_state':['unique_exact_name_to_accepted_id']*2+['multiple_accepted_ids_ambiguous'],
