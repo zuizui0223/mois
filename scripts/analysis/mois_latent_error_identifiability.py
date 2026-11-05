@@ -61,7 +61,7 @@ def identifiability(tests: int, populations: int, accuracy: str) -> dict:
         "flower_petal_truth_verified_by_counts": False,
         "prevalence_separation_guaranteed_by_strata_names": False,
         "latent_class_label_switching_resolved": False,
-        "supports_environment_specific_error_claim": (
+        "population_specific_accuracy_parameter_count_not_excluded_only": (
             status != "UNDERIDENTIFIED" and accuracy == "population_specific"),
         "not_a_sensitivity_or_specificity_estimate": True,
     }
