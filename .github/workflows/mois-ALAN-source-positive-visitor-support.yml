@@ -62,11 +62,11 @@ jobs:
             --direct original/direct_species_trait_ledger.csv.gz \
             --globi original/GloBI_stage2_signed_extension.csv.gz \
             --viirs original/viirs_population_source_matched_cells_2020.csv \
-            --output results
+            --output GloBI_positive_visit_result_20261105
           python - <<'PY'
           from pathlib import Path
           import pandas as pd,json,hashlib
-          root=Path('results')
+          root=Path('GloBI_positive_visit_result_20261105')
           d=pd.read_csv(root/'GloBI_positive_visit_colour_spatial_support.csv')
           r=json.loads((root/'source_positive_evidence_receipt.json').read_text())
           assert r['source_GloBI_unique_interaction_rows']==61967
@@ -89,6 +89,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: mois-ALAN-2019-24-positive-moth-butterfly-evidence-colour-support-no-absence
-          path: results/
+          path: GloBI_positive_visit_result_20261105/
           retention-days: 90
           if-no-files-found: error
