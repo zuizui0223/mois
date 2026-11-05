@@ -1,0 +1,70 @@
+name: MOIS Hui-Walter same-photo white-test identifiability SOURCE AUDIT ONLY
+on:
+  push:
+    branches: [method/mois-hui-walter-identifiability-20261105]
+    paths:
+      - .github/workflows/mois-hui-walter-identifiability-only.yml
+      - scripts/analysis/mois_latent_error_identifiability.py
+      - tests/test_mois_latent_error_identifiability.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-hui-walter-frozen-source-identifiability-audit-only
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check latent-class parameter counting and exact same-photo contracts
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_latent_error_identifiability.py -v
+          python -m py_compile scripts/analysis/mois_latent_error_identifiability.py
+      - name: Reuse existing 131072 numeric measurements ONLY, no photos or new classifier
+        run: |
+          set -euo pipefail
+          mkdir -p frozen
+          gh release download mois-128shards-131072-fullROI9-plus-500px-sourceID-joined-20261027-v1 \
+            --repo zuizui0223/mois \
+            --pattern bulk128_original_photo_ID_500px_and_strict_roi9_ONE_ROW.parquet \
+            --dir frozen
+          echo '2d648c832929f8ba59301906d5ea8d100bdfec6449c6e2828f6b9a910ddd0a02  frozen/bulk128_original_photo_ID_500px_and_strict_roi9_ONE_ROW.parquet' | sha256sum -c -
+      - name: Audit empirical paired-photo source for TWO botanical white classifiers
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_latent_error_identifiability \
+            --bulk-parquet frozen/bulk128_original_photo_ID_500px_and_strict_roi9_ONE_ROW.parquet \
+            --output result
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('result/source_eligibility.json').read_text())
+          assert d['original_distinct_photo_ids']==131072
+          assert d['original_strict9_success']==48784
+          assert d['original_strict9_unknown']==82288
+          assert not d['medium500_is_independent_white_petal_binary_test']
+          assert not d['second_independent_white_petal_classifier_outputs_in_frozen_source']
+          assert d['same_photo_paired_binary_white_tests']==0
+          assert not d['Hui_Walter_fit_run'] and not d['Se_Sp_environment_specific_estimated']
+          assert not d['original_strict9_unknown_imputed_or_relabelled']
+          assert not d['raw_original_photos_downloaded'] and not d['new_original_photo_ROI_inference']
+          assert d['identifiability_examples'][1]['count_status']=='UNDERIDENTIFIED'
+          print('MOIS_HW_NO_GOLD_STANDARD_METHOD_READINESS_SOURCE_AUDITED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-hui-walter-original131072-identifiability-source-audit-NO-FIT
+          path: result/source_eligibility.json
+          retention-days: 90
+          if-no-files-found: error
