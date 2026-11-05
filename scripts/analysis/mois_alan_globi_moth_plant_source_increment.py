@@ -221,6 +221,10 @@ def run(canonical,names,accepted,direct,out,*,page_size=250,max_pages=8):
     # study-level claim rows remain local and are NOT auto published to repo.
     totals.to_csv(out/"guild_record_photo_coverage.csv",index=False)
     support.to_csv(out/"guild_record_spatial_support.csv",index=False)
+    # Preserve only public GloBI interaction source claims, never the restricted
+    # Island species-colour rows. This frozen cache prevents repeat API queries.
+    records.to_csv(out/"GloBI_bounded_interaction_source_cache.csv.gz",index=False,
+                   compression={"method":"gzip","mtime":0})
     pd.DataFrame(quality).to_csv(out/"source_query_status.csv",index=False)
     pd.DataFrame(receipts).to_csv(out/"source_query_SHA_pages.csv",index=False)
     result={"schema":"MOIS_ALAN_GloBI_live_API_moth_family_source_feasibility_v1",
@@ -238,7 +242,9 @@ def run(canonical,names,accepted,direct,out,*,page_size=250,max_pages=8):
             "API_data_not_original_stable_GloBI_0p9_source":True,
             "MOIS_source_SHAs":{k:v[1] for k,v in files.items()},
             **meta,
-            "source_examples_not_raw_study_records_published":True,
+            "GloBI_source_claims_cached_in_GitHub_artifact":True,
+            "source_examples_not_raw_study_records_published":False,
+            "restricted_Island_species_colour_rows_published":False,
             "new_original_image_downloads":0,"new_image_inferences":0,
             "MNAR_sensitivity_scenarios_run":False,
             "result_SHA256":{p.name:sha(p) for p in sorted(out.iterdir()) if p.is_file()},
