@@ -13,6 +13,8 @@ def run(root,queue,out):
         if signature!=record['request_sha256']:raise ValueError('Cache request digest differs')
         if path.name.startswith('worldpop2_'):
             cells=[f['id'] for f in p['features']['features']]
+            key=hashlib.sha256(('|'.join(cells)+'|'+','.join(map(str,p['years']))).encode()).hexdigest()[:16]
+            if path.name!=f'worldpop2_{key}.json':raise ValueError('Population cache identity differs')
             population.extend(population_batch(cells,p['years'],path.parent))
         elif path.name.startswith('viirs_'):
             # Infer the exact cached cells from the regular nine-point geometry.

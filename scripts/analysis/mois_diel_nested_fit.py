@@ -11,8 +11,15 @@ def run(source,environment,out):
     keys=['cell025','year'];cols=keys+['radiance','population_density','temperature_c','precipitation_mm','n_precise_observations','block5','region10']
     if e.duplicated(keys).any():raise ValueError('Duplicate environmental keys')
     d=d.merge(e[cols],on=keys,how='left',validate='many_to_one')
-    raw=len(d);d=d.dropna(subset=cols+['white','night_share']).copy()
-    d=d.loc[d.population_density.ge(0)&d.precipitation_mm.ge(0)]
+    raw=len(d)
+    required=cols+['white','night_share']
+    d['environment_complete']=d[required].notna().all(axis=1)&d.population_density.ge(0)&d.precipitation_mm.ge(0)
+    d['missing_fields']=d[required].isna().apply(lambda row:'|'.join(row.index[row]),axis=1)
+    d.to_csv(out/'experimental_candidate_join_and_exclusions.csv.gz',index=False)
+    support=d.groupby('species').agg(candidate_rows=('year','size'),retained_rows=('environment_complete','sum'),candidate_cells=('cell025','nunique')).reset_index()
+    support['excluded_rows']=support.candidate_rows-support.retained_rows
+    support.to_csv(out/'experimental_environment_support_by_species.csv',index=False)
+    d=d.loc[d.environment_complete].copy()
     d['log_population']=np.log1p(d.population_density);d['log_precipitation']=np.log1p(d.precipitation_mm)
     d['log_effort']=np.log1p(d.n_precise_observations);d['night_centered']=d.night_share-.5;d['white_night']=d.white*d.night_centered
     names=['white','night_centered','white_night','log_population','temperature_c','log_precipitation','log_effort']
