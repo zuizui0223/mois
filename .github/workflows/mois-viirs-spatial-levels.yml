@@ -1,0 +1,79 @@
+name: MOIS ALAN spatial level correspondence (not annual change)
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-viirs-spatial-levels.yml
+      - scripts/analysis/mois_viirs_spatial_levels_20261105.py
+      - tests/test_mois_viirs_spatial_levels_20261105.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-ALAN-2020-2024-separate-spatial-levels-no-delta
+  cancel-in-progress: false
+jobs:
+  signed-analytical-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate spatial model contracts; no temporal-change regression
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 statsmodels==0.14.5 scipy==1.15.2
+          python -m unittest discover -s tests -p test_mois_viirs_spatial_levels_20261105.py -v
+          python -m py_compile scripts/analysis/mois_viirs_spatial_levels_20261105.py
+      - name: Recover exact prior ORIGINAL numerical cell sources; no pixels or new VIIRS requests
+        run: |
+          set -euo pipefail
+          mkdir -p signed/2020 signed/2024
+          gh run download 41946071715 --repo zuizui0223/mois \
+            --name mois-2020-VIIRS4month-WorldPop2020-taxonequal-source-cells --dir signed/2020
+          gh run download 41952464936 --repo zuizui0223/mois \
+            --name mois-ALAN-2020-2024-source-locked-original-photo-repeated-cell-numeric --dir signed/2024
+          echo '3562db1e5783e77d3bb408bd33817b4d7cccf31ad4d4ad42586469708fd407e3  signed/2020/viirs_population_source_matched_cells_2020.csv' | sha256sum -c -
+          echo '1c5f03e5a7c355a0f7045133140c5cf2e39a5802c548f89d1c2f66c8a235db5f  signed/2024/repeated_area_2020_2024_cell_aggregate.csv' | sha256sum -c -
+      - name: Independently fit year-specific geographic spatial ALAN correspondence
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_viirs_spatial_levels_20261105 \
+            --source-2020 signed/2020/viirs_population_source_matched_cells_2020.csv \
+            --source-2024 signed/2024/repeated_area_2020_2024_cell_aggregate.csv \
+            --out spatial_association
+          python - <<'PY'
+          import pandas as pd,json,hashlib
+          from pathlib import Path
+          path=Path('spatial_association')
+          d=pd.read_csv(path/'VIIRS_white_spatial_correspondence_by_year.csv').set_index('model')
+          assert set(d.index)=={'2020_all','2020_common302','2024_common302'}
+          assert d.loc['2020_all','n_cells']==1044
+          assert d.loc['2020_common302','n_cells']==302
+          assert d.loc['2024_common302','n_cells']==302
+          assert abs(d.loc['2020_all','night_white_coefficient_pp_per_log1p']-(-0.091869961815608))<1e-5
+          assert abs(d.loc['2020_common302','night_white_coefficient_pp_per_log1p']-0.374991992052294)<1e-5
+          assert abs(d.loc['2024_common302','night_white_coefficient_pp_per_log1p']-(-1.61896132812163))<1e-5
+          receipt=json.loads((path/'spatial_correspondence_receipt.json').read_text())
+          assert receipt['analysis']=='cross_sectional_level_not_temporal_change'
+          assert receipt['population2024_measured']==False
+          assert receipt['unknown_ROI9_not_white_nonwhite']
+          assert receipt['no_new_GIS_requests_or_original_image_download']
+          assert receipt['MNAR_sensitivity_run'] is False
+          assert receipt['result_SHA256']==hashlib.sha256((path/'VIIRS_white_spatial_correspondence_by_year.csv').read_bytes()).hexdigest()
+          print('MOIS_ALAN_SOURCE_SIGNED_SPATIAL_CORRESPONDENCE_NOT_YEAR_CHANGE_CONFIRMED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-ALAN-2020-2024-separate-spatial-level-coefficients-and-receipt
+          path: spatial_association/
+          retention-days: 90
+          if-no-files-found: error
