@@ -15,7 +15,7 @@ from scripts.analysis import mois_alan_globi_moth_plant_source_increment as old
 
 SHA={
  "globi":"6116acab80f2277af7ec109715e5815bf6c4461767ae61580da8d842c9e230e4",
- "status":"183d1a2da5a5bf159876e77441a292218cae8e24b9aaeed12df5fb68ee8e24b9eda",
+ "status":"183d1a2da5a5bf159876e77441a292218ca2f9bab202e9f5feb68ee8e24b9eda",
  "canonical":old.CANONICAL_SHA,
  "names":old.NAMES_SHA,
  "accepted":old.WCVP_SHA,
@@ -23,7 +23,7 @@ SHA={
  "viirs2020":"3562db1e5783e77d3bb408bd33817b4d7cccf31ad4d4ad42586469708fd407e3",
 }
 # Actual status SHA pinned here, no silent fallback to a different source.
-SHA["status"]="183d1a2da5a5bf159876e77441a292218cae8e24b9aaeed12df5fb68ee8e24b9eda"
+SHA["status"]="183d1a2da5a5bf159876e77441a292218ca2f9bab202e9f5feb68ee8e24b9eda"
 SIZES=(.05,.1,.25,.5,1.)
 PERIODS=("2020","2024","2019-2024")
 GUILDS=("moth_only","butterfly_only")
