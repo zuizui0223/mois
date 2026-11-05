@@ -30,7 +30,7 @@ class SourceStage2Tests(unittest.TestCase):
         old=pd.DataFrame({"plant_name":["Silene latifolia"],
              "guild":["moth_family_visit"],"source_family":["Sphingidae"],
              "relation":["visitsFlowersOf"],"insect_name":["Moth sp."],"study_title":["A"]})
-        with self.assertRaisesRegex(ValueError,"truncated"):
+        with self.assertRaisesRegex(ValueError,"capped provider"):
             s.add_pages(old,self.sample().loc[self.sample().family.eq("Sphingidae")])
 
 if __name__=="__main__":unittest.main()
