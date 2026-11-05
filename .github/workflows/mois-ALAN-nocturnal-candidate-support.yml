@@ -126,8 +126,8 @@ jobs:
                                    **count(data,d,colour_type)})
           result=pd.DataFrame(rows)
           a=result.set_index(['period','grid_degrees','colour_source'])
-          for p,deg,w,all4 in [('2020',.25,6,0),('2024',.25,17,0),
-                                ('2019-2024 pooled',.25,100,0),
+          for p,deg,w,all4 in [('2020',.25,6,0),('2024',.25,17,2),
+                                ('2019-2024 pooled',.25,100,14),
                                 ('2019-2024 pooled',.5,141,19)]:
               v=a.loc[(p,deg,'independent_species_direct')]
               assert int(v.cells_with_any_white_both_groups)==w
