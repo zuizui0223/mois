@@ -1,0 +1,54 @@
+name: MOIS ALAN GloBI true moth-visitor source pilot (numeric metadata only)
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-alan-globi-moth-guild-source-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  moth-plant-interaction-source-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Probe GloBI flower-visitor source schema with named moth families
+        run: |
+          python - <<'PY'
+          import requests,json,csv,io,hashlib
+          from pathlib import Path
+          q=[
+             ('Sphingidae','visitsFlowersOf'),
+             ('Sphingidae','pollinates'),
+             ('Noctuidae','visitsFlowersOf'),
+             ('Geometridae','visitsFlowersOf'),
+             ('Papilionidae','visitsFlowersOf'),
+          ]
+          rows=[]
+          for family,relation in q:
+              url='https://api.globalbioticinteractions.org/interaction.csv'
+              params={'sourceTaxon':family,'interactionType':relation,
+                      'includeObservations':'true','limit':'20','offset':'0'}
+              rec={'family':family,'relationship':relation,'url':url,'params':params}
+              try:
+                  response=requests.get(url,params=params,timeout=30,
+                                        headers={'User-Agent':'MOIS-Research-GloBI-Source-Audit/1.0'})
+                  rec['http']=response.status_code
+                  rec['bytes']=len(response.content)
+                  rec['sha256']=hashlib.sha256(response.content).hexdigest()
+                  rec['content_type']=response.headers.get('content-type')
+                  rec['header']=response.text[:500]
+                  if response.status_code==200:
+                      reader=csv.DictReader(io.StringIO(response.text))
+                      rec['fields']=reader.fieldnames
+                      rec['sample_rows']=list(reader)[:2]
+              except Exception as e:rec['error']=str(e)[:300]
+              rows.append(rec)
+              print('GLOBI_FLOWER_GUILD_PROBE',json.dumps({k:rec.get(k) for k in ('family','relationship','http','bytes','fields','error')},sort_keys=True),flush=True)
+          Path('globi_moth_family_pilot.json').write_text(json.dumps(rows,indent=2,ensure_ascii=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-alan-GloBI-specific-moth-vs-butterfly-meta-probe
+          path: globi_moth_family_pilot.json
+          retention-days: 60
