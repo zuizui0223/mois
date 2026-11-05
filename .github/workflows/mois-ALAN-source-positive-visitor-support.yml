@@ -48,7 +48,7 @@ jobs:
             --name mois-2020-VIIRS4month-WorldPop2020-taxonequal-source-cells --dir original
           echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  original/canonical_observations_climate.csv.gz' | sha256sum -c -
           echo 'dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2  original/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' | sha256sum -c -
-          echo '9cd6aa7ca29f00c64283bcc08dcb778e212b6449c406343ce74679741c06db2b3  original/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz' | sha256sum -c -
+          echo '9cd6aa7ca29f00c64283bcc08dcb778e212b644b837e64070051339b11d8b7b3  original/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz' | sha256sum -c -
           echo '7e86170218814abe2845da9a0282aecfdc930819b9d0c439bae8df4a0679c577  original/direct_species_trait_ledger.csv.gz' | sha256sum -c -
           echo 'a6b97aa0941215d2f645e4c4fbf19490492b93680a7d7c0502814c7a66902994  original/GloBI_stage2_signed_extension.csv.gz' | sha256sum -c -
           echo '3562db1e5783e77d3bb408bd33817b4d7cccf31ad4d4ad42586469708fd407e3  original/viirs_population_source_matched_cells_2020.csv' | sha256sum -c -
