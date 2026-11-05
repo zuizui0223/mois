@@ -160,7 +160,7 @@ def assess(s,source_names, direct,positions):
                      "cells_both_groups_independently_documented_white_ge1":int(((a>=1)&(b>=1)).sum()),
                      "cells_four_direct_colour_and_visit_groups_ge1":int(((a>=1)&(b>=1)&(c>=1)&(d>=1)).sum()),
                      "cells_four_direct_colour_and_visit_groups_ge2":int(((a>=2)&(b>=2)&(c>=2)&(d>=2)).sum()),
-                     "cells_four_direct_colour_and_visit_groups_ge3":int(((a>=3)&(b>=3)&(c>=3)&(d>=3)).sum()}
+                     "cells_four_direct_colour_and_visit_groups_ge3":int(((a>=3)&(b>=3)&(c>=3)&(d>=3)).sum())}
             summaries.append(summary)
     return pd.DataFrame(summaries),{
         "source_photo_rows":len(x),
