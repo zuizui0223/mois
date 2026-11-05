@@ -1,0 +1,53 @@
+name: MOIS full global macro fit after verified environmental acquisition
+on:
+  push:
+    branches: [analysis/mois-diel-sameyear-macro-20261105]
+    paths: [.github/workflows/mois-global-macro-fit.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  production:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy==2.1.3 pandas==2.2.3 scipy requests xarray netCDF4
+      - run: python -m unittest discover -s tests -p 'test_mois_macro*.py' -v
+      - name: Wait for complete environmental acquisition
+        run: gh run watch 41983664064 --repo zuizui0223/mois --exit-status --interval 60
+      - run: gh run download 41983664064 --repo zuizui0223/mois --dir acquired
+      - run: gh run download 41982925538 --repo zuizui0223/mois --dir broad_source
+      - run: gh run download 41982122333 --repo zuizui0223/mois --dir experimental_source
+      - run: python -m scripts.analysis.mois_flora_macro_assemble --source broad_source --out assembled
+      - run: python -m scripts.analysis.mois_diel_nested_assemble --source experimental_source --broad assembled --out nested
+      - run: python -m scripts.analysis.mois_macro_environment_assemble --root acquired --queue assembled/environment_queue.csv --out environment
+      - name: Download same-year coarse climate source
+        run: |
+          mkdir -p climate_source
+          curl --fail --location --retry 4 --retry-all-errors --output climate_source/air.2m.mon.mean.nc https://psl.noaa.gov/thredds/fileServer/Datasets/ncep.reanalysis2/Monthlies/gaussian_grid/air.2m.mon.mean.nc
+          curl --fail --location --retry 4 --retry-all-errors --output climate_source/prate.sfc.mon.mean.nc https://psl.noaa.gov/thredds/fileServer/Datasets/ncep.reanalysis2/Monthlies/gaussian_grid/prate.sfc.mon.mean.nc
+      - run: python -m scripts.acquisition.mois_macro_climate --queue assembled/environment_queue.csv --root climate_source --out climate
+      - run: python -m scripts.analysis.mois_macro_fit --source assembled --environment environment/sameyear_environment.csv --climate climate/sameyear_coarse_climate.csv --out models
+      - run: python -m scripts.analysis.mois_diel_nested_fit --source nested/experimental_species_cell_year_source.csv.gz --environment models/all_primary_rows_with_environment_and_missingness.csv.gz --out nested_models
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-full-global-macro-new-data-production
+          path: |
+            models/
+            nested_models/
+            environment/
+            climate/
+            nested/*receipt.json
+            nested/*support*.csv
+            assembled/assembly_receipt.json
+          retention-days: 90
