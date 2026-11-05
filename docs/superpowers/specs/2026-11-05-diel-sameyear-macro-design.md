@@ -16,6 +16,14 @@ Global macro inference is a comparison of photographed species assemblages or sp
 
 Reuse original photo/observation uniqueness, SHA locks, source-arm separation, strict abstention, geographic blocks, and cloud-free VIIRS QA. Audit method/mois-hui-walter-identifiability-20261105 at 41bc2520b9313d4cfce8b3d0f9ab873cc12e6e7c. Two genuine independent white-petal classifiers do not exist; do not fit Hui–Walter or label published species flower colour as an independent same-photo classifier. Preserve experimental heterogeneity and phylogenetic dependence where supported.
 
+## Frozen broad model before coefficient inspection
+
+Source assembly completed: 7,722 species have precise observations; 8,667,448 precise observations in 2015–2024 yield 83,991 primary cell-years, 23,612 cells, and 556 five-degree spatial blocks. Northern/southern cell-year counts are 72,629/11,362. These are source support, not fitted environmental results.
+
+Primary outcome is the percentage of documented single-colour species that are white in each eligible cell/year. Equal cell-year weight; log1p nonnegative VIIRS, log1p same-year WorldPop density, same-year temperature, log1p same-year precipitation, log1p original precise plant observation effort, and log documented richness are predictors. Absorb ten-degree region and year fixed effects; cluster uncertainty across five-degree blocks. Sensitivities: separate hemispheres, within-cell/year effects for cells with >=3 observed years, and genus/cell/year composition with genus/region/year effects and two-way spatial/genus clustering (each cell-year total weight one). None establishes causation or species absence. Genus controls and clustering are not a complete phylogenetic model; ecological cell association is conditional on the frozen species pool.
+
+Same-year climate addition uses NOAA PSL NCEP/DOE Reanalysis II monthly 2 m temperature and precipitation rate, integrated over the exact observation year with twelve required months. This coarse native Gaussian grid adjusts broad climatic variation only; no claim of 0.25-degree climate resolution. High-resolution static normals, if used later, must remain separately labelled. Failed/missing environmental matches are retained in the exclusion ledger; no interpolation across years. Nine-point VIIRS is an annual sampled proxy, not official annual VNL or plant-level illumination.
+
 ## Completion contract
 
 New published experimental and trait data downloaded with hashes; eligible species and exclusions enumerated; new same-year environmental data actually retrieved with year/quality checks; an identified macro model fit on the selected real cohort; tests and independent numerical checks; source-linked report and reproducible outputs. Unsupported models remain explicitly unestimated. No automatic merge or external communication.

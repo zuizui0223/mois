@@ -86,14 +86,16 @@ def population_batch(cells,years,cache):
     key=hashlib.sha256(('|'.join(cells)+'|'+','.join(map(str,years))).encode()).hexdigest()[:16]
     payload={'features':{'type':'FeatureCollection','features':[polygon(c) for c in cells]},'years':years,'include':'population'}
     d=cached_request(POP3+'/batch',payload,Path(cache)/f'worldpop2_{key}.json',post='json',timeout=240)
-    rows=[];seen=set()
+    rows=[];seen=set();keys=set()
     for feature in d.get('features',[]):
         cell=feature['id'];assert cell in cells and cell not in seen;seen.add(cell)
         for value in feature.get('years',[]):
             year=value['data_year'];assert year in years
+            if (cell,year) in keys:raise ValueError('Duplicate population cell/year')
+            keys.add((cell,year))
             value_ok=not feature.get('skipped',False) and np.isfinite(value['population_density']) and value['population_density']>=0
             rows.append({'cell025':cell,'year':year,'population_density':value['population_density'] if value_ok else np.nan,'population_area_km2':feature['area_km2']})
-    assert seen==set(cells) and len(rows)==len(cells)*len(years)
+    if keys!={(cell,year) for cell in cells for year in years}:raise ValueError('Population cell/year coverage differs')
     return rows
 
 def run(queue,out,cache,kind,workers=3,shard=0,shards=1):
@@ -112,11 +114,16 @@ def run(queue,out,cache,kind,workers=3,shard=0,shards=1):
     allrows=[];done=0
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futures=[ex.submit(viirs_batch if kind=='viirs' else population_batch,*job,cache) for job in jobs]
-        for f in as_completed(futures):
-            allrows.extend(f.result());done+=1
-            if done%10==0 or done==len(jobs):
-                pd.DataFrame(allrows).to_csv(out/f'{kind}_shard{shard:03d}.csv',index=False)
-                print(json.dumps({'kind':kind,'batches_done':done,'batches_total':len(jobs),'rows':len(allrows),'shard':shard}),flush=True)
+        try:
+            for f in as_completed(futures):
+                allrows.extend(f.result());done+=1
+                if done%10==0 or done==len(jobs):
+                    pd.DataFrame(allrows).to_csv(out/f'{kind}_shard{shard:03d}.csv',index=False)
+                    print(json.dumps({'kind':kind,'batches_done':done,'batches_total':len(jobs),'rows':len(allrows),'shard':shard}),flush=True)
+        except BaseException:
+            for f in futures:f.cancel()
+            if allrows:pd.DataFrame(allrows).to_csv(out/f'{kind}_shard{shard:03d}.csv',index=False)
+            raise
     return allrows
 
 if __name__=='__main__':

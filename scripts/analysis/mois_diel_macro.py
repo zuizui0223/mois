@@ -35,6 +35,8 @@ def build_species(root,out):
     names=pd.read_csv(names_path,dtype=str);accepted=pd.read_csv(accepted_path,dtype=str)
     lookup=name_lookup(names,accepted)
     path=root/'signed/diel_figshare_v1/published_analysis_export.csv'
+    assert digest(root/'signed/diel_figshare_v1/DvN_analysis_dataframe final.RData')=='b0aa1fa67fc484fa0000ed5f08119733d710d1c21e41c7ac0a018c1c50f6345a'
+    assert digest(path)=='fa099bc07412242d41fb20ccd507674c8ffac3fe45c1c302a706a806d0218d87', 'Frozen published export differs'
     d=pd.read_csv(path);d=d.loc[d.treatment.eq('day_night')].copy()
     d['night_share']=night_share(d['effectiveness_value_night.pollination'],d['effectiveness_value_day.pollination'])
     rows=[]

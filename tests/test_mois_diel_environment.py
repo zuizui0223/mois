@@ -1,7 +1,18 @@
 import unittest
+from unittest.mock import patch
 from scripts.acquisition import mois_diel_environment as m
 
 class EnvironmentalContracts(unittest.TestCase):
+    def test_population_duplicate_cannot_replace_missing_year(self):
+        response={'features':[{'id':'713_568','area_km2':100,'years':[{'data_year':2020,'population_density':4},{'data_year':2020,'population_density':5}]}]}
+        with patch.object(m,'cached_request',return_value=response):
+            with self.assertRaises(ValueError):m.population_batch(['713_568'],[2020,2024],'unused')
+    def test_population_exact_requested_keys(self):
+        response={'features':[{'id':'713_568','area_km2':100,'years':[{'data_year':2024,'population_density':0},{'data_year':2020,'population_density':5}]}]}
+        with patch.object(m,'cached_request',return_value=response):
+            rows=m.population_batch(['713_568'],[2020,2024],'unused')
+        self.assertEqual({(r['cell025'],r['year']) for r in rows},{('713_568',2020),('713_568',2024)})
+        self.assertEqual(rows[0]['population_density'],0)
     def sample(self,year=2019,month=7,cloud=5):
         return {'locationId':0,'location':{'x':10.,'y':20.},'value':f'2 {cloud}','attributes':{'year':year,'month':month}}
     def test_wrong_viirs_year_fails(self):
