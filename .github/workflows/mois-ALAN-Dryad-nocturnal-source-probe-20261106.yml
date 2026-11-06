@@ -1,0 +1,108 @@
+name: MOIS nocturnal pollen source Dryad taxonomic-resolution probe
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-ALAN-Dryad-nocturnal-source-probe-20261106.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-ALAN-Dryad-public-source-probe
+  cancel-in-progress: false
+jobs:
+  public-source-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read Dryad metadata and identify species-rank source files without inventing plant labels
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests==2.32.5 pandas==2.2.3 openpyxl==3.1.5
+          python - <<'PY'
+          import requests,json,hashlib,io,re
+          import pandas as pd
+          from pathlib import Path
+          out=Path('source_discovery');out.mkdir()
+          ses=requests.Session()
+          ses.headers.update({'User-Agent':'MOIS academic nocturnal plant-pollen dataset provenance probe/1.0'})
+          identifiers={
+             'Diniz_2025_Ecuador':'10.5061/dryad.sxksn03gp',
+             'Atwater_2025_Puerto_Rico':'10.5061/dryad.gxd2547xh',
+          }
+          record={}
+          for name,doi in identifiers.items():
+              rdata={'doi':doi,'dataset_url':'https://datadryad.org/dataset/doi:'+doi,'status':'not_fetched'}
+              urls=[
+                'https://datadryad.org/api/v2/datasets/doi%3A'+doi.replace('/','%2F'),
+                'https://datadryad.org/api/v2/datasets/doi:'+doi
+              ]
+              meta=None
+              for url in urls:
+                  try:
+                      resp=ses.get(url,timeout=25)
+                      print('DRYAD_META',name,resp.status_code,len(resp.content),resp.url,flush=True)
+                      if resp.ok:
+                          meta=resp.json();break
+                  except Exception as ex:print('DRYAD_META_ERROR',name,str(ex)[:180],flush=True)
+              if not isinstance(meta,dict):
+                  rdata['status']='metadata_failed';record[name]=rdata;continue
+              rdata['status']='metadata_success'
+              rdata['dataset_meta_keys']=sorted(meta.keys())
+              rdata['dataset_json_sha256']=hashlib.sha256(resp.content).hexdigest()
+              rdata['versionNumber']=meta.get('versionNumber')
+              rdata['links']=meta.get('_links',{})
+              candidate=[]
+              if isinstance(meta.get('identifier'),str):
+                  rdata['id']=meta['identifier']
+              for rawlink in (meta.get('_links') or {}).values():
+                  links=rawlink if isinstance(rawlink,list) else [rawlink]
+                  for link in links:
+                      if isinstance(link,dict) and 'href' in link:
+                          candidate.append(link['href'])
+              for path in candidate:
+                  if 'version' in path and 'file' not in path:
+                      uri='https://datadryad.org'+path if path.startswith('/') else path
+                      try:
+                          rr=ses.get(uri,timeout=25)
+                          if rr.ok:
+                              vv=rr.json()
+                              rdata['version_json_keys']=sorted(vv.keys())
+                              rdata['version_sha256']=hashlib.sha256(rr.content).hexdigest()
+                              rdata['version_links']=vv.get('_links',{})
+                              for link in (vv.get('_links') or {}).values():
+                                  for item in (link if isinstance(link,list) else [link]):
+                                      if isinstance(item,dict) and 'href' in item:
+                                          candidate.append(item['href'])
+                              break
+                      except Exception as e:print('DRYAD_VERSION_ERROR',name,str(e)[:150])
+              visited=set()
+              for path in candidate:
+                  if 'file' not in path:continue
+                  uri='https://datadryad.org'+path if path.startswith('/') else path
+                  if uri in visited:continue
+                  visited.add(uri)
+                  try:
+                      rr=ses.get(uri,timeout=30)
+                      print('DRYAD_FILES_API',name,rr.status_code,len(rr.content),uri,flush=True)
+                      if rr.ok:
+                          data=rr.json()
+                          rdata['file_response_keys']=list(data)
+                          rdata['file_meta_sha256']=hashlib.sha256(rr.content).hexdigest()
+                          rdata['files_summary']=str(data)[:3500]
+                          break
+                  except Exception as exc:print('DRYAD_FILES_API_ERROR',name,str(exc)[:180])
+              record[name]=rdata
+          (out/'dryad_public_API_discovery_receipt.json').write_text(json.dumps(record,indent=2,ensure_ascii=False))
+          for k,v in record.items():
+              print('DRYAD_DISCOVERY',k,json.dumps(v,ensure_ascii=False)[:5500],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-Dryad-public-plant-pollen-source-discovery-NO-PHOTOS
+          path: source_discovery/
+          retention-days: 90
+          if-no-files-found: error
