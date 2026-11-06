@@ -58,6 +58,12 @@ Both original local CSV files and GitHub source blobs verified byte-identical us
 
 No source photographs fetched, inferred or recoloured. No unknown converted to white/nonwhite. No original scientific estimates overwritten, no previously forbidden MNAR sensitivity run, no private Island species-level trait records redistributed.
 
+## Prioritized evidence acquisition roster (compiled locally, not publicly uploaded)
+
+Of the **40** photographed accepted species from the nocturnally collected moth pollen-transport study, **5** have independently documented single-state WHITE flowers, **3** have independently documented single-state NONWHITE flowers and **32** have no eligible single-state High/Medium documented botanical flower colour. Those **32** otherwise eligible MOIS species account for **2,707 original strictROI9 successful photos** during 2019–2024, including **76 photos on original 2020 VIIRS cells** and **12 photos on actual 2024 VIIRS cells**.
+
+An additional species-name only literature-retrieval priority queue was created for the user-facing local reproducibility bundle; it ranks those 32 species by existing same-year satellite-matched photo support and existing ROI9-success photo opportunity counts. It does NOT assign flower colour or true local nocturnal pollination from photos. The queue is held outside the public PR because the original independent individual species trait ledger has third-party redistribution constraints. Five new local unit tests passed, source SHA locks verified, and the GitHub public aggregate CSVs are byte-identical to the independently run numerical outputs.
+
 ## Next focused step
 
 Source an *independent species-level* time-of-day / pollen-transfer candidate panel from explicitly nocturnal source studies, retaining study location, event-time verification, plant accepted ID, pollen carriage vs verified deposition/seed production, and presence of **documented day-time interactions** as separate fields. The [Diniz et al. (2025) primary pollen-metabarcoding dataset](https://datadryad.org/dataset/doi%3A10.5061/dryad.sxksn03gp) is a potential second source; some plant links are ASVs identified only at genus/family rank, so they must NOT be automatically promoted to species identities. Recheck botanical white and exact-year VIIRS support before any ALAN coefficient. A source with 500 plant-association records but zero species-level accepted names has no usable denominator for the targeted inference.
