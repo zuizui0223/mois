@@ -1,0 +1,55 @@
+name: MOIS island shoreline source recovery (no images)
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths: [.github/workflows/mois-island-GSHHG-source-20261106.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-island-GSHHG-h-L1-L2-source-only
+  cancel-in-progress: false
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download official frozen coastline archive and retain high-resolution L1/L2 only
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --connect-timeout 20 --max-time 300 \
+            https://github.com/GenericMappingTools/gshhg-gmt/releases/download/2.3.7/gshhg-shp-2.3.7.zip \
+            --output gshhg-shp-2.3.7.zip
+          echo '8dbbe7e071e77e9e75f2d639239099ebca8d5c16d6a07df8169729d49f15cf41  gshhg-shp-2.3.7.zip' | sha256sum -c -
+          python - <<'PY'
+          import hashlib,json,zipfile
+          from pathlib import Path
+          target=Path('shoreline');target.mkdir()
+          with zipfile.ZipFile('gshhg-shp-2.3.7.zip') as z:
+              for member in z.namelist():
+                  name=Path(member).name
+                  if name.startswith(('GSHHS_h_L1.','GSHHS_h_L2.')) or name.upper() in ('README.TXT','LICENSE.TXT','COPYING.LESSER','COPYING'):
+                      (target/name).write_bytes(z.read(member))
+          for level in (1,2):
+              for suffix in ('shp','shx','dbf','prj'):
+                  assert (target/f'GSHHS_h_L{level}.{suffix}').is_file()
+          report={'source':'GSHHG','version':'2.3.7','resolution':'h',
+                  'original_archive_sha256':'8dbbe7e071e77e9e75f2d639239099ebca8d5c16d6a07df8169729d49f15cf41',
+                  'source_url':'https://github.com/GenericMappingTools/gshhg-gmt/releases/download/2.3.7/gshhg-shp-2.3.7.zip',
+                  'purpose':'ocean landmass point overlay with inland-water exclusion',
+                  'island_repo_policy_min_area_km2':5.0,
+                  'island_repo_policy_mainland_area_threshold_km2':7000000.0,
+                  'source_photo_requests':0,
+                  'extracted_sha256':{f.name:hashlib.sha256(f.read_bytes()).hexdigest() for f in sorted(target.iterdir())}}
+          (target/'source_receipt.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
+          print('GSHHG_FROZEN_H_L1_L2_SOURCE_VERIFIED',json.dumps(report,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-GSHHG-2.3.7-high-L1-L2-SHA-source-no-images
+          path: shoreline/
+          retention-days: 90
+          if-no-files-found: error
