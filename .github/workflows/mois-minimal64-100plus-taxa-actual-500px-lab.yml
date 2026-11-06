@@ -1,0 +1,205 @@
+name: MOIS actually acquire 64 bias-balanced NEW original photos from >=100 source taxa
+on:
+  push:
+    branches: [feat/full93m-medium-pixel-firstpass]
+    paths:
+      - .github/workflows/mois-minimal64-100plus-taxa-actual-500px-lab.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-genuine-novel-64-photo-tier07-100plus-zero9-observation-disjoint-source
+  cancel-in-progress: false
+jobs:
+  actually-download-and-measure-bounded64-source-photographs:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      ULTRALYTICS_OFFLINE: 'True'
+      ORIGINAL_MODEL_SHA: f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5
+      SOURCE_TAG: mois-20261026-minimal64-new-taxa-100plus-tier07-bias-strata-source-v1
+      COLOUR_TAG: mois-real20261026-novel64-source-geobalanced-original500px-floralLab-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install already-tested original medium-photo and sRGB-Lab pixel runtime
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 \
+            Pillow==11.3.0 ultralytics==8.4.112
+          python -m py_compile scripts/acquisition/mois_full93m_medium_pixel_scan.py
+          python -m unittest discover -s tests -p test_mois_flower_box_lab_colour.py -v
+          python -m unittest discover -s tests -p test_mois_full93m_floral_lab_v2.py -v
+      - name: Restore immutable NEW original photo ID source and SHA-based 64-photo selection receipt
+        run: |
+          set -euo pipefail
+          mkdir -p source model
+          gh release download "$SOURCE_TAG" --repo "$REPO" --dir source \
+            --pattern mois_bounded_bias_aware_newphoto_precolour_source_receipt.json \
+            --pattern mois_bounded_bias_aware_tier07_new64_original_source.csv.gz \
+            --pattern mois_bounded_new_taxon_original_photo_sampling_provenance.csv
+          echo '3debdd9353e423cf21b5f768f8aead9bb7587fcdc5f761ac7e381746d4099b0b  source/mois_bounded_bias_aware_tier07_new64_original_source.csv.gz' | sha256sum -c -
+          python - <<'PY'
+          import csv,gzip,json,hashlib
+          from pathlib import Path
+          base=Path('source')
+          r=json.loads((base/'mois_bounded_bias_aware_newphoto_precolour_source_receipt.json').read_text())
+          assert r['schema']=='mois_minimal_64_unmeasured_100plus_taxa_tier07_geo_effort_sampling_v1'
+          assert r['all_16_original_tier07_source_tar_archives_SHA_verified']
+          assert r['actual_new_original_photo_IDs_SELECTED_not_yet_image_downloaded']==64
+          assert r['one_photo_one_source_observation_one_taxon_in_minimal_pilot']
+          assert r['image_bytes_newly_downloaded']==0
+          assert r['full_93m_parent_photo_ids']==93209351
+          with gzip.open(base/'mois_bounded_bias_aware_tier07_new64_original_source.csv.gz','rt') as f:
+            rows=list(csv.DictReader(f))
+          assert len(rows)==64 and len(set(x['photo_id'] for x in rows))==64
+          assert len(set(x['inat_taxon_id'] for x in rows))==64
+          assert len(set(x['observation_uuid'] for x in rows))==64
+          assert all(x['tier']=='7' for x in rows)
+          print('MOIS_GENUINE_64_PRESELECTED_ORIGINAL_PHOTO_IDS_NO_PRETEND_MEASUREMENTS',flush=True)
+          PY
+      - name: Restore source SHA-frozen flower BOX detector once, no anatomical petal network
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 9fae6ccdf684a46026f72ba12e98de2c5c54bf2a
+          git -C "$RUNNER_TEMP/fcp" show FETCH_HEAD:data/atlas/qualification/roi_v4_training/jrc_yolo11n_last_v4.pt > model/jrc_yolo11n_last_v4.pt
+          echo "$ORIGINAL_MODEL_SHA  model/jrc_yolo11n_last_v4.pt" | sha256sum -c -
+          python - <<'PY'
+          from ultralytics import YOLO
+          m=YOLO('model/jrc_yolo11n_last_v4.pt')
+          assert m.names.get(0)=='item'
+          print('MOIS_ORIGINAL_YOLO11_FLORAL_BOX_MODEL_SHA_LOCKED_FOR_64_NEW_PHOTOS',flush=True)
+          PY
+      - name: ACTUALLY read at most 64 NEW distinct original iNaturalist S3 500px photos and detect box colour in one pass
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.acquisition.mois_full93m_medium_pixel_scan import (
+             scan_source,sha_file,WarmFlowerBoxDetector,Pacer,download_medium,
+          )
+          source=Path('source/mois_bounded_bias_aware_tier07_new64_original_source.csv.gz')
+          receipt=json.loads(Path('source/mois_bounded_bias_aware_newphoto_precolour_source_receipt.json').read_text())
+          model=WarmFlowerBoxDetector(
+              weights=Path('model/jrc_yolo11n_last_v4.pt'),
+              expected_sha256='f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5',
+              class_id=0,expected_class_name='item',device='cpu',conf=0.02)
+          pace=Pacer(2.0)
+          result=scan_source(
+              source,Path('actual64'),
+              expected_source_sha256=receipt['photo_source_SHA256'],
+              expected_count=64,part=0,tier=7,
+              detector=model,
+              download=lambda url:download_medium(url,pace),
+              workers=6,batch_size=64,max_packets=1,
+              source_role='bias_controlled_pilot',
+              feature_mode='floral_box_lab_v2')
+          assert result['schema']=='mois_all_original_photo_medium_pixel_stage1_CIELAB_dominant_v2'
+          assert result['actual_unique_source_photo_ids_attempted']==64
+          assert result['outcome_conditioned_supplement_not_population_unbiased'] is True
+          assert result['calibration_subset_not_global_census'] is True
+          assert not result['all_original_input_photos_attempted']
+          assert result['CIELAB_box_source_protocol']=='mois_flower_box_srgb_cielab_mode_v1'
+          print('MOIS_REAL_NEW64_ORIGINAL_500PX_IMAGES_PIXELS_AND_LAB_OBSERVED',
+                json.dumps({k:result[k] for k in (
+                   'actual_unique_source_photo_ids_attempted','screen_counts',
+                   'medium_image_pixels_decoded','medium_image_pixels_unavailable',
+                   'medium_image_payload_bytes_downloaded',
+                   'outcome_conditioned_supplement_not_population_unbiased')},sort_keys=True),flush=True)
+          PY
+      - name: Independently reconcile every new original photo and source effort band, preserve technical unknowns
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv,gzip,hashlib,json
+          from collections import defaultdict
+          from pathlib import Path
+          base=Path('source')
+          r=json.loads((base/'mois_bounded_bias_aware_newphoto_precolour_source_receipt.json').read_text())
+          full=Path('actual64')
+          packet=full/'packet-0000000.csv.gz'
+          result=json.loads((full/'packet-0000000.receipt.json').read_text())
+          with gzip.open(packet,'rt') as f:
+            data=list(csv.DictReader(f))
+          with (base/'mois_bounded_new_taxon_original_photo_sampling_provenance.csv').open() as f:
+            prior={x['photo_id']:x for x in csv.DictReader(f)}
+          assert len(data)==len(prior)==64
+          assert set(prior)=={x['photo_id'] for x in data}
+          assert result['source_gzip_sha256']==r['photo_source_SHA256']
+          assert result['photo_ids']==64
+          status=defaultdict(lambda:defaultdict(int))
+          count_lab=0
+          for x in data:
+              meta=prior[x['photo_id']]
+              cell=meta['source_hemisphere_band']+'|'+meta['sampling_prior_attempt_class']
+              status[cell]['actual_photos_attempted']+=1
+              status[cell][x['screen_status']]+=1
+              if x.get('floral_box_main_L_star'):
+                  count_lab+=1
+                  status[cell]['observed_flower_BOX_CIELAB_photos']+=1
+          assert len(status)==8 and all(v['actual_photos_attempted']==8 for v in status.values())
+          overview={
+            'schema':'mois_new_64_source_photo_100plus_no_old9_minimal_pixel_measurement_receipt_v1',
+            'fresh_original_photo_ids_attempted':64,
+            'fresh_source_observations':64,
+            'fresh_taxa_100plus_source_no_prior_strict9':64,
+            'old_1043930_photo_and_observation_overlap':0,
+            'actual_source_media_decoded':result['medium_image_pixels_decoded'],
+            'actual_500px_flower_ROI_Lab_boxes_measured':count_lab,
+            'real_provider_access_or_decode_failures':result['medium_image_pixels_unavailable'],
+            'four_hue_or_original9_strict_new_classification_claimed':False,
+            'botanical_petal_colour_claimed':False,
+            'outcome_conditioned_sample_is_NOT_globally_unbiased':True,
+            'all_decoded_photo_pixel_access_retains_true_screen_unknowns':True,
+            'source_phase2_by_geography_and_prior_attempts':{k:dict(v) for k,v in status.items()},
+            'source_precolour_receipt_sha256':hashlib.sha256((base/'mois_bounded_bias_aware_newphoto_precolour_source_receipt.json').read_bytes()).hexdigest(),
+            'genuine_media_pixel_terminal_SHA256':hashlib.sha256(packet.read_bytes()).hexdigest()
+          }
+          (full/'mois_new64_real_pixel_global_bias_aware_summary.json').write_text(
+            json.dumps(overview,indent=2,sort_keys=True)+'\n')
+          print('MOIS_NEW64_REAL_PHOTO_COLOUR_MEASUREMENTS_BY_GEO_EFFORT',
+                json.dumps(overview,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-actual-64-new-100plus-source-taxa-500px-image-Lab-photoIDs
+          path: |
+            actual64/
+            source/mois_bounded_bias_aware_newphoto_precolour_source_receipt.json
+            source/mois_bounded_new_taxon_original_photo_sampling_provenance.csv
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish only real new pixel terminal table and source selection receipt without redistributing photographs
+        run: |
+          set -euo pipefail
+          if gh release view "$COLOUR_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p prior
+            gh release download "$COLOUR_TAG" --repo "$REPO" --dir prior \
+              --pattern mois_new64_real_pixel_global_bias_aware_summary.json
+            cmp prior/mois_new64_real_pixel_global_bias_aware_summary.json \
+                actual64/mois_new64_real_pixel_global_bias_aware_summary.json
+            echo 'Previous signed new-photo pixel release unchanged.'
+          else
+            gh release create "$COLOUR_TAG" \
+              actual64/packet-0000000.csv.gz \
+              actual64/packet-0000000.receipt.json \
+              actual64/mois_new64_real_pixel_global_bias_aware_summary.json \
+              source/mois_bounded_bias_aware_newphoto_precolour_source_receipt.json \
+              source/mois_bounded_new_taxon_original_photo_sampling_provenance.csv \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS genuinely NEW 64 selected original-photo S3 image assays, 100plus source species lacking previous ROI9' \
+              --notes 'Actual 64 distinct original source photo IDs and observation IDs from 64 different taxa with at least 100 source photographs, previously zero strict 9-colour ROIs, previously 1–4 attempted photos; 8 per north/south extratropical/tropical × old image effort stratum. Parent original source complete 93209351 photo IDs, tier07 1193829 source pixel opportunities fully SHA verified, no overlap with previous 1043930. Photo media actually fetched once from public Open Data S3 and YOLO-box CIELAB L/C/h and white/green/brown-like descriptors computed. This is a color and ROI tech pilot, not anatomically verified petals and NOT 64 new strict flower ROI9 classes. The outcome-conditioned taxon source selection is NOT a representative or inverse-probability-correctable world-flora prevalence estimator; preserve failure outcomes and source-original colour stats separately. No original images redistributed.'
+          fi

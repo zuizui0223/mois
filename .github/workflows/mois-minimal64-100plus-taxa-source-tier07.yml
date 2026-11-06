@@ -1,0 +1,122 @@
+name: MOIS source frozen minimal64 new 100plus taxa missing9 bias controlled tier07 pilot
+on:
+  push:
+    branches: [feat/full93m-medium-pixel-firstpass]
+    paths:
+      - scripts/acquisition/mois_select_new64_tier07_never_strict_100plus.py
+      - tests/test_mois_select_new64_tier07_never_strict_100plus.py
+      - .github/workflows/mois-minimal64-100plus-taxa-source-tier07.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-minimal64-previously-poor-taxa-geographically-balanced-signed93m-tier07-source
+  cancel-in-progress: false
+jobs:
+  freeze-sixty-four-novel-photo-ids-from-fully-authenticated-93m-source:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+      REPO: zuizui0223/mois
+      ORIGINAL_TIER: mois-complete-93209351-original-photo-target-tiers-v1
+      RELEASE_TAG: mois-20261026-minimal64-new-taxa-100plus-tier07-bias-strata-source-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Sanity-check bounded signed source selection and sample design
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/acquisition/mois_select_new64_tier07_never_strict_100plus.py
+          python -m unittest discover -s tests -p test_mois_select_new64_tier07_never_strict_100plus.py -v
+      - name: Restore exactly 16 independently SHA-signed tier07 all original photo/opportunity files
+        run: |
+          set -euo pipefail
+          mkdir -p original_tier
+          gh release download "$ORIGINAL_TIER" --repo "$REPO" --dir original_tier \
+            --pattern 'tier-07-group-*.tar' \
+            --pattern 'group-*-receipt.json' \
+            --pattern 'mois_all_original_photo_target_tiers_receipt.json'
+          test "$(find original_tier -maxdepth 1 -name 'tier-07-group-*.tar' | wc -l)" -eq 16
+          test "$(find original_tier -maxdepth 1 -name 'group-*-receipt.json' | wc -l)" -eq 16
+          test -s original_tier/mois_all_original_photo_target_tiers_receipt.json
+          echo MOIS_TIER07_ALL_16_ORIGINAL_OBSERVATION_AND_PHOTO_HASH_SOURCE_AVAILABLE
+      - name: Restore current genuine 1043930 old image photo IDs, their observation UUIDs, and rebased 400710 real nine-component colours
+        run: |
+          set -euo pipefail
+          mkdir -p atlas old census priority
+          gh release download mois-original1043930-400710-strict9-with-oldwaves-restored-20261026-v1 \
+            --repo "$REPO" --dir atlas \
+            --pattern mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet \
+            --pattern mois_real1043930_recovered_400710_original9_source_receipt.json
+          gh run download 40187688390 --repo "$REPO" \
+            --name mois-1043930-latest-original-photo-four-hue-fully-signed-union --dir census
+          gh release download mois-original1043930-source-structure-42111-taxon-colour-gaps-20261026-v1 \
+            --repo "$REPO" --dir priority \
+            --pattern mois_42111_source_taxon_photo_ROI_priority_register.csv.gz
+          printf '%s\n' \
+            'df0f562b58bdc7ba06e901530eb809f513a763e2b0524d3b195e99ee56e930ef  atlas/mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet' \
+            '9a4f3dae6fbcee967b71cb29576e71d52c48e1f1f790b7d3ea4750c4bcb0e6d4  census/mois_latest_1043930_true_original_photo_hue_observation.parquet' \
+            | sha256sum -c -
+      - name: Choose independent original photos and observations only from taxa with at least 100 source photos and zero 9ROI measurements
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_select_new64_tier07_never_strict_100plus \
+            --groups original_tier \
+            --registry original_tier/mois_all_original_photo_target_tiers_receipt.json \
+            --register priority/mois_42111_source_taxon_photo_ROI_priority_register.csv.gz \
+            --atlas atlas/mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet \
+            --atlas-receipt atlas/mois_real1043930_recovered_400710_original9_source_receipt.json \
+            --union census/mois_latest_1043930_true_original_photo_hue_observation.parquet \
+            --union-receipt census/mois_latest_1043930_photo_union_receipt.json \
+            --per-cell 8 --output pilot_source
+          python - <<'PY'
+          import json,csv,gzip,hashlib
+          from pathlib import Path
+          root=Path('pilot_source')
+          p=json.loads((root/'mois_bounded_bias_aware_newphoto_precolour_source_receipt.json').read_text())
+          assert p['schema']=='mois_minimal_64_unmeasured_100plus_taxa_tier07_geo_effort_sampling_v1'
+          assert p['full_93m_parent_photo_ids']==93209351
+          assert p['previous_9colour_success_source']==400710
+          assert p['all_1043930_previously_attempted_original_photo_ids_excluded']==1043930
+          assert p['all_16_original_tier07_source_tar_archives_SHA_verified']
+          assert p['one_photo_one_source_observation_one_taxon_in_minimal_pilot']
+          assert 24<=p['actual_new_original_photo_IDs_SELECTED_not_yet_image_downloaded']<=64
+          assert p['image_bytes_newly_downloaded']==p['original_ROI_or_photo_Lab_inferred']==0
+          with gzip.open(root/'mois_bounded_bias_aware_tier07_new64_original_source.csv.gz','rt') as f:
+              r=list(csv.DictReader(f))
+          assert len(r)==p['actual_new_original_photo_IDs_SELECTED_not_yet_image_downloaded']
+          assert len(set(q['observation_uuid'] for q in r))==len(r)
+          assert len(set(q['inat_taxon_id'] for q in r))==len(r)
+          print('MOIS_ORIGINAL93M_GEO_EFFORT_BIAS_AWARE_NEW_PHOTO_SOURCE_FROZEN',
+                json.dumps({k:v for k,v in p.items() if k!='original_tier07_group_SHA256'},
+                            sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-minimal64-new100plus-nocolour-independent-original-photo-source
+          path: pilot_source/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish signed source-only sampling plan BEFORE opening any provider photo
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p previous
+            gh release download "$RELEASE_TAG" --repo "$REPO" --dir previous \
+              --pattern mois_bounded_bias_aware_newphoto_precolour_source_receipt.json
+            cmp previous/mois_bounded_bias_aware_newphoto_precolour_source_receipt.json \
+                pilot_source/mois_bounded_bias_aware_newphoto_precolour_source_receipt.json
+            echo 'Unchanged immutable independent photo source identity.'
+          else
+            gh release create "$RELEASE_TAG" pilot_source/* \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS original 93m tier07 minimum new <=64 photo IDs from >=100-source taxa with zero strict9' \
+              --notes 'FIRST no photo pixels were downloaded: using all 16 source SHA-authenticated 93m original observation-tier07 source sets; selected up to eight photos each in northern/southern tropical/extratropical x original source photo attempts=1 or 2-4 among taxa with >=100 original photo opportunities and zero accepted image-derived 9palette colour. Any photo-ID/observation-ID among pre-existing 1043930 real photos was excluded, strict nine image-data 400710 rebased. This is an outcome-conditioned supplemental enrichment design, NOT a globally representative iNaturalist or wild/native blooming species probability sample. Each selected original image has a source-provenance ledger and conditional tier07 source selection factors; raw photo colour and flowering phenology not inferred. Full 93m remains eligible for later image scans.'
+          fi

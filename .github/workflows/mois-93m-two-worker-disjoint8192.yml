@@ -1,0 +1,211 @@
+name: MOIS two real persistent photo workers, disjoint 8192, 16 requests/s test
+on:
+  push:
+    branches: [feat/full93m-medium-pixel-firstpass]
+    paths:
+      - .github/workflows/mois-93m-two-worker-disjoint8192.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-two-real-source-workers-distinct-tier12-chunk2-and-chunk6
+  cancel-in-progress: false
+jobs:
+  two-actual-photo-workers:
+    if: github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - slot: 0
+            chunk: 2
+          - slot: 1
+            chunk: 6
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: "1"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      ULTRALYTICS_OFFLINE: "True"
+      WEIGHT_SHA: f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5
+      SLOT: ${{ matrix.slot }}
+      CHUNK: ${{ matrix.chunk }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install one CPU warm YOLO and pooled S3 HTTP connector
+        run: |
+          set -euo pipefail
+          python -m pip install -q Pillow==11.3.0 numpy==2.1.3 \
+            ultralytics==8.4.112 urllib3==2.5.0
+          python -m py_compile scripts/acquisition/mois_93m_persistent_worker.py
+      - name: Reuse signed 363920-photo parent and verify this is a NEW unique source chunk for one slot
+        run: |
+          set -euo pipefail
+          mkdir -p signed weights
+          gh run download 40166855425 --repo zuizui0223/mois \
+            --name mois-full93m-real-tier12-part000-363920-source-89-sha-bounded-photo-chunks \
+            --dir signed
+          python - <<'PY'
+          import os,json,hashlib,csv
+          from pathlib import Path
+          from scripts.acquisition.mois_93m_persistent_worker import slot_for
+          tier,part=12,0
+          slot,chunk=int(os.environ["SLOT"]),int(os.environ["CHUNK"])
+          assert slot_for(tier,part,chunk,2)==slot
+          assert chunk not in (0,1), "Previously scanned original images must not be redownloaded"
+          root=Path("signed")
+          proof=json.loads((root/"chunk_receipt.json").read_text())
+          assert proof["actual_original_photo_IDs"]==363920
+          assert proof["original_source_part_sha256"]=="2601e901d31cb1aac65ac94ce3d2e6e3cce9aef45cacd137a4213cd81b2c53eb"
+          assert proof["chunks"]==89
+          assert hashlib.sha256((root/"chunk_manifest.csv").read_bytes()).hexdigest()==proof["manifest_sha256"]
+          with (root/"chunk_manifest.csv").open(newline="") as fh:
+              item=next(x for x in csv.DictReader(fh)
+                        if int(x["chunk_index"])==chunk)
+          assert int(item["expected_photo_ids"])==4096
+          file=root/item["chunk_relative_path"]
+          assert hashlib.sha256(file.read_bytes()).hexdigest()==item["chunk_gzip_sha256"]
+          print("MOIS_DISJOINT_FRESH_SOURCE_SLOT_READY",
+                slot,chunk,4096,flush=True)
+          PY
+      - name: SHA-restore authentic trained YOLO from frozen FCP original code
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp-model"
+          git -C "$RUNNER_TEMP/fcp-model" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp-model" fetch --no-tags --depth=1 origin 9fae6ccdf684a46026f72ba12e98de2c5c54bf2a
+          git -C "$RUNNER_TEMP/fcp-model" show FETCH_HEAD:data/atlas/qualification/roi_v4_training/jrc_yolo11n_last_v4.pt > weights/jrc_yolo11n_last_v4.pt
+          echo "$WEIGHT_SHA  weights/jrc_yolo11n_last_v4.pt" | sha256sum -c -
+      - name: Run ONE long-lived model in this slot, with next256-image prefetch and 8 S3 req/s per worker
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os,time
+          from pathlib import Path
+          from concurrent.futures import ThreadPoolExecutor
+          from scripts.acquisition.mois_93m_persistent_worker import PooledOpenDataDownloader
+          from scripts.acquisition.mois_full93m_medium_pixel_scan import WarmFlowerBoxDetector
+          from scripts.acquisition.mois_full93m_signed_chunk_pixel_scan import run
+          slot,chunk=int(os.environ["SLOT"]),int(os.environ["CHUNK"])
+          weight=Path("weights/jrc_yolo11n_last_v4.pt")
+          detector=WarmFlowerBoxDetector(
+              weight,os.environ["WEIGHT_SHA"],0,"item",device="cpu",conf=.02)
+          connection_pool=PooledOpenDataDownloader(8.0,io_threads=16)
+          t0=time.time()
+          try:
+              with ThreadPoolExecutor(max_workers=16) as io_executor:
+                  evidence=run(Path("signed"),Path("stage1"),chunk,
+                      detector=detector,download=connection_pool,
+                      workers=16,batch_size=256,io_executor=io_executor,
+                      prefetch_next_packet=True)
+          finally:
+              connection_pool.close()
+          t1=time.time()
+          complete=json.loads(Path("stage1/complete_receipt.json").read_text())
+          assert evidence["actual_new_or_resumed_medium_photo_attempts"]==4096
+          assert complete["expected_photo_ids"]==4096
+          assert complete["source_role"]=="full93m_chunk"
+          assert complete["source_chunk_index"]==chunk
+          assert complete["actual_unique_source_photo_ids_attempted"]==4096
+          assert complete["source_scan_prefetch_overlapped"] is True
+          assert complete["prefetched_photo_packet_size"]==256
+          assert len(list(Path("stage1").glob("packet-*.csv.gz")))==16
+          assert complete["detector_identity"]=="yolo11:"+os.environ["WEIGHT_SHA"]+":item:0.02"
+          r={
+              "schema":"mois_two_source_disjoint_real_500px_workers_v1",
+              "worker_slot":slot,"worker_slots":2,
+              "tier":12,"part":0,"source_chunk_index":chunk,
+              "original_photos_attempted":4096,
+              "actual_medium_photos_decoded":complete["medium_image_pixels_decoded"],
+              "candidate_boxes":complete["screen_counts"].get("candidate",0),
+              "screen_negatives_not_deleted":complete["screen_counts"].get("negative",0),
+              "technical_errors":complete["screen_counts"].get("error",0),
+              "model_weight_sha256":os.environ["WEIGHT_SHA"],
+              "download_connection_pool_reused_for_all_packet_work":True,
+              "next_256_image_packet_prefetched_during_model":True,
+              "source_4hue_petal_labels_changed":False,
+              "original_photo_bytes_saved_to_disk":False,
+              "provider_http_requests_per_second_this_slot_ceiling":8,
+              "source_photo_start_epoch":t0,
+              "source_photo_end_epoch":t1,
+              "wall_seconds":t1-t0,
+              "new_original_photo_ids_per_second":4096/(t1-t0),
+          }
+          Path("stage1/worker_slot_summary.json").write_text(
+              json.dumps(r,indent=2,sort_keys=True)+"\n")
+          print("MOIS_PARALLEL_REAL_93M_SOURCE_ONE_SLOT_RESULT",
+                json.dumps(r,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-93m-2slot-fresh4096-source-slot-${{ matrix.slot }}-chunk-${{ matrix.chunk }}
+          path: stage1/
+          retention-days: 90
+          if-no-files-found: warn
+
+  verify-two-workers:
+    needs: two-actual-photo-workers
+    if: needs.two-actual-photo-workers.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-93m-2slot-fresh4096-source-slot-*
+          path: both
+      - name: Reconcile real two-worker source disjointness and exact aggregate elapsed span
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from collections import Counter
+          files=list(Path("both").rglob("worker_slot_summary.json"))
+          assert len(files)==2,files
+          workers=[json.loads(f.read_text()) for f in files]
+          assert {x["worker_slot"] for x in workers}=={0,1}
+          assert {x["source_chunk_index"] for x in workers}=={2,6}
+          assert sum(x["original_photos_attempted"] for x in workers)==8192
+          assert all(x["next_256_image_packet_prefetched_during_model"] for x in workers)
+          assert all(x["source_4hue_petal_labels_changed"] is False for x in workers)
+          elapsed=max(x["source_photo_end_epoch"] for x in workers)-min(
+              x["source_photo_start_epoch"] for x in workers)
+          assert elapsed>0
+          record={
+            "schema":"mois_exact_8192_2parallel_source_photo_pixels_v1",
+            "new_exact_photo_id_attempts":8192,
+            "parallel_worker_count":2,
+            "original_93m_part":0,"original_93m_tier":12,
+            "photo_disjoint_chunk_indices":[2,6],
+            "aggregate_total_requested_source_ceiling_rps":16,
+            "actual_end_to_end_parallel_elapsed_wall_seconds":elapsed,
+            "actual_both_workers_combined_photo_attempts_per_second":8192/elapsed,
+            "medium_pixels_decoded":sum(x["actual_medium_photos_decoded"] for x in workers),
+            "candidate_boxes":sum(x["candidate_boxes"] for x in workers),
+            "screen_negatives":sum(x["screen_negatives_not_deleted"] for x in workers),
+            "errors":sum(x["technical_errors"] for x in workers),
+            "human_verified_flower_petal_labels_from_this_stage":0,
+            "full93m_total_images_completed":False,
+            "workers":workers,
+          }
+          Path("both/true_parallel8192_receipt.json").write_text(
+              json.dumps(record,indent=2,sort_keys=True)+"\n")
+          print("MOIS_REAL_PARALLEL_8192_SOURCE_IMAGE_WORKERS_CAPACITY_BENCHMARK",
+                json.dumps(record,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-93m-real-8192-source-two-persistent-slot-parallel-summary
+          path: both/true_parallel8192_receipt.json
+          retention-days: 90
+          if-no-files-found: error

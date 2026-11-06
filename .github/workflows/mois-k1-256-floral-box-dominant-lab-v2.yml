@@ -1,0 +1,116 @@
+name: MOIS 256 real floral box dominant sRGB Lab green brown white pilot
+on:
+  push:
+    branches: [feat/full93m-medium-pixel-firstpass]
+    paths:
+      - .github/workflows/mois-k1-256-floral-box-dominant-lab-v2.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-256-photo-real-srgb-Lab-floral-region-major-colour-only-once
+  cancel-in-progress: false
+jobs:
+  actual-real-floral-colour-proxy-green-brown-white:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 23
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      ULTRALYTICS_OFFLINE: "True"
+      MODEL_SHA: f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify fixed sRGB D65 Lab transforms and original-photo packet invariants offline
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 Pillow==11.3.0 pandas==2.2.3 \
+            pyarrow==19.0.1 ultralytics==8.4.112
+          python -m unittest discover -s tests -p test_mois_flower_box_lab_colour.py -v
+          python -m unittest discover -s tests -p test_mois_full93m_floral_lab_v2.py -v
+          python -m py_compile scripts/acquisition/mois_k1_medium_pixel_256_benchmark.py
+      - name: Restore signature-verified real K1 128 previous ROI success and 128 previous ROI fail
+        run: |
+          set -euo pipefail
+          mkdir -p actual_K1 weights
+          gh release download mois-full93m-tier06-balanced-onephoto-K1-new-original-warm8-RGB-v1 \
+            --repo zuizui0223/mois --dir actual_K1 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          printf '%s\n' \
+            '0d3de3374a06b1e7b9ad0281e2ab7844632ed139db871488524061191c8f34c1  actual_K1/measured_photos.parquet' \
+            'e86463bc61f9eebd8cbdbe01269f767c140bf243f9e374027008e9f095eb9044  actual_K1/receipt.json' \
+            | sha256sum -c -
+      - name: Restore SHA-locked original YOLO11 model only, not petal annotation network
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch --no-tags --depth=1 origin 9fae6ccdf684a46026f72ba12e98de2c5c54bf2a
+          git -C "$RUNNER_TEMP/fcp" show FETCH_HEAD:data/atlas/qualification/roi_v4_training/jrc_yolo11n_last_v4.pt > weights/jrc_yolo11n_last_v4.pt
+          echo "$MODEL_SHA  weights/jrc_yolo11n_last_v4.pt" | sha256sum -c -
+          python - <<'PY'
+          from ultralytics import YOLO
+          assert YOLO("weights/jrc_yolo11n_last_v4.pt").names.get(0)=="item"
+          print("MOIS_LAB_REAL_FLOWER_BOX_MODEL_ITEM_CLASS_AND_SHA_VERIFIED")
+          PY
+      - name: Actual 500px Open Data S3 photographs, warm YOLO and sRGB-Lab ROI mode all in ONE pass
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_k1_medium_pixel_256_benchmark \
+            --k1-parquet actual_K1/measured_photos.parquet \
+            --k1-receipt actual_K1/receipt.json \
+            --source-output verified_photo_inputs \
+            --pixel-output fresh_flower_roi_Lab_mode \
+            --weights weights/jrc_yolo11n_last_v4.pt \
+            --weights-sha256 "$MODEL_SHA" \
+            --flower-class-id 0 --flower-class-name item \
+            --detector-conf .02 --device cpu \
+            --workers 8 --requests-per-second 2 \
+            --colour-feature-mode floral_box_lab_v2 --execute
+      - name: Verify green/brown/white/CIELAB source is box-pixel descriptive, not real petal assignment
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv,gzip,json
+          from pathlib import Path
+          base=Path("fresh_flower_roi_Lab_mode")
+          summary=json.loads((base/"K1_medium_pixel_benchmark_summary.json").read_text())
+          packet=json.loads((base/"packet-0000000.receipt.json").read_text())
+          with gzip.open(base/"packet-0000000.csv.gz","rt") as f:
+              d=list(csv.DictReader(f))
+          assert len(d)==256 and len({r["photo_id"] for r in d})==256
+          assert packet["schema"]=="mois_all_original_photo_medium_pixel_stage1_CIELAB_dominant_v2"
+          assert packet["CIELAB_box_source_protocol"]=="mois_flower_box_srgb_cielab_mode_v1"
+          assert summary["pilot_images_attempted"]==256
+          assert summary["color_feature_mode"]=="floral_box_lab_v2"
+          assert summary["source_K1_roi_classification_by_medium_scan_status"]
+          assert summary["observed_flower_box_lab_features"]["this_is_flower_box_not_semantic_petals"]
+          assert summary["medium_decoded"]+summary["medium_access_or_decode_unknown"]==256
+          assert not (base/"complete_receipt.json").exists()
+          measured=[r for r in d if r["screen_status"]=="candidate"
+                    and r["floral_box_main_L_star"]]
+          assert len(measured)>0
+          assert all(0<=float(r["floral_box_main_L_star"])<=100 for r in measured)
+          assert all(float(r["floral_box_main_C_star"])>=0 for r in measured)
+          assert all(0<=float(r["floral_box_fraction_green_like"])<=1 for r in measured)
+          assert all(0<=float(r["floral_box_fraction_brown_like"])<=1 for r in measured)
+          assert all(r["floral_box_may_include_nonfloral_pixels"]=="true" for r in measured)
+          print("MOIS_TRUE256_PHOTOS_DOMINANT_FLORAL_BOX_LAB_GREEN_BROWN_WHITE_RESULT",
+                json.dumps(summary,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real-K1-256-500px-floral-region-dominant-Lab-green-brown-v2
+          path: |
+            verified_photo_inputs/
+            fresh_flower_roi_Lab_mode/
+          retention-days: 90
+          if-no-files-found: warn

@@ -1,0 +1,75 @@
+name: MOIS data-only real K1 500px fast colour proxy calibration
+on:
+  push:
+    branches: [feat/full93m-medium-pixel-firstpass]
+    paths:
+      - .github/workflows/mois-k1-fast500-box-proxy-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  k1-authentic-box-proxy-vs-four-hue:
+    if: github.repository == 'zuizui0223/mois' && github.ref == 'refs/heads/feat/full93m-medium-pixel-firstpass'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install data-only original Parquet join dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_k1_fast500_box_proxy_vs_roi.py
+      - name: Restore SHA-locked K1 original 76753 previous ROI and the 256 warm YOLO medium photo outcomes
+        run: |
+          set -euo pipefail
+          mkdir -p original_K1 original_500px
+          gh release download mois-full93m-tier06-balanced-onephoto-K1-new-original-warm8-RGB-v1 \
+            --repo zuizui0223/mois --dir original_K1 --pattern measured_photos.parquet
+          echo '0d3de3374a06b1e7b9ad0281e2ab7844632ed139db871488524061191c8f34c1  original_K1/measured_photos.parquet' | sha256sum -c -
+          gh run download 40163518118 --repo zuizui0223/mois \
+            --name mois-K1-256-500px-original-YOLO-box-detection-and-timing \
+            --dir original_500px
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('original_500px/YOLO500_results')
+          assert (p/'packet-0000000.csv.gz').exists()
+          r=json.loads((p/'K1_medium_pixel_benchmark_summary.json').read_text())
+          assert r['actual_flower_detection_model_used'] is True
+          assert r['pilot_images_attempted']==256 and r['medium_decoded']==256
+          assert r['flower_detection_recall_established'] is False
+          print('MOIS_REAL_256_500PX_EXISTING_ORIGINAL_IMAGES_REUSED_WITHOUT_S3',flush=True)
+          PY
+      - name: Compare genuine 500px cropped-box HSV with frozen 4-hue ROI reference, no unknown recolouring
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_k1_fast500_box_proxy_vs_roi \
+            --k1-parquet original_K1/measured_photos.parquet \
+            --stage1-packet original_500px/YOLO500_results/packet-0000000.csv.gz \
+            --output fast500_K1_calibration.json
+          python - <<'PY'
+          import json
+          r=json.load(open('fast500_K1_calibration.json'))
+          assert r['original_photos_evaluated']==256
+          assert r['original_ROI_success_reference']==128
+          assert r['original_ROI_gate_unknown_without_reference']==128
+          assert r['new_image_bytes_fetched']==0
+          assert r['unknown_original_roi_labels_promoted_to_colours']==0
+          assert r['automatically_human_certified_open_flower_petals']==0
+          assert r['confidence_threshold_or_model_tuned_on_this_same_sample'] is False
+          print('MOIS_K1_IMAGE_PROXY_TRUE_AGREEMENT_NO_NEW_DOWNLOADS',
+                json.dumps(r,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-K1-256-existing-500px-boxHSV-versus-frozen-four-hue-ROI-calibration
+          path: fast500_K1_calibration.json
+          retention-days: 90
+          if-no-files-found: error

@@ -1,0 +1,131 @@
+name: MOIS rebalance 400710 actual ROI9 with 2048 NEW geo-season original-photo acquisitions
+on:
+  push:
+    branches: [feat/full93m-medium-pixel-firstpass]
+    paths:
+      - scripts/acquisition/mois_balance1043930_tier07_2048_source.py
+      - tests/test_mois_balance1043930_tier07_2048_source.py
+      - .github/workflows/mois-balance1043930-real2048-geo-season-RGB.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-t07-2048-photographs-region-season-coverage-compensating-original-20261026
+  cancel-in-progress: false
+jobs:
+  source-bias-balancing-cohorts:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      ORIGINAL_TIER: mois-complete-93209351-original-photo-target-tiers-v1
+      PRECOLOUR_TAG: mois-original93m-tier07-geoseason-balanced-2048-botharms-source-20261026-v1
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    outputs:
+      groups: ${{ steps.ready.outputs.groups }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Check pre-registered adaptive geographic/season bias-allocation design before new photographs
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/acquisition/mois_balance1043930_tier07_2048_source.py
+          python -m unittest discover -s tests -p test_mois_balance1043930_tier07_2048_source.py -v
+      - name: Restore only signed original source photo tier07, once across all 16 source groups (no full93m rescan)
+        run: |
+          set -euo pipefail
+          mkdir -p parent_tier
+          gh release download "$ORIGINAL_TIER" --repo "$REPO" --dir parent_tier \
+            --pattern 'tier-07-group-*.tar' \
+            --pattern 'group-*-receipt.json' \
+            --pattern 'mois_all_original_photo_target_tiers_receipt.json'
+          test "$(find parent_tier -maxdepth 1 -name 'tier-07-group-*.tar' | wc -l)" -eq 16
+          test "$(find parent_tier -maxdepth 1 -name 'group-*-receipt.json' | wc -l)" -eq 16
+      - name: Restore true photo-ID and observation-ID census; use current 400710 strict original ROI9 profiles as acquisition deficit
+        run: |
+          set -euo pipefail
+          mkdir -p original atlas frame
+          gh release download mois-original1043930-400710-strict9-with-oldwaves-restored-20261026-v1 \
+            --repo "$REPO" --dir atlas \
+            --pattern mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet \
+            --pattern mois_real1043930_recovered_400710_original9_source_receipt.json
+          gh run download 40187688390 --repo "$REPO" \
+            --name mois-1043930-latest-original-photo-four-hue-fully-signed-union \
+            --dir original
+          gh release download mois-original1043930-source-structure-42111-taxon-colour-gaps-20261026-v1 \
+            --repo "$REPO" --dir frame \
+            --pattern mois_42111_source_taxon_photo_ROI_priority_register.csv.gz
+          printf '%s\n' \
+            'df0f562b58bdc7ba06e901530eb809f513a763e2b0524d3b195e99ee56e930ef  atlas/mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet' \
+            '9a4f3dae6fbcee967b71cb29576e71d52c48e1f1f790b7d3ea4750c4bcb0e6d4  original/mois_latest_1043930_true_original_photo_hue_observation.parquet' \
+            | sha256sum -c -
+      - name: Select two SEPARATE balanced 256 reference + 1792 deficit-targeted source cohorts with exact independent original observations
+        id: ready
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_balance1043930_tier07_2048_source \
+            --groups parent_tier \
+            --registry parent_tier/mois_all_original_photo_target_tiers_receipt.json \
+            --atlas atlas/mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet \
+            --atlas-receipt atlas/mois_real1043930_recovered_400710_original9_source_receipt.json \
+            --union original/mois_latest_1043930_true_original_photo_hue_observation.parquet \
+            --union-receipt original/mois_latest_1043930_photo_union_receipt.json \
+            --taxa frame/mois_42111_source_taxon_photo_ROI_priority_register.csv.gz \
+            --reference 256 --targeted 1792 --output new_photo_source
+          python - <<'PY'
+          import json,os,csv
+          from pathlib import Path
+          root=Path('new_photo_source')
+          m=json.loads((root/'manifest.json').read_text())
+          assert m['new_photo_attempts_planned']==2048
+          assert m['source_arm_counts']=={
+              'mois_tier07_geo_season_photo_reference_original_observation_v1':256,
+              'mois_tier07_1043930_photo_bias_gap_adaptive_species_season_v1':1792}
+          assert m['work_units']==8
+          assert m['group_ids']==[0,1]
+          assert m['existing_strict9_actual_original_roi_SHA256']=='df0f562b58bdc7ba06e901530eb809f513a763e2b0524d3b195e99ee56e930ef'
+          assert m['source_new_image_IDs_and_observations_unique_and_prior_disjoint']
+          assert m['provider_original_image_bytes_downloaded']==0
+          with (root/'selected_original_photo_design_provenance.csv').open(newline='') as f:
+              table=list(csv.DictReader(f))
+          assert len(table)==2048
+          assert len({r['photo_id'] for r in table})==2048
+          assert len({r['original_observation_id'] for r in table})==2048
+          assert len({r['inat_taxon_id'] for r in table})>100
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('groups=[0,1]\n')
+          print('MOIS_GENUINE93M_2048_REGION_SEASON_PHOTO_BIAS_REPAIR_SOURCE_SIGNED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-2048-novel-original-photo-biased-geo-season-balanced-precolour-source
+          path: new_photo_source/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish source-only experiment design and exact 2048 photo IDs before any RGB download
+        run: |
+          set -euo pipefail
+          tar -cf new_photo_worker_shards.tar -C new_photo_source shards
+          if gh release view "$PRECOLOUR_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p previous
+            gh release download "$PRECOLOUR_TAG" --repo "$REPO" --dir previous --pattern manifest.json
+            cmp previous/manifest.json new_photo_source/manifest.json
+            echo 'Already published same source and strata; no amendment.'
+          else
+            gh release create "$PRECOLOUR_TAG" \
+              new_photo_source/manifest.json \
+              new_photo_source/selected_original_photo_design_provenance.csv \
+              new_photo_worker_shards.tar \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS 93m source: 2048 new images for latitude/season ROI9 bias correction with 256 reference controls' \
+              --notes 'No image bytes downloaded or inferred yet. Exactly 2048 independent original photo IDs and observation UUIDs, new versus the 1043930 already attempted source. A 256-photo source-observation-uniform reference cohort and 1792 *separate* taxon/latitude-band/local season gap-targeted enrichment cohort selected using existing 400710 actual original ROI9 support and regional ROI success rates. Geographic season/source support, per-stratum conditional sampling probabilities and all 16 tier07 source archive SHA receipts frozen BEFORE opening pixels. Conditional strata weights are not a valid 93m worldwide plant or colour distribution Horvitz-Thompson estimator without modelling the original observational population; no petal/bloom/native classifications inferred.'
+          fi
