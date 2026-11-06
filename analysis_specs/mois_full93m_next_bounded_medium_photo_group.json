@@ -3,8 +3,7 @@
   "source_release": "mois-complete-93209351-original-photo-target-tiers-v1",
   "full_original_photo_ids": 93209351,
   "tier": 0,
-  "group": 2,
-  "expected_source_photo_ids": 1074,
+  "group": 3,
   "max_real_image_attempts_this_run": 1200,
   "provider_medium_requests_per_second": 3,
   "bounded_parallel_downloads": 8,
@@ -15,5 +14,5 @@
   "no_photographic_native_or_taxon_exclusions": true,
   "requires_source_group_sha_and_original_photo_count": true,
   "full_93m_census_complete": false,
-  "scope": "new_genuine_tier0_source_group2_testing_3rps"
+  "scope": "new_genuine_tier0_source_group3_source_derived_count_3rps"
 }
