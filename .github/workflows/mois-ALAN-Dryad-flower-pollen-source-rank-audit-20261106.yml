@@ -60,12 +60,22 @@ jobs:
               wanted=[f for f in candidates if f.get("path")==info["file"] or f.get("filename")==info["file"]]
               if len(wanted)!=1:raise RuntimeError(f"expected exactly one version-pinned {info['file']}, got {len(wanted)}")
               file=wanted[0]
-              uri=root+f"/files/{file['id']}/download"
+              filelinks=file.get("_links",{})
+              link=filelinks.get("stash:download") or filelinks.get("download")
+              if isinstance(link,dict) and link.get("href"):
+                  uri=link["href"]
+                  if uri.startswith("/"):uri="https://datadryad.org"+uri
+              else:
+                  self_link=(filelinks.get("self") or {}).get("href","")
+                  found=re.search(r"/files/(\\d+)",self_link)
+                  if not found:raise RuntimeError("Dryad file lacks id and public download metadata: "+str(filelinks)[:900])
+                  uri=root+f"/files/{found.group(1)}/download"
+              print("DRYAD_SIGNED_FILE_URL_PATH",label,uri.split("?")[0],flush=True)
               r=ses.get(uri,timeout=90);print("DRYAD_FILE_DOWNLOAD",label,r.status_code,len(r.content),flush=True)
               r.raise_for_status()
               digest=hashlib.sha256(r.content).hexdigest()
               result={"doi":info["doi"],"api_version_id":info["version"],
-                      "file":info["file"],"file_id":file["id"],
+                      "file":info["file"],"file_reference":filelinks.get("self",{}).get("href",""),
                       "file_sha256":digest,"file_size":len(r.content),
                       "data_license_not_reissued":True,
                       "latent_night_pollination_effectiveness_not_asserted":True,
