@@ -1,0 +1,87 @@
+name: MOIS ALAN Atwater 2025 moth pollen study × verified WCVP flower colour source
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-ALAN-Atwater-moth-pollen-source-join-20261106.yml
+      - scripts/analysis/mois_alan_atwater_moth_plant_source_join_20261106.py
+      - tests/test_mois_alan_atwater_moth_plant_source_join_20261106.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-ALAN-Atwater-public-original-moth-pollen-source-join
+  cancel-in-progress: false
+jobs:
+  original-source-join:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test independently documented moth-visitor and pollen-transport source tier
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m unittest discover -s tests -p test_mois_alan_atwater_moth_plant_source_join_20261106.py -v
+          python -m py_compile scripts/analysis/mois_alan_atwater_moth_plant_source_join_20261106.py
+      - name: Use existing source-frozen numeric photo and VIIRS artifacts only
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh run download 41007444495 --repo zuizui0223/mois \
+            --name mois-nohuman-canonical-climate-joined-20261030 --dir source
+          gh run download 39225659840 --repo zuizui0223/mois \
+            --name mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status --dir source
+          gh run download 34191508045 --repo zuizui0223/island \
+            --name source-scale-batch-integration-34191508045 --dir source
+          gh run download 41946071715 --repo zuizui0223/mois \
+            --name mois-2020-VIIRS4month-WorldPop2020-taxonequal-source-cells --dir source
+          gh run download 41952464936 --repo zuizui0223/mois \
+            --name mois-ALAN-2020-2024-source-locked-original-photo-repeated-cell-numeric --dir source
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  source/canonical_observations_climate.csv.gz' | sha256sum -c -
+          echo 'dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2  source/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' | sha256sum -c -
+          echo '9cd6aa7ca29f00c64283bcc08dcb778e212b644b837e64070051339b11d8b7b3  source/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz' | sha256sum -c -
+          echo '7e86170218814abe2845da9a0282aecfdc930819b9d0c439bae8df4a0679c577  source/direct_species_trait_ledger.csv.gz' | sha256sum -c -
+          echo '3562db1e5783e77d3bb408bd33817b4d7cccf31ad4d4ad42586469708fd407e3  source/viirs_population_source_matched_cells_2020.csv' | sha256sum -c -
+          echo '1c5f03e5a7c355a0f7045133140c5cf2e39a5802c548f89d1c2f66c8a235db5f  source/repeated_area_2020_2024_cell_aggregate.csv' | sha256sum -c -
+      - name: Exact MOIS photo ID, WCVP species and same-year VIIRS support of Atwater plant source
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_alan_atwater_moth_plant_source_join_20261106 \
+            --canonical source/canonical_observations_climate.csv.gz \
+            --taxon source/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+            --names source/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz \
+            --direct source/direct_species_trait_ledger.csv.gz \
+            --viirs2020 source/viirs_population_source_matched_cells_2020.csv \
+            --viirs2024 source/repeated_area_2020_2024_cell_aggregate.csv \
+            --out original_atwater_source
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib,pandas as pd
+          p=Path('original_atwater_source')
+          r=json.loads((p/'source_receipt.json').read_text())
+          assert r['original_table_species']==7
+          assert r['original_table_flower_visit_rows']==151
+          assert r['original_table_pollen_transport_rows']==28
+          assert r['new_images_downloaded_or_ROI_inferred']==0
+          assert r['MNAR_tipping_scenarios_run']==False
+          assert r['original_study_shows_pollen_carrying_NOT_stigma_deposition']
+          assert len(pd.read_csv(p/'public_Atwater_2025_table2_moth_plant_counts.csv'))==7
+          for name,digest in r['output_sha256'].items():
+              assert hashlib.sha256((p/name).read_bytes()).hexdigest()==digest
+          print('MOIS_ATWATER_AUTHENTICATED_PAPER_SOURCE_MOIS_WCVP_VIIRS_NUMERIC_JOIN_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-Atwater2025-Florida-moth-study-seven-plants-original-photo-source-coverage
+          path: original_atwater_source/
+          retention-days: 90
+          if-no-files-found: error
