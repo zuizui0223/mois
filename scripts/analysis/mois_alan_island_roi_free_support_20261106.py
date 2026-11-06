@@ -276,8 +276,8 @@ def run(args):
     legacy=legacy_viirs_support(
         pd.read_csv(args.viirs2020,dtype={"cell_id":str}) if args.viirs2020 else None,
         pd.read_csv(args.viirs2024,dtype={"cell_id":str}) if args.viirs2024 else None)
-    annual=signed_annual_viirs(pd.read_csv(args.viirs_annual,dtype={"cell_id":str}))
-        if args.viirs_annual else pd.DataFrame(columns=legacy.columns)
+    annual=(signed_annual_viirs(pd.read_csv(args.viirs_annual,dtype={"cell_id":str}))
+            if args.viirs_annual else pd.DataFrame(columns=legacy.columns))
     # An annual record, if available, takes priority. The quarterly proxy is a
     # separate diagnostic; never splice it into an "annual" time series.
     source=annual if args.viirs_annual else legacy
