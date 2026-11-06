@@ -1,0 +1,55 @@
+name: MOIS global no-area-cutoff real source connectivity preflight
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths: [.github/workflows/mois-global-noarea-network-resume-preflight-20261106.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-global-noarea-two-request-preflight
+  cancel-in-progress: false
+jobs:
+  actual-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q requests==2.32.5
+      - name: Obtain actual source bytes for the first globally queued 2020 site
+        run: |
+          python - <<'PY'
+          import datetime as dt,hashlib,json,requests
+          from pathlib import Path
+          out=Path('preflight');out.mkdir()
+          rec={'schema':'mois_global_real_network_preflight_v1','target_id':'2020|1242_2853|2','longitude':-117.875,'latitude':52.675,'new_photo_requests':0,'requests':[]}
+          geometry=json.dumps({'x':-117.875,'y':52.675,'spatialReference':{'wkid':4326}})
+          sources=[('viirs','https://di-lawimagery1.img.arcgis.com/arcgis/rest/services/NighttimeLightsMDNB/ImageServer','1577836800000,1580515199000'),('population_global1','https://worldpop.arcgis.com/arcgis/rest/services/WorldPop_Population_Density_1km/ImageServer','1577836800000,1609459199000')]
+          for name,url,times in sources:
+              params={'f':'json','geometry':geometry,'geometryType':'esriGeometryPoint','returnGeometry':'false','returnCatalogItems':'true','time':times}
+              if name=='viirs':params['renderingRule']=json.dumps({'rasterFunction':'Average Monthly Radiance (Raw Values)'})
+              entry={'product':name,'year':2020,'month':1 if name=='viirs' else 0,'endpoint':url+'/identify','params':params,'retrieved_utc':dt.datetime.now(dt.timezone.utc).isoformat()}
+              try:
+                  r=requests.get(url+'/identify',params=params,timeout=35)
+                  file=out/(name+'.response.json');file.write_bytes(r.content)
+                  entry.update(http_status=r.status_code,response_sha256=hashlib.sha256(r.content).hexdigest(),response_file=file.name)
+                  if r.status_code==200:
+                      obj=r.json();entry['raw_value']=obj.get('value');entry['api_error']=obj.get('error');entry['catalog_items']=obj.get('catalogItems');entry['properties']=obj.get('properties')
+                  else:entry['error']='HTTP_'+str(r.status_code)
+              except requests.RequestException as e:entry['error']=type(e).__name__+': '+str(e)[:300]
+              except ValueError as e:entry['error']='INVALID_JSON: '+str(e)[:200]
+              rec['requests'].append(entry)
+              print('ACTUAL_GLOBAL_ENVIRONMENT_PREFLIGHT',json.dumps(entry,ensure_ascii=False),flush=True)
+              if entry.get('http_status') in (401,403,429) or entry.get('error'):break
+          (out/'preflight_receipt.json').write_text(json.dumps(rec,indent=2,sort_keys=True)+'\n')
+          assert len(rec['requests'])==2 and all(r.get('http_status')==200 and not r.get('api_error') for r in rec['requests']), 'Provider connectivity not verified; retain raw failure, do not launch the batch'
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-global-noarea-2020-firstsite-real-provider-responses
+          path: preflight/
+          retention-days: 90
+          if-no-files-found: error
