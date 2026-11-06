@@ -156,8 +156,9 @@ def legacy_viirs_support(v20=None,v24=None):
         a.columns=["cell_id","radiance"]
         a["year"]=2024; a["source"]="quarter_months_NOT_annual"
         frames.append(a)
-    return pd.concat(frames,ignore_index=True) if frames else pd.DataFrame(
-        columns=["cell_id","radiance","year","source"])
+    return pd.concat(frames,ignore_index=True) if frames else pd.DataFrame({
+        "cell_id":pd.Series(dtype="string"),"radiance":pd.Series(dtype="float64"),
+        "year":pd.Series(dtype="int64"),"source":pd.Series(dtype="string")})
 
 def signed_annual_viirs(annual):
     required={"cell_id","year","radiance","cf_cvg","product_version"}
