@@ -4,7 +4,7 @@
   "full_original_photo_ids": 93209351,
   "tier": 0,
   "group": 3,
-  "max_real_image_attempts_this_run": 1200,
+  "max_real_image_attempts_this_run": 2048,
   "provider_medium_requests_per_second": 3,
   "bounded_parallel_downloads": 8,
   "frozen_yolo_original_weight_sha256": "f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5",
@@ -14,5 +14,5 @@
   "no_photographic_native_or_taxon_exclusions": true,
   "requires_source_group_sha_and_original_photo_count": true,
   "full_93m_census_complete": false,
-  "scope": "new_genuine_tier0_source_group3_source_derived_count_3rps"
+  "scope": "new_genuine_tier0_source_group3_signed_count_up_to2048_3rps"
 }
