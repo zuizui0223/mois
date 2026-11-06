@@ -68,7 +68,7 @@ jobs:
           else
             echo 'Historical Island artifact expired/unavailable; independently rebuild source and record backend.'
             git clone --depth 1 --filter=blob:none --sparse https://github.com/zuizui0223/island.git source-island-repo
-            git -C source-island-repo sparse-checkout set src config pyproject.toml README.md
+            git -C source-island-repo sparse-checkout set src config
             python -m pip install -q -e ./source-island-repo
             island-v2-gshhg build --output-dir geometry/rebuilt
             cp geometry/rebuilt/prepared/islands_v2.gpkg geometry/islands_v2.gpkg
