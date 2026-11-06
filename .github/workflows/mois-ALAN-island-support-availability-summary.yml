@@ -1,0 +1,103 @@
+name: MOIS ALAN island ROI-free real support distribution without redoing source
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-ALAN-island-support-availability-summary.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  data-only-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore only already successful genuine island ROI-free numeric aggregate
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          mkdir -p input
+          gh run download 42171173575 --repo zuizui0223/mois \
+            --name mois-island-ALAN-ROI-free-source-coverage-20261106 --dir input
+          python - <<'PY'
+          import pandas as pd,hashlib,json
+          from pathlib import Path
+          p=Path('input')
+          receipt=json.loads((p/'source_receipt.json').read_text())
+          assert receipt['schema']=='mois_ALAN_island_ROIfree_source_support_v1'
+          assert receipt['actual_island_original_photo_observations']==61734
+          assert receipt['island_photo_independent_direct_colour']==28024
+          assert receipt['island_photo_moth_visit_positive']==14041
+          assert receipt['island_photo_direct_colour_and_moth_positive']==5328
+          for name,sha in receipt['output_sha256'].items():
+              assert hashlib.sha256((p/name).read_bytes()).hexdigest()==sha
+          x=pd.read_csv(p/'island_year_ROI_free_source_support.csv')
+          assert x.island_id.nunique()==889
+          assert x.photos_all_original_no_roi_gate.sum()==61734
+          assert x.photos_with_independent_single_colour.sum()==28024
+          assert x.photos_with_positive_moth_visit_record.sum()==14041
+          assert x.photos_colour_and_moth_record.sum()==5328
+          # Delineate a photo-rich island from a true colour-guild-ALAN support island.
+          isl=x.groupby('island_id',as_index=False).agg(
+              photos=('photos_all_original_no_roi_gate','sum'),
+              colour_photos=('photos_with_independent_single_colour','sum'),
+              moth_photos=('photos_with_positive_moth_visit_record','sum'),
+              joint_photos=('photos_colour_and_moth_record','sum'),
+              years=('year','nunique'),
+              max_species_colour=('documented_single_colour_species','max'),
+              max_moth_species=('moth_visit_record_species','max'),
+              peak_cells=('same_year_viirs_distinct_cells','max'))
+          lights=x.loc[x.light_source.eq('quarter_months_NOT_annual')].copy()
+          same_year=x.loc[x.same_year_viirs_matched_photos.gt(0)].copy()
+          out={
+           'schema':'mois_island_ROIfree_source_power_gate_20261106_v1',
+           'original_run_id':42171173575,
+           'source_islands_with_photos':int(len(isl)),
+           'source_island_year_rows':int(len(x)),
+           'photos_original':int(x.photos_all_original_no_roi_gate.sum()),
+           'strict9_success_diagnostic_not_selection':int(x.photos_strict9_success_diagnostic_only.sum()),
+           'photo_with_single_direct_colour':int(x.photos_with_independent_single_colour.sum()),
+           'photo_with_moth_visit_evidence':int(x.photos_with_positive_moth_visit_record.sum()),
+           'photo_colour_and_moth_visit_positive':int(x.photos_colour_and_moth_record.sum()),
+           'islands_at_least_20_plant_photos':int(isl.photos.ge(20).sum()),
+           'islands_at_least_100_plant_photos':int(isl.photos.ge(100).sum()),
+           'islands_at_least_5_direct_colour_photos':int(isl.colour_photos.ge(5).sum()),
+           'islands_at_least_5_joint_moth_colour_photos':int(isl.joint_photos.ge(5).sum()),
+           'islands_with_3plus_single_colour_species_in_a_year':int(isl.max_species_colour.ge(3).sum()),
+           'islands_with_3plus_moth_visit_species_in_a_year':int(isl.max_moth_species.ge(3).sum()),
+           'islands_with_2plus_photo_years':int(isl.years.ge(2).sum()),
+           'island_years_same_year_quarter_month_viirs':int(len(same_year)),
+           'islands_any_same_year_quarter_month_viirs':int(same_year.island_id.nunique()),
+           'island_years_3plus_distinct_viirs_sites':int(x.same_year_viirs_distinct_cells.ge(3).sum()),
+           'island_years_3plus_viirs_sites_and_3plus_direct_species':int(
+               (x.same_year_viirs_distinct_cells.ge(3)&x.documented_single_colour_species.ge(3)).sum()),
+           'island_years_3plus_viirs_sites_colour_and_moth_5plus_photo':int(
+               (x.same_year_viirs_distinct_cells.ge(3)&x.photos_colour_and_moth_record.ge(5)).sum()),
+           'light_interval_quarter_month_proxy_only':True,
+           'annual_VNL_not_acquired':True,
+           'island_native_status_source_not_provided':True,
+           'no_photos_downloaded_no_ROI_inference':True}
+          if len(lights):
+              v=lights.loc[lights.viirs_log1p_q90_minus_q10.notna(),
+                           'viirs_log1p_q90_minus_q10']
+              out['same_year_viirs_quarter_proxy_q90_q10_median']=float(v.median()) if len(v) else None
+              out['same_year_viirs_quarter_proxy_q90_q10_max']=float(v.max()) if len(v) else None
+              out['same_year_viirs_quarter_proxy_n_supporting_island_years']=int(len(v))
+          Path('gate').mkdir(exist_ok=True)
+          (Path('gate')/'island_power_gate_source_counts.json').write_text(json.dumps(
+             out,ensure_ascii=False,sort_keys=True,indent=2)+'\n')
+          print('MOIS_ACTUAL_ISLAND_ALAN_NO_ROI_DETECTABILITY_GATE',json.dumps(out,sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-island-ALAN-ROI-free-support-power-gate-20261106
+          path: gate/
+          retention-days: 90
+          if-no-files-found: error
