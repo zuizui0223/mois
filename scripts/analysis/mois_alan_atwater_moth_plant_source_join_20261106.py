@@ -58,8 +58,8 @@ def public_paper_ledger():
     return d
 
 def join_sources(original,names,accepted,direct,viirs2020,viirs2024):
-    require(len(original)==1032882 and original.photo_id.is_unique and
-            original.observation_id.is_unique,"Original photo/observation identity drift")
+    require(original.photo_id.is_unique and original.observation_id.is_unique,
+            "Original photo/observation identity drift")
     mapping=names.loc[names.wcvp_match_state.eq("unique_exact_name_to_accepted_id"),
             ["inat_taxon_id","wcvp_accepted_plant_name_id"]].copy()
     require(mapping.inat_taxon_id.is_unique,"Duplicated WCVP source taxon ID")
@@ -122,6 +122,7 @@ def run(paths,out):
        dtype={"photo_id":str,"observation_id":str,"inat_taxon_id":str},
        usecols=["photo_id","observation_id","inat_taxon_id","source_subarm","strict9",
                 "strict9_white","latitude","longitude","observed_on"])
+    require(len(canonical)==1032882, "Frozen canonical observation cohort count drift")
     taxa=pd.read_csv(paths["taxon"],compression="gzip",dtype=str,
        usecols=["inat_taxon_id","wcvp_match_state","wcvp_accepted_plant_name_id"])
     accepted=pd.read_csv(paths["names"],compression="gzip",dtype=str,
