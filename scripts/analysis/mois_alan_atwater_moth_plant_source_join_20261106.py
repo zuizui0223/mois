@@ -19,7 +19,7 @@ SOURCE_PINS={
  "taxon":"dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2",
  "names":"9cd6aa7ca29f00c64283bcc08dcb778e212b644b837e64070051339b11d8b7b3",
  "direct":"7e86170218814abe2845da9a0282aecfdc930819b9d0c439bae8df4a0679c577",
- "viirs2020":"3562db1e5783e77d3bb408bd33817b4d4ad42586469708fd407e3",
+ "viirs2020":"3562db1e5783e77d3bb408bd33817b4d7cccf31ad4d4ad42586469708fd407e3",
  "viirs2024":"1c5f03e5a7c355a0f7045133140c5cf2e39a5802c548f89d1c2f66c8a235db5f",
 }
 # Public paper Table 2 metadata, not a new GloBI plant interaction.
