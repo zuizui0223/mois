@@ -70,7 +70,7 @@ jobs:
             git clone --depth 1 --filter=blob:none --sparse https://github.com/zuizui0223/island.git source-island-repo
             git -C source-island-repo sparse-checkout set src config
             python -m pip install -q -e ./source-island-repo
-            island-v2-gshhg build --output-dir geometry/rebuilt
+            island-v2-gshhg build --config-path source-island-repo/config/island_source_gshhg.yml --output-dir geometry/rebuilt
             cp geometry/rebuilt/prepared/islands_v2.gpkg geometry/islands_v2.gpkg
             cp geometry/rebuilt/prepared/source_policy.json geometry/source_policy.json
           fi
