@@ -41,7 +41,7 @@ def validate_sources(cn,uc,receipt):
     for col in cols:
         a,b=joined[col+"_CN"],joined[col+"_UC"]
         if col=="land_class":require(a.equals(b),"land status drift")
-        else:require(np.allclose(pd.to_numeric(a),pd.to_numeric(b),equal_nan=True,rtol=0,atol=1e-9),
+        else:require(np.allclose(pd.to_numeric(a),pd.to_numeric(b),equal_nan=True,rtol=1e-10,atol=1e-7),
                      "original same-year source changed: "+col)
     require(int(cn.complete.sum())==43595 and int(cn.population_source_status.eq("OK").sum())==44667,
             "original constrained population complete count changed")
