@@ -84,7 +84,7 @@ jobs:
           set -euo pipefail
           python -m scripts.analysis.mois_global2024_VIIRS_WorldPopG2_bulk_20261107 \
             --targets original_source_2024/mois_2024_next4096_source.csv \
-            --raster-receipt src/worldpop_meta/WorldPop_Global2_2024_original_geotiff_receipt.json \
+            --worldpop-receipt src/worldpop_meta/WorldPop_Global2_2024_original_geotiff_receipt.json \
             --worldpop-tiff worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif \
             --out VIIRS_result_2024 --expected-count 4096 --workers 4
       - name: Zero-network complete SHA replay and numeric source year audit
@@ -93,7 +93,7 @@ jobs:
           set -euo pipefail
           python -m scripts.analysis.mois_global2024_VIIRS_WorldPopG2_bulk_20261107 \
             --targets original_source_2024/mois_2024_next4096_source.csv \
-            --raster-receipt src/worldpop_meta/WorldPop_Global2_2024_original_geotiff_receipt.json \
+            --worldpop-receipt src/worldpop_meta/WorldPop_Global2_2024_original_geotiff_receipt.json \
             --worldpop-tiff worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif \
             --out VIIRS_result_2024 --expected-count 4096 --workers 4 --offline
           python - <<'PY'
