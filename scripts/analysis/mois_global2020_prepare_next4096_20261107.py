@@ -27,22 +27,22 @@ def sha(path):
         for b in iter(lambda:f.read(4<<20),b''):h.update(b)
     return h.hexdigest()
 
-def select(q,existing,legacy_cells):
+def select(q,existing,legacy_cells,expected_pending=34726,selected_n=4096):
     """Target selection independent of strict9, flower colour, and geography."""
     no=set(existing)
     same=q.exposure_site_kind.eq('same_land_grid_centre')
     no.update(q.loc[same & q.cell_id.isin(legacy_cells),'target_id'])
     d=q.loc[q.land_class.isin(['island','mainland']) & ~q.target_id.isin(no)].copy()
-    check(len(d)==34726,'previous source population not reconciled')
+    check(len(d)==expected_pending,'previous source population not reconciled')
     d['blind_hash']=d.target_id.map(
         lambda x:hashlib.sha256(('MOIS-global-v1|'+x).encode()).hexdigest())
-    d=d.sort_values('blind_hash').head(4096)
-    check(len(d)==4096 and d.target_id.is_unique,"duplicated or insufficient target cohort")
+    d=d.sort_values('blind_hash').head(selected_n)
+    check(len(d)==selected_n and d.target_id.is_unique,"duplicated or insufficient target cohort")
     check(not d[['query_longitude','query_latitude']].duplicated().any(),
           'duplicate raster coordinate inside target sample')
     return d
 
-def run(canonical,shoreline,legacy,previous256,previous1024,previous64,out):
+def run(canonical,shoreline,legacy,previous256,previous1024,previous64,out,previous4096=None):
     files={'canonical':canonical,'legacy':legacy,'previous256':previous256,
            'previous1024':previous1024,'previous64':previous64}
     for name,p in files.items():check(sha(p)==SHAS[name],'source SHA changed '+name)
@@ -96,16 +96,25 @@ def run(canonical,shoreline,legacy,previous256,previous1024,previous64,out):
         check(len(r)==int(name.replace('previous','')) and r.target_id.is_unique,
               'existing prior source result lost '+name)
         old.extend(r.target_id)
-    check(len(old)==len(set(old))==1344 and set(old)<=set(q.target_id),
+    if previous4096 is not None:
+        check(sha(previous4096)==MANIFEST,'first 4096 source selection manifest changed')
+        extra=pd.read_csv(previous4096,dtype={'target_id':str})
+        check(len(extra)==4096 and extra.target_id.is_unique,'previous new 4096 IDs changed')
+        old.extend(extra.target_id)
+    expected_old=5440 if previous4096 is not None else 1344
+    check(len(old)==len(set(old))==expected_old and set(old)<=set(q.target_id),
           'prior source target ID collision')
-    sampled=select(q,old,old_cells)
+    all_remaining=previous4096 is not None
+    expected_n=30630 if all_remaining else 4096
+    source_sha='f9805adb2533c6a26a632e6d011b2468637e7603bc7b1afb209b06ab38a2fd35' if all_remaining else MANIFEST
+    sampled=select(q,old,old_cells,expected_pending=expected_n,selected_n=expected_n)
     fields=['target_id','land_class','query_longitude','query_latitude',
             'n_attempted','n_strict9','source_subarms']
     out.mkdir(parents=True)
-    target=out/'source_locked_2020_new4096.csv'
+    target=out/('source_locked_2020_remaining30630.csv' if all_remaining else 'source_locked_2020_new4096.csv')
     sampled[fields].to_csv(target,index=False,float_format='%.12g',lineterminator='\n')
-    check(sha(target)==MANIFEST,'source 4096 manifest differs from independently computed exact queue')
-    report={'schema':'mois_source_locked_2020_next4096_noarea_v1',
+    check(sha(target)==source_sha,'source manifest differs from independently computed exact global queue')
+    report={'schema':'mois_source_locked_2020_after4096_remaining30630_noarea_v1' if all_remaining else 'mois_source_locked_2020_next4096_noarea_v1',
       'canonical_sha256':SHAS['canonical'],
       'coastline_archive_sha256':coast['original_archive_sha256'],
       'source_SHA256':SHAS,
@@ -114,7 +123,7 @@ def run(canonical,shoreline,legacy,previous256,previous1024,previous64,out):
       'original_2020_same_landmass_grid_centres':35275,
       'previous_legacy_2020_source_sites':1014,
       'previous_new_requests_count':len(old),
-      'pending_known_land_target_pool':34726,
+      'pending_known_land_target_pool':expected_n,
       'new_selected_targets':len(sampled),
       'island':int(sampled.land_class.eq('island').sum()),
       'mainland':int(sampled.land_class.eq('mainland').sum()),
@@ -136,5 +145,6 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for n in ('canonical','shoreline','legacy','previous256','previous1024','previous64','out'):
         p.add_argument('--'+n,required=True,type=Path)
+    p.add_argument('--previous4096',type=Path)
     a=p.parse_args()
-    run(a.canonical,a.shoreline,a.legacy,a.previous256,a.previous1024,a.previous64,a.out)
+    run(a.canonical,a.shoreline,a.legacy,a.previous256,a.previous1024,a.previous64,a.out,a.previous4096)
