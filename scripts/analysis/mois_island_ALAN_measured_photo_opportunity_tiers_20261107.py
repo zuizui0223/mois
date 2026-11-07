@@ -141,6 +141,52 @@ def fit_tier(df,shared):
         "tier_is_exploratory_quality_expansion_not_primary_confirmatory":True,
     }
 
+def provenance_of_expanded_co_support(strict,moderate):
+    """Where do additional true-ROI pairs arise? No observation-level export.
+
+    Keep old strict paired year×region units fixed, then ask whether adding
+    measured but lower-opportunity photos changes the interaction WITHIN
+    the same paired units. Separately report the newly paired year×regions.
+    The two are exploratory support diagnostics, not a multiple-testing
+    search for a favourable significance threshold.
+    """
+    old_shared,oldgroups=exact_year_block_support(strict)
+    new_shared,newgroups=exact_year_block_support(moderate)
+    panel.require(oldgroups.issubset(newgroups),"New measured data lost strict original paired groups")
+    coords=pd.MultiIndex.from_frame(moderate[["year","region5"]])
+    old_area=moderate.loc[coords.isin(oldgroups)].copy()
+    new_area=moderate.loc[coords.isin(newgroups-oldgroups)].copy()
+    ids=set(strict.target_id)
+    newly=moderate.loc[~moderate.target_id.isin(ids)]
+    report={
+      "old_strict_paired_year_region_groups":len(oldgroups),
+      "new_measured_paired_year_region_groups":len(newgroups),
+      "newly_paired_year_region_groups":len(newgroups-oldgroups),
+      "new_original_strict9_measured_added_cell_years":int(len(newly)),
+      "new_original_strict9_measured_added_island_cells":int(newly.is_island.sum()),
+      "expanded_measured_cells_in_previously_paired_groups":int(len(old_area)),
+      "newly_added_cells_in_previously_paired_groups":int(
+          (~old_area.target_id.isin(ids)).sum()),
+      "island_cells_in_previously_paired_groups":int(old_area.is_island.sum()),
+      "expanded_measured_cells_in_newly_paired_groups":int(len(new_area)),
+      "island_cells_in_newly_paired_groups":int(new_area.is_island.sum()),
+    }
+    f="white_pp ~ log_light * is_island + log_pop + "+COVARS+" + C(year_region5)"
+    def restricted(frame, name):
+        regions=int(frame.region5.nunique())
+        n_island=int(frame.is_island.sum())
+        if regions<10 or n_island<40 or len(frame)<100:
+            return {"estimable":False,"reason":"insufficient geographic/year direct-pair support",
+                    "clusters":regions,"island_cells":n_island,"cells":len(frame)}
+        frame=frame.copy()
+        frame["year_region5"]=frame.year.astype(str)+"__"+frame.region5
+        return {"estimable":True,"clusters":regions,"island_cells":n_island,
+                "cells":len(frame),
+                "interaction":cluster_fit(frame,f,"region5")["log_light:is_island"]}
+    report["measured_2species_within_strict_existing_paired_blocks"]=restricted(old_area,"existing")
+    report["measured_2species_only_new_paired_blocks"]=restricted(new_area,"new")
+    return report
+
 def run(paths,out):
     out=Path(out)
     panel.require(not out.exists(),"Refuse to overwrite source-verified photo cohort")
@@ -157,6 +203,8 @@ def run(paths,out):
         summary.append(row)
         if name in ("strict_5p3r3s","measured_3p2r2s"):
             fits[name]=fit_tier(df,matched)
+    provenance=provenance_of_expanded_co_support(
+        tiers["strict_5p3r3s"],tiers["measured_3p2r2s"])
     baseline=fits["strict_5p3r3s"]["global_region_year_adjusted_interaction"]
     panel.require(abs(baseline["beta"]-(-2.4970445996320447))<0.00001 and
                   len(tiers["strict_5p3r3s"])==7982,
@@ -181,6 +229,7 @@ def run(paths,out):
        "tier_gates":{"photo_attempts_strict9_accepted_species":{k:list(v) for k,v in TIERS.items()}},
        "tier_support":summary,
        "tier_models":fits,
+       "source_measured_co_support_provenance":provenance,
        "strict_primary_preserved":True,
        "measured_1_species_is_support_counts_only":True,
        "observational_not_causal_nor_biologically_white_species_fraction":True,
@@ -190,7 +239,8 @@ def run(paths,out):
     }
     (out/"source_receipt.json").write_text(json.dumps(receipt,sort_keys=True,indent=2)+"\n")
     print("MOIS_REAL_MEASURED_OPPORTUNITY_TIERS_ISLAND_ALAN",
-        json.dumps({"counts":summary,"models":fits},sort_keys=True),flush=True)
+        json.dumps({"counts":summary,"models":fits,"support_provenance":provenance},
+                   sort_keys=True),flush=True)
     return receipt
 
 if __name__=="__main__":
