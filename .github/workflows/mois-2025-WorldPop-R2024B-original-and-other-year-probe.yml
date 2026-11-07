@@ -1,4 +1,5 @@
 name: MOIS 2025 WorldPop R2024B UC original GeoTIFF and 2019-2023 source-year probe
+# Signed 2025 source probe: one-year raster, not a mixed-year population product
 on:
   push:
     branches: [analysis/mois-viirs-popmatch-20261105]
