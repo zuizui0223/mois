@@ -1,0 +1,73 @@
+name: MOIS 2025 original VIIRS and WorldPop R2024B UC source availability
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths: [.github/workflows/mois-2025-source-availability-original.yml]
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency:
+  group: mois-2025-official-population-and-monthly-VIIRS-source-probe
+  cancel-in-progress: false
+jobs:
+  original-source-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Confirm 2025 original census model mosaic and source-year monthly VIIRS
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests==2.32.5
+          mkdir -p out
+          python - <<'PY'
+          import requests,json,hashlib,datetime as dt,calendar
+          from pathlib import Path
+          session=requests.Session()
+          session.headers.update({'User-Agent':'MOIS macrobio original 2025 sameyear raster source probe/1.0'})
+          base='https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2024B/2025/0_Mosaicked/v1/'
+          sites=[
+            base+'1km/unconstrained/global_pop_2025_UC_1km_R2024B_v1.tif',
+            base+'1km_ua/unconstrained/global_pop_2025_UC_1km_R2024B_UA_v1.tif',
+            base+'1km/constrained/global_pop_2025_CN_1km_R2024B_v1.tif'
+          ]
+          receipt={'schema':'MOIS_2025_official_R2024B_UC_and_VIIRS_source_probe',
+             'population_source_year':2025,'source_release':'WorldPop Global2 R2024B v1',
+             'VIIRS_requested_year':2025,'photo_downloads':0,'population':[],'VIIRS':[]}
+          for url in sites:
+              x={'URL':url}
+              try:
+                  r=session.head(url,allow_redirects=True,timeout=25)
+                  x.update({'HEAD_status':r.status_code,'HEAD_content_length':r.headers.get('Content-Length'),
+                            'HEAD_etag':r.headers.get('ETag'),'HEAD_accept_ranges':r.headers.get('Accept-Ranges')})
+                  print('OFFICIAL_WORLDPOP_2025_HEAD',json.dumps(x),flush=True)
+              except Exception as e:x['error']=str(e)[:200]
+              receipt['population'].append(x)
+          endpoint='https://di-lawimagery1.img.arcgis.com/arcgis/rest/services/NighttimeLightsMDNB/ImageServer/getSamples'
+          for mo in (1,4,7,10):
+              start=dt.datetime(2025,mo,1,tzinfo=dt.timezone.utc)
+              end=dt.datetime(2025,mo,calendar.monthrange(2025,mo)[1],23,59,59,tzinfo=dt.timezone.utc)
+              params={'f':'json','geometryType':'esriGeometryMultipoint',
+                  'geometry':json.dumps({'points':[[139.7,35.7],[121.5,25.0],[-74.0,40.7]],'spatialReference':{'wkid':4326}},separators=(',',':')),
+                  'returnFirstValueOnly':'true','outFields':'*','interpolation':'RSP_NearestNeighbor',
+                  'time':f'{int(start.timestamp()*1000)},{int(end.timestamp()*1000)}'}
+              x={'month':mo,'n_requested':3}
+              try:
+                  r=session.get(endpoint,params=params,timeout=45)
+                  obj=r.json()
+                  x.update({'http':r.status_code,'raw_SHA256':hashlib.sha256(r.content).hexdigest(),
+                             'error':obj.get('error'),'n_samples':len(obj.get('samples',[])),
+                             'example_values':[{'value':s.get('value'),'attributes':s.get('attributes'),
+                             'locationId':s.get('locationId')} for s in obj.get('samples',[])[:3]]})
+                  (Path('out')/f'2025_viirs_{mo:02d}_actual_provider.json').write_bytes(r.content)
+                  print('OFFICIAL_2025_VIIRS_SOURCE_YEAR_MONTH',json.dumps(x)[:1100],flush=True)
+              except Exception as e:x['error']=str(e)[:250]
+              receipt['VIIRS'].append(x)
+          (Path('out')/'2025_source_availability_receipt.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-2025-official-population-R2024B-UC-and-VIIRS-months-probe
+          path: out/
+          retention-days: 90
+          if-no-files-found: error
