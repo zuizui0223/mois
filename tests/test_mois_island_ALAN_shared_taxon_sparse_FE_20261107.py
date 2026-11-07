@@ -60,8 +60,9 @@ class SharedSourceTaxonFixedEffects(unittest.TestCase):
         self.assertEqual(result["source"]["original_photo_cell_years"],480)
         self.assertEqual(result["source"]["observed_accepted_taxa"],24)
         beta=result["interaction_geographic_spatial_cluster"]["beta"]
+        d["white_pp"]=100*d.photo_white_fraction
         full=smf.wls(
-            "photo_white_fraction*100 ~ log_light*is_island + log_pop"
+            "white_pp ~ log_light*is_island + log_pop"
             " + bio5 + log_rain + elevation + log_attempts"
             " + C(wcvp_accepted_plant_name_id) + C(year) + C(region5)",
             data=d,weights=d.photo_cell_equal_species_weight,
