@@ -71,3 +71,94 @@ jobs:
           path: out/
           retention-days: 90
           if-no-files-found: error
+  official-2025-global-raster:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Load WGS84 raster and true geographic pixel area source logic
+        run: python -m pip install -q rasterio==1.4.3 pyproj==3.7.2 numpy==2.1.3 requests==2.32.5
+      - uses: actions/cache/restore@v4
+        with:
+          path: source_G2_2025/
+          key: mois-2025-R2024B-UC-original-global-865211479
+      - name: Download exact same-year source 2025 30arcsec world unconstrained population count raster
+        timeout-minutes: 16
+        run: |
+          set -euo pipefail
+          mkdir -p source_G2_2025
+          if [ ! -f source_G2_2025/global_pop_2025_UC_1km_R2024B_v1.tif ]; then
+            curl --fail --location --retry 2 --connect-timeout 25 --speed-time 90 \
+              --speed-limit 1024 --max-time 810 \
+              'https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2024B/2025/0_Mosaicked/v1/1km/unconstrained/global_pop_2025_UC_1km_R2024B_v1.tif' \
+              --output source_G2_2025/global_pop_2025_UC_1km_R2024B_v1.tif
+          fi
+          test "$(stat -c%s source_G2_2025/global_pop_2025_UC_1km_R2024B_v1.tif)" -eq 865211479
+          sha256sum source_G2_2025/global_pop_2025_UC_1km_R2024B_v1.tif
+      - name: Confirm original 2025 GeoTIFF checksum, CRS and geodesic conversion
+        run: |
+          set -euo pipefail
+          mkdir -p raster_receipt
+          python - <<'PY'
+          import hashlib,math,json
+          from pathlib import Path
+          import rasterio,pyproj
+          p=Path('source_G2_2025/global_pop_2025_UC_1km_R2024B_v1.tif')
+          h=hashlib.sha256()
+          with p.open('rb') as f:
+              for part in iter(lambda:f.read(4<<20),b''):h.update(part)
+          rec={'schema':'MOIS_WorldPop_2025_R2024B_UC_sameyear_original_full_raster_v1',
+               'source_release':'WorldPop Global2 R2024B v1 unconstrained',
+               'source_year':2025,
+               'source_units':'people per grid pixel, not people/km2',
+               'source_url':'https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2024B/2025/0_Mosaicked/v1/1km/unconstrained/global_pop_2025_UC_1km_R2024B_v1.tif',
+               'original_file_SHA256':h.hexdigest(),
+               'original_file_bytes':p.stat().st_size,
+               'no_2020_or_2024_population_substitution':True,
+               'no_new_photo_downloads_or_ROI_inference':True,
+               'example_sites':[]}
+          geod=pyproj.Geod(ellps='WGS84')
+          with rasterio.open(p) as ds:
+              rec.update({'CRS':ds.crs.to_string(),'width':ds.width,'height':ds.height,
+                          'count':ds.count,'resolution':list(ds.res),
+                          'nodata':ds.nodata,'bounds':list(ds.bounds)})
+              assert ds.crs.to_epsg()==4326 and ds.count==1
+              assert ds.width==43200 and ds.height==17280
+              assert abs(ds.res[0]-1/120)<1e-6 and abs(ds.res[1]-1/120)<1e-6
+              for name,lon,lat in [('Honshu',139.7,35.7),('Taiwan',121.52,25.04),
+                    ('United Kingdom',-0.125,51.507),('New Zealand',174.76,-36.85),
+                    ('USA',-74.0,40.7),('Australia',151.21,-33.87),
+                    ('Alaska',-149.9,61.2),('Greenland',-51.73,64.18)]:
+                  r,c=ds.index(lon,lat)
+                  if not(0<=r<ds.height and 0<=c<ds.width):continue
+                  val=float(next(ds.sample([(lon,lat)]))[0])
+                  x0,y0,x1,y1=rasterio.windows.bounds(rasterio.windows.Window(c,r,1,1),ds.transform)
+                  area,_=geod.polygon_area_perimeter([x0,x1,x1,x0],[y0,y0,y1,y1])
+                  km2=abs(area)/1e6
+                  good=math.isfinite(val) and val>=0 and (ds.nodata is None or val!=ds.nodata)
+                  rec['example_sites'].append({'name':name,'lat':lat,'lon':lon,
+                       'raster_count_per_pixel':val,'geodesic_pixel_km2':km2,
+                       'population_density_per_km2':val/km2 if good else None,
+                       'status':'OK' if good else 'NODATA'})
+          (Path('raster_receipt')/'WorldPop_Global2_2025_R2024B_UC_original_raster_receipt.json').write_text(
+              json.dumps(rec,indent=2,sort_keys=True)+'\n')
+          print('MOIS_REAL_2025_WORLDPOP_UC_ORIGINAL_SHA_CONFIRMED',
+                json.dumps({k:rec[k] for k in ('original_file_bytes','original_file_SHA256',
+                                              'CRS','width','height','count','resolution','nodata')},
+                          sort_keys=True),flush=True)
+          PY
+      - uses: actions/cache/save@v4
+        if: success()
+        with:
+          path: source_G2_2025/
+          key: mois-2025-R2024B-UC-original-global-865211479
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-2025-R2024B-UC-official-global-raster-SHA-receipt
+          path: raster_receipt/
+          if-no-files-found: warn
+          retention-days: 90
