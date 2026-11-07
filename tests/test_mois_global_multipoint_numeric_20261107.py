@@ -20,7 +20,7 @@ class MultipointSourceTests(unittest.TestCase):
         self.assertIsNone(x[0]["value"])
         self.assertEqual(x[0]["cloud"],1)
     def test_wrong_month_rejected(self):
-        with self.assertRaisesRegex(ValueError,"wrong source raster"):
+        with self.assertRaisesRegex(ValueError,"wrong source year/month"):
             m.extract_samples("viirs",1,self.rows(),self.sample(month=2))
     def test_nonfinite_radiance_rejected(self):
         x=self.sample();x["samples"][0]["value"]="NaN 5"
