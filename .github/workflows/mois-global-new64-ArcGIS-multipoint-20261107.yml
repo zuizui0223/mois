@@ -1,0 +1,111 @@
+name: MOIS new 64-source global multipoint VIIRS-WorldPop acquisition (2020 all land)
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-global-new64-ArcGIS-multipoint-20261107.yml
+      - scripts/analysis/mois_global_multipoint_numeric_20261107.py
+      - tests/test_mois_global_multipoint_numeric_20261107.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-global-getSamples-new64-source-2020-v1
+  cancel-in-progress: false
+jobs:
+  genuine-new-environmental-values:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests for pixel/cloudfree bands and source fail-closed conditions
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests==2.32.5 pandas==2.2.3
+          python -m unittest discover -s tests -p test_mois_global_multipoint_numeric_20261107.py -v
+          python -m py_compile scripts/analysis/mois_global_multipoint_numeric_20261107.py
+      - name: Verify original 64 selected pending source IDs and eliminate requests already acquired
+        run: |
+          set -euo pipefail
+          mkdir -p original manifest
+          gh run download 42219556580 --repo zuizui0223/mois \
+            --name mois-global-next1024-combined-real-values-response-SHAs --dir original
+          gh run download 42192184774 --repo zuizui0223/mois \
+            --name mois-global-noarea-2020-256-real-values-and-response-SHAs --dir original
+          echo '7aa0193178d664818bca777749074fc88fe0b9e594e83e5eb34d6f72110efce9  original/next_output/all1024_values.csv' | sha256sum -c -
+          echo '303424afe40b41e7bda2ec0ae456dd27820a50e17f7ca23204c81036adf21466  original/global_output/values.csv' | sha256sum -c -
+          python - <<'PY'
+          import base64,gzip,hashlib,csv,io,json
+          from pathlib import Path
+          from scripts.analysis.mois_global_multipoint_numeric_20261107 import validate_targets
+          orig=Path('config/mois_global_multipoint_new64_20261107.csv.gz.b64').read_text().strip()
+          raw=gzip.decompress(base64.b64decode(orig))
+          expected='3b18e3b2934037e3a134d1b8c3475fd919177f17e072b208048a89f2a5e87934'
+          assert hashlib.sha256(raw).hexdigest()==expected
+          Path('manifest/targets64.csv').write_bytes(raw)
+          x=validate_targets('manifest/targets64.csv')
+          assert len(x)==64 and sum(r['land_class']=='island' for r in x)==6
+          assert sum(r['land_class']=='mainland' for r in x)==58
+          prior=[]
+          for filename in ['original/next_output/all1024_values.csv','original/global_output/values.csv']:
+              prior.extend(csv.DictReader(Path(filename).open()))
+          assert not {r['target_id'] for r in x} & {r['target_id'] for r in prior}
+          def key(r):
+              return (float(r['query_longitude']),float(r['query_latitude']))
+          assert not {key(r) for r in x} & {key(r) for r in prior}
+          record={'manifest_sha256':expected,'targets':len(x),'land_classes':{'island':6,'mainland':58},
+             'previous1280_source_targets_excluded':True,
+             'previous1280_source_point_coordinates_excluded':True,
+             'selection_rule':'pending 2020 known land, next SHA256(MOIS-global-v1|target_id) tranche',
+             'source_queue_sha256':'e3be875c55e535ea00ee504b38203fd9b1b052ff5775f04701a0b7cc9e27d07c',
+             'no_colour_or_ROI_based_selection':True,
+             'new_photo_downloads':0}
+          Path('manifest/source_preflight_receipt.json').write_text(json.dumps(record,indent=2,sort_keys=True)+'\n')
+          print('MOIS_NEXT_NEW64_NO_DUPLICATE_SOURCE_REQUESTS',json.dumps(record,sort_keys=True),flush=True)
+          PY
+      - name: Acquire genuinely new numeric values for 64 sites using FIVE multipoint API calls
+        timeout-minutes: 9
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global_multipoint_numeric_20261107 \
+            --targets manifest/targets64.csv --out result
+          python -m scripts.analysis.mois_global_multipoint_numeric_20261107 \
+            --targets manifest/targets64.csv --out result --offline
+          python - <<'PY'
+          import json,hashlib,csv
+          from pathlib import Path
+          p=Path('result')
+          a=json.loads((p/'receipt.json').read_text())
+          b=json.loads((p/'replay_receipt.json').read_text())
+          assert a['request_count_new']==5 and b['request_count_new']==0
+          assert a['target_rows']==64 and b['target_rows']==64
+          assert a['targets_complete']==b['targets_complete']
+          assert a['source_manifest_sha256']=='3b18e3b2934037e3a134d1b8c3475fd919177f17e072b208048a89f2a5e87934'
+          assert (p/'values.csv').read_bytes()==(p/'replay_values.csv').read_bytes()
+          assert a['output_values_sha256']==b['output_values_sha256']
+          assert len(a['response_sha256'])==5
+          assert a['no_original_photo_downloads_or_ROI_inference'] and b['no_original_photo_downloads_or_ROI_inference']
+          assert a['no_area_or_latitude_cutoff']
+          for filename,signed in a['response_sha256'].items():
+              assert hashlib.sha256((p/filename).read_bytes()).hexdigest()==signed
+          print('MOIS_MULTIPOINT_64_GENUINE_SOURCE_RESPONSES_AND_OFFLINE_REPLAY_VERIFIED',
+              json.dumps({'complete':a['targets_complete'],'quality_incomplete':a['targets_quality_incomplete'],
+                          'API_requests':a['request_count_new'],'valid_values':a['valid_numeric_values']},
+                          sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-global-multipoint-64-new-targets-2020-source-responses-and-replay
+          path: |
+            result/
+            manifest/
+          retention-days: 90
+          if-no-files-found: error
