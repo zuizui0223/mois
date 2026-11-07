@@ -16,6 +16,13 @@ class Test4096Bulk(unittest.TestCase):
         self.assertEqual(sum(p['n'] for p in plans if p['product']=='population'),4096)
         self.assertEqual(max(p['n'] for p in plans if p['product']=='viirs'),512)
         self.assertEqual(max(p['n'] for p in plans if p['product']=='population'),128)
+    def test_remaining30630_uses_bounded_512_viirs_and_128_population(self):
+        plans=b.plan_requests(fake(30630))
+        self.assertEqual(len(plans),480)
+        self.assertEqual(sum(p['n'] for p in plans if p['product']=='viirs'),30630*4)
+        self.assertEqual(sum(p['n'] for p in plans if p['product']=='population'),30630)
+        self.assertEqual(max(p['n'] for p in plans if p['product']=='viirs'),512)
+        self.assertEqual(max(p['n'] for p in plans if p['product']=='population'),128)
     def test_no_duplicate_target_and_coordinates(self):
         x=fake(4);x.append(x[1].copy())
         with self.assertRaisesRegex(ValueError,'duplicate'):
