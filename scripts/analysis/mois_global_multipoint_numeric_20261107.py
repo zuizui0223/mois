@@ -48,7 +48,8 @@ def extract_samples(product,month,rows,response,year=2020):
         require(abs(float(loc["x"])-float(expected["query_longitude"]))<=1e-7 and
                 abs(float(loc["y"])-float(expected["query_latitude"]))<=1e-7,
                 "provider location does not match target")
-        token=re.split(r'[,\s]+',str(item.get("value") or "").strip())
+        source_value=item.get("value")
+        token=re.split(r'[,\s]+',str(source_value).strip()) if source_value is not None else [""]
         if token in ([""],["NoData"]):
             indexed[i]={"status":"NO_DATA","value":None,"cloud":None}
             continue
