@@ -1,0 +1,207 @@
+name: MOIS fourth real 4096 new original photo ROI-v4 pixels beyond full309439 measured source
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_original_fourth4096_after_309439_source_freeze.py"
+      - "scripts/analysis/mois_replay_fourth4096_actual_ROI_pixels_and_source_dates.py"
+      - "scripts/analysis/mois_reassemble_original_new4096_measurements.py"
+      - "tests/test_mois_fourth4096_original_photo_selection.py"
+      - "tests/test_mois_replay_fourth4096_original_ROI_and_dates.py"
+      - ".github/workflows/mois-fourth4096-actual-fresh-original-pixel-photo-growth.yml"
+      - "docs/MOIS_WAVE4_REAL_NEXT4096_PHOTOS_AFTER309439_SOURCE_AND_MEASUREMENT_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-fourth-original4096-all3430502-unmeasured-post309439-genuine-photo-RGB
+  cancel-in-progress: true
+
+jobs:
+  freeze-fourth-original-photo-IDs-not-pixels:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test outcome-blind photo-ID hash/source sample and unchanged real ROI input source contract
+        run: |
+          python -m pip install -q 'numpy==2.1.3' 'pandas==2.2.3' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_fourth4096_original_photo_selection.py tests/test_mois_replay_fourth4096_original_ROI_and_dates.py tests/test_mois_third4096_photo_source.py
+      - name: Retrieve FULL original 3430502 photo IDs and actual finished 309439 photo/date source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p authentic_original_full_source previously_measured_309439
+          gh run download 38884223530 --repo zuizui0223/fcp \
+            --name fcp-rgfca-1000-EXACT-20260927-original-photo-ID-128-worker-source-NO-PIXELS \
+            --dir authentic_original_full_source
+          gh run download 39028400690 --repo zuizui0223/mois \
+            --name mois-all256-full-FCP-original309439-149653-dated-colour-real-photo-source-and-season \
+            --dir previously_measured_309439
+          test -s authentic_original_full_source/rgfca_1000_exact_source_photo_IDs/rgfca_1000_complete_original_source_photo_IDs.csv
+          test -s previously_measured_309439/mois_original309439_fullFCP256_actual_photo_hues_and_source_dates.csv.gz
+      - name: Scan 3430502 authentic source IDs and select exactly 4096 unseen photo IDs without colour/season inspection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_original_fourth4096_after_309439_source_freeze \
+            --source-3430502-original-photo-csv authentic_original_full_source/rgfca_1000_exact_source_photo_IDs/rgfca_1000_complete_original_source_photo_IDs.csv \
+            --already-measured-309439-original-photo-csv-gz previously_measured_309439/mois_original309439_fullFCP256_actual_photo_hues_and_source_dates.csv.gz \
+            --output fourth_photo_source_plan
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('fourth_photo_source_plan/mois_first4096_original_source_only_freeze.json').read_text())
+          assert r['source_photo_ids_original']==3430502
+          assert r['prior_original_measured_photo_ids']==309439
+          assert r['prior_original_classified_four_hues']==149662
+          assert r['prior_original_dated_classified_hues']==149653
+          assert r['first_wave_original_source_photo_ids']==4096
+          assert r['first_wave_taxa']==1000
+          assert r['first_wave_distinct_source_observers']==4096
+          assert r['first_wave_distinct_original_observation_IDs']==4096
+          assert r['first_wave_original_shards']==16
+          assert r['photos_per_original_shard']==256
+          assert r['new_photo_pixels_actually_measured'] is False
+          assert r['no_photo_colour_or_fitness_or_bloom_label_used']
+          print('MOIS_FOURTH4096_SOURCE_ONLY_ORIGINAL_PHOTO_ID_LOCK_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-fourth4096-frozen-new-unmeasured-photo-ID-source-plan
+          path: fourth_photo_source_plan/
+          retention-days: 90
+          if-no-files-found: error
+
+  measure-fourth4096-original-RGB-photo-pixels:
+    needs: freeze-fourth-original-photo-IDs-not-pixels
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-fourth4096-frozen-new-unmeasured-photo-ID-source-plan
+          path: fourth_source
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore identical frozen FCP ROI-v4 detector and EfficientSAM model files; no older colour results
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp_source"
+          git -C "$RUNNER_TEMP/fcp_source" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp_source" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp_source" checkout -q --detach FETCH_HEAD
+          python -m pip install -q 'numpy<3' 'pandas<3' scipy Pillow ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp_source"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/mois_original_sam"
+      - name: Download 256 genuinely new original photographic pixels and generate four SHA-verified model terminals
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp_source"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-original-wave4-fresh-photo-source-rate"
+          n=${{ matrix.shard }}
+          index=$(printf '%02d' "$n")
+          python -m scripts.analysis.mois_measure_original_new_photos_roi_v4 \
+            --photo-shard "fourth_source/mois_source_only_shard_${index}_256.csv" \
+            --precolour-receipt fourth_source/mois_first4096_original_source_only_freeze.json \
+            --shard-id "$n" \
+            --fcp-runtime-root "$RUNNER_TEMP/fcp_source" \
+            --original-sam "$RUNNER_TEMP/mois_original_sam" \
+            --outdir "real_original_wave4_photo_RGB_ROI_${index}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-fourth4096-real-original-ROI256-shard-${{ matrix.shard }}
+          path: real_original_wave4_photo_RGB_ROI_*/
+          retention-days: 90
+          if-no-files-found: warn
+
+  integrate-all-4096-genuine-original-pixel-terminals:
+    needs: [freeze-fourth-original-photo-IDs-not-pixels, measure-fourth4096-original-RGB-photo-pixels]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install photo source, calendar, and spatial source diagnostic dependencies
+        run: |
+          python -m pip install -q 'numpy==2.1.3' 'pandas==2.2.3' 'pytest==8.4.2'
+          python -m pytest -q tests/test_mois_fourth4096_original_photo_selection.py tests/test_mois_replay_fourth4096_original_ROI_and_dates.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-fourth4096-frozen-new-unmeasured-photo-ID-source-plan
+          path: fourth_plan
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-fourth4096-real-original-ROI256-shard-*
+          path: original_workers
+          merge-multiple: false
+      - name: Recover prior source photo pixels for exact original 309439 ROI + dated photo provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p full_measured_309439
+          gh run download 39028400690 --repo zuizui0223/mois \
+            --name mois-all256-full-FCP-original309439-149653-dated-colour-real-photo-source-and-season \
+            --dir full_measured_309439
+          test -s full_measured_309439/mois_original309439_fullFCP256_actual_photo_hues_and_source_dates.csv.gz
+          zip -j -q authentic_prior309439_original_RGB_source.zip full_measured_309439/*
+      - name: Reconcile all 16 actually measured source shards, append 4096 independent original IDs, refit source seasons
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_replay_fourth4096_actual_ROI_pixels_and_source_dates \
+            --real-original309439-source-zip authentic_prior309439_original_RGB_source.zip \
+            --blind-original-photo-plan fourth_plan \
+            --real-original4096-photo-ROI-workers original_workers \
+            --output final_fourth_original_ROI_photo_growth
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('final_fourth_original_ROI_photo_growth/mois_fourth_4096_actual_original_ROI_pixels_and_source_dates_decision.json')
+          j=json.loads(p.read_text())
+          assert j['before_real_measured_photo_ids']==309439
+          assert j['new_photo_ids_actually_processed']==4096
+          assert j['expanded_genuine_original_photo_ids']==313535
+          assert j['before_original_photo_four_hue_ROIs']==149662
+          assert j['before_original_date_plus_four_hue_ROIs']==149653
+          assert j['new_photo_four_hue_original_ROI_classified']>0
+          assert j['new_photo_both_source_observation_day_and_four_hue']==j['new_photo_four_hue_original_ROI_classified']
+          assert j['expanded_actual_date_and_four_hue_ROI_photo_ids']==149653+j['new_photo_four_hue_original_ROI_classified']
+          assert j['no_old_source_hue_taxon_photo_or_observation_date_changed']
+          assert not j['FCP_intraspecific_genetic_or_D_W_50km_models_imported']
+          print('MOIS_NEW4096_GENUINE_RGB_PHOTOGRAPH_ROI_PLUS_FULL313535_DATE_AND_HUE_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-fourth4096-real309439-plus4096-original-photo-pixels-and-dated-four-hue-ecology
+          path: final_fourth_original_ROI_photo_growth/
+          retention-days: 90
+          if-no-files-found: error
