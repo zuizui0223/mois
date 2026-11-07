@@ -124,9 +124,10 @@ def year_safeguards(year,d):
     return result
 
 def common_geographic_support_blocks(cells):
-    """Only geographic blocks with observed island AND mainland cell-years."""
-    by_block=cells.groupby("region5",observed=True).is_island.agg(["min","max"])
-    return set(by_block.index[(by_block["min"]==0)&(by_block["max"]==1)])
+    """Only observed island+mainland comparisons within the SAME YEAR and 5° block."""
+    by_year_block=cells.groupby(["year","region5"],observed=True).is_island.agg(["min","max"])
+    return set(by_year_block.index[
+        (by_year_block["min"]==0)&(by_year_block["max"]==1)])
 
 def test_generalizability(cells,formula):
     """Two empirical questions beyond the pooled coefficient.
@@ -153,16 +154,20 @@ def test_generalizability(cells,formula):
             "spatial_blocks":int(kept.region5.nunique()),
             **stats}
     both=common_geographic_support_blocks(cells)
-    shared=cells.loc[cells.region5.isin(both)].copy()
+    present=pd.MultiIndex.from_frame(cells[["year","region5"]])
+    shared=cells.loc[present.isin(both)].copy()
     shared_island=int(shared.is_island.sum())
+    shared_blocks=int(shared.region5.nunique())
     co_support={
-      "blocks_with_both_land_classes":len(both),
+      "year_and_block_groups_with_both_land_classes":len(both),
+      "distinct_blocks_with_sameyear_island_mainland":shared_blocks,
       "total_spatial_blocks":int(cells.region5.nunique()),
       "co_supported_cell_years":len(shared),
       "co_supported_island_cell_years":shared_island,
+      "only_sameyear_island_mainland_comparisons":True,
       "does_not_impute_unobserved_mainland_or_island":True,
     }
-    if len(both)>=10 and shared_island>=40 and len(shared)>=100:
+    if shared_blocks>=10 and shared_island>=40 and len(shared)>=100:
         co_support["estimable"]=True
         co_support["interaction"]=cluster_fit(
             shared,formula,"region5")["log_light:is_island"]
