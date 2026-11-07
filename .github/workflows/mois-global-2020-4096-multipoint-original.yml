@@ -1,0 +1,117 @@
+name: MOIS global 4096 original landmass multipoint 2020 environment
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths: [.github/workflows/mois-global-2020-4096-multipoint-original.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-global2020-exact4096-multipoint-v1
+  cancel-in-progress: false
+jobs:
+  source-confirmed4096:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 32
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test source month, cloudfree, no area filter and numeric-zero contracts
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests==2.32.5 pandas==2.2.3 numpy==2.1.3 geopandas==1.1.2 shapely==2.1.2
+          python -m unittest discover -s tests -p test_mois_global_multipoint_numeric_20261107.py -v
+          python -m unittest discover -s tests -p test_mois_global2020_multipoint_bulk4096_20261107.py -v
+          python -m py_compile scripts/analysis/mois_global_2020_GSHHG_scope_20261107.py
+          python -m py_compile scripts/analysis/mois_global2020_prepare_next4096_20261107.py
+          python -m py_compile scripts/analysis/mois_global2020_multipoint_bulk4096_20261107.py
+      - name: Recover SHA-signed canonical photo, coastline and earlier exact environmental responses
+        run: |
+          set -euo pipefail
+          mkdir -p src/shoreline src/first256 src/next1024 src/next64
+          gh run download 41007444495 --repo zuizui0223/mois --name mois-nohuman-canonical-climate-joined-20261030 --dir src
+          gh run download 42175243391 --repo zuizui0223/mois --name mois-GSHHG-2.3.7-high-L1-L2-SHA-source-no-images --dir src/shoreline
+          gh run download 41946071715 --repo zuizui0223/mois --name mois-2020-VIIRS4month-WorldPop2020-taxonequal-source-cells --dir src
+          gh run download 42192184774 --repo zuizui0223/mois --name mois-global-noarea-2020-256-real-values-and-response-SHAs --dir src/first256
+          gh run download 42219556580 --repo zuizui0223/mois --name mois-global-next1024-combined-real-values-response-SHAs --dir src/next1024
+          gh run download 42322001600 --repo zuizui0223/mois --name mois-global-multipoint-64-new-targets-2020-source-responses-and-replay --dir src/next64
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  src/canonical_observations_climate.csv.gz' | sha256sum -c -
+          echo '3562db1e5783e77d3bb408bd33817b4d7cccf31ad4d4ad42586469708fd407e3  src/viirs_population_source_matched_cells_2020.csv' | sha256sum -c -
+          echo '303424afe40b41e7bda2ec0ae456dd27820a50e17f7ca23204c81036adf21466  src/first256/global_output/values.csv' | sha256sum -c -
+          echo '7aa0193178d664818bca777749074fc88fe0b9e594e83e5eb34d6f72110efce9  src/next1024/next_output/all1024_values.csv' | sha256sum -c -
+          echo 'a513250fa9911a35c7f40380684ae97f52d7cdfea7bf828cdcd7cbe1be34192c  src/next64/result/values.csv' | sha256sum -c -
+      - name: Reconstruct exact original 38403 2020 GSHHG targets and freeze next4096
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2020_prepare_next4096_20261107 \
+            --canonical src/canonical_observations_climate.csv.gz \
+            --shoreline src/shoreline \
+            --legacy src/viirs_population_source_matched_cells_2020.csv \
+            --previous256 src/first256/global_output/values.csv \
+            --previous1024 src/next1024/next_output/all1024_values.csv \
+            --previous64 src/next64/result/values.csv \
+            --out source4096
+          echo 'fa06170ce59e41b6d7e486c236acf7d004091a035f7cbddbb3632bcd788ffa65  source4096/source_locked_2020_new4096.csv' | sha256sum -c -
+      - uses: actions/cache/restore@v4
+        with:
+          path: output/raw
+          key: mois4096-raw-fa06170c-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: mois4096-raw-fa06170c-
+      - name: Acquire 4096 genuinely new global numerical environments in 64 provider requests
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2020_multipoint_bulk4096_20261107 \
+            --targets source4096/source_locked_2020_new4096.csv --out output --workers 4
+      - name: Offline source-byte replay and complete value counts
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2020_multipoint_bulk4096_20261107 \
+            --targets source4096/source_locked_2020_new4096.csv --out output --offline --workers 4
+          python - <<'PY'
+          import json,hashlib,csv
+          from pathlib import Path
+          r=Path('output')
+          a=json.loads((r/'receipt.json').read_text())
+          b=json.loads((r/'replay_receipt.json').read_text())
+          assert a['targets_attempted']==b['targets_attempted']==4096
+          assert a['API_requests_new']==64 and b['API_requests_new']==0
+          assert b['API_requests_reused_from_saved_raw']==64
+          assert a['data_SHA256']==b['data_SHA256']
+          assert (r/'values.csv').read_bytes()==(r/'replay_values.csv').read_bytes()
+          assert a['data_SHA256']==hashlib.sha256((r/'values.csv').read_bytes()).hexdigest()
+          assert a['input_manifest_SHA256']=='fa06170ce59e41b6d7e486c236acf7d004091a035f7cbddbb3632bcd788ffa65'
+          assert len(a['responses_source_SHA256'])==64
+          assert a['new_photo_downloads_or_ROI_inferences']==0
+          assert a['island_area_minimum'] is None and a['latitude_cutoff'] is None
+          for name,dig in a['responses_source_SHA256'].items():
+              assert hashlib.sha256((r/'raw'/name).read_bytes()).hexdigest()==dig
+          vals=list(csv.DictReader((r/'values.csv').open()))
+          assert len(vals)==4096 and len({x['target_id'] for x in vals})==4096
+          assert sum(x['complete']=='True' for x in vals)==a['targets_complete']
+          print('MOIS_4096_GLOBAL_SOURCE_VERIFIED',
+             json.dumps({k:a[k] for k in ('targets_attempted','targets_complete',
+                  'targets_quality_incomplete','complete_by_land','viirs_valid_month_values',
+                  'population_valid_values','API_requests_new')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: output/raw
+          key: mois4096-raw-fa06170c-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-global-original-2020-new4096-multipoint-SHA-replay
+          path: |
+            source4096/
+            output/
+          retention-days: 90
+          if-no-files-found: warn
