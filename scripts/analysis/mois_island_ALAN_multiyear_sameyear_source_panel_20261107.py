@@ -123,6 +123,72 @@ def year_safeguards(year,d):
     result["cell_id_without_year"]=coord[1].values
     return result
 
+def test_generalizability(cells,formula):
+    """Two empirical questions beyond the pooled coefficient.
+
+    (1) Does the island × light slope retain its sign when any one year is
+        excluded? These five fits share much source support (NOT five
+        independent replications).
+    (2) Is that slope identifiable within 5-degree geographic blocks
+        containing BOTH island and mainland photographic opportunities?
+        Do not extrapolate island-only blocks into mainland comparators.
+
+    Also audit how many island cell-years are concentrated on the largest
+    original GSHHG landmass. No photo/coordinate rows are exported.
+    """
+    require(cells.year.nunique()==5 and len(cells)==sum(YEAR_COUNTS.values()),
+            "Generalization diagnostics must use exact original 5-year population")
+    leave_year={}
+    for omitted in PHOTO_YEARS:
+        kept=cells.loc[cells.year.ne(omitted)]
+        stats=cluster_fit(kept,formula,"region5")["log_light:is_island"]
+        leave_year[str(omitted)]={
+            "cell_years":int(len(kept)),
+            "island_cell_years":int(kept.is_island.sum()),
+            "spatial_blocks":int(kept.region5.nunique()),
+            **stats}
+    by_block=cells.groupby("region5",observed=True).is_island.agg(["min","max"])
+    both=set(by_block.index[(by_block["min"]==0)&(by_block["max"]==1)])
+    shared=cells.loc[cells.region5.isin(both)].copy()
+    shared_island=int(shared.is_island.sum())
+    co_support={
+      "blocks_with_both_land_classes":len(both),
+      "total_spatial_blocks":int(cells.region5.nunique()),
+      "co_supported_cell_years":len(shared),
+      "co_supported_island_cell_years":shared_island,
+      "does_not_impute_unobserved_mainland_or_island":True,
+    }
+    if len(both)>=10 and shared_island>=40 and len(shared)>=100:
+        co_support["estimable"]=True
+        co_support["interaction"]=cluster_fit(
+            shared,formula,"region5")["log_light:is_island"]
+    else:
+        co_support.update({
+            "estimable":False,
+            "reason":"insufficient_within_5degree_block_island_mainland_common_support"})
+    island=cells.loc[cells.is_island.eq(1)]
+    ranked=island.groupby("land_id").size().sort_values(ascending=False)
+    require(len(ranked)>0,"No real GSHHG islands in original source")
+    largest=str(ranked.index[0])
+    omitted_island=cells.loc[~(cells.is_island.eq(1)&cells.land_id.eq(largest))]
+    dominant={
+        "independent_landmasses_with_any_island_photo_cell":int(len(ranked)),
+        "largest_island_photo_cell_years":int(ranked.iloc[0]),
+        "largest_island_share_of_island_cell_years":float(ranked.iloc[0]/len(island)),
+        "five_largest_islands_share_of_island_cell_years":float(ranked.iloc[:5].sum()/len(island)),
+        "largest_island_exclusion_interaction":cluster_fit(
+            omitted_island,formula,"region5")["log_light:is_island"],
+        "largest_island_excluded_cell_years":int(len(omitted_island)),
+    }
+    return {
+        "leave_one_year_out":leave_year,
+        "leave_one_year_out_all_negative":all(
+            d["beta"]<0 for d in leave_year.values()),
+        "geographically_co_supported_island_mainland_comparison":co_support,
+        "original_island_sampling_concentration":dominant,
+        "diagnostics_are_source_support_checks_not_causes_or_preregistered_confirmations":True,
+    }
+
 def run(paths,out):
     out=Path(out);require(not out.exists(),"Do not overwrite prior results")
     original,wcvp=load_frozen_photos(paths)
@@ -156,6 +222,7 @@ def run(paths,out):
             "Too few independent island units for repeated-year fixed effects")
     within_form="white_pp ~ log_light + log_pop + "+COVARS+" + C(land_id) + C(year)"
     island_fit=cluster_fit(within,within_form,"land_id")
+    geographic_temporal_audit=test_generalizability(allcells,reg)
     desc=allcells.groupby(["year","land_class"],observed=True).agg(
         matched_photo_cells=("target_id","nunique"),
         mean_photo_white_ROI_pp=("white_pp","mean"),
@@ -177,6 +244,7 @@ def run(paths,out):
       "between_island_mainland_light_interaction_geoblock_cluster":between["log_light:is_island"],
       "between_model_full_light_and_island_terms":between,
       "within_island_FE_year_adjusted_light":island_fit["log_light"],
+      "geographic_temporal_generalisability":geographic_temporal_audit,
       "year_repeated_same_regions_not_independent_experiments":True,
       "no_causal_ALAN_or_native_plant_extirpation_or_moth_service_claim":True,
       "no_ROI_unknown_imputed":True,
@@ -193,7 +261,8 @@ def run(paths,out):
           "geographic_clusters_persist_across_years",
           "independent_islands_in_supported_within_fit",
           "between_island_mainland_light_interaction_geoblock_cluster",
-          "within_island_FE_year_adjusted_light"]},sort_keys=True),flush=True)
+          "within_island_FE_year_adjusted_light",
+          "geographic_temporal_generalisability"]},sort_keys=True),flush=True)
     return result
 
 if __name__=="__main__":
