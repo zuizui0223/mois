@@ -1,6 +1,6 @@
 """2025 source-type and no-2020-population mixing contracts."""
 import unittest
-from scripts.analysis import mois_global2025_VIIRS_WorldPopG2_bulk_20261107 as a
+from scripts.analysis import mois_global2025_VIIRS_WorldPopR2024B_UC_bulk_20261107 as a
 
 class SourceTests(unittest.TestCase):
     def source(self):
@@ -22,7 +22,7 @@ class SourceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"Wrong photo year"):
             a.validate_targets(d,2)
     def test_true_2025_raster_file_hash_pinned(self):
-        self.assertEqual(a.RASTER_BYTES,865211479)
+        self.assertEqual(len(a.RASTER_SHA),64)
         self.assertEqual(a.RASTER_BYTES,865211479)
         self.assertEqual(a.YEAR,2025)
         self.assertIn("R2024B",a.RASTER_NAME)
