@@ -123,6 +123,12 @@ def make_photo_cells(year,canonical,wcvp,land,env):
         accepted_species_n=("wcvp_accepted_plant_name_id","nunique")).reset_index()
     d=env.merge(attempt,on="target_id",how="left",validate="one_to_one")
     d=d.merge(per_cell,on="target_id",how="left",validate="one_to_one")
+    # Numeric satellite tables retain target_id but not the GSHHG sibling
+    # land_id: recover that ID from the verified original year geometry.
+    d=d.merge(safe[["target_id","land_id"]],on="target_id",how="inner",
+              validate="one_to_one")
+    require(d.target_id.is_unique and d.land_id.notna().all(),
+            "Selected light cells lack authentic original landmass identity")
     d["photo_eligible"]=(d.photo_attempts.ge(5)&d.strict9_success.ge(3)&
                           d.accepted_species_n.ge(3))
     d["light_eligible"]=(d.viirs_valid_months.ge(3)&d.viirs_median.notna())
