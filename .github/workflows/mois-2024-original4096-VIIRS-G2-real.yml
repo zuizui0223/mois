@@ -4,6 +4,9 @@ on:
     branches: [analysis/mois-viirs-popmatch-20261105]
     paths:
       - .github/workflows/mois-2024-original4096-VIIRS-G2-real.yml
+      - scripts/analysis/mois_global2024_original_source_20261107.py
+      - scripts/analysis/mois_global2024_VIIRS_WorldPopG2_bulk_20261107.py
+      - tests/test_mois_global2024_VIIRS_WorldPopG2_bulk_20261107.py
   workflow_dispatch:
 permissions:
   contents: read
