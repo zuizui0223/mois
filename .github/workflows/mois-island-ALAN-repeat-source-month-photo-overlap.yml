@@ -1,0 +1,137 @@
+name: MOIS actual photo observation month and repeated-site taxon overlap
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-island-ALAN-repeat-source-month-photo-overlap.yml
+      - scripts/analysis/mois_island_ALAN_repeated_photo_month_match_20261108.py
+      - tests/test_mois_island_ALAN_repeated_photo_month_match_20261108.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-source-photo-month-repeat-siteyear:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Verify 5-year photographic analysis and year/geography source tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 statsmodels==0.14.5 geopandas==1.1.2 shapely==2.1.2
+          python -m unittest discover -s tests -p test_mois_island_ALAN_repeated_photo_month_match_20261108.py -v
+          python -m py_compile scripts/analysis/mois_island_ALAN_repeated_photo_month_match_20261108.py
+      - name: Restore signed frozen original photo and accepted-taxon sources
+        timeout-minutes: 7
+        run: |
+          set -euo pipefail
+          mkdir -p src/photo src/wcvp src/coast
+          gh run download 41007444495 --repo zuizui0223/mois --name mois-nohuman-canonical-climate-joined-20261030 --dir src/photo
+          gh run download 39225659840 --repo zuizui0223/mois --name mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status --dir src/wcvp
+          gh run download 42175243391 --repo zuizui0223/mois --name mois-GSHHG-2.3.7-high-L1-L2-SHA-source-no-images --dir src/coast
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  src/photo/canonical_observations_climate.csv.gz' | sha256sum -c -
+          echo 'dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2  src/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' | sha256sum -c -
+      - name: Restore three same-year original 2019 2021 2023 VIIRS and population sources
+        timeout-minutes: 9
+        run: |
+          set -euo pipefail
+          mkdir -p src/2019/viirs src/2019/pop src/2021/viirs src/2021/pop src/2023/viirs src/2023/pop
+          gh run download 42337911536 --repo zuizui0223/mois --name mois-original-2019-global-mainland-island-monthly-VIIRS-source-SHA --dir src/2019/viirs
+          gh run download 42338121269 --repo zuizui0223/mois --name mois-original-2019-R2024B-UC-global-popdensity-photo-source --dir src/2019/pop
+          gh run download 42337911536 --repo zuizui0223/mois --name mois-original-2021-global-mainland-island-monthly-VIIRS-source-SHA --dir src/2021/viirs
+          gh run download 42338121269 --repo zuizui0223/mois --name mois-original-2021-R2024B-UC-global-popdensity-photo-source --dir src/2021/pop
+          gh run download 42337911536 --repo zuizui0223/mois --name mois-original-2023-global-mainland-island-monthly-VIIRS-source-SHA --dir src/2023/viirs
+          gh run download 42338121269 --repo zuizui0223/mois --name mois-original-2023-R2024B-UC-global-popdensity-photo-source --dir src/2023/pop
+          test -f src/2019/viirs/source_year/2019/mois_2019_full_photo_landmass_source.csv
+          test -f src/2021/viirs/source_year/2021/mois_2021_full_photo_landmass_source.csv
+          test -f src/2023/viirs/source_year/2023/mois_2023_full_photo_landmass_source.csv
+          test -f src/2019/pop/source_receipt.json
+          test -f src/2021/pop/source_receipt.json
+          test -f src/2023/pop/source_receipt.json
+      - name: Restore independent 2024 sameyear VIIRS plus 2024 unconstrained population
+        timeout-minutes: 7
+        run: |
+          set -euo pipefail
+          mkdir -p src/2024/land src/2024/CN src/2024/UC
+          gh run download 42328254130 --repo zuizui0223/mois --name mois-global2024-original4096-WPGlobal2-2024-VIIRS-raw-SHA --dir src/2024/land
+          gh run download 42328567038 --repo zuizui0223/mois --name mois-global2024-rest62360-original-VIIRS-G2-all66456-source --dir src/2024/CN
+          gh run download 42333953557 --repo zuizui0223/mois --name mois-2024-WorldPop-UC-R2024B-full-original-66456-population-source --dir src/2024/UC
+          echo 'f7f65e6bc167089b3034555c655e777f528ecdd29952ab7ee9833d8722f39267  src/2024/land/original_source_2024/mois_2024_full_photo_landmass_source.csv' | sha256sum -c -
+          echo '6e0a077d496e90848d05d043bffae57e4772519f4572a457221c5ef4da0fb813  src/2024/CN/result_rest2024/all2024_known_land_combined_values.csv' | sha256sum -c -
+          echo 'a07af611836d215fb7997c7f574729df10787f5a7cc9bfa1b67bf5a831d613dc  src/2024/UC/2024_66k_UC_R2024B_fullcohort_values.csv' | sha256sum -c -
+      - name: Restore 2025 original VIIRS and sameyear WorldPop numeric plus verified original coast
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          mkdir -p src/2025/numeric
+          gh run download 42337703150 --repo zuizui0223/mois --name mois-2025-original73463-mainland-island-full-VIIRS-and-R2024B-UC-source --dir src/2025/numeric
+          python -m scripts.analysis.mois_global2025_original_source_20261107 --canonical src/photo/canonical_observations_climate.csv.gz --shoreline src/coast --out src/2025/geo --allow-knownland-verified-geo-roundoff
+          echo '45c5152e1edad997ff8749c645818996fb2b0bc03a2ab7c0753af446afaab143  src/2025/geo/mois_2025_all73463_knownland_source.csv' | sha256sum -c -
+      - name: Fit real photo white ROI against sameyear light by island with year and geographic dependency
+        timeout-minutes: 12
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_island_ALAN_repeated_photo_month_match_20261108 \
+            --canonical src/photo/canonical_observations_climate.csv.gz \
+            --wcvp src/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+            --geo2019 src/2019/viirs/source_year/2019/mois_2019_full_photo_landmass_source.csv \
+            --viirs2019 src/2019/viirs/VIIRS_2019/values.csv \
+            --pop2019 src/2019/pop/2024B_UC_2019_worldpop_sameyear_photo_landmass_popdensity.csv \
+            --geo2021 src/2021/viirs/source_year/2021/mois_2021_full_photo_landmass_source.csv \
+            --viirs2021 src/2021/viirs/VIIRS_2021/values.csv \
+            --pop2021 src/2021/pop/2024B_UC_2021_worldpop_sameyear_photo_landmass_popdensity.csv \
+            --geo2023 src/2023/viirs/source_year/2023/mois_2023_full_photo_landmass_source.csv \
+            --viirs2023 src/2023/viirs/VIIRS_2023/values.csv \
+            --pop2023 src/2023/pop/2024B_UC_2023_worldpop_sameyear_photo_landmass_popdensity.csv \
+            --geo2024 src/2024/land/original_source_2024/mois_2024_full_photo_landmass_source.csv \
+            --cn2024 src/2024/CN/result_rest2024/all2024_known_land_combined_values.csv \
+            --uc2024 src/2024/UC/2024_66k_UC_R2024B_fullcohort_values.csv \
+            --uc2024receipt src/2024/UC/UC_R2024B_source_receipt.json \
+            --geo2025 src/2025/geo/mois_2025_full_photo_landmass_source.csv \
+            --geo2025receipt src/2025/geo/2025_source_receipt.json \
+            --viirs2025 src/2025/numeric/numeric_2025/values.csv \
+            --out source_real_photo_month_taxon_overlap
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('source_real_photo_month_taxon_overlap')
+          r=json.loads((p/'photo_month_matched_source_taxon_overlap_receipt.json').read_text())
+          assert r['original_observation_years']==[2019,2021,2023,2024,2025]
+          assert r['source_original_strict9_reused_only']
+          assert r['actual_month_observed_on_original_photograph_not_inferred_bloom_month']
+          assert r['photo_no_record_not_plant_absence']
+          assert r['date_month_missing_excluded_not_filled']
+          assert r['no_2022_2020_source_substitution']
+          assert r['no_new_original_photo_RGB_download_or_ROI_inference']
+          assert r['no_MNAR_tipping_or_IPW']
+          for label in ['strict_5p3r3s','measured_3p2r2s']:
+              result=r['results'][label]
+              months=result['source_photo_date_provenance']
+              assert months['accepted_original_strict9_source_photos_joined']>=months['actual_observed_calendar_month_photos']
+              support=result['month_comparable_observed_photo_taxon_pairs']
+              assert support['photo_month_year_pairs_with_valid_original_dates']>=0
+              assert support['repeated_photo_year_pairs_without_date_comparison']>=0
+              for land in ['island','mainland']:
+                  x=support['results'][land]
+                  assert (x['all_dated_pairs']['observed_repeated_siteyear_pairs']
+                          == x['same_dominant_photo_month']['observed_repeated_siteyear_pairs']
+                           + x['different_dominant_photo_month']['observed_repeated_siteyear_pairs'])
+          print('MOIS_GENUINE_MONTH_MATCHED_REPEAT_PHOTO_TAXA_SOURCE',
+                 json.dumps(r['results'],sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-original-same-site-actual-photo-month-taxonomic-overlap
+          path: source_real_photo_month_taxon_overlap/
+          retention-days: 90
+          if-no-files-found: warn
