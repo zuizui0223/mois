@@ -216,6 +216,78 @@ def genuinely_crossland_taxon_5deg_year_support(species,eligible):
       "geographic_5degree_clustered_errors":True,
       "not_observationally_independent_same_species_genotypes":True}
 
+def cross_year_taxon_reference_transfer(species,cohort):
+    """Train *photographic* accepted-taxon colour in 2019/21/23 only, hold
+    2024 and 2025 photo cells out of the reference entirely.
+
+    Compare photographed prior-year taxon compositions and current-year
+    within-taxon photo deviations ONLY on truly observed accepted species
+    with an independent earlier-year photo source. Do not impute unknown
+    flower colour or missing biological presence. This is temporal evidence
+    transfer, not independent external trait validation.
+    """
+    train=(2019,2021,2023)
+    test=(2024,2025)
+    prior=species.loc[species.year.isin(train)]
+    future=species.loc[species.year.isin(test)]
+    panel.require(len(prior)>0 and len(future)>0,"Cannot split original photo years")
+    reference=prior.groupby(SPECIES_COL,observed=True).agg(
+        earlier_photo_mean_white=("photo_white_fraction","mean"),
+        independent_photo_cell_years=("target_id","nunique")).reset_index()
+    f=future.merge(reference,on=SPECIES_COL,how="inner",validate="many_to_one")
+    panel.require(f.year.isin(test).all(),"Training photo year leaked into holdout")
+    f=f.loc[f.target_id.isin(set(cohort.target_id))].copy()
+    grouped=f.groupby("target_id",observed=True).agg(
+        matched_observed_accepted_species=(SPECIES_COL,"nunique"),
+        known_earlier_photo_reference_white=("earlier_photo_mean_white","mean"),
+        true_heldout_photo_white_same_taxa=("photo_white_fraction","mean")).reset_index()
+    cells=cohort.loc[cohort.year.isin(test)].copy()
+    joined=cells.merge(grouped,on="target_id",how="left",validate="one_to_one")
+    eligible=joined.loc[joined.matched_observed_accepted_species.ge(2)].copy()
+    panel.require(eligible.matched_observed_accepted_species.le(
+        eligible.accepted_species_n).all(),
+        "More earlier-year taxon matches than observed current-year taxa")
+    eligible["prior_year_source_reference_white_pp"]=100*eligible.known_earlier_photo_reference_white
+    eligible["heldout_same_species_photo_white_pp"]=100*eligible.true_heldout_photo_white_same_taxa
+    eligible["heldout_species_photo_difference_pp"]=(
+        eligible.heldout_same_species_photo_white_pp-
+        eligible.prior_year_source_reference_white_pp)
+    island=int(eligible.is_island.sum())
+    blocks=int(eligible.region5.nunique())
+    receipt={
+        "source_reference_training_photo_years":list(train),
+        "fully_unseen_reference_target_years":list(test),
+        "training_accepted_taxa_with_photo_colours":len(reference),
+        "eligible_current_year_photo_cells":len(cells),
+        "current_year_cells_with_at_least_two_earlier_photo_taxon_references":len(eligible),
+        "eligible_island_cells":island,
+        "eligible_geographic_blocks":blocks,
+        "eligible_observed_taxon_cell_years":int(eligible.matched_observed_accepted_species.sum()),
+        "earlier_photo_reference_is_not_an_independently_measured_trait":True,
+        "all_reference_taxa_are_genuinely_observed_in_both_year_partitions":True,
+        "no_heldout_year_photo_used_in_earlier_year_reference":True,
+    }
+    if len(eligible)<100 or island<35 or blocks<10:
+        receipt.update({"estimable":False,
+                        "reason":"insufficient source-verified 2+ accepted photo taxon cross-year holdout coverage"})
+        return receipt
+    formula=" ~ log_light * is_island + log_pop + "+COVARS+" + C(region5) + C(year)"
+    terms={
+       "prior_year_taxon_reference_component":"prior_year_source_reference_white_pp",
+       "heldout_current_photo_white_on_same_taxa":"heldout_same_species_photo_white_pp",
+       "heldout_photo_deviation_from_prior_year_source_reference":"heldout_species_photo_difference_pp",
+    }
+    fits={k:cluster_fit(eligible,v+formula,"region5")["log_light:is_island"]
+          for k,v in terms.items()}
+    panel.require(abs(
+        fits["heldout_current_photo_white_on_same_taxa"]["beta"]-
+        fits["prior_year_taxon_reference_component"]["beta"]-
+        fits["heldout_photo_deviation_from_prior_year_source_reference"]["beta"])<1e-5,
+        "Source temporal transfer coefficients cannot be exactly reconstructed")
+    return {**receipt,"estimable":True,"models":fits,
+       "population_is_subset_with_at_least_two_earlier_observed_accepted_taxa":True,
+       "source_photo_species_prior_year_reference_not_causal_or_genetically_fixed":True}
+
 def run(paths,out):
     out=Path(out)
     panel.require(not out.exists(),"Do not overwrite published source receipts")
@@ -244,6 +316,10 @@ def run(paths,out):
     panel.require(abs(
         main["measured_two_species"]["global_cell_white_ROI_decomposition"]["observed_white_ROI"]["beta"]
         - (-1.204806413294285))<1e-5,"Broader genuine colour cohort changed")
+    temporal_transfer={
+       "strict_original":cross_year_taxon_reference_transfer(species,strict),
+       "measured_two_species":cross_year_taxon_reference_transfer(species,broad),
+    }
     source_taxa_shared=species.groupby(SPECIES_COL).is_island.nunique()
     reported={
         "schema":"MOIS_original_photo_taxon_turnover_ALAN_island_sameyear_20261107_v1",
@@ -254,6 +330,7 @@ def run(paths,out):
         "original_source_taxa_seen_both_island_and_mainland":int(source_taxa_shared.ge(2).sum()),
         "actual_species_photo_cell_years":len(species),
         "results":main,
+        "independent_observation_year_taxon_photo_reference_transfer":temporal_transfer,
         "exact_original_ROI_and_WCVP_white_values_reconstructed":True,
         "no_new_RGB_download_or_ROI_reinference":True,
         "no_photo_unknown_imputation_or_MNAR_tipping":True,
@@ -267,7 +344,8 @@ def run(paths,out):
     print("MOIS_REAL_TAXON_TURNOVER_ISLAND_ALAN_WHITE",json.dumps({
         k:reported[k] for k in ("actual_original_source_accepted_taxa",
         "original_source_taxa_seen_both_island_and_mainland",
-        "actual_species_photo_cell_years","results")},sort_keys=True),flush=True)
+        "actual_species_photo_cell_years","results",
+        "independent_observation_year_taxon_photo_reference_transfer")},sort_keys=True),flush=True)
     return reported
 if __name__=="__main__":
     p=argparse.ArgumentParser()
