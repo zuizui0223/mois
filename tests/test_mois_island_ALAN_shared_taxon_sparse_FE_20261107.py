@@ -9,13 +9,13 @@ class SharedSourceTaxonFixedEffects(unittest.TestCase):
     def test_pure_same_taxon_across_land_classes_and_one_cell_equal_weight(self):
         sp="wcvp_accepted_plant_name_id"
         data=pd.DataFrame([
-         {"target_id":"2019|a|1",sp:"A","is_island":1,"region5":"X",
+         {"target_id":"2019|a|1",sp:"A","year":2019,"is_island":1,"region5":"X",
           "photo_white_fraction":.3},
-         {"target_id":"2019|a|1",sp:"B","is_island":1,"region5":"X",
+         {"target_id":"2019|a|1",sp:"B","year":2019,"is_island":1,"region5":"X",
           "photo_white_fraction":.5},
-         {"target_id":"2019|b|2",sp:"A","is_island":0,"region5":"X",
+         {"target_id":"2019|b|2",sp:"A","year":2019,"is_island":0,"region5":"X",
           "photo_white_fraction":.1},
-         {"target_id":"2019|c|1",sp:"C","is_island":1,"region5":"Y",
+         {"target_id":"2019|c|1",sp:"C","year":2019,"is_island":1,"region5":"Y",
           "photo_white_fraction":.8},
         ])
         selected,c=m.true_crossland_accepted_taxa(data,
