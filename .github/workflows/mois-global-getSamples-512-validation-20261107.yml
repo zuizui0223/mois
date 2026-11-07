@@ -1,0 +1,186 @@
+name: MOIS validate 512-site multipoint ArcGIS numeric extraction versus original identify SHAs
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths: [.github/workflows/mois-global-getSamples-512-validation-20261107.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-global-2020-multipoint-512-same-original-identity
+  cancel-in-progress: false
+jobs:
+  exact-multipoint-equivalence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download only already verified 2020 original numeric responses (no images)
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 requests==2.32.5
+          gh run download 42219556580 --repo zuizui0223/mois \
+            --name mois-global-next1024-combined-real-values-response-SHAs --dir old
+          echo '7aa0193178d664818bca777749074fc88fe0b9e594e83e5eb34d6f72110efce9  old/next_output/all1024_values.csv' | sha256sum -c -
+          mkdir -p multipoint512/raw
+      - name: Compare 4 VIIRS months including cloud band, and population, against 512 original identify points
+        timeout-minutes: 14
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import pandas as pd,requests,json,re,hashlib,math,datetime as dt,calendar,time
+          from pathlib import Path
+          all_sources=pd.read_csv('old/next_output/all1024_values.csv')
+          valid=all_sources.complete.copy()
+          for mo in (1,4,7,10):valid &= all_sources[f'viirs_{mo}_status'].eq('OK')
+          selected=all_sources.loc[valid].iloc[
+              pd.Series(range(512)).map(lambda i: int(i*(int(valid.sum())-1)/511)).to_numpy()
+          ].reset_index(drop=True)
+          assert len(selected)==512 and selected.target_id.is_unique and selected.target_id.str.startswith('2020|').all()
+          endpoints={
+             'viirs':'https://di-lawimagery1.img.arcgis.com/arcgis/rest/services/NighttimeLightsMDNB/ImageServer',
+             'population':'https://worldpop.arcgis.com/arcgis/rest/services/WorldPop_Population_Density_1km/ImageServer',
+          }
+          def times(y,m):
+              a=dt.datetime(y,m,1,tzinfo=dt.timezone.utc)
+              b=dt.datetime(y,m,calendar.monthrange(y,m)[1],23,59,59,tzinfo=dt.timezone.utc)
+              return f'{int(a.timestamp()*1000)},{int(b.timestamp()*1000)}'
+          def old_key(product,year,month,x,y):
+              s={'product':product if product=='viirs' else 'population_global1',
+                 'endpoint':endpoints[product]+'/identify',
+                 'year':year,'month':month if product=='viirs' else 0,
+                 'longitude':float(x),'latitude':float(y),
+                 'rendering':'Average Monthly Radiance (Raw Values)' if product=='viirs' else 'native_population_density'}
+              return hashlib.sha256(json.dumps(s,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+          def original_for(product,month,row):
+              name=old_key(product,2020,month,row.query_longitude,row.query_latitude)
+              for b in range(4):
+                  file=Path(f'old/next_output/block_{b}/cache/{name}.response')
+                  meta=Path(f'old/next_output/block_{b}/cache/{name}.json')
+                  if file.is_file():
+                      receipt=json.loads(meta.read_text())
+                      raw=file.read_bytes()
+                      assert hashlib.sha256(raw).hexdigest()==receipt['response_sha256']
+                      assert receipt['status']=='OK'
+                      return json.loads(raw)
+              raise ValueError('Frozen prior original identify source absent: '+row.target_id)
+          session=requests.Session()
+          session.headers.update({'User-Agent':'MOIS global floristic spatial batch numerical source-equivalence research/1.0'})
+          counts={'numeric_matches':0,'VIIRS_cloudfree_matches':0,'all_month_year_checked':0,'population_matches':0}
+          audit={'schema':'MOIS_ArcGIS_getSamples_512_source_verified_20261107',
+              'original_source_run':42219556580,
+              'original_source_csv_SHA256':'7aa0193178d664818bca777749074fc88fe0b9e594e83e5eb34d6f72110efce9',
+              'selected_sites':512,'batch_getSamples_works_at_512':None,
+              '512_is_sample_only_not_new_population_of_photo_sites':True,
+              'new_original_photographic_pixels_or_ROI_inferences':0,
+              'previously_acquired_target_values_not_recounted_as_new':True,
+              'requested_VIIRS_months':[1,4,7,10],
+              'comparison_grouping':'original photo-independent 2020 source SHA-verified API request identity and coordinate',
+              'outcomes':{},'probe_requests':[]}
+          chunk_size=512
+          for product,month in [('viirs',m) for m in (1,4,7,10)]+[('population',0)]:
+              expected_by_loc={}
+              for i,row in enumerate(selected.itertuples(index=False)):
+                  x=float(getattr(row,f'viirs_{month}_value')) if product=='viirs' else float(row.population_density)
+                  raw=original_for(product,month,row)
+                  if product=='viirs':
+                      assert raw['catalogItems']['features'][0]['attributes']['year']==2020
+                      assert raw['catalogItems']['features'][0]['attributes']['month']==month
+                      s=raw['properties']['Values'][0].split()
+                      assert abs(float(s[0])-x)<1e-8 and float(s[1])>=2
+                      expected_by_loc[i]=(x,int(round(float(s[1]))))
+                  else:
+                      assert abs(float(raw['value'])-x)<1e-9
+                      expected_by_loc[i]=(x,None)
+              results=[]
+              start=0
+              while start<512:
+                  size=min(chunk_size,512-start)
+                  indices=list(range(start,start+size))
+                  points=[[float(selected.iloc[i].query_longitude),float(selected.iloc[i].query_latitude)] for i in indices]
+                  params={'f':'json','geometryType':'esriGeometryMultipoint',
+                     'geometry':json.dumps({'points':points,'spatialReference':{'wkid':4326}},separators=(',',':')),
+                     'returnFirstValueOnly':'true','outFields':'*',
+                     'interpolation':'RSP_NearestNeighbor',
+                     'time':times(2020,month) if product=='viirs' else times(2020,1).split(',')[0]+','+times(2020,12).split(',')[1]}
+                  r=session.get(endpoints[product]+'/getSamples',params=params,timeout=65)
+                  raw=r.content
+                  filename=f'multipoint512/raw/{product}_{month:02d}_at_{start:03d}_n{size:03d}.json'
+                  Path(filename).write_bytes(raw)
+                  try:obj=r.json()
+                  except ValueError:obj={'error':{'text':'Non-JSON source','http':r.status_code}}
+                  rec={'product':product,'month':month,'first_index':start,'number_requested':size,
+                       'http_status':r.status_code,'raw_response_SHA256':hashlib.sha256(raw).hexdigest(),
+                       'raw_response_path':filename,
+                       'number_samples':len(obj.get('samples') or []),
+                       'provider_error':obj.get('error')}
+                  audit['probe_requests'].append(rec)
+                  if r.status_code!=200 or obj.get('error') or len(obj.get('samples') or [])!=size:
+                      if chunk_size==512:
+                          chunk_size=128
+                          print('MULTIPOINT_512_FALLBACK_TO_128',product,month,rec,flush=True)
+                          continue
+                      raise RuntimeError('Provider cannot return exact supported source batch: '+json.dumps(rec))
+                  # LocationId must index current multipoint group exactly;
+                  # never use data row order or nearest location heuristics
+                  locations={}
+                  for sample in obj['samples']:
+                      local_id=sample.get('locationId')
+                      if not isinstance(local_id,int) or local_id not in range(size) or local_id in locations:
+                          raise ValueError('Duplicate or missing source locationId')
+                      i=start+local_id;old=selected.iloc[i]
+                      loc=sample['location']
+                      if abs(loc['x']-float(old.query_longitude))>1e-7 or abs(loc['y']-float(old.query_latitude))>1e-7:
+                          raise ValueError('Sample location does not match photo-independent selected source')
+                      band=[float(s) for s in re.split(r'[,\s]+',str(sample['value']).strip())]
+                      if not all(math.isfinite(v) for v in band):raise ValueError('Nonfinite band')
+                      if len(band)!=(2 if product=='viirs' else 1):raise ValueError('Raw VIIRS/WorldPop band count changed')
+                      value,cloud=expected_by_loc[i]
+                      tolerance=1e-5 if product=='viirs' else max(2e-5,5e-6*abs(value))
+                      if abs(band[0]-value)>tolerance:
+                          raise ValueError('Retrieved raster band changed outside original identify precision: '+str((product,month,i,band,value)))
+                      counts['numeric_matches']+=1
+                      if product=='viirs':
+                          at=sample.get('attributes') or {}
+                          if at.get('year')!=2020 or at.get('month')!=month:raise ValueError('Wrong source raster year or month')
+                          counts['all_month_year_checked']+=1
+                          if int(round(band[1]))!=cloud:raise ValueError('Cloudfree count disagrees with original response')
+                          counts['VIIRS_cloudfree_matches']+=1
+                      else:counts['population_matches']+=1
+                      locations[local_id]=True
+                  if len(locations)!=size:raise ValueError('Some original source points were silently omitted')
+                  results.extend(indices)
+                  start+=size
+              if results!=list(range(512)):raise ValueError('Wrong returned target ordering/overlap')
+              audit['outcomes'][f'{product}_{month:02d}']={'source_sites':len(results),
+                  'original_identify_numeric_values_confirmed':len(results),
+                  'source_viirs_cloud_count_confirmed':len(results) if product=='viirs' else None,
+                  'exact_original_year_and_month_confirmed':len(results) if product=='viirs' else None}
+              print('MOIS_GETSAMPLES_512_EQUIVALENCE',product,month,'validated',len(results),'chunk_size',chunk_size,flush=True)
+          assert counts['numeric_matches']==2560
+          assert counts['VIIRS_cloudfree_matches']==2048
+          assert counts['all_month_year_checked']==2048
+          assert counts['population_matches']==512
+          audit['all_numerical_and_month_quality_values_source_equivalent']=True
+          audit['512_sites_multiband_equivalent']=chunk_size==512
+          audit['validated_multisite_point_month_and_population_values']=counts
+          audit['sample_2020_only_not_confirmed_for_other_years']=True
+          audit['any_global_bulk_queue_promoted_to_completed_from_probe']=False
+          Path('multipoint512/receipt.json').write_text(json.dumps(audit,indent=2,sort_keys=True)+'\n')
+          print('MOIS_ARCGIS_512_TRUE_ORIGINAL_SOURCE_EQUIVALENCE_CONFIRMED',json.dumps(
+              {'counts':counts,'requests':len(audit['probe_requests']),'chunk_size':chunk_size},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-global-512-original-source-identical-multipoint-radiance-cloudfree-population
+          path: multipoint512/
+          retention-days: 90
+          if-no-files-found: warn
