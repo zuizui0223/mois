@@ -51,6 +51,36 @@ class SourceTaxonTurnoverTests(unittest.TestCase):
         self.assertIn("exact_original_ROI_and_WCVP_white_values_reconstructed",run)
         self.assertIn("no_photo_unknown_imputation_or_MNAR_tipping",run)
 
+    def test_earlier_year_source_reference_never_uses_2024_or_2025_photos(self):
+        # Taxon A is photographed in 2019, and in 2024 with a different colour.
+        # Taxon B has a source observation in 2021 and 2025.
+        species=pd.DataFrame([
+          dict(target_id="2019|s1|1",year=2019,wcvp_accepted_plant_name_id="A",
+               photo_white_fraction=.2),
+          dict(target_id="2021|s2|2",year=2021,wcvp_accepted_plant_name_id="B",
+               photo_white_fraction=.8),
+          dict(target_id="2024|s3|1",year=2024,wcvp_accepted_plant_name_id="A",
+               photo_white_fraction=.6),
+          dict(target_id="2024|s3|1",year=2024,wcvp_accepted_plant_name_id="B",
+               photo_white_fraction=.5),
+          dict(target_id="2025|s4|2",year=2025,wcvp_accepted_plant_name_id="C",
+               photo_white_fraction=.9)])
+        cohort=pd.DataFrame([
+          dict(target_id="2024|s3|1",year=2024,
+               is_island=1,region5="X",accepted_species_n=2,
+               log_light=1.,log_pop=.2,bio5=10.,log_rain=2.,
+               elevation=20.,log_attempts=2.),
+          dict(target_id="2025|s4|2",year=2025,
+               is_island=0,region5="Y",accepted_species_n=2,
+               log_light=1.,log_pop=.2,bio5=10.,log_rain=2.,
+               elevation=20.,log_attempts=2.)])
+        r=m.cross_year_taxon_reference_transfer(species,cohort)
+        self.assertEqual(r["training_accepted_taxa_with_photo_colours"],2)
+        self.assertEqual(r["current_year_cells_with_at_least_two_earlier_photo_taxon_references"],1)
+        self.assertEqual(r["eligible_island_cells"],1)
+        self.assertFalse(r["estimable"])
+        self.assertTrue(r["no_heldout_year_photo_used_in_earlier_year_reference"])
+
     def test_photo_reference_composition_is_exact_derived_observation(self):
         # For the two species in the island cell, the photographic whiteness
         # exactly equals a source taxon mean component plus site deviation.
