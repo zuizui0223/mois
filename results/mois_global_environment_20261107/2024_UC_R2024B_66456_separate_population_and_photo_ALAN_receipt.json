@@ -1,0 +1,68 @@
+{
+  "schema": "MOIS_2024_sameyear_R2024B_UC_population_20261107_v1",
+  "population_2024_source_models_not_mixed": true,
+  "R2025A_constrained_original_GeoTIFF_sha256": "3539cbac76092c1e8c8d45426fc0dfb06067a1e3f28bfbee993dba21aa03194e",
+  "R2024B_unconstrained_original_GeoTIFF_sha256": "e0ff729885f5449eb5bdd7347f9b337d99a8ee9bbbaadf2b3e679db8d8f53538",
+  "R2024B_unconstrained_2024_source_values_sha256": "a07af611836d215fb7997c7f574729df10787f5a7cc9bfa1b67bf5a831d613dc",
+  "original_2024_source_cells": 66456,
+  "VIIRS_3plus_months_source_cells": 64646,
+  "R2025A_CN_complete": 43595,
+  "R2024B_UC_complete": 64412,
+  "R2024B_UC_zero_population_pixels": 596,
+  "R2024B_UC_source_nodata": 296,
+  "R2024B_UC_newly_eligible_CN_not_eligible": 20822,
+  "R2024B_UC_lost_CN_eligible": 5,
+  "net_complete_cell_gain": 20817,
+  "UC_complete_mainland": 56296,
+  "UC_complete_island": 8116,
+  "extra_preexisting_original_strict9_photo_successes": 16093,
+  "CN_photo_VIIRS_population_eligible_cells": 1617,
+  "UC_photo_VIIRS_population_eligible_cells": 2085,
+  "CN_within_island_eligible": {
+    "islands": 17,
+    "cells": 142,
+    "beta": -4.884245,
+    "CI": [
+      -8.297767,
+      -1.470723
+    ]
+  },
+  "UC_within_island_eligible": {
+    "islands": 20,
+    "cells": 184,
+    "beta": -2.745775,
+    "CI": [
+      -6.135437,
+      0.643887
+    ],
+    "p_nominal": 0.106318
+  },
+  "UC_global_light": {
+    "cells": 2085,
+    "beta": -0.920858,
+    "CI": [
+      -2.661187,
+      0.819472
+    ],
+    "p_nominal": 0.29807
+  },
+  "UC_cross_section_island_x_light": {
+    "cells": 2085,
+    "beta": -3.081142,
+    "CI": [
+      -6.090245,
+      -0.072039
+    ],
+    "p_nominal": 0.04481
+  },
+  "multiple_exploratory_models_no_confirmatory_causality": true,
+  "photo_measurement_is_original_ROI9_white_component_not_botanical_white_species": true,
+  "new_photograph_downloads": 0,
+  "new_ROI_inference": 0,
+  "technical_unknown_colour_imputation": 0,
+  "year2020_population_not_substituted_in_2024": true,
+  "acquisition_run": 42333953557,
+  "model_run": 42334725084,
+  "acquisition_artifact_id": 13559161397,
+  "model_artifact_id": 13559096980
+}
