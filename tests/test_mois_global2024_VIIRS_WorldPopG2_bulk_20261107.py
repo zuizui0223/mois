@@ -31,7 +31,7 @@ class SourceTests(unittest.TestCase):
     def test_duplicate_GIS_coordinates_are_not_false_independence(self):
         d=self.source();d[1]["query_longitude"]=d[0]["query_longitude"]
         d[1]["query_latitude"]=d[0]["query_latitude"]
-        with self.assertRaisesRegex(ValueError,"Duplicate raster GIS"):
+        with self.assertRaisesRegex(ValueError,"Duplicate source raster"):
             a.validate_targets(d,2)
     def test_numeric_source_photos_never_reclassified(self):
         self.assertEqual(a.SELECT_SHA,"541b6134090b61a285ffa9c45ee3df8a382e66ae5628c394ca0c4d47af9207a0")
