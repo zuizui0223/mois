@@ -2,7 +2,10 @@ name: MOIS true-year 2019 2021 2022 2023 worldwide VIIRS four months
 on:
   push:
     branches: [analysis/mois-viirs-popmatch-20261105]
-    paths: [.github/workflows/mois-global-2019-2023-original-viirs-source.yml]
+    paths:
+      - .github/workflows/mois-global-2019-2023-original-viirs-source.yml
+      - scripts/analysis/mois_global2019_2023_original_photo_geography.py
+      - scripts/analysis/mois_global2019_2023_original_photo_year_VIIRS.py
   workflow_dispatch:
 permissions:
   contents: read
