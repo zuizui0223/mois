@@ -41,7 +41,7 @@ def load_frozen_photos(paths):
         usecols=["inat_taxon_id","wcvp_match_state","wcvp_accepted_plant_name_id"])
     return photo,wcvp
 
-def year_historic(year, paths, photos,wcvp):
+def year_historic(year, paths, photos,wcvp, *, return_all=False):
     geo_file=paths[f"geo{year}"]
     sat_file=paths[f"viirs{year}"]
     pop_file=paths[f"pop{year}"]
@@ -52,10 +52,10 @@ def year_historic(year, paths, photos,wcvp):
     poprec=json.loads((Path(pop_file).parent/"source_receipt.json").read_text())
     geo,env=verify_environment(year,geo_file,sat_file,pop_file,
                                source,satrec,poprec)
-    _,_,d,_=make_photo_cells(year,photos,wcvp,geo,env)
-    return d
+    _,full,d,_=make_photo_cells(year,photos,wcvp,geo,env)
+    return (full,d) if return_all else d
 
-def year2024(paths,photos,wcvp):
+def year2024(paths,photos,wcvp, *, return_all=False):
     require(sha(paths["geo2024"])==GEOGRAPHY_2024_SHA and
             sha(paths["cn2024"])==CN_SHA and sha(paths["uc2024"])==UC_SHA,
             "Original 2024 matched CN/UC/landmass source byte drift")
@@ -70,12 +70,12 @@ def year2024(paths,photos,wcvp):
                   on="target_id",validate="one_to_one")
     data["population_source_status"]=data.pop("population_UC_R2024B_status")
     data["population_density"]=data.pop("population_UC_R2024B_density_per_km2")
-    _,_,_,m,_,_=make_frames(photos,wcvp,geo,data)
+    _,full,_,m,_,_=make_frames(photos,wcvp,geo,data)
     require(len(m)==2085 and m.target_id.is_unique,
             "2024 original UC photographic model source changed")
-    return m
+    return (full,m) if return_all else m
 
-def year2025(paths,photos,wcvp):
+def year2025(paths,photos,wcvp, *, return_all=False):
     rec=json.loads(Path(paths["geo2025receipt"]).read_text())
     require(rec.get("full_source_reference_SHA256")==GEO_SHA and
             rec.get("full_source_SHA256")==sha(paths["geo2025"]) and
@@ -99,8 +99,8 @@ def year2025(paths,photos,wcvp):
     require(env.loc[env.population_status.ne("OK"),
          "population_density_per_km2"].isna().all(),
          "2025 population no-data not retained")
-    _,_,d,_=make_photo_cells(2025,photos,wcvp,geo,env)
-    return d
+    _,full,d,_=make_photo_cells(2025,photos,wcvp,geo,env)
+    return (full,d) if return_all else d
 
 def year_safeguards(year,d):
     require(len(d)==YEAR_COUNTS[year] and d.target_id.is_unique,
