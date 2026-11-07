@@ -1,0 +1,118 @@
+name: MOIS island ALAN ROI-free source feasibility
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-ALAN-island-ROI-free-source-support.yml
+      - scripts/analysis/mois_alan_island_roi_free_support_20261106.py
+      - tests/test_mois_alan_island_roi_free_support_20261106.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-ALAN-island-original-ROI-free-source-audit
+  cancel-in-progress: false
+jobs:
+  real-island-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run synthetic no-photo island/native/positive-evidence tests first
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 shapely==2.1.2 geopandas==1.1.1
+          python -m unittest discover -s tests -p test_mois_alan_island_roi_free_support_20261106.py -v
+          python -m py_compile scripts/analysis/mois_alan_island_roi_free_support_20261106.py
+      - name: Download SHA-pinned numeric photos and independent traits only
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh run download 41007444495 --repo zuizui0223/mois --name mois-nohuman-canonical-climate-joined-20261030 --dir source
+          gh run download 39225659840 --repo zuizui0223/mois --name mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status --dir source
+          gh run download 34191508045 --repo zuizui0223/island --name source-scale-batch-integration-34191508045 --dir source
+          gh run download 41976552977 --repo zuizui0223/mois --name mois-ALAN-GloBI-stage2-actual-records-2019-2024-supported-source --dir source
+          gh run download 41946071715 --repo zuizui0223/mois --name mois-2020-VIIRS4month-WorldPop2020-taxonequal-source-cells --dir source
+          gh run download 41952464936 --repo zuizui0223/mois --name mois-ALAN-2020-2024-source-locked-original-photo-repeated-cell-numeric --dir source
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  source/canonical_observations_climate.csv.gz' | sha256sum -c -
+          echo 'dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2  source/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' | sha256sum -c -
+          echo '9cd6aa7ca29f00c64283bcc08dcb778e212b644b837e64070051339b11d8b7b3  source/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz' | sha256sum -c -
+          echo '7e86170218814abe2845da9a0282aecfdc930819b9d0c439bae8df4a0679c577  source/direct_species_trait_ledger.csv.gz' | sha256sum -c -
+          echo 'a6b97aa0941215d2f645e4c4fbf19490492b93680a7d7c0502814c7a66902994  source/GloBI_stage2_signed_extension.csv.gz' | sha256sum -c -
+          echo '3562db1e5783e77d3bb408bd33817b4d7cccf31ad4d4ad42586469708fd407e3  source/viirs_population_source_matched_cells_2020.csv' | sha256sum -c -
+          echo '1c5f03e5a7c355a0f7045133140c5cf2e39a5802c548f89d1c2f66c8a235db5f  source/repeated_area_2020_2024_cell_aggregate.csv' | sha256sum -c -
+      - name: Restore original Island GSHHG geometry SHA or rebuild with provenance
+        run: |
+          set -euo pipefail
+          mkdir -p geometry
+          if gh api repos/zuizui0223/island/actions/artifacts/8066083419/zip > /tmp/island-original.zip 2>/dev/null &&
+             echo 'bee33e14672ec7ff4ed1f7acaea36b32cc6170a45c3d14b2caeb5f43bfaa623b  /tmp/island-original.zip' | sha256sum -c -; then
+            python - <<'PY'
+          import zipfile
+          from pathlib import Path
+          with zipfile.ZipFile('/tmp/island-original.zip') as z:
+              for name in ['islands_v2.gpkg','source_policy.json']:
+                  matches=[p for p in z.namelist() if p.endswith('/'+name)]
+                  assert len(matches)==1,(name,matches)
+                  Path('geometry',name).write_bytes(z.read(matches[0]))
+          print('MOIS_ISLAND_FROZEN_GSHHG_POLYGONS_RECOVERED')
+          PY
+          else
+            echo 'Historical Island artifact expired/unavailable; independently rebuild source and record backend.'
+            git clone --depth 1 --filter=blob:none --sparse https://github.com/zuizui0223/island.git source-island-repo
+            git -C source-island-repo sparse-checkout set src config
+            python -m pip install -q -e ./source-island-repo
+            island-v2-gshhg build --config-path source-island-repo/config/island_source_gshhg.yml --output-dir geometry/rebuilt
+            cp geometry/rebuilt/prepared/islands_v2.gpkg geometry/islands_v2.gpkg
+            cp geometry/rebuilt/prepared/source_policy.json geometry/source_policy.json
+          fi
+          python - <<'PY'
+          import geopandas as gpd,json
+          g=gpd.read_file('geometry/islands_v2.gpkg',layer='islands')
+          p=json.load(open('geometry/source_policy.json'))
+          assert g.crs.to_epsg()==4326 and g.island_id.is_unique and len(g)>2000
+          print('MOIS_ISLAND_GEOMETRY_BACKEND',p.get('source_backend'),
+                'version',p.get('source_version'),'polygon_units',len(g))
+          PY
+      - name: Compute REAL island-year photographic, independent-colour, moth and same-year quarterly VIIRS support
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_alan_island_roi_free_support_20261106 \
+            --canonical source/canonical_observations_climate.csv.gz \
+            --names source/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+            --accepted source/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz \
+            --direct source/direct_species_trait_ledger.csv.gz \
+            --globi source/GloBI_stage2_signed_extension.csv.gz \
+            --islands geometry/islands_v2.gpkg --min-area-km2 20 \
+            --viirs2020 source/viirs_population_source_matched_cells_2020.csv \
+            --viirs2024 source/repeated_area_2020_2024_cell_aggregate.csv \
+            --output island_ROIfree_20261106
+          cp geometry/source_policy.json island_ROIfree_20261106/island_source_policy.json
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          out=Path('island_ROIfree_20261106')
+          r=json.loads((out/'source_receipt.json').read_text())
+          assert r['actual_island_original_photo_observations']>0
+          assert r['islands_with_original_photographs']>0
+          assert not r['annual_VNL_product_source_supplied']
+          assert not r['island_specific_establishment_review_source_supplied']
+          for f,s in r['output_sha256'].items():
+              assert hashlib.sha256((out/f).read_bytes()).hexdigest()==s
+          print('MOIS_ISLAND_ROIFREE_REAL_SOURCE_COUNTS_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-island-ALAN-ROI-free-source-coverage-20261106
+          path: island_ROIfree_20261106/
+          retention-days: 90
+          if-no-files-found: warn

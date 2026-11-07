@@ -1,0 +1,180 @@
+name: MOIS ALAN nocturnal-lineage candidate support on frozen data only
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-ALAN-nocturnal-candidate-support.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  guild-metadata-feasibility:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install numeric-only dependencies
+        run: python -m pip install -q numpy==2.1.3 pandas==2.2.3
+      - name: Download already SHA-frozen MOIS/Island numeric artifacts; no photos or new inference
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh run download 41007444495 --repo zuizui0223/mois --name mois-nohuman-canonical-climate-joined-20261030 --dir source
+          gh run download 39225659840 --repo zuizui0223/mois --name mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status --dir source
+          gh run download 41043422845 --repo zuizui0223/mois --name mois-original-WCVP-family-vs-genus-six-region-ROI9 --dir source
+          gh run download 34191508045 --repo zuizui0223/island --name source-scale-batch-integration-34191508045 --dir source
+          gh run download 41946071715 --repo zuizui0223/mois --name mois-2020-VIIRS4month-WorldPop2020-taxonequal-source-cells --dir source
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  source/canonical_observations_climate.csv.gz' | sha256sum -c -
+          echo 'dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2  source/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' | sha256sum -c -
+          echo '9cd6aa7ca29f00c64283bcc08dcb778e212b644b837e64070051339b11d8b7b3  source/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz' | sha256sum -c -
+          echo 'a138ab56c0233b769f41c56c7eee7df82f09365d052983c1460f74f8cbf881f0  source/accepted_family_species_region.csv.gz' | sha256sum -c -
+          echo '7e86170218814abe2845da9a0282aecfdc930819b9d0c439bae8df4a0679c577  source/direct_species_trait_ledger.csv.gz' | sha256sum -c -
+          echo '32b53d23d4beac39846e3c618f7a4f5d8b24164a126cf63c4cc530b2e720aae6  source/population_matched_bright_dark_pairs_2020.csv' | sha256sum -c -
+      - name: Count supported four-cell colour×candidate-pollination cross-section without pretending guild truth
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          import numpy as np,pandas as pd
+          root=Path('source')
+          columns=['photo_id','observation_id','inat_taxon_id','source_subarm','observed_on',
+                   'latitude','longitude','strict9','climate_complete','original_roi_four_hue']
+          x=pd.read_csv(root/'canonical_observations_climate.csv.gz',compression='gzip',
+                        usecols=columns,dtype={'photo_id':str,'observation_id':str,'inat_taxon_id':str},low_memory=False)
+          assert len(x)==1032882 and x.photo_id.is_unique and x.observation_id.is_unique
+          assert int(x.strict9.sum())==401703
+          name=pd.read_csv(root/'mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz',
+                           compression='gzip',dtype=str,
+                           usecols=['inat_taxon_id','wcvp_match_state','wcvp_accepted_plant_name_id'])
+          name=name.loc[name.wcvp_match_state.eq('unique_exact_name_to_accepted_id'),
+                        ['inat_taxon_id','wcvp_accepted_plant_name_id']]
+          accepted=pd.read_csv(root/'mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz',
+                            compression='gzip',dtype=str,
+                            usecols=['wcvp_accepted_plant_name_id','wcvp_accepted_name']).drop_duplicates()
+          assert accepted.groupby('wcvp_accepted_plant_name_id').wcvp_accepted_name.nunique().max()==1
+          accepted=accepted.drop_duplicates('wcvp_accepted_plant_name_id')
+          name=name.merge(accepted,on='wcvp_accepted_plant_name_id',validate='many_to_one')
+          name['genus']=name.wcvp_accepted_name.str.split().str[0]
+          families=pd.read_csv(root/'accepted_family_species_region.csv.gz',compression='gzip',
+                      usecols=['accepted_id','family'],dtype=str).drop_duplicates()
+          assert families.groupby('accepted_id').family.nunique().max()==1
+          name=name.merge(families,left_on='wcvp_accepted_plant_name_id',right_on='accepted_id',
+                         how='left',validate='many_to_one')
+          direct=pd.read_csv(root/'direct_species_trait_ledger.csv.gz',compression='gzip',
+                     dtype=str,usecols=['accepted_species','trait_name','normalized_value',
+                                        'quality','resolution_status','classification'])
+          n_true_guild=int(direct.trait_name.str.contains('pollination|guild|pollen_vector',
+                                  case=False,na=False).sum())
+          assert n_true_guild==0,'New real guild data exist: stop and re-evaluate biological plan'
+          direct=direct.loc[(direct.trait_name=='flower_primary_color') &
+                     direct.quality.isin(['high','medium']) &
+                     direct.resolution_status.eq('resolved') &
+                     ~direct.classification.isin(['cultivar_contamination','partial_self_compatibility']),
+                     ['accepted_species','normalized_value']]
+          assert direct.accepted_species.is_unique
+          x=x.loc[x.source_subarm.eq('historical_main') & x.strict9 &
+               x.climate_complete & x.observed_on.astype(str).str[:4].between('2019','2024') &
+               x.latitude.between(-60,60) & x.longitude.between(-180,180)].copy()
+          x['year']=x.observed_on.astype(str).str[:4]
+          x=x.merge(name[['inat_taxon_id','wcvp_accepted_plant_name_id','wcvp_accepted_name','genus','family']],
+                    on='inat_taxon_id',how='left',validate='many_to_one')
+          x=x.merge(direct,left_on='wcvp_accepted_name',right_on='accepted_species',
+                    how='left',validate='many_to_one')
+          NIGHT={'Silene','Oenothera','Nicotiana','Datura','Platanthera'}
+          DAY={'Apiaceae','Asteraceae'}
+          x['guild_proxy']=np.where(x.genus.isin(NIGHT),'moth_candidate_genus',
+                          np.where(x.family.isin(DAY),'day_candidate_family','unassigned'))
+          x=x.loc[x.guild_proxy.ne('unassigned')].copy()
+          x['known_colour']=np.where(x.normalized_value.eq('white'),'white',
+                          np.where(x.normalized_value.isin(['yellow_orange','red_pink','blue_purple',
+                                                            'green_brown_inconspicuous']),'nonwhite','unknown'))
+          def count(y,deg,colour_source):
+              t=y.copy()
+              if colour_source=='photo_roi4':
+                  t['colour']=np.where(t.original_roi_four_hue.eq('white'),'white',
+                     np.where(t.original_roi_four_hue.isin(['yellow_orange','red_pink','blue_purple']),
+                              'nonwhite','unknown'))
+              else:t['colour']=t.known_colour
+              t=t.loc[t.colour.ne('unknown') & t.wcvp_accepted_plant_name_id.notna()].copy()
+              t['cell']=(np.floor((t.longitude+180)/deg).astype(int).astype(str)+'_'+
+                         np.floor((t.latitude+90)/deg).astype(int).astype(str))
+              c=t.groupby(['cell','guild_proxy','colour']).wcvp_accepted_plant_name_id.nunique().unstack(['guild_proxy','colour']).fillna(0)
+              def col(g,w):return c.get((g,w),pd.Series(0,index=c.index))
+              nw=col('moth_candidate_genus','white');dw=col('day_candidate_family','white')
+              nn=col('moth_candidate_genus','nonwhite');dn=col('day_candidate_family','nonwhite')
+              return {'cells_with_any_white_both_groups':int(((nw>=1)&(dw>=1)).sum()),
+                      'cells_white_3_species_both_groups':int(((nw>=3)&(dw>=3)).sum()),
+                      'cells_four_colour_by_proxy_groups_ge1_species':int(((nw>=1)&(dw>=1)&(nn>=1)&(dn>=1)).sum()),
+                      'cells_four_colour_by_proxy_groups_ge3_species':int(((nw>=3)&(dw>=3)&(nn>=3)&(dn>=3)).sum())}
+          rows=[]
+          for yname,data in [('2020',x.loc[x.year.eq('2020')]),('2024',x.loc[x.year.eq('2024')]),
+                             ('2019-2024 pooled',x)]:
+              for d in (.1,.25,.5):
+                  for colour_type in ('independent_species_direct','photo_roi4'):
+                      rows.append({'period':yname,'grid_degrees':d,'colour_source':colour_type,
+                                   **count(data,d,colour_type)})
+          result=pd.DataFrame(rows)
+          a=result.set_index(['period','grid_degrees','colour_source'])
+          assert len(result)==18 and result[['cells_with_any_white_both_groups',
+                 'cells_four_colour_by_proxy_groups_ge1_species',
+                 'cells_four_colour_by_proxy_groups_ge3_species']].ge(0).all().all()
+          assert (result.cells_four_colour_by_proxy_groups_ge3_species<=
+                  result.cells_four_colour_by_proxy_groups_ge1_species).all()
+          assert (result.cells_four_colour_by_proxy_groups_ge1_species<=
+                  result.cells_with_any_white_both_groups).all()
+          # Counts are MEASURED, never asserted equal to a past report made
+          # with different source sampling or a different taxon/guild definition.
+          
+          p=pd.read_csv(root/'population_matched_bright_dark_pairs_2020.csv',
+                        dtype={'bright_cell_id':str,'dark_cell_id':str})
+          assert len(p)==128
+          q=x.loc[x.year.eq('2020') & x.known_colour.eq('white')].copy()
+          q['cell_id']=(np.floor((q.longitude+180)/.05).astype(int).astype(str)+'_'+
+                         np.floor((q.latitude+90)/.05).astype(int).astype(str))
+          sample=q.loc[q.cell_id.isin(set(p.bright_cell_id)|set(p.dark_cell_id))]
+          night=sample.loc[sample.guild_proxy.eq('moth_candidate_genus')]
+          day=sample.loc[sample.guild_proxy.eq('day_candidate_family')]
+          assert len(night)>=0 and len(day)>=0
+          # No claim that species absent from literature are non-nocturnal.
+          result.to_csv('output/candidate_guild_cell_count_support.csv',index=False)
+          receipt={'schema':'mois_alan_night_candidate_guild_four_trait_support_only_v1',
+                   'selected_genera':sorted(NIGHT),'comparison_family_candidates':sorted(DAY),
+                   'label_provenance':'HYPOTHESIS PROXY only; NOT direct nocturnal or diurnal pollination',
+                   'true_pollination_guild_source_rows':0,
+                   'photos_reacquired_or_inferred':0,
+                   'do_not_claim_triple_difference_fit':True,
+                   'do_not_claim_night_moth_species_prevalence':True,
+                   'do_not_claim_species_local_extirpation':True,
+                   'matching_2020_128_pairs':128,
+                   'candidate_nocturnal_direct_white_source_photos_in_old_128_pairs':int(len(night)),
+                   'candidate_day_direct_white_source_photos_in_old_128_pairs':int(len(day)),
+                   'old_pair_white_day_species':int(day.wcvp_accepted_plant_name_id.nunique()),
+                   'dataset_names':'original historical_main MOIS observation-photo canonical, WCVP, Island direct species colour',
+                   'output_sha256':hashlib.sha256(Path('output/candidate_guild_cell_count_support.csv').read_bytes()).hexdigest()}
+          Path('output/receipt.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          print('MOIS_ALAN_NOCTURNAL_GUILD_SUPPORT_ONLY',
+                json.dumps({'category':'hypothesis_proxy_not_real_moth_nocturnality',
+                    '2020_g025':a.loc[('2020',.25,'independent_species_direct')].to_dict(),
+                    '2024_g025':a.loc[('2024',.25,'independent_species_direct')].to_dict(),
+                    'pooled_g05':a.loc[('2019-2024 pooled',.5,'independent_species_direct')].to_dict(),
+                    '2019_2024_R0I_four_colour_supported':False,
+                    'old128_direct_white_nocturnal_candidate_photos':int(len(night))
+                  },sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-ALAN-nocturnal-candidate-actual-observation-source-coverage-NO-FIT
+          path: output/
+          retention-days: 90
+          if-no-files-found: error

@@ -1,0 +1,136 @@
+name: MOIS 2024 real original 4096 world mainland/all-islands VIIRS + Global2 population
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-2024-original4096-VIIRS-G2-real.yml
+      - scripts/analysis/mois_global2024_original_source_20261107.py
+      - scripts/analysis/mois_global2024_VIIRS_WorldPopG2_bulk_20261107.py
+      - tests/test_mois_global2024_VIIRS_WorldPopG2_bulk_20261107.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-2024-real-original-4096-raster-and-VIIRS-v1
+  cancel-in-progress: false
+jobs:
+  sameyear-original4096:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test source-year identity and population-source version safeguards
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 geopandas==1.1.2 shapely==2.1.2 requests==2.32.5 rasterio==1.4.3 pyproj==3.7.2
+          python -m unittest discover -s tests -p test_mois_global2024_VIIRS_WorldPopG2_bulk_20261107.py -v
+          python -m py_compile scripts/analysis/mois_global2024_original_source_20261107.py
+          python -m py_compile scripts/analysis/mois_global2024_VIIRS_WorldPopG2_bulk_20261107.py
+      - name: Recover only signed original photo/shoreline and original official 2024 Global2 raster receipt
+        timeout-minutes: 7
+        run: |
+          set -euo pipefail
+          mkdir -p src/shoreline src/worldpop_meta
+          gh run download 41007444495 --repo zuizui0223/mois \
+            --name mois-nohuman-canonical-climate-joined-20261030 --dir src
+          gh run download 42175243391 --repo zuizui0223/mois \
+            --name mois-GSHHG-2.3.7-high-L1-L2-SHA-source-no-images --dir src/shoreline
+          gh run download 42327361916 --repo zuizui0223/mois \
+            --name mois-worldpop-Global2-2024-full-geotiff-SHA-and-density-source-receipt \
+            --dir src/worldpop_meta
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  src/canonical_observations_climate.csv.gz' | sha256sum -c -
+      - name: Reconstruct exact 2024 photo GSHHG source including no-area small-island and high-latitude cells
+        timeout-minutes: 7
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2024_original_source_20261107 \
+            --canonical src/canonical_observations_climate.csv.gz \
+            --shoreline src/shoreline --out original_source_2024
+          echo 'f7f65e6bc167089b3034555c655e777f528ecdd29952ab7ee9833d8722f39267  original_source_2024/mois_2024_full_photo_landmass_source.csv' | sha256sum -c -
+          echo '541b6134090b61a285ffa9c45ee3df8a382e66ae5628c394ca0c4d47af9207a0  original_source_2024/mois_2024_next4096_source.csv' | sha256sum -c -
+          echo 'a792602a05735c5049c960a80fc6a75f4a1241c0a3abaa9769f452330559bf2d  original_source_2024/mois_2024_remaining62360_source.csv' | sha256sum -c -
+      - uses: actions/cache/restore@v4
+        with:
+          path: worldpop_raster/
+          key: mois-worldpop-2024-R2025A-v1-unadjusted1km-original-source
+      - name: Obtain same-year official Global2 R2025A-v1 geotiff without mixing old Global1
+        timeout-minutes: 11
+        run: |
+          set -euo pipefail
+          mkdir -p worldpop_raster
+          if [ ! -f worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif ]; then
+            curl --fail --location --retry 3 --connect-timeout 25 --speed-time 90 --speed-limit 1024 --max-time 620 \
+              'https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2025A/2024/0_Mosaicked/v1/1km/constrained/global_pop_2024_CN_1km_R2025A_v1.tif' \
+              --output worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif
+          fi
+          echo '3539cbac76092c1e8c8d45426fc0dfb06067a1e3f28bfbee993dba21aa03194e  worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif' | sha256sum -c -
+      - uses: actions/cache/restore@v4
+        with:
+          path: VIIRS_result_2024/raw/
+          key: mois-2024-VIIRS-4096-global2-source-raw-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: mois-2024-VIIRS-4096-global2-source-raw-v1-
+      - name: Collect TRUE 2024 Jan-Apr-Jul-Oct VIIRS and Global2 per-pixel people/km2 at 4096 new photo locations
+        timeout-minutes: 15
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2024_VIIRS_WorldPopG2_bulk_20261107 \
+            --targets original_source_2024/mois_2024_next4096_source.csv \
+            --worldpop-receipt src/worldpop_meta/WorldPop_Global2_2024_original_geotiff_receipt.json \
+            --worldpop-tiff worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif \
+            --out VIIRS_result_2024 --expected-count 4096 --workers 4
+      - name: Zero-network complete SHA replay and numeric source year audit
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2024_VIIRS_WorldPopG2_bulk_20261107 \
+            --targets original_source_2024/mois_2024_next4096_source.csv \
+            --worldpop-receipt src/worldpop_meta/WorldPop_Global2_2024_original_geotiff_receipt.json \
+            --worldpop-tiff worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif \
+            --out VIIRS_result_2024 --expected-count 4096 --workers 4 --offline
+          python - <<'PY'
+          import json,hashlib,csv
+          from pathlib import Path
+          o=Path('VIIRS_result_2024')
+          a=json.loads((o/'receipt.json').read_text());b=json.loads((o/'replay_receipt.json').read_text())
+          assert a['original_target_count']==b['original_target_count']==4096
+          assert a['source_photo_year']==a['VIIRS_year']==a['population_raster_year']==2024
+          assert a['original_WorldPop_source']['source_file_sha256']=='3539cbac76092c1e8c8d45426fc0dfb06067a1e3f28bfbee993dba21aa03194e'
+          assert a['population_2020_Global1_mixed_in'] is False
+          assert a['new_VIIRS_provider_requests']+a['saved_original_VIIRS_replay_requests']==32
+          assert b['new_VIIRS_provider_requests']==0 and b['saved_original_VIIRS_replay_requests']==32
+          assert a['output_values_SHA256']==b['output_values_SHA256']
+          assert (o/'values.csv').read_bytes()==(o/'replay_values.csv').read_bytes()
+          assert len(a['original_VIIRS_response_SHA256'])==32
+          for file,digest in a['original_VIIRS_response_SHA256'].items():
+              assert hashlib.sha256((o/'raw'/file).read_bytes()).hexdigest()==digest
+          rows=list(csv.DictReader((o/'values.csv').open()))
+          assert len(rows)==4096 and sum(x['complete']=='True' for x in rows)==a['completed_targets']
+          assert a['no_island_area_or_latitude_cutoff'] and a['new_photos_or_ROI_reinference']==0
+          print('MOIS_2024_4096_REAL_VIIRS_G2_SAMEYEAR_SOURCE_REPLAY_VALIDATED',
+             json.dumps({k:a[k] for k in ('original_target_count','completed_targets','incomplete_targets','complete_by_land',
+                'valid_VIIRS_month_count','valid_WorldPop_2024_population_pixels',
+                'new_VIIRS_provider_requests')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: VIIRS_result_2024/raw/
+          key: mois-2024-VIIRS-4096-global2-source-raw-v1-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-global2024-original4096-WPGlobal2-2024-VIIRS-raw-SHA
+          path: |
+            original_source_2024/
+            VIIRS_result_2024/
+          retention-days: 90
+          if-no-files-found: warn

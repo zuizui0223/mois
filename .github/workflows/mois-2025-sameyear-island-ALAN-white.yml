@@ -1,0 +1,103 @@
+name: MOIS true 2025 same-year original island ALAN photo-white fit
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-2025-sameyear-island-ALAN-white.yml
+      - scripts/analysis/mois_2025_sameyear_island_ALAN_white_20261107.py
+      - tests/test_mois_2025_sameyear_island_ALAN_white_20261107.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-2025-source-locked-flower-light:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Test unchanged ROI and true 2025 observation-year source identity
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 scipy==1.15.2 statsmodels==0.14.5 geopandas==1.1.2 shapely==2.1.2
+          python -m unittest discover -s tests -p test_mois_2025_sameyear_island_ALAN_white_20261107.py -v
+          python -m py_compile scripts/analysis/mois_2025_sameyear_island_ALAN_white_20261107.py
+      - name: Retrieve original photographic RGB-only measurement source, accepted taxa, GSHHG and already downloaded 2025 sameyear numeric values
+        timeout-minutes: 8
+        run: |
+          set -euo pipefail
+          mkdir -p source/photos source/wcvp source/shoreline source/numeric
+          gh run download 41007444495 --repo zuizui0223/mois --name mois-nohuman-canonical-climate-joined-20261030 --dir source/photos
+          gh run download 39225659840 --repo zuizui0223/mois --name mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status --dir source/wcvp
+          gh run download 42175243391 --repo zuizui0223/mois --name mois-GSHHG-2.3.7-high-L1-L2-SHA-source-no-images --dir source/shoreline
+          gh run download 42337703150 --repo zuizui0223/mois --name mois-2025-original73463-mainland-island-full-VIIRS-and-R2024B-UC-source --dir source/numeric
+          printf '%s\n' \
+            'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  source/photos/canonical_observations_climate.csv.gz' \
+            'dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2  source/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' | sha256sum -c -
+      - name: Reconstitute original 2025 photo GSHHG cell-to-landmass source, WITHOUT fetching any image
+        timeout-minutes: 7
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2025_original_source_20261107 \
+            --canonical source/photos/canonical_observations_climate.csv.gz \
+            --shoreline source/shoreline \
+            --out exact_2025_photo_geometry --allow-knownland-verified-geo-roundoff
+          echo '45c5152e1edad997ff8749c645818996fb2b0bc03a2ab7c0753af446afaab143  exact_2025_photo_geometry/mois_2025_all73463_knownland_source.csv' | sha256sum -c -
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path('exact_2025_photo_geometry')
+          rec=json.loads((p/'2025_source_receipt.json').read_text())
+          full=hashlib.sha256((p/'mois_2025_full_photo_landmass_source.csv').read_bytes()).hexdigest()
+          assert rec['full_source_SHA256']==full
+          assert rec['full_source_reference_SHA256']=='de2cd14690383f7e66cff68c945cf2a6812b33b0511f0189aaea9f6d62ea37fc'
+          assert rec['all_knownland_site_SHA256']=='45c5152e1edad997ff8749c645818996fb2b0bc03a2ab7c0753af446afaab143'
+          print('MOIS_2025_TRUE_SOURCE_IDS_VERIFIED_FULL_AREA_BYTES_IDENTICAL',
+                rec['full_source_bytes_identical_to_original'],flush=True)
+          PY
+      - name: Actually estimate 2025 same-year all-island and mainland original ROI white versus light
+        timeout-minutes: 9
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_2025_sameyear_island_ALAN_white_20261107 \
+            --canonical source/photos/canonical_observations_climate.csv.gz \
+            --wcvp source/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+            --geo exact_2025_photo_geometry/mois_2025_full_photo_landmass_source.csv \
+            --geo-receipt exact_2025_photo_geometry/2025_source_receipt.json \
+            --numeric source/numeric/numeric_2025/values.csv \
+            --numeric-receipt source/numeric/numeric_2025/receipt.json \
+            --out 2025_original_photo_sameyear_island_ALAN
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('2025_original_photo_sameyear_island_ALAN')
+          r=json.loads((p/'source_receipt.json').read_text())
+          assert r['year']==2025
+          assert r['sameyear_original_environment_known_land']==73463
+          assert r['sameyear_original_environment_complete']==70499
+          assert r['photo_year_VIIRS_year_population_year_all_2025']
+          assert r['technical_unknown_relabels']==0
+          assert r['new_photo_downloads_or_ROI_inference']==0
+          f=p/'2025_sameyear_photo_island_mainland_descriptive.csv'
+          assert hashlib.sha256(f.read_bytes()).hexdigest()==r['descriptive_sha256']
+          print('MOIS_2025_REAL_ISLAND_VIIRS_WHITE_SUMMARY',json.dumps({
+            k:r[k] for k in ('photographic_eligible_sameyear_alanspatial_population_cells',
+                             'island_eligible_photo_cells',
+                             'independent_islands_with_exposure_variation',
+                             'models')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-2025-real-original-white-ROI-island-light-sameyear-population
+          path: 2025_original_photo_sameyear_island_ALAN/
+          retention-days: 90
+          if-no-files-found: warn

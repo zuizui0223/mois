@@ -1,0 +1,229 @@
+name: MOIS historical 2020-2024 repeated spatial-cell VIIRS and photographed white mass
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-viirs-repeated-2020-2024-original.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-2020-2024-repeated-original-photo-cell-viirs
+  cancel-in-progress: false
+jobs:
+  actual-repeat-area-VIIRS:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 29
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install numeric tools and validate existing source parser
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 statsmodels==0.14.5 requests==2.32.5 pytest==8.4.2
+          python -m pytest -q tests/test_mois_viirs_2020_population_match.py
+          python -m py_compile scripts/analysis/mois_viirs_2020_population_match.py
+      - name: Download ONLY previously sealed 2020 numerical photo/cell data, not images
+        run: |
+          set -euo pipefail
+          mkdir -p original
+          gh run download 41007444495 --repo zuizui0223/mois \
+            --name mois-nohuman-canonical-climate-joined-20261030 --dir original
+          gh run download 41946071715 --repo zuizui0223/mois \
+            --name mois-2020-VIIRS4month-WorldPop2020-taxonequal-source-cells --dir original
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  original/canonical_observations_climate.csv.gz' | sha256sum -c -
+          echo '3562db1e5783e77d3bb408bd33817b4d7cccf31ad4d4ad42586469708fd407e3  original/viirs_population_source_matched_cells_2020.csv' | sha256sum -c -
+      - name: Same-source same-cell 2024 real photographs and 2024 VIIRS raw-month changes
+        timeout-minutes: 22
+        run: |
+          set -euo pipefail
+          mkdir -p result
+          python - <<'PY'
+          import concurrent.futures,hashlib,json,math,time
+          from pathlib import Path
+          import numpy as np,pandas as pd,statsmodels.api as sm
+          from scripts.analysis import mois_viirs_2020_population_match as v
+
+          def require(ok,msg):
+              if not bool(ok):raise ValueError('MOIS_2020_2024_REPEAT: '+msg)
+          def digest(path):
+              h=hashlib.sha256()
+              with open(path,'rb') as f:
+                  for b in iter(lambda:f.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+
+          cols=['photo_id','observation_id','inat_taxon_id','source_subarm',
+             'observed_on','latitude','longitude','strict9','strict9_white',
+             'climate_complete','wc2_bio05_10m','wc2_bio12_10m','wc2_elev_2p5m']
+          df=pd.read_csv('original/canonical_observations_climate.csv.gz',compression='gzip',
+              usecols=cols,dtype={'photo_id':str,'observation_id':str,'inat_taxon_id':str},low_memory=False)
+          require(df.photo_id.is_unique and df.observation_id.is_unique,'Duplicate original identity')
+          v.YEAR=2020
+          y20,m20=v.select_cells(df)
+          h=pd.read_csv('original/viirs_population_source_matched_cells_2020.csv',dtype={'cell_id':str})
+          require(len(y20)==1059 and len(h)==1059 and set(y20.cell_id)==set(h.cell_id),
+                  '2020 original cell cohort has changed')
+          require(h.source_complete.sum()==1044,'2020 exposure cohort changed')
+          v.YEAR=2024
+          y24,m24=v.select_cells(df)
+          require(len(y24)>2000 and m24['strict9_measurements_before_cell_gate']>40000,
+                  'No actual 2024 original photo support')
+          y24_names=y24[['cell_id','n_attempted','n_strict9','white_taxon_equal',
+                     'strict9_yield','longitude','latitude']].rename(columns={
+                     'n_attempted':'attempts2024','n_strict9':'strict2024',
+                     'white_taxon_equal':'white2024','strict9_yield':'yield2024',
+                     'longitude':'longitude2024','latitude':'latitude2024'})
+          sub=h.loc[h.source_complete].merge(y24_names,on='cell_id',how='inner',
+                   validate='one_to_one')
+          require(len(sub)>=250,'Insufficient exact matched 2020-2024 source cell overlap')
+          # Same-taxon species support is a separate target from changing whole-assemblage means.
+          t=df.loc[df.source_subarm.eq('historical_main') & df.climate_complete &
+                df.latitude.between(-60,60) & df.longitude.between(-180,180) &
+                df.strict9 & df.observed_on.astype(str).str[:4].isin(['2020','2024']),
+                ['photo_id','inat_taxon_id','latitude','longitude','observed_on','strict9_white']].copy()
+          t['year']=t.observed_on.astype(str).str[:4]
+          t['cell_id']=(np.floor((t.longitude+180)/v.GRID).astype(int).astype(str)+'_'+
+                      np.floor((t.latitude+90)/v.GRID).astype(int).astype(str))
+          t=t.loc[t.cell_id.isin(set(sub.cell_id))]
+          per=t.groupby(['cell_id','inat_taxon_id','year'],observed=True).strict9_white.mean().unstack('year')
+          require({'2020','2024'}<=set(per.columns),'No measured same taxon-year cells')
+          per=per.dropna(subset=['2020','2024'])
+          same=per.assign(white_change_same_taxon_pp=100*(per['2024']-per['2020'])).groupby(level=0).agg(
+                n_shared_nominal_taxa=('white_change_same_taxon_pp','size'),
+                same_taxon_white_change_pp=('white_change_same_taxon_pp','mean')).reset_index()
+          require(len(same)>50,'Same-taxon year support is unexpectedly low')
+          sub=sub.merge(same,on='cell_id',how='left',validate='one_to_one')
+          sub.n_shared_nominal_taxa=sub.n_shared_nominal_taxa.fillna(0).astype(int)
+
+          # 2020 population baseline is kept constant. The old WorldPop REST
+          # endpoint ends in 2020: NEVER pretend year-2024 population is observed.
+          def sample(row):
+              result={'cell_id':str(row['cell_id'])}
+              values=[];clouds=[]
+              for m in (1,4,7,10):
+                  answer=v.identify(v.VIIRS,float(row['longitude']),float(row['latitude']),
+                                    2024,month=m)
+                  if answer.get('source_error'):
+                      num,cloud,status=None,None,'API_ERROR'
+                  else:num,cloud,status=v._parse_viirs_response(answer,2024,m)
+                  result[f'radiance_2024_{m:02d}']=np.nan if num is None else num
+                  result[f'cloud_free_2024_{m:02d}']=np.nan if cloud is None else cloud
+                  result[f'viirs_2024_status_{m:02d}']=status
+                  if status=='OK':values.append(num);clouds.append(cloud)
+              result['VIIRS_2024_n_valid_months']=len(values)
+              result['VIIRS_2024_quarter_median']=float(np.median(values)) if len(values)>=3 else np.nan
+              return result
+          require(np.allclose(sub.longitude,sub.longitude2024) and
+                  np.allclose(sub.latitude,sub.latitude2024),
+                  'Original grid cell centres changed across two years')
+          site_coordinates=sub[['cell_id','longitude','latitude']].copy()
+          with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+              future=list(pool.map(sample,site_coordinates.to_dict('records')))
+          raw2024=pd.DataFrame(future)
+          raw2024.to_csv('result/viirs_2024_raw_month_cells_checkpoint.csv',index=False)
+          x=sub.merge(raw2024,on='cell_id',how='left',validate='one_to_one')
+          require(x.cell_id.is_unique and len(x)==len(sub),'2024 VIIRS join lost ID')
+          x=x.loc[x.VIIRS_2024_n_valid_months.ge(3)].copy()
+          require(len(x)>=180,'Insufficient genuine 2024 cloud-free monthly VIIRS')
+          x['delta_log1p_VIIRS']=np.log1p(x.VIIRS_2024_quarter_median.clip(lower=0))\
+                                 -np.log1p(x.viirs_quarterly_median.clip(lower=0))
+          x['delta_white_pp']=100*(x.white2024-x.white_taxon_equal)
+          x['delta_ROI_yield_pp']=100*(x.yield2024-x.strict9_yield)
+          x['delta_log_attempts']=np.log(x.attempts2024/x.n_attempted)
+          require(x.delta_white_pp.between(-100,100).all(),'Unexpected white component change')
+          # Fixed exogenous baseline conditions, sampling effort change,
+          # and change in upward satellite radiance. Not a causal correction
+          # for 2020-to-2024 population changes or species extirpation.
+          terms=['delta_log1p_VIIRS','baseline_log_VIIRS','baseline_log_pop',
+                 'delta_log_attempts','BIO5','BIO12','elev']
+          d=pd.DataFrame({'delta_log1p_VIIRS':x.delta_log1p_VIIRS,
+                   'baseline_log_VIIRS':np.log1p(x.viirs_quarterly_median.clip(lower=0)),
+                   'baseline_log_pop':np.log1p(x.population_density.clip(lower=0)),
+                   'delta_log_attempts':x.delta_log_attempts,
+                   'BIO5':x.bio5,'BIO12':np.log1p(x.bio12.clip(lower=0)),'elev':x.elev})
+          require(np.isfinite(d.to_numpy(float)).all(),'Nonfinite climate/exposure')
+          for c in terms[1:]:
+              std=d[c].std(ddof=0)
+              require(std>1e-8,'No predictor variance: '+c)
+              d[c]=(d[c]-d[c].mean())/std
+          mat=sm.add_constant(d)
+          require(np.linalg.matrix_rank(mat)==len(mat.columns),'Regressor dependence')
+          require(x.block_id.nunique()>=15,'Too few geographic blocks')
+          fitted=sm.OLS(x.delta_white_pp.to_numpy(float),mat).fit(
+                  cov_type='cluster',cov_kwds={'groups':x.block_id.astype(str)},use_t=True)
+          slope=float(fitted.params.iloc[1]);ci=fitted.conf_int().iloc[1]
+          # Count positive/negative observed differences, no species disappearance.
+          report={
+             'schema':'mois_2020_2024_same_spatial_cells_original_ROI9_and_VIIRS_v1',
+             'photo_source_SHA256':'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c',
+             'VIIRS_2020_source_SHA256':'3562db1e5783e77d3bb408bd33817b4d7cccf31ad4d4ad42586469708fd407e3',
+             'year0':m20,'year1':m24,
+             'year2020_exposure_complete_cells':1044,
+             'year2020_2024_overlapping_photo_cells':len(sub),
+             'year2020_2024_valid_both_VIIRS_cells':len(x),
+             'repeated_geographic_blocks':int(x.block_id.nunique()),
+             'photo_attempts_2020':int(x.n_attempted.sum()),
+             'photo_attempts_2024':int(x.attempts2024.sum()),
+             'strictROI9_success_2020':int(x.n_strict9.sum()),
+             'strictROI9_success_2024':int(x.strict2024.sum()),
+             'shared_nominal_taxa_cellyear_pairs':int(x.n_shared_nominal_taxa.sum()),
+             'cells_with_at_least_1_shared_measured_taxon':int(x.n_shared_nominal_taxa.ge(1).sum()),
+             'cells_with_at_least_3_shared_measured_taxa':int(x.n_shared_nominal_taxa.ge(3).sum()),
+             'mean_cell_change_white_mass_pp':float(x.delta_white_pp.mean()),
+             'median_cell_change_white_mass_pp':float(x.delta_white_pp.median()),
+             'mean_cell_change_log1p_night_radiance':float(x.delta_log1p_VIIRS.mean()),
+             'median_cell_change_log1p_night_radiance':float(x.delta_log1p_VIIRS.median()),
+             'radiance_change_q10_q50_q90':x.delta_log1p_VIIRS.quantile([.1,.5,.9]).tolist(),
+             'mean_cell_ROI_success_change_pp':float(x.delta_ROI_yield_pp.mean()),
+             'estimate_white_change_pp_per_log1p_radiance_change':slope,
+             'nominal_block_cluster_95ci_low_pp':float(ci.iloc[0]),
+             'nominal_block_cluster_95ci_high_pp':float(ci.iloc[1]),
+             'nominal_block_cluster_p_two_sided':float(fitted.pvalues.iloc[1]),
+             'main_model_predictors':terms,
+             'WorldPop_baseline_year':2020,
+             'WorldPop_2000_2020_service_NOT_VALID_for_2024':True,
+             'year2024_population_density_change_adjusted':False,
+             'VIIRS_is_upward_spectral_unspecified_not_ground_light':True,
+             'island_Moth_pollination_guild_measured':False,
+             'photographic_species_not_reobserved_NOT_extinct':True,
+             'same_taxon_comparison_secondary_low_support':True,
+             'ROI_unknown_never_as_nonwhite':True,
+             'no_raw_photo_bytes_downloaded_or_model_inference':True,
+             'MNAR_tipping_scenarios_not_run':True,
+             'not_causal_population_turnover_or_ALAN_extinction':True
+          }
+          out=Path('result')
+          x[['cell_id','block_id','longitude','latitude','population_density',
+             'viirs_quarterly_median','VIIRS_2024_quarter_median',
+             'VIIRS_2024_n_valid_months','delta_log1p_VIIRS','delta_white_pp',
+             'delta_ROI_yield_pp','n_attempted','attempts2024','n_strict9',
+             'strict2024','n_shared_nominal_taxa','same_taxon_white_change_pp']].to_csv(
+                  out/'repeated_area_2020_2024_cell_aggregate.csv',index=False)
+          report['output_SHA256']={file.name:hashlib.sha256(file.read_bytes()).hexdigest()
+                 for file in out.iterdir() if file.is_file()}
+          (out/'repeat_area_2020_2024_receipt.json').write_text(
+               json.dumps(report,indent=2,sort_keys=True,allow_nan=False)+'\n')
+          print('MOIS_ALAN_2020_TO_2024_TRUE_REPEATED_CELL_RESULT',
+            json.dumps({k:report[k] for k in (
+             'year2020_2024_valid_both_VIIRS_cells',
+             'cells_with_at_least_1_shared_measured_taxon',
+             'mean_cell_change_white_mass_pp',
+             'estimate_white_change_pp_per_log1p_radiance_change',
+             'nominal_block_cluster_95ci_low_pp',
+             'nominal_block_cluster_95ci_high_pp')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-ALAN-2020-2024-source-locked-original-photo-repeated-cell-numeric
+          path: result/
+          retention-days: 90
+          if-no-files-found: error

@@ -1,0 +1,185 @@
+name: MOIS full 2024 62360 remaining all mainland/islands VIIRS+WorldPop Global2 actual data
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths: [.github/workflows/mois-2024-remaining62360-VIIRS-G2-real.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-2024-world-global2-VIIRS-last62360-source-noarea
+  cancel-in-progress: false
+jobs:
+  sameyear-remaining62360:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 49
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test source-year and no-false population and original photo IDs
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 geopandas==1.1.2 shapely==2.1.2 \
+            requests==2.32.5 rasterio==1.4.3 pyproj==3.7.2 scipy==1.15.2
+          python -m unittest discover -s tests -p test_mois_global2024_VIIRS_WorldPopG2_bulk_20261107.py -v
+          python -m py_compile scripts/analysis/mois_global2024_original_source_20261107.py
+          python -m py_compile scripts/analysis/mois_global2024_VIIRS_WorldPopG2_bulk_20261107.py
+      - name: Recover original canonical/shoreline, original Global2 2024 raster metadata and previous 4096 actual source values
+        timeout-minutes: 7
+        run: |
+          set -euo pipefail
+          mkdir -p src/shoreline src/worldpop_meta src/pilot4096
+          gh run download 41007444495 --repo zuizui0223/mois \
+            --name mois-nohuman-canonical-climate-joined-20261030 --dir src
+          gh run download 42175243391 --repo zuizui0223/mois \
+            --name mois-GSHHG-2.3.7-high-L1-L2-SHA-source-no-images --dir src/shoreline
+          gh run download 42327361916 --repo zuizui0223/mois \
+            --name mois-worldpop-Global2-2024-full-geotiff-SHA-and-density-source-receipt \
+            --dir src/worldpop_meta
+          gh run download 42328254130 --repo zuizui0223/mois \
+            --name mois-global2024-original4096-WPGlobal2-2024-VIIRS-raw-SHA --dir src/pilot4096
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  src/canonical_observations_climate.csv.gz' | sha256sum -c -
+          python - <<'PY'
+          import json,hashlib,csv
+          from pathlib import Path
+          p=Path('src/pilot4096/VIIRS_result_2024')
+          r=json.loads((p/'receipt.json').read_text())
+          assert r['original_target_count']==4096 and r['completed_targets']==2756
+          assert r['original_source_photo_grid_sha256']=='541b6134090b61a285ffa9c45ee3df8a382e66ae5628c394ca0c4d47af9207a0'
+          assert r['original_WorldPop_source']['source_file_sha256']=='3539cbac76092c1e8c8d45426fc0dfb06067a1e3f28bfbee993dba21aa03194e'
+          assert hashlib.sha256((p/'values.csv').read_bytes()).hexdigest()==r['output_values_SHA256']
+          assert len(list(csv.DictReader((p/'values.csv').open())))==4096
+          print('MOIS_2024_PILOT4096_REAL_VALUES_VERIFIED_AND_EXCLUDED_FROM_NEW_API_REQUESTS')
+          PY
+      - name: Reconstruct same exact global photo/GSHHG 2024 source and non-overlapping remaining 62360 sites
+        timeout-minutes: 7
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2024_original_source_20261107 \
+            --canonical src/canonical_observations_climate.csv.gz \
+            --shoreline src/shoreline --out original_source_2024
+          echo 'f7f65e6bc167089b3034555c655e777f528ecdd29952ab7ee9833d8722f39267  original_source_2024/mois_2024_full_photo_landmass_source.csv' | sha256sum -c -
+          echo '541b6134090b61a285ffa9c45ee3df8a382e66ae5628c394ca0c4d47af9207a0  original_source_2024/mois_2024_next4096_source.csv' | sha256sum -c -
+          echo 'a792602a05735c5049c960a80fc6a75f4a1241c0a3abaa9769f452330559bf2d  original_source_2024/mois_2024_remaining62360_source.csv' | sha256sum -c -
+          python - <<'PY'
+          import pandas as pd
+          a=pd.read_csv('src/pilot4096/original_source_2024/mois_2024_next4096_source.csv',dtype={'target_id':str})
+          b=pd.read_csv('original_source_2024/mois_2024_remaining62360_source.csv',dtype={'target_id':str})
+          assert len(a)==4096 and len(b)==62360
+          assert not set(a.target_id)&set(b.target_id)
+          assert b.land_class.value_counts().to_dict()=={'mainland':54013,'island':8347}
+          print('MOIS_2024_NONOVERLAPPING_SOURCE_PILOT4096_REMAINDER62360_VERIFIED')
+          PY
+      - uses: actions/cache/restore@v4
+        with:
+          path: worldpop_raster/
+          key: mois-worldpop-2024-R2025A-v1-unadjusted1km-original-source
+      - name: Source locked 2024 Global2 population raster (download only if cache unavailable)
+        timeout-minutes: 12
+        run: |
+          set -euo pipefail
+          mkdir -p worldpop_raster
+          if [ ! -f worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif ]; then
+            curl --fail --location --retry 3 --connect-timeout 25 --speed-time 90 --speed-limit 1024 --max-time 650 \
+              'https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2025A/2024/0_Mosaicked/v1/1km/constrained/global_pop_2024_CN_1km_R2025A_v1.tif' \
+              --output worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif
+          fi
+          echo '3539cbac76092c1e8c8d45426fc0dfb06067a1e3f28bfbee993dba21aa03194e  worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif' | sha256sum -c -
+      - uses: actions/cache/restore@v4
+        with:
+          path: result_rest2024/raw/
+          key: mois-2024-global2-rest62360-source-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: mois-2024-global2-rest62360-source-v1-
+      - name: Acquire remaining 62360 real 2024 source coordinates with 4-month VIIRS and original 2024 Global2 population
+        timeout-minutes: 23
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2024_VIIRS_WorldPopG2_bulk_20261107 \
+            --targets original_source_2024/mois_2024_remaining62360_source.csv \
+            --worldpop-tiff worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif \
+            --worldpop-receipt src/worldpop_meta/WorldPop_Global2_2024_original_geotiff_receipt.json \
+            --expected-count 62360 --source-sha a792602a05735c5049c960a80fc6a75f4a1241c0a3abaa9769f452330559bf2d \
+            --out result_rest2024 --workers 4
+      - name: Strict source replay without new provider requests; combine with verified 4096 previous measured values
+        timeout-minutes: 8
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2024_VIIRS_WorldPopG2_bulk_20261107 \
+            --targets original_source_2024/mois_2024_remaining62360_source.csv \
+            --worldpop-tiff worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif \
+            --worldpop-receipt src/worldpop_meta/WorldPop_Global2_2024_original_geotiff_receipt.json \
+            --expected-count 62360 --source-sha a792602a05735c5049c960a80fc6a75f4a1241c0a3abaa9769f452330559bf2d \
+            --out result_rest2024 --workers 4 --offline
+          python - <<'PY'
+          import json,hashlib,pandas as pd
+          from pathlib import Path
+          p=Path('result_rest2024')
+          a=json.loads((p/'receipt.json').read_text())
+          b=json.loads((p/'replay_receipt.json').read_text())
+          assert a['original_target_count']==b['original_target_count']==62360
+          assert a['new_VIIRS_provider_requests']+a['saved_original_VIIRS_replay_requests']==488
+          assert b['new_VIIRS_provider_requests']==0 and b['saved_original_VIIRS_replay_requests']==488
+          assert a['output_values_SHA256']==b['output_values_SHA256']
+          assert (p/'values.csv').read_bytes()==(p/'replay_values.csv').read_bytes()
+          assert a['original_source_photo_grid_sha256']=='a792602a05735c5049c960a80fc6a75f4a1241c0a3abaa9769f452330559bf2d'
+          assert a['population_2020_Global1_mixed_in'] is False
+          assert len(a['original_VIIRS_response_SHA256'])==488
+          for filename,sha in a['original_VIIRS_response_SHA256'].items():
+              assert hashlib.sha256((p/'raw'/filename).read_bytes()).hexdigest()==sha
+          pilot=pd.read_csv('src/pilot4096/VIIRS_result_2024/values.csv',dtype={'target_id':str})
+          rest=pd.read_csv(p/'values.csv',dtype={'target_id':str})
+          assert len(pilot)==4096 and len(rest)==62360
+          assert not set(pilot.target_id)&set(rest.target_id)
+          joined=pd.concat([pilot,rest],ignore_index=True)
+          assert len(joined)==66456 and joined.target_id.is_unique
+          global_source=pd.read_csv('original_source_2024/mois_2024_full_photo_landmass_source.csv',dtype={'target_id':str})
+          assert len(global_source)==69196 and global_source.target_id.is_unique
+          assert set(joined.target_id)==set(global_source.loc[global_source.land_class.isin(['mainland','island']),'target_id'])
+          joined.to_csv(p/'all2024_known_land_combined_values.csv',index=False,float_format='%.15g')
+          metadata={
+             'schema':'MOIS_2024_all_known_land_original_2024_VIIRS_G2_popcount_v1',
+             'source_year':2024,'original_photo_target_year_rows':69196,
+             'known_mainland_island_target_year_rows':66456,
+             'unresolved_GSHHG_landmass_target_year_rows':2740,
+             'original_photo_attempts_all_2024':151355,
+             'original_strict9_success_all_2024':59588,
+             'known_land_2024_complete':int(joined.complete.sum()),
+             'known_land_2024_incomplete':int((~joined.complete).sum()),
+             'known_land_2024_population_valid':int(joined.population_source_status.eq('OK').sum()),
+             'known_land_2024_VIIRS_at_least3months':int(joined.viirs_valid_months.ge(3).sum()),
+             'complete_by_land':joined.loc[joined.complete].land_class.value_counts().to_dict(),
+             'source_population':'WorldPop Global2 R2025A v1 original 2024 30-arcsec count',
+             'population_grid_density_converted_via_WGS84_geodesic_pixel_km2':True,
+             '2020_global1_population_was_not_used':True,
+             'VIIRS_source_months':[1,4,7,10],'actual_VIIRS_requests_rest':a['new_VIIRS_provider_requests'],
+             'VIIRS_original_response_replay_zero_new':True,
+             'original_WorldPop_raster_SHA256':'3539cbac76092c1e8c8d45426fc0dfb06067a1e3f28bfbee993dba21aa03194e',
+             'original_source_photos_or_ROI_newly_downloaded':0,
+             'unknown_to_colour_imputation':False,
+             'island_area_cutoff':None,'latitude_cutoff':None,
+             'known_land_combined_values_sha256':hashlib.sha256((p/'all2024_known_land_combined_values.csv').read_bytes()).hexdigest()}
+          (p/'2024_all_known_land_source_receipt.json').write_text(json.dumps(metadata,sort_keys=True,indent=2)+'\n')
+          print('MOIS_2024_ALL_KNOWN_LAND_ACTUAL_GLOBAL2_VIIRS_SOURCE_COMPLETE',json.dumps(metadata,sort_keys=True),flush=True)
+          PY
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: result_rest2024/raw/
+          key: mois-2024-global2-rest62360-source-v1-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-global2024-rest62360-original-VIIRS-G2-all66456-source
+          path: |
+            result_rest2024/
+            original_source_2024/2024_source_receipt.json
+          retention-days: 90
+          if-no-files-found: warn

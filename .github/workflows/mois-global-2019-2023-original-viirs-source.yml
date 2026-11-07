@@ -1,0 +1,110 @@
+name: MOIS true-year 2019 2021 2022 2023 worldwide VIIRS four months
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-global-2019-2023-original-viirs-source.yml
+      - scripts/analysis/mois_global2019_2023_original_photo_geography.py
+      - scripts/analysis/mois_global2019_2023_original_photo_year_VIIRS.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-year:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        year: [2019, 2021, 2022, 2023]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test actual photo-year and original VIIRS month-quality
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests==2.32.5 pandas==2.2.3 numpy==2.1.3 geopandas==1.1.2 shapely==2.1.2
+          python -m unittest discover -s tests -p test_mois_global2019_2023_original_photo_year_VIIRS.py -v
+          python -m py_compile scripts/analysis/mois_global2019_2023_original_photo_geography.py
+          python -m py_compile scripts/analysis/mois_global2019_2023_original_photo_year_VIIRS.py
+      - name: Use frozen original photographs and GSHHG polygons, not new image requests
+        run: |
+          set -euo pipefail
+          mkdir -p src/shoreline
+          gh run download 41007444495 --repo zuizui0223/mois \
+            --name mois-nohuman-canonical-climate-joined-20261030 --dir src
+          gh run download 42175243391 --repo zuizui0223/mois \
+            --name mois-GSHHG-2.3.7-high-L1-L2-SHA-source-no-images --dir src/shoreline
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  src/canonical_observations_climate.csv.gz' | sha256sum -c -
+      - name: Independently reconstruct original source photo locations and exact no-area GSHHG land
+        timeout-minutes: 8
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2019_2023_original_photo_geography \
+            --canonical src/canonical_observations_climate.csv.gz \
+            --shoreline src/shoreline --years ${{ matrix.year }} --out source_year
+          test -f source_year/${{ matrix.year }}/mois_${{ matrix.year }}_knownland_sites.csv
+      - uses: actions/cache/restore@v4
+        with:
+          path: VIIRS_${{ matrix.year }}/raw/
+          key: mois-real-year-monthly-${{ matrix.year }}-VIIRS-raw-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: mois-real-year-monthly-${{ matrix.year }}-VIIRS-raw-v1-
+      - name: Collect 2025-independent true-year 2019/2021/2022/2023 numeric VIIRS original
+        timeout-minutes: 30
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2019_2023_original_photo_year_VIIRS \
+            --year ${{ matrix.year }} --targets source_year/${{ matrix.year }}/mois_${{ matrix.year }}_knownland_sites.csv \
+            --out VIIRS_${{ matrix.year }} --workers 4
+      - name: Reproduce every monthly VIIRS source value offline using raw provider bytes
+        timeout-minutes: 7
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2019_2023_original_photo_year_VIIRS \
+            --year ${{ matrix.year }} --targets source_year/${{ matrix.year }}/mois_${{ matrix.year }}_knownland_sites.csv \
+            --out VIIRS_${{ matrix.year }} --workers 4 --offline
+          python - <<'PY'
+          import json,hashlib,csv
+          from pathlib import Path
+          year=${{ matrix.year }}
+          p=Path(f'VIIRS_{year}')
+          r=json.loads((p/'receipt.json').read_text())
+          t=json.loads((p/'replay_receipt.json').read_text())
+          assert r['source_year']==t['source_year']==year
+          assert r['values_SHA256']==t['values_SHA256']
+          assert (p/'values.csv').read_bytes()==(p/'replay_values.csv').read_bytes()
+          assert len(list(csv.DictReader((p/'values.csv').open())))==r['all_original_year_photo_cells']
+          assert len(r['raw_original_response_SHA256'])==t['original_provider_responses_reused']
+          assert t['new_provider_requests']==0
+          assert r['population_source_not_fetched_or_imputed']
+          assert r['new_original_photo_downloads_or_ROI_reinferences']==0
+          assert r['no_island_area_or_latitude_exclusions']
+          for name,hashvalue in r['raw_original_response_SHA256'].items():
+              assert hashlib.sha256((p/'raw'/name).read_bytes()).hexdigest()==hashvalue
+          print('MOIS_YEAR_BY_YEAR_GLOBAL_RAW_VIIRS_VERIFIED',
+              json.dumps({k:r[k] for k in ('source_year','all_original_year_photo_cells',
+              'source_island_sites','source_mainland_sites',
+              'source_VIIRS_at_least3months_sites','valid_monthly_VIIRS_values',
+              'new_provider_requests')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: VIIRS_${{ matrix.year }}/raw/
+          key: mois-real-year-monthly-${{ matrix.year }}-VIIRS-raw-v1-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-original-${{ matrix.year }}-global-mainland-island-monthly-VIIRS-source-SHA
+          path: |
+            VIIRS_${{ matrix.year }}/
+            source_year/${{ matrix.year }}/
+          retention-days: 90
+          if-no-files-found: warn

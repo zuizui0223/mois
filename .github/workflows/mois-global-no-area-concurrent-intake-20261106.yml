@@ -1,0 +1,109 @@
+name: MOIS global mainland plus all islands concurrent photo and environment intake
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths: [.github/workflows/mois-global-no-area-concurrent-intake-20261106.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-global-no-area-source-intake-20261106-v1
+  cancel-in-progress: false
+jobs:
+  new-original-photo-intake:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Source and no-area-exclusion tests
+        run: |
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 requests==2.32.5 pyarrow==19.0.1 pillow==11.1.0
+          python -m unittest discover -s tests -p test_mois_global_acquisition_20261106.py -v
+      - uses: actions/cache/restore@v4
+        id: restored
+        with:
+          path: global_photo_intake
+          key: mois-global-new-original-20261106-once-v1
+      - name: Recover source IDs ONLY; never restart old measured photo runs
+        if: steps.restored.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p source
+          gh release download mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1 \
+            --repo zuizui0223/mois --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet --dir source
+          echo '3fbd0f0ec7eb347b3bbc7ab509ec9312ec6d797ed932dcf7bb425959898c3835  source/mois_1181146_unique_original_photo_continuous9_by_arm.parquet' | sha256sum -c -
+      - name: Acquire new licensed original photo bytes globally, not new colours
+        if: steps.restored.outputs.cache-hit != 'true'
+        run: |
+          python -m scripts.acquisition.mois_global_acquisition_20261106 photos \
+            --baseline source/mois_1181146_unique_original_photo_continuous9_by_arm.parquet --out global_photo_intake
+      - uses: actions/cache/save@v4
+        if: always() && steps.restored.outputs.cache-hit != 'true'
+        with:
+          path: global_photo_intake
+          key: mois-global-new-original-20261106-once-v1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-global-new-original-photos-attribution-SHA-NOT-ROI9-20261106
+          path: global_photo_intake/
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: warn
+  global-environment-intake:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install source geometry and raster tools
+        run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 requests==2.32.5 rasterio==1.4.3 pyproj==3.7.0
+      - uses: actions/cache/restore@v4
+        id: restored
+        with:
+          path: global_environment_intake
+          key: mois-global-environment-2024-20261106-once-v1
+      - name: Reuse original canonical photo coordinates and 302 previously retrieved 2024 cells
+        if: steps.restored.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p prior
+          gh run download 41007444495 --repo zuizui0223/mois \
+            --name mois-nohuman-canonical-climate-joined-20261030 --dir prior
+          gh run download 41952464936 --repo zuizui0223/mois \
+            --name mois-ALAN-2020-2024-source-locked-original-photo-repeated-cell-numeric --dir prior
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  prior/canonical_observations_climate.csv.gz' | sha256sum -c -
+          echo '1c5f03e5a7c355a0f7045133140c5cf2e39a5802c548f89d1c2f66c8a235db5f  prior/repeated_area_2020_2024_cell_aggregate.csv' | sha256sum -c -
+      - name: Retrieve next 512 global same-year satellite cells and actual 2024 WorldPop raster
+        if: steps.restored.outputs.cache-hit != 'true'
+        run: |
+          python -m scripts.acquisition.mois_global_acquisition_20261106 environment \
+            --canonical prior/canonical_observations_climate.csv.gz \
+            --previous prior/repeated_area_2020_2024_cell_aggregate.csv \
+            --year 2024 --limit 512 --out global_environment_intake
+      - uses: actions/cache/save@v4
+        if: always() && steps.restored.outputs.cache-hit != 'true'
+        with:
+          path: global_environment_intake
+          key: mois-global-environment-2024-20261106-once-v1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-global-all-land-no-area-filter-environment-2024-20261106
+          path: |
+            global_environment_intake/
+            !global_environment_intake/WorldPop2024_global_source.tif
+          retention-days: 90
+          if-no-files-found: warn

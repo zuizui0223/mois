@@ -1,0 +1,294 @@
+name: MOIS 2025 original VIIRS and WorldPop R2024B UC source availability
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-2025-source-availability-original.yml
+      - scripts/analysis/mois_global2025_original_source_20261107.py
+      - scripts/analysis/mois_global2025_VIIRS_WorldPopR2024B_UC_bulk_20261107.py
+      - tests/test_mois_global2025_VIIRS_WorldPopR2024B_UC_bulk_20261107.py
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency:
+  group: mois-2025-official-population-and-monthly-VIIRS-source-probe
+  cancel-in-progress: false
+jobs:
+  original-source-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Confirm 2025 original census model mosaic and source-year monthly VIIRS
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests==2.32.5
+          mkdir -p out
+          python - <<'PY'
+          import requests,json,hashlib,datetime as dt,calendar
+          from pathlib import Path
+          session=requests.Session()
+          session.headers.update({'User-Agent':'MOIS macrobio original 2025 sameyear raster source probe/1.0'})
+          base='https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2024B/2025/0_Mosaicked/v1/'
+          sites=[
+            base+'1km/unconstrained/global_pop_2025_UC_1km_R2024B_v1.tif',
+            base+'1km_ua/unconstrained/global_pop_2025_UC_1km_R2024B_UA_v1.tif',
+            base+'1km/constrained/global_pop_2025_CN_1km_R2024B_v1.tif'
+          ]
+          receipt={'schema':'MOIS_2025_official_R2024B_UC_and_VIIRS_source_probe',
+             'population_source_year':2025,'source_release':'WorldPop Global2 R2024B v1',
+             'VIIRS_requested_year':2025,'photo_downloads':0,'population':[],'VIIRS':[]}
+          for url in sites:
+              x={'URL':url}
+              try:
+                  r=session.head(url,allow_redirects=True,timeout=25)
+                  x.update({'HEAD_status':r.status_code,'HEAD_content_length':r.headers.get('Content-Length'),
+                            'HEAD_etag':r.headers.get('ETag'),'HEAD_accept_ranges':r.headers.get('Accept-Ranges')})
+                  print('OFFICIAL_WORLDPOP_2025_HEAD',json.dumps(x),flush=True)
+              except Exception as e:x['error']=str(e)[:200]
+              receipt['population'].append(x)
+          endpoint='https://di-lawimagery1.img.arcgis.com/arcgis/rest/services/NighttimeLightsMDNB/ImageServer/getSamples'
+          for mo in (1,4,7,10):
+              start=dt.datetime(2025,mo,1,tzinfo=dt.timezone.utc)
+              end=dt.datetime(2025,mo,calendar.monthrange(2025,mo)[1],23,59,59,tzinfo=dt.timezone.utc)
+              params={'f':'json','geometryType':'esriGeometryMultipoint',
+                  'geometry':json.dumps({'points':[[139.7,35.7],[121.5,25.0],[-74.0,40.7]],'spatialReference':{'wkid':4326}},separators=(',',':')),
+                  'returnFirstValueOnly':'true','outFields':'*','interpolation':'RSP_NearestNeighbor',
+                  'time':f'{int(start.timestamp()*1000)},{int(end.timestamp()*1000)}'}
+              x={'month':mo,'n_requested':3}
+              try:
+                  r=session.get(endpoint,params=params,timeout=45)
+                  obj=r.json()
+                  x.update({'http':r.status_code,'raw_SHA256':hashlib.sha256(r.content).hexdigest(),
+                             'error':obj.get('error'),'n_samples':len(obj.get('samples',[])),
+                             'example_values':[{'value':s.get('value'),'attributes':s.get('attributes'),
+                             'locationId':s.get('locationId')} for s in obj.get('samples',[])[:3]]})
+                  (Path('out')/f'2025_viirs_{mo:02d}_actual_provider.json').write_bytes(r.content)
+                  print('OFFICIAL_2025_VIIRS_SOURCE_YEAR_MONTH',json.dumps(x)[:1100],flush=True)
+              except Exception as e:x['error']=str(e)[:250]
+              receipt['VIIRS'].append(x)
+          (Path('out')/'2025_source_availability_receipt.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-2025-official-population-R2024B-UC-and-VIIRS-months-probe
+          path: out/
+          retention-days: 90
+          if-no-files-found: error
+  official-2025-global-raster:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Load WGS84 raster and true geographic pixel area source logic
+        run: python -m pip install -q rasterio==1.4.3 pyproj==3.7.2 numpy==2.1.3 requests==2.32.5
+      - uses: actions/cache/restore@v4
+        with:
+          path: source_G2_2025/
+          key: mois-2025-R2024B-UC-original-global-865211479
+      - name: Download exact same-year source 2025 30arcsec world unconstrained population count raster
+        timeout-minutes: 16
+        run: |
+          set -euo pipefail
+          mkdir -p source_G2_2025
+          if [ ! -f source_G2_2025/global_pop_2025_UC_1km_R2024B_v1.tif ]; then
+            curl --fail --location --retry 2 --connect-timeout 25 --speed-time 90 \
+              --speed-limit 1024 --max-time 810 \
+              'https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2024B/2025/0_Mosaicked/v1/1km/unconstrained/global_pop_2025_UC_1km_R2024B_v1.tif' \
+              --output source_G2_2025/global_pop_2025_UC_1km_R2024B_v1.tif
+          fi
+          test "$(stat -c%s source_G2_2025/global_pop_2025_UC_1km_R2024B_v1.tif)" -eq 865211479
+          sha256sum source_G2_2025/global_pop_2025_UC_1km_R2024B_v1.tif
+      - name: Confirm original 2025 GeoTIFF checksum, CRS and geodesic conversion
+        run: |
+          set -euo pipefail
+          mkdir -p raster_receipt
+          python - <<'PY'
+          import hashlib,math,json
+          from pathlib import Path
+          import rasterio,pyproj
+          p=Path('source_G2_2025/global_pop_2025_UC_1km_R2024B_v1.tif')
+          h=hashlib.sha256()
+          with p.open('rb') as f:
+              for part in iter(lambda:f.read(4<<20),b''):h.update(part)
+          rec={'schema':'MOIS_WorldPop_2025_R2024B_UC_sameyear_original_full_raster_v1',
+               'source_release':'WorldPop Global2 R2024B v1 unconstrained',
+               'source_year':2025,
+               'source_units':'people per grid pixel, not people/km2',
+               'source_url':'https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2024B/2025/0_Mosaicked/v1/1km/unconstrained/global_pop_2025_UC_1km_R2024B_v1.tif',
+               'original_file_SHA256':h.hexdigest(),
+               'original_file_bytes':p.stat().st_size,
+               'no_2020_or_2024_population_substitution':True,
+               'no_new_photo_downloads_or_ROI_inference':True,
+               'example_sites':[]}
+          geod=pyproj.Geod(ellps='WGS84')
+          with rasterio.open(p) as ds:
+              rec.update({'CRS':ds.crs.to_string(),'width':ds.width,'height':ds.height,
+                          'count':ds.count,'resolution':list(ds.res),
+                          'nodata':ds.nodata,'bounds':list(ds.bounds)})
+              assert ds.crs.to_epsg()==4326 and ds.count==1
+              assert ds.width==43200 and ds.height==17280
+              assert abs(ds.res[0]-1/120)<1e-6 and abs(ds.res[1]-1/120)<1e-6
+              for name,lon,lat in [('Honshu',139.7,35.7),('Taiwan',121.52,25.04),
+                    ('United Kingdom',-0.125,51.507),('New Zealand',174.76,-36.85),
+                    ('USA',-74.0,40.7),('Australia',151.21,-33.87),
+                    ('Alaska',-149.9,61.2),('Greenland',-51.73,64.18)]:
+                  r,c=ds.index(lon,lat)
+                  if not(0<=r<ds.height and 0<=c<ds.width):continue
+                  val=float(next(ds.sample([(lon,lat)]))[0])
+                  x0,y0,x1,y1=rasterio.windows.bounds(rasterio.windows.Window(c,r,1,1),ds.transform)
+                  area,_=geod.polygon_area_perimeter([x0,x1,x1,x0],[y0,y0,y1,y1])
+                  km2=abs(area)/1e6
+                  good=math.isfinite(val) and val>=0 and (ds.nodata is None or val!=ds.nodata)
+                  rec['example_sites'].append({'name':name,'lat':lat,'lon':lon,
+                       'raster_count_per_pixel':val,'geodesic_pixel_km2':km2,
+                       'population_density_per_km2':val/km2 if good else None,
+                       'status':'OK' if good else 'NODATA'})
+          (Path('raster_receipt')/'WorldPop_Global2_2025_R2024B_UC_original_raster_receipt.json').write_text(
+              json.dumps(rec,indent=2,sort_keys=True)+'\n')
+          print('MOIS_REAL_2025_WORLDPOP_UC_ORIGINAL_SHA_CONFIRMED',
+                json.dumps({k:rec[k] for k in ('original_file_bytes','original_file_SHA256',
+                                              'CRS','width','height','count','resolution','nodata')},
+                          sort_keys=True),flush=True)
+          PY
+      - uses: actions/cache/save@v4
+        if: success()
+        with:
+          path: source_G2_2025/
+          key: mois-2025-R2024B-UC-original-global-865211479
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-2025-R2024B-UC-official-global-raster-SHA-receipt
+          path: raster_receipt/
+          if-no-files-found: warn
+          retention-days: 90
+  full-2025-original-global-cells:
+    needs: official-2025-global-raster
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Verify original 2025 photo, source year, population units and zero/NoData
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 requests==2.32.5 \
+             geopandas==1.1.2 shapely==2.1.2 rasterio==1.4.3 pyproj==3.7.2
+          python -m unittest discover -s tests -p test_mois_global2025_VIIRS_WorldPopR2024B_UC_bulk_20261107.py -v
+          python -m py_compile scripts/analysis/mois_global2025_original_source_20261107.py
+          python -m py_compile scripts/analysis/mois_global2025_VIIRS_WorldPopR2024B_UC_bulk_20261107.py
+      - name: Reuse canonical original photo IDs, original coastline and signed 2025 population raster receipt
+        run: |
+          set -euo pipefail
+          mkdir -p signed/shoreline signed/rastermeta
+          gh run download 41007444495 --repo zuizui0223/mois --name mois-nohuman-canonical-climate-joined-20261030 --dir signed
+          gh run download 42175243391 --repo zuizui0223/mois --name mois-GSHHG-2.3.7-high-L1-L2-SHA-source-no-images --dir signed/shoreline
+          gh run download 42336572103 --repo zuizui0223/mois --name mois-2025-R2024B-UC-official-global-raster-SHA-receipt --dir signed/rastermeta
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  signed/canonical_observations_climate.csv.gz' | sha256sum -c -
+          python - <<'PY'
+          import json
+          r=json.load(open('signed/rastermeta/WorldPop_Global2_2025_R2024B_UC_original_raster_receipt.json'))
+          assert r['original_file_SHA256']=='4ef9014dbe9f20462b719abb2987eb9efca2b4517bfdcd7f0f8d0a2a8cdd191f'
+          assert r['original_file_bytes']==865211479 and r['source_year']==2025
+          PY
+      - name: Regenerate exact original 73463 known island and mainland source sites without area exclusion
+        timeout-minutes: 9
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2025_original_source_20261107 \
+             --canonical signed/canonical_observations_climate.csv.gz \
+             --shoreline signed/shoreline --out source_2025
+          echo 'de2cd14690383f7e66cff68c945cf2a6812b33b0511f0189aaea9f6d62ea37fc  source_2025/mois_2025_full_photo_landmass_source.csv' | sha256sum -c -
+          echo '45c5152e1edad997ff8749c645818996fb2b0bc03a2ab7c0753af446afaab143  source_2025/mois_2025_all73463_knownland_source.csv' | sha256sum -c -
+      - uses: actions/cache/restore@v4
+        with:
+          path: original_population2025/
+          key: mois-pop-Global2-2025-UC-R2024B-865211479-original-GTIFF
+      - name: Confirm WorldPop full 2025 release retrieved and cached; no old raster substituted
+        timeout-minutes: 14
+        run: |
+          set -euo pipefail
+          mkdir -p original_population2025
+          if [ ! -f original_population2025/global_pop_2025_UC_1km_R2024B_v1.tif ]; then
+            curl --fail --location --retry 2 --connect-timeout 25 \
+              --speed-time 90 --speed-limit 1024 --max-time 810 \
+              'https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2024B/2025/0_Mosaicked/v1/1km/unconstrained/global_pop_2025_UC_1km_R2024B_v1.tif' \
+              --output original_population2025/global_pop_2025_UC_1km_R2024B_v1.tif
+          fi
+          echo '4ef9014dbe9f20462b719abb2987eb9efca2b4517bfdcd7f0f8d0a2a8cdd191f  original_population2025/global_pop_2025_UC_1km_R2024B_v1.tif' | sha256sum -c -
+      - uses: actions/cache/restore@v4
+        with:
+          path: numeric_2025/raw
+          key: mois-original-2025-full73463-VIIRS-monthly-R2024B-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: mois-original-2025-full73463-VIIRS-monthly-R2024B-v1-
+      - name: Extract actual 2025 Jan Apr Jul Oct VIIRS, cloudfree quality and official 2025 UC population for all 73463 sites
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2025_VIIRS_WorldPopR2024B_UC_bulk_20261107 \
+             --targets source_2025/mois_2025_all73463_knownland_source.csv \
+             --worldpop-tiff original_population2025/global_pop_2025_UC_1km_R2024B_v1.tif \
+             --worldpop-receipt signed/rastermeta/WorldPop_Global2_2025_R2024B_UC_original_raster_receipt.json \
+             --out numeric_2025 --expected-count 73463 --source-sha 45c5152e1edad997ff8749c645818996fb2b0bc03a2ab7c0753af446afaab143 \
+             --workers 4
+      - name: Replay 2025 original source bytes exactly, no additional HTTP
+        timeout-minutes: 8
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2025_VIIRS_WorldPopR2024B_UC_bulk_20261107 \
+             --targets source_2025/mois_2025_all73463_knownland_source.csv \
+             --worldpop-tiff original_population2025/global_pop_2025_UC_1km_R2024B_v1.tif \
+             --worldpop-receipt signed/rastermeta/WorldPop_Global2_2025_R2024B_UC_original_raster_receipt.json \
+             --out numeric_2025 --expected-count 73463 --source-sha 45c5152e1edad997ff8749c645818996fb2b0bc03a2ab7c0753af446afaab143 \
+             --offline --workers 4
+          python - <<'PY'
+          import json,csv,hashlib
+          from pathlib import Path
+          o=Path('numeric_2025')
+          a=json.loads((o/'receipt.json').read_text());b=json.loads((o/'replay_receipt.json').read_text())
+          assert a['source_photo_year']==b['source_photo_year']==2025
+          assert a['VIIRS_year']==a['population_raster_year']==2025
+          assert a['original_target_count']==73463
+          assert a['new_VIIRS_provider_requests']+a['saved_original_VIIRS_replay_requests']==576
+          assert b['new_VIIRS_provider_requests']==0 and b['saved_original_VIIRS_replay_requests']==576
+          assert a['output_values_SHA256']==b['output_values_SHA256']
+          assert (o/'values.csv').read_bytes()==(o/'replay_values.csv').read_bytes()
+          assert a['original_WorldPop_source']['source_file_sha256']=='4ef9014dbe9f20462b719abb2987eb9efca2b4517bfdcd7f0f8d0a2a8cdd191f'
+          assert a['original_source_photo_grid_sha256']=='45c5152e1edad997ff8749c645818996fb2b0bc03a2ab7c0753af446afaab143'
+          assert a['new_photos_or_ROI_reinference']==0
+          assert a['no_island_area_or_latitude_cutoff'] and not a['population_2020_Global1_mixed_in']
+          assert len(a['original_VIIRS_response_SHA256'])==576
+          for file,s in a['original_VIIRS_response_SHA256'].items():
+              assert hashlib.sha256((o/'raw'/file).read_bytes()).hexdigest()==s
+          v=list(csv.DictReader((o/'values.csv').open()))
+          assert len(v)==73463 and len({t['target_id'] for t in v})==73463
+          assert sum(t['complete']=='True' for t in v)==a['completed_targets']
+          print('MOIS_2025_ORIGINAL_ALL_LAND_73463_SAMEYEAR_SOURCE_REPLAY_CONFIRMED',json.dumps({
+             k:a[k] for k in ('original_target_count','completed_targets','incomplete_targets',
+                'complete_by_land','valid_VIIRS_month_count','valid_WorldPop_2025_population_pixels',
+                'new_VIIRS_provider_requests')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: numeric_2025/raw
+          key: mois-original-2025-full73463-VIIRS-monthly-R2024B-v1-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-2025-original73463-mainland-island-full-VIIRS-and-R2024B-UC-source
+          path: |
+            numeric_2025/
+            source_2025/source_receipt.json
+          retention-days: 90
+          if-no-files-found: warn

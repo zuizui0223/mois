@@ -1,0 +1,94 @@
+name: MOIS 2020 exact new 36070 global island mainland nightlight white-ROI source refit
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-2020-fullnew36070-sameyear-island-ALAN-white-refit.yml
+      - scripts/analysis/mois_2020_sameyear_island_alanspatial_refit_20261107.py
+      - tests/test_mois_2020_sameyear_island_alanspatial_refit_20261107.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-original-2020-fullnew36070-landmass-island-light-colour-refit
+  cancel-in-progress: false
+jobs:
+  real-original-2020-white-versus-light-by-landmass:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install scientific numerical/geospatial libraries and verify no-network source tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 scipy==1.15.2 statsmodels==0.14.5 geopandas==1.1.2 shapely==2.1.2
+          python -m py_compile scripts/analysis/mois_2020_sameyear_island_alanspatial_refit_20261107.py
+          python -m unittest discover -s tests -p test_mois_2020_sameyear_island_alanspatial_refit_20261107.py -v
+      - name: Restore only original signed photo numeric traits and GSHHG source and five real 2020 VIIRS population cohorts
+        timeout-minutes: 11
+        run: |
+          set -euo pipefail
+          mkdir -p src/photos src/wcvp src/shoreline src/first256 src/next1024 src/next64 src/first4096 src/last30630
+          gh run download 41007444495 --repo zuizui0223/mois --name mois-nohuman-canonical-climate-joined-20261030 --dir src/photos
+          gh run download 39225659840 --repo zuizui0223/mois --name mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status --dir src/wcvp
+          gh run download 42175243391 --repo zuizui0223/mois --name mois-GSHHG-2.3.7-high-L1-L2-SHA-source-no-images --dir src/shoreline
+          gh run download 42192184774 --repo zuizui0223/mois --name mois-global-noarea-2020-256-real-values-and-response-SHAs --dir src/first256
+          gh run download 42219556580 --repo zuizui0223/mois --name mois-global-next1024-combined-real-values-response-SHAs --dir src/next1024
+          gh run download 42322001600 --repo zuizui0223/mois --name mois-global-multipoint-64-new-targets-2020-source-responses-and-replay --dir src/next64
+          gh run download 42324300132 --repo zuizui0223/mois --name mois-global-original-2020-new4096-multipoint-SHA-replay --dir src/first4096
+          gh run download 42325144724 --repo zuizui0223/mois --name mois-global-original-2020-remaining30630-all-land-source-SHA-multipoint --dir src/last30630
+          printf '%s\n' \
+            'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  src/photos/canonical_observations_climate.csv.gz' \
+            'dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2  src/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' \
+            '303424afe40b41e7bda2ec0ae456dd27820a50e17f7ca23204c81036adf21466  src/first256/global_output/values.csv' \
+            '7aa0193178d664818bca777749074fc88fe0b9e594e83e5eb34d6f72110efce9  src/next1024/next_output/all1024_values.csv' \
+            'a513250fa9911a35c7f40380684ae97f52d7cdfea7bf828cdcd7cbe1be34192c  src/next64/result/values.csv' \
+            '174de5a28b62f36e456504062d099b8f1a55f3cc7a2d7fdf6fed003e511446d0  src/last30630/output/values.csv' \
+            | sha256sum -c -
+      - name: Actual 2020 per-photo GSHHG landmass join and all signed new 36070 target sameyear refit
+        timeout-minutes: 16
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_2020_sameyear_island_alanspatial_refit_20261107 \
+            --canonical src/photos/canonical_observations_climate.csv.gz \
+            --wcvp src/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+            --shoreline src/shoreline \
+            --first256 src/first256/global_output/values.csv \
+            --next1024 src/next1024/next_output/all1024_values.csv \
+            --next64 src/next64/result/values.csv \
+            --first4096 src/first4096/output/values.csv \
+            --last30630 src/last30630/output/values.csv \
+            --out actual_2020_island_ALAN_white_results
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('actual_2020_island_ALAN_white_results/results.json').read_text())
+          assert r['original_source_count_new_targets']==36070
+          assert r['unknown_colours_imputed'] is False
+          assert r['no_photo_RGB_downloads_or_ROI_recomputation'] is True
+          assert r['island_area_latitude_filters_used'] is False
+          assert r['no_ALAN_causal_native_species_extinction_or_moth_claim'] is True
+          assert r['new2020_targets_with_photo_gate_and_VIIRS']>=r['new2020_targets_with_photo_gate_VIIRS_population']
+          assert r['new2020_targets_with_photo_gate_VIIRS_population']>=r['new2020_within_island_cells']
+          print('MOIS_2020_SIGNED_NEW_SOURCE_ISLAND_LIGHT_ESTIMATES_COMPLETE',json.dumps({
+            'observed_island_cells':r['new2020_island_pop_eligible_cells'],
+            'within_island_units':r['new2020_within_island_independent_islands'],
+            'models':r['models']},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-2020-actual-new36070-sameyear-island-mainland-nightlight-white-refit
+          path: actual_2020_island_ALAN_white_results/
+          retention-days: 90
+          if-no-files-found: warn

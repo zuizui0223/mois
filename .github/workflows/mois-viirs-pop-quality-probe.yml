@@ -1,0 +1,48 @@
+name: MOIS VIIRS month/radiance quality and population year selector probe
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-viirs-pop-quality-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Check raw/month and population time-specific remote rasters (no photos)
+        run: |
+          python - <<'PY'
+          import json,requests,datetime,calendar
+          from pathlib import Path
+          viirs='https://di-lawimagery1.img.arcgis.com/arcgis/rest/services/NighttimeLightsMDNB/ImageServer'
+          pop='https://worldpop.arcgis.com/arcgis/rest/services/WorldPop_Population_Density_1km/ImageServer'
+          sites=[('Tokyo',139.7,35.7),('RuralSpain',-4.0,39.0)]
+          def ms(y,m,d):return int(datetime.datetime(y,m,d,tzinfo=datetime.timezone.utc).timestamp()*1000)
+          out=[]
+          for source,base in [('viirs',viirs),('pop',pop)]:
+            for y,m in ([(2018,1),(2020,1),(2020,7),(2023,6),(2025,6)] if source=='viirs' else [(2010,1),(2019,1),(2020,1)]):
+              for city,x,ycoord in sites:
+                fields={'f':'json','geometry':json.dumps({'x':x,'y':ycoord,'spatialReference':{'wkid':4326}}),
+                        'geometryType':'esriGeometryPoint','returnGeometry':'false','returnCatalogItems':'true',
+                        'time':f'{ms(y,m,1)},{ms(y,m,calendar.monthrange(y,m)[1])+86399999}'}
+                if source=='viirs':
+                  fields['renderingRule']=json.dumps({'rasterFunction':'Average Monthly Radiance (Raw Values)'})
+                try:
+                  response=requests.get(base+'/identify',params=fields,timeout=30)
+                  j=response.json()
+                  entry={'service':source,'year':y,'month':m,'site':city,'http':response.status_code,
+                    'value':j.get('value'),'error':j.get('error'),'items':str(j.get('catalogItems'))[:800],
+                    'properties':str(j.get('properties'))[:500]}
+                except Exception as exc:entry={'service':source,'year':y,'month':m,'site':city,'exception':str(exc)[:300]}
+                out.append(entry)
+                print('SOURCE_VALUE',json.dumps(entry,ensure_ascii=False),flush=True)
+          Path('viirs_month_pop_year_probe.json').write_text(json.dumps(out,indent=2,ensure_ascii=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-viirs-month-raw-versus-pop-year-confirmation
+          path: viirs_month_pop_year_probe.json
+          retention-days: 30

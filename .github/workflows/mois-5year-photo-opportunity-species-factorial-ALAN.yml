@@ -1,0 +1,135 @@
+name: MOIS actual photo opportunity and accepted species factorial island ALAN
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-5year-photo-opportunity-species-factorial-ALAN.yml
+      - scripts/analysis/mois_island_ALAN_photo_opportunity_species_factorial_20261107.py
+      - tests/test_mois_island_ALAN_photo_opportunity_species_factorial_20261107.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-photo-opportunity-species-factorial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Verify 5-year photographic analysis and year/geography source tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 statsmodels==0.14.5 geopandas==1.1.2 shapely==2.1.2
+          python -m unittest discover -s tests -p test_mois_island_ALAN_photo_opportunity_species_factorial_20261107.py -v
+          python -m py_compile scripts/analysis/mois_island_ALAN_photo_opportunity_species_factorial_20261107.py
+      - name: Restore signed frozen original photo and accepted-taxon sources
+        timeout-minutes: 7
+        run: |
+          set -euo pipefail
+          mkdir -p src/photo src/wcvp src/coast
+          gh run download 41007444495 --repo zuizui0223/mois --name mois-nohuman-canonical-climate-joined-20261030 --dir src/photo
+          gh run download 39225659840 --repo zuizui0223/mois --name mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status --dir src/wcvp
+          gh run download 42175243391 --repo zuizui0223/mois --name mois-GSHHG-2.3.7-high-L1-L2-SHA-source-no-images --dir src/coast
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  src/photo/canonical_observations_climate.csv.gz' | sha256sum -c -
+          echo 'dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2  src/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' | sha256sum -c -
+      - name: Restore three same-year original 2019 2021 2023 VIIRS and population sources
+        timeout-minutes: 9
+        run: |
+          set -euo pipefail
+          mkdir -p src/2019/viirs src/2019/pop src/2021/viirs src/2021/pop src/2023/viirs src/2023/pop
+          gh run download 42337911536 --repo zuizui0223/mois --name mois-original-2019-global-mainland-island-monthly-VIIRS-source-SHA --dir src/2019/viirs
+          gh run download 42338121269 --repo zuizui0223/mois --name mois-original-2019-R2024B-UC-global-popdensity-photo-source --dir src/2019/pop
+          gh run download 42337911536 --repo zuizui0223/mois --name mois-original-2021-global-mainland-island-monthly-VIIRS-source-SHA --dir src/2021/viirs
+          gh run download 42338121269 --repo zuizui0223/mois --name mois-original-2021-R2024B-UC-global-popdensity-photo-source --dir src/2021/pop
+          gh run download 42337911536 --repo zuizui0223/mois --name mois-original-2023-global-mainland-island-monthly-VIIRS-source-SHA --dir src/2023/viirs
+          gh run download 42338121269 --repo zuizui0223/mois --name mois-original-2023-R2024B-UC-global-popdensity-photo-source --dir src/2023/pop
+          test -f src/2019/viirs/source_year/2019/mois_2019_full_photo_landmass_source.csv
+          test -f src/2021/viirs/source_year/2021/mois_2021_full_photo_landmass_source.csv
+          test -f src/2023/viirs/source_year/2023/mois_2023_full_photo_landmass_source.csv
+          test -f src/2019/pop/source_receipt.json
+          test -f src/2021/pop/source_receipt.json
+          test -f src/2023/pop/source_receipt.json
+      - name: Restore independent 2024 sameyear VIIRS plus 2024 unconstrained population
+        timeout-minutes: 7
+        run: |
+          set -euo pipefail
+          mkdir -p src/2024/land src/2024/CN src/2024/UC
+          gh run download 42328254130 --repo zuizui0223/mois --name mois-global2024-original4096-WPGlobal2-2024-VIIRS-raw-SHA --dir src/2024/land
+          gh run download 42328567038 --repo zuizui0223/mois --name mois-global2024-rest62360-original-VIIRS-G2-all66456-source --dir src/2024/CN
+          gh run download 42333953557 --repo zuizui0223/mois --name mois-2024-WorldPop-UC-R2024B-full-original-66456-population-source --dir src/2024/UC
+          echo 'f7f65e6bc167089b3034555c655e777f528ecdd29952ab7ee9833d8722f39267  src/2024/land/original_source_2024/mois_2024_full_photo_landmass_source.csv' | sha256sum -c -
+          echo '6e0a077d496e90848d05d043bffae57e4772519f4572a457221c5ef4da0fb813  src/2024/CN/result_rest2024/all2024_known_land_combined_values.csv' | sha256sum -c -
+          echo 'a07af611836d215fb7997c7f574729df10787f5a7cc9bfa1b67bf5a831d613dc  src/2024/UC/2024_66k_UC_R2024B_fullcohort_values.csv' | sha256sum -c -
+      - name: Restore 2025 original VIIRS and sameyear WorldPop numeric plus verified original coast
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          mkdir -p src/2025/numeric
+          gh run download 42337703150 --repo zuizui0223/mois --name mois-2025-original73463-mainland-island-full-VIIRS-and-R2024B-UC-source --dir src/2025/numeric
+          python -m scripts.analysis.mois_global2025_original_source_20261107 --canonical src/photo/canonical_observations_climate.csv.gz --shoreline src/coast --out src/2025/geo --allow-knownland-verified-geo-roundoff
+          echo '45c5152e1edad997ff8749c645818996fb2b0bc03a2ab7c0753af446afaab143  src/2025/geo/mois_2025_all73463_knownland_source.csv' | sha256sum -c -
+      - name: Fit real photo white ROI against sameyear light by island with year and geographic dependency
+        timeout-minutes: 12
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_island_ALAN_photo_opportunity_species_factorial_20261107 \
+            --canonical src/photo/canonical_observations_climate.csv.gz \
+            --wcvp src/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+            --geo2019 src/2019/viirs/source_year/2019/mois_2019_full_photo_landmass_source.csv \
+            --viirs2019 src/2019/viirs/VIIRS_2019/values.csv \
+            --pop2019 src/2019/pop/2024B_UC_2019_worldpop_sameyear_photo_landmass_popdensity.csv \
+            --geo2021 src/2021/viirs/source_year/2021/mois_2021_full_photo_landmass_source.csv \
+            --viirs2021 src/2021/viirs/VIIRS_2021/values.csv \
+            --pop2021 src/2021/pop/2024B_UC_2021_worldpop_sameyear_photo_landmass_popdensity.csv \
+            --geo2023 src/2023/viirs/source_year/2023/mois_2023_full_photo_landmass_source.csv \
+            --viirs2023 src/2023/viirs/VIIRS_2023/values.csv \
+            --pop2023 src/2023/pop/2024B_UC_2023_worldpop_sameyear_photo_landmass_popdensity.csv \
+            --geo2024 src/2024/land/original_source_2024/mois_2024_full_photo_landmass_source.csv \
+            --cn2024 src/2024/CN/result_rest2024/all2024_known_land_combined_values.csv \
+            --uc2024 src/2024/UC/2024_66k_UC_R2024B_fullcohort_values.csv \
+            --uc2024receipt src/2024/UC/UC_R2024B_source_receipt.json \
+            --geo2025 src/2025/geo/mois_2025_full_photo_landmass_source.csv \
+            --geo2025receipt src/2025/geo/2025_source_receipt.json \
+            --viirs2025 src/2025/numeric/numeric_2025/values.csv \
+            --out actual_photo_species_2x2_factorial
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          out=Path('actual_photo_species_2x2_factorial')
+          r=json.loads((out/'factorial_source_receipt.json').read_text())
+          assert r['strict_primary_reference_unchanged']
+          assert r['no_original_photo_RGB_downloads_or_reinference']
+          assert r['no_unknown_to_white_or_nonwhite_imputation']
+          assert r['no_MNAR_tipping_or_IPW_scenarios']
+          c=r['source_quality_tier_counts']; m=r['source_quality_tier_models']
+          assert c['strict_5photos_3species']['photo_cell_years']==7982
+          assert c['both_3photos_2species']['photo_cell_years']==20543
+          assert c['strict_5photos_3species']['paired_island_cell_years']==119
+          assert c['both_3photos_2species']['paired_island_cell_years']==408
+          assert c['photos_only_3photos_3species']['photo_cell_years']>=7982
+          assert c['species_only_5photos_2species']['photo_cell_years']>=7982
+          assert abs(m['strict_5photos_3species']['global_interaction']['beta']+2.4970445996320447)<1e-5
+          for x in m.values():
+              assert x['global_interaction']['beta']==x['global_interaction']['beta']
+          data=out/'factorial_photo_opportunity_species_source_support.csv'
+          assert hashlib.sha256(data.read_bytes()).hexdigest()==r['output_support_SHA256']
+          print('MOIS_PHOTO_SPECIES_FACTORIAL_ACTUAL_SOURCE_SIGNED',json.dumps({
+            'counts':c,'models':m,
+            'observed_gate_effect_changes':r['observed_gate_relaxation_coefficient_differences'],
+            'matched_photo_species_stratum':r['same_year_geographic_photo_species_strata_common_support']},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-5year-original-photo-species-island-ALAN-factorial
+          path: actual_photo_species_2x2_factorial/
+          retention-days: 90
+          if-no-files-found: warn

@@ -1,0 +1,139 @@
+name: MOIS ArcGIS multipoint getSamples versus source-verified 2020 singlepoint identify
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths: [.github/workflows/mois-global-ArcGIS-multipoint-equivalence-20261107.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-global-imageserver-multipoint-source-equivalence
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe exact image service getSamples multipoint against signed previously acquired identify values
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 requests==2.32.5
+          mkdir -p probe
+          gh run download 42219556580 --repo zuizui0223/mois \
+            --name mois-global-next1024-combined-real-values-response-SHAs \
+            --dir signed
+          echo '7aa0193178d664818bca777749074fc88fe0b9e594e83e5eb34d6f72110efce9  signed/next_output/all1024_values.csv' | sha256sum -c -
+          python - <<'PY'
+          import hashlib,requests,json,calendar,datetime as dt,math
+          from pathlib import Path
+          import pandas as pd
+          src=pd.read_csv('signed/next_output/all1024_values.csv')
+          support=src.loc[src.complete & src.viirs_1_status.eq('OK') &
+                          src.viirs_7_status.eq('OK') &
+                          src.population_global1_0_status.eq('OK')].copy()
+          k=max(1,len(support)//12)
+          chosen=support.iloc[::k].head(12).copy()
+          assert len(chosen)==12
+          geometry={'points':chosen[['query_longitude','query_latitude']].astype(float).to_numpy().tolist(),
+                    'spatialReference':{'wkid':4326}}
+          def daterange(y,m):
+              a=dt.datetime(y,m,1,tzinfo=dt.timezone.utc)
+              b=dt.datetime(y,m,calendar.monthrange(y,m)[1],23,59,59,tzinfo=dt.timezone.utc)
+              return f'{int(a.timestamp()*1000)},{int(b.timestamp()*1000)}'
+          rest={
+            'viirs':'https://di-lawimagery1.img.arcgis.com/arcgis/rest/services/NighttimeLightsMDNB/ImageServer/getSamples',
+            'population':'https://worldpop.arcgis.com/arcgis/rest/services/WorldPop_Population_Density_1km/ImageServer/getSamples',
+          }
+          report={'schema':'MOIS_arcgis_imageserver_getSamples_multipoint_probe_v1',
+              'original_identify_run_id':42219556580,
+              'original_identify_input_SHA256':'7aa0193178d664818bca777749074fc88fe0b9e594e83e5eb34d6f72110efce9',
+              'geometry_type':'esriGeometryMultipoint',
+              'source_point_count':len(chosen),'source_photo_downloads':0,
+              'returned_values_not_automatically_equivalent_to_raw_monthly_VIIRS':True,
+              'datasets':{}}
+          session=requests.Session()
+          session.headers.update({'User-Agent':'MOIS academic multipoint geospatial numeric equivalence test/1.0'})
+          for source,months in [('viirs',[1,7]),('population',[0])]:
+              for m in months:
+                  key=f'{source}_{m:02d}'
+                  params={'f':'json','geometryType':'esriGeometryMultipoint',
+                      'geometry':json.dumps(geometry,separators=(',',':')),
+                      'returnFirstValueOnly':'true','outFields':'*',
+                      'interpolation':'RSP_NearestNeighbor'}
+                  if source=='viirs':params['time']=daterange(2020,m)
+                  else:params['time']=daterange(2020,1).split(',')[0]+','+daterange(2020,12).split(',')[1]
+                  record={'endpoint':rest[source],'month':m,'parameters':params,
+                     'input_point_count':len(chosen),'source_units_expected':'nW/cm2/sr' if source=='viirs' else 'population/km2',
+                     'raw_VIIRS_pixel_band_mapping_not_verified':True}
+                  try:
+                      r=session.get(rest[source],params=params,timeout=65)
+                      record['http_status']=r.status_code
+                      record['response_SHA256']=hashlib.sha256(r.content).hexdigest()
+                      Path(f'probe/{key}_raw.json').write_bytes(r.content)
+                      obj=r.json()
+                      record['error']=obj.get('error')
+                      vals=obj.get('samples',[])
+                      record['n_samples']=len(vals)
+                      record['sample_examples']=vals[:4]
+                      # Values can be comma-separated multiband, unfiltered
+                      # raster values, or e.g. image stretch. Never use
+                      # without independent original identify comparison.
+                      expected=chosen[f'viirs_{m}_value' if source=='viirs' else 'population_density'].astype(float).tolist()
+                      matches=[]
+                      unmatched=[]
+                      for s in vals:
+                          v=s.get('value')
+                          loc=s.get('location') or {}
+                          if v is None or not loc or len(geometry['points'])==0:
+                              unmatched.append('missing_value_or_location');continue
+                          try:
+                              nums=[float(z) for z in str(v).split(',')]
+                              x=float(loc.get('x'));y=float(loc.get('y'))
+                          except (ValueError,TypeError):
+                              unmatched.append('invalid_value');continue
+                          if not math.isfinite(x) or not math.isfinite(y):continue
+                          distances=[(x-pt[0])**2+(y-pt[1])**2 for pt in geometry['points']]
+                          which=distances.index(min(distances))
+                          if min(distances)>1e-6:
+                              unmatched.append('location_not_exact_original');continue
+                          delta=abs(nums[0]-expected[which])
+                          matches.append({'sample_source_index':which,'sample_band_values':nums,
+                            'frozen_identify_value':expected[which],
+                            'abs_first_band_difference':delta})
+                      record['matched_location_count']=len(matches)
+                      record['samples_with_first_band_identify_equivalence_0p001']=sum(z['abs_first_band_difference']<=.001 for z in matches)
+                      record['largest_first_band_difference']=max((z['abs_first_band_difference'] for z in matches),default=None)
+                      record['all12_first_band_equivalent_0p001']=len(matches)==12 and all(
+                            z['abs_first_band_difference']<=.001 for z in matches)
+                      record['matches']=matches
+                      record['unmatched_notes']=unmatched
+                      print('MULTIPOINT_PROBE',key,'http',r.status_code,'samples',len(vals),
+                            'first_band_equivalent',record['samples_with_first_band_identify_equivalence_0p001'],flush=True)
+                  except Exception as e:
+                      record['exception']=str(e)[:500]
+                      print('MULTIPOINT_PROBE_ERROR',key,str(e)[:500],flush=True)
+                  report['datasets'][key]=record
+          report['can_replace_VIIRS_monthly_identify']=bool(report['datasets'].get('viirs_01',{}).get('all12_first_band_equivalent_0p001') and report['datasets'].get('viirs_07',{}).get('all12_first_band_equivalent_0p001'))
+          report['can_replace_WorldPop_identify']=bool(report['datasets'].get('population_00',{}).get('all12_first_band_equivalent_0p001'))
+          report['cloudfree_second_band_independently_verified']=False
+          report['can_replace_all_5_previous_identify_queries']=False
+          (Path('probe')/'multipoint_source_equivalence_receipt.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
+          print('MOIS_ARCGIS_MULTIPOINT_SOURCE_RESULT',
+            json.dumps({k:report[k] for k in ('can_replace_VIIRS_monthly_identify',
+                       'can_replace_WorldPop_identify','can_replace_all_5_previous_identify_queries')},
+                       sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-global-ArcGIS-getSamples-multipoint-12points-raw-versus-identify-source
+          path: probe/
+          retention-days: 90
+          if-no-files-found: error

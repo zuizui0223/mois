@@ -1,0 +1,101 @@
+name: MOIS global mainland and all-island 256 real environmental targets
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths: [.github/workflows/mois-global-noarea-256-environment-20261106.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-global-noarea-2020-256-source-data
+  cancel-in-progress: false
+jobs:
+  original-environment-values:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test missingness, year identity, exact response SHA and polar support
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests==2.32.5
+          python -m unittest discover -s tests -p test_mois_global_cached_environment_20261106.py -v
+          python -m py_compile scripts/analysis/mois_global_cached_environment_20261106.py
+      - name: Decode exact outcome-blind global target subset and reuse real source preflight
+        run: |
+          set -euo pipefail
+          mkdir -p global_input seed
+          python - <<'PY'
+          import base64,gzip,hashlib,csv,io,json
+          from pathlib import Path
+          packed=Path('config/mois_global_2020_256_targets_20261106.csv.gz.b64').read_text()
+          raw=gzip.decompress(base64.b64decode(packed))
+          expected='ec0f8f41f9958573a52d8800368e6c6a34b87a9933a661d9bcd6c6f6f16e8aef'
+          assert hashlib.sha256(raw).hexdigest()==expected, 'Target source mismatch; do not acquire'
+          Path('global_input/targets.csv').write_bytes(raw)
+          rows=list(csv.DictReader(io.StringIO(raw.decode())))
+          assert len(rows)==256 and len({r['target_id'] for r in rows})==256
+          assert sum(r['land_class']=='mainland' for r in rows)==219
+          assert sum(r['land_class']=='island' for r in rows)==37
+          assert sum(abs(float(r['query_latitude']))>60 for r in rows)==10
+          assert all(r['target_id'].startswith('2020|') for r in rows)
+          receipt={'source_global_queue_sha256':'d8a2bb2152a334706588a9434f777dc4d3310ae911e28bd1ac720d028c0f5702',
+           'target_sha256':expected,'source_pending_2020_known_land_targets':36070,
+           'selection':'lowest SHA256(MOIS-global-v1|target_id); independent of colour or strict9 success',
+           'planned_targets':256,'mainland':219,'island':37,'latitude_beyond_60':10,
+           'minimum_island_area_filter':None,'source_unknowns_not_imputed':True,
+           'analysis_estimates_are_not_representative_global_flora_frequencies':True}
+          Path('global_input/selection_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          print('EXACT_SOURCE_TARGET_MANIFEST_VERIFIED',json.dumps(receipt),flush=True)
+          PY
+          gh run download 42190860854 --repo zuizui0223/mois \
+            --name mois-global-noarea-2020-firstsite-real-provider-responses --dir seed
+          echo 'd91d6bc1bd257ae06e7d4ad59f291bef8203d91ceb383ff4bc3bd76b78ac6cbd  seed/viirs.response.json' | sha256sum -c -
+          echo '2cf7767e76158e3d081ecbb086f35712d92cbe6a6f8c4bac2df0ecba007f2d00  seed/population_global1.response.json' | sha256sum -c -
+      - uses: actions/cache@v4
+        with:
+          path: global_output/cache
+          key: mois-global2020-ec0f8f41f995-response-cache-v2
+      - name: Real numerical extraction with four concurrent workers and provider stop rules
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global_cached_environment_20261106 \
+            --targets global_input/targets.csv --out global_output --seed seed --workers 4
+      - name: Reproduce every output using only saved provider response bytes
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global_cached_environment_20261106 \
+            --targets global_input/targets.csv --out global_output --offline --workers 4
+          python - <<'PY'
+          import json,hashlib,csv
+          from pathlib import Path
+          p=Path('global_output')
+          r=json.loads((p/'receipt.json').read_text())
+          o=json.loads((p/'replay_receipt.json').read_text())
+          assert r['targets_planned']==256 and r['targets_attempted']==256
+          assert r['new_photo_requests']==0 and r['ROI_reinference']==0
+          assert r['area_filter'] is None and r['latitude_filter'] is None
+          assert o['requests_new']==0 and o['requests_reused']==1280
+          assert r['values_sha256']==o['values_sha256']
+          assert r['targets_complete']==o['targets_complete']
+          assert hashlib.sha256((p/'values.csv').read_bytes()).hexdigest()==r['values_sha256']
+          rows=list(csv.DictReader((p/'values.csv').open()))
+          assert len(rows)==256 and len({x['target_id'] for x in rows})==256
+          print('MOIS_GLOBAL_256_REAL_ACQUISITION_AND_OFFLINE_REPLAY_VERIFIED',json.dumps(r,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-global-noarea-2020-256-real-values-and-response-SHAs
+          path: |
+            global_output/
+            global_input/
+          retention-days: 90
+          if-no-files-found: error

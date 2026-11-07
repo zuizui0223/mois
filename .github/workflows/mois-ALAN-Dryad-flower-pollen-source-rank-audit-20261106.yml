@@ -1,0 +1,127 @@
+name: MOIS Dryad independent nocturnal plant pollen data source-rank audit
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-ALAN-Dryad-flower-pollen-source-rank-audit-20261106.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-ALAN-independent-Dryad-nocturnal-source-data-audit
+  cancel-in-progress: false
+jobs:
+  source-rank-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch two public version-pinned Dryad source files and count resolvable plant names, never photos
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 openpyxl==3.1.5 requests==2.32.5
+          python - <<'PY'
+          import io,json,re,hashlib,requests
+          from pathlib import Path
+          import pandas as pd
+          out=Path('dryad_rank_only');out.mkdir()
+          src={
+            "Diniz_2025_tropical_pollen_network":{"version":405111,"file":"network.xlsx","doi":"10.5061/dryad.sxksn03gp"},
+            "Atwater_2025_settling_moth_interaction":{"version":412555,"file":"RAW_DATA_Ecological_Entomology_ID_24-0350-EEN.csv","doi":"10.5061/dryad.gxd2547xh"}
+          }
+          ses=requests.Session();ses.headers.update({"User-Agent":"MOIS public ecological original source rank QA v1"})
+          # Only candidate Latin binomials; provisional nomenclature does NOT mean WCVP verified.
+          def apparent_species(raw):
+              if not isinstance(raw,str):return None
+              s=" ".join(raw.strip().replace("_"," ").split())
+              bits=s.split()
+              if len(bits)<2:return None
+              genus,epithet=bits[:2]
+              if not re.fullmatch(r"[A-Z][a-z]{2,}",genus):return None
+              if not re.fullmatch(r"[a-z]{2,}(?:-[a-z]+)*",epithet):return None
+              if epithet in {"species","unidentified","unknown","indet","complex","group","sp","cf","aff"}:return None
+              if re.search(r"\b(sp|spp|cf|aff|agg|complex|uncultured|environmental)\b",s,re.I):return None
+              return genus+" "+epithet
+          report={}
+          for label,info in src.items():
+              root="https://datadryad.org/api/v2"
+              url=root+f"/versions/{info['version']}/files?per_page=100"
+              res=ses.get(url,timeout=35);print("DRYAD_LIST",label,res.status_code,len(res.content),flush=True)
+              res.raise_for_status()
+              obj=res.json()
+              emb=obj.get("_embedded",{})
+              candidates=emb.get("stash:files") or emb.get("files") or obj.get("files") or []
+              if isinstance(candidates,dict):candidates=candidates.get("items",[])
+              print("DRYAD_LIST_KEYS",label,list(obj),list(emb),len(candidates),flush=True)
+              for f in candidates:
+                  print("DRYAD_FILE_META",label,json.dumps({k:f.get(k) for k in ["id","path","size","mimeType","sha256"]}),flush=True)
+              wanted=[f for f in candidates if f.get("path")==info["file"] or f.get("filename")==info["file"]]
+              if len(wanted)!=1:raise RuntimeError(f"expected exactly one version-pinned {info['file']}, got {len(wanted)}")
+              file=wanted[0]
+              filelinks=file.get("_links",{})
+              link=filelinks.get("stash:download") or filelinks.get("download")
+              if isinstance(link,dict) and link.get("href"):
+                  uri=link["href"]
+                  if uri.startswith("/"):uri="https://datadryad.org"+uri
+              else:
+                  self_link=(filelinks.get("self") or {}).get("href","")
+                  found=re.search(r"/files/(\\d+)",self_link)
+                  if not found:raise RuntimeError("Dryad file lacks id and public download metadata: "+str(filelinks)[:900])
+                  uri=root+f"/files/{found.group(1)}/download"
+              print("DRYAD_SIGNED_FILE_URL_PATH",label,uri.split("?")[0],flush=True)
+              r=ses.get(uri,timeout=90);print("DRYAD_FILE_DOWNLOAD",label,r.status_code,len(r.content),flush=True)
+              r.raise_for_status()
+              digest=hashlib.sha256(r.content).hexdigest()
+              result={"doi":info["doi"],"api_version_id":info["version"],
+                      "file":info["file"],"file_reference":filelinks.get("self",{}).get("href",""),
+                      "file_sha256":digest,"file_size":len(r.content),
+                      "data_license_not_reissued":True,
+                      "latent_night_pollination_effectiveness_not_asserted":True,
+                      "species_names_require_WCVP_verification":True}
+              if label.startswith("Diniz"):
+                  book=pd.ExcelFile(io.BytesIO(r.content))
+                  result["workbook_sheet_names"]=book.sheet_names
+                  sheets=[]
+                  for sheet in book.sheet_names:
+                      df=pd.read_excel(book,sheet_name=sheet,dtype=str)
+                      ds={"sheet":sheet,"rows":len(df),"columns":list(map(str,df.columns))}
+                      if "ASV" in df.columns:
+                          names=df.ASV.dropna().astype(str)
+                          good=names.map(apparent_species)
+                          ds.update({"plant_candidate_binomial_rows":int(good.notna().sum()),
+                                     "candidate_binomial_distinct":int(good.nunique()),
+                                     "higher_taxon_or_unclear_rows":int(good.isna().sum()),
+                                     "distinct_pollen_ASV_labels":int(names.nunique())})
+                          if "polGroup" in df.columns:
+                              ds["pollinator_groups"]=df.polGroup.value_counts().to_dict()
+                      sheets.append(ds)
+                  result["sheets"]=sheets
+              else:
+                  df=pd.read_csv(io.BytesIO(r.content),encoding="utf-8-sig",low_memory=False)
+                  result["rows"]=len(df);result["columns"]=list(map(str,df.columns))
+                  # Audit names in their original columns. No guessed species promotion.
+                  for col in df.columns:
+                      if "plant" in col.lower() and ("genus" in col.lower() or "species" in col.lower()):
+                          result["raw_column_examples_"+str(col)]=df[col].dropna().astype(str).head(5).to_list()
+                  name_cols=[c for c in df.columns if "plant" in c.lower() and ("species" in c.lower())]
+                  result["candidate_species_fields"]=name_cols
+                  if name_cols:
+                      goods=pd.concat([df[c].astype("string").map(apparent_species) for c in name_cols],axis=1)
+                      result["species_binomial_standalone_rows"]=int(goods.notna().any(axis=1).sum())
+                      result["candidate_binomials_in_species_column"]=int(pd.unique(goods.stack()).size)
+                  for col in df.columns:
+                      if "network" in col.lower() and "type" in col.lower():
+                          result["network_types"]=df[col].fillna("UNKNOWN").astype(str).value_counts().to_dict()
+              report[label]=result
+              print("DRYAD_RANK_RESULT",label,json.dumps(result,ensure_ascii=False)[:9000],flush=True)
+          (out/"Dryad_20261106_original_data_rank_receipt.json").write_text(json.dumps(report,sort_keys=True,indent=2,ensure_ascii=False)+"\n")
+          print("MOIS_DRYAD_TWO_PUBLIC_SOURCE_RANK_AUDIT_COMPLETED",flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-Dryad-two-original-pollen-sources-rank-and-SHA-audit-NO-IMAGES
+          path: dryad_rank_only/
+          retention-days: 90
+          if-no-files-found: error

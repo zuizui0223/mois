@@ -1,0 +1,58 @@
+name: MOIS VIIRS and population REST source authenticity probe
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-viirs-worldpop-source-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-visibility:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Probe external source metadata and numeric values, never photos
+        run: |
+          python - <<'PY'
+          import requests,json
+          from pathlib import Path
+          sources={
+          'viirs':'https://di-lawimagery1.img.arcgis.com/arcgis/rest/services/NighttimeLightsMDNB/ImageServer',
+          'pop':'https://worldpop.arcgis.com/arcgis/rest/services/WorldPop_Population_Density_1km/ImageServer'
+          }
+          sites=[('tokyo',139.7,35.7),('rural',-4.0,39.0)]
+          result={}
+          for key,url in sources.items():
+              d={'url':url,'samples':[]}
+              try:
+                  r=requests.get(url,params={'f':'json'},timeout=25)
+                  d['metadata_http']=r.status_code
+                  r.raise_for_status();z=r.json()
+                  d['metadata']={p:z.get(p) for p in ('name','hasMultidimensions','timeInfo','mosaicRule','defaultMosaicMethod','allowedMosaicMethods','rasterFunctionInfos')}
+                  d['metadata_keys']=list(z)
+                  print('SOURCE',key,r.status_code,'fields',list(z)[:25],flush=True)
+              except Exception as ex:
+                  d['metadata_error']=str(ex)[:250]
+                  print('SOURCE_ERROR',key,str(ex)[:250],flush=True)
+              for name,lon,lat in sites:
+                  q={'f':'json','geometry':json.dumps({'x':lon,'y':lat,'spatialReference':{'wkid':4326}}),
+                    'geometryType':'esriGeometryPoint','returnGeometry':'false','returnCatalogItems':'false',
+                    'time':'1577836800000,1609459199000'}
+                  e={'site':name}
+                  try:
+                      r=requests.get(url+'/identify',params=q,timeout=25)
+                      e['status']=r.status_code
+                      z=r.json();e['value']=z.get('value');e['error']=z.get('error');e['keys']=list(z)
+                      e['response_sample']=json.dumps(z)[:600]
+                  except Exception as ex:e['error']=str(ex)[:250]
+                  d['samples'].append(e)
+                  print('PROBE',key,name,e.get('value'),e.get('error'),flush=True)
+              result[key]=d
+          Path('source_probe.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-viirs-pop-open-source-readiness-probe-no-photos
+          path: source_probe.json
+          retention-days: 30

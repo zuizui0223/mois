@@ -1,0 +1,94 @@
+name: MOIS ALAN 6-year source-positive moth+butterfly evidence × direct colour coverage
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-ALAN-source-positive-visitor-support.yml
+      - scripts/analysis/mois_alan_positive_visitor_evidence_support_20261105.py
+      - tests/test_mois_alan_positive_visitor_evidence_support_20261105.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-ALAN-6year-original-positive-visitor-evidence-source-coverage
+  cancel-in-progress: false
+jobs:
+  real-positive-visitor-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 19
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test overlap, unknown and exact accepted species counts
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m unittest discover -s tests -p test_mois_alan_positive_visitor_evidence_support_20261105.py -v
+          python -m py_compile scripts/analysis/mois_alan_positive_visitor_evidence_support_20261105.py
+      - name: Download only SHA-pinned existing numeric science inputs; no photographs
+        run: |
+          set -euo pipefail
+          mkdir -p original
+          gh run download 41007444495 --repo zuizui0223/mois \
+            --name mois-nohuman-canonical-climate-joined-20261030 --dir original
+          gh run download 39225659840 --repo zuizui0223/mois \
+            --name mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status --dir original
+          gh run download 34191508045 --repo zuizui0223/island \
+            --name source-scale-batch-integration-34191508045 --dir original
+          gh run download 41976552977 --repo zuizui0223/mois \
+            --name mois-ALAN-GloBI-stage2-actual-records-2019-2024-supported-source --dir original
+          gh run download 41946071715 --repo zuizui0223/mois \
+            --name mois-2020-VIIRS4month-WorldPop2020-taxonequal-source-cells --dir original
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  original/canonical_observations_climate.csv.gz' | sha256sum -c -
+          echo 'dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2  original/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' | sha256sum -c -
+          echo '9cd6aa7ca29f00c64283bcc08dcb778e212b644b837e64070051339b11d8b7b3  original/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz' | sha256sum -c -
+          echo '7e86170218814abe2845da9a0282aecfdc930819b9d0c439bae8df4a0679c577  original/direct_species_trait_ledger.csv.gz' | sha256sum -c -
+          echo 'a6b97aa0941215d2f645e4c4fbf19490492b93680a7d7c0502814c7a66902994  original/GloBI_stage2_signed_extension.csv.gz' | sha256sum -c -
+          echo '3562db1e5783e77d3bb408bd33817b4d7cccf31ad4d4ad42586469708fd407e3  original/viirs_population_source_matched_cells_2020.csv' | sha256sum -c -
+      - name: Verify existing 6-year flower evidence at 10/25/50/100 km and 2020 VIIRS sites
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_alan_positive_visitor_evidence_support_20261105 \
+            --canonical original/canonical_observations_climate.csv.gz \
+            --names original/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+            --accepted original/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz \
+            --direct original/direct_species_trait_ledger.csv.gz \
+            --globi original/GloBI_stage2_signed_extension.csv.gz \
+            --viirs original/viirs_population_source_matched_cells_2020.csv \
+            --output GloBI_positive_visit_result_20261105
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd,json,hashlib
+          root=Path('GloBI_positive_visit_result_20261105')
+          d=pd.read_csv(root/'GloBI_positive_visit_colour_spatial_support.csv')
+          r=json.loads((root/'source_positive_evidence_receipt.json').read_text())
+          assert r['source_GloBI_unique_interaction_rows']==61967
+          assert r['original_photo_ids_with_any_positive_guild']==113366
+          assert r['distinct_accepted_species_with_any_guild']==3601
+          assert r['distinct_accepted_species_direct_single_colour']==1343
+          assert len(d)==7
+          v=d.loc[(d.frame=='six_year_all_existing_photo_regions')&d.degrees.eq(.25)].iloc[0]
+          assert v.white_moth_and_butterfly_visitor_positive_cells==4013
+          assert v.four_evidence_color_classes_min1_cells==2221
+          assert v.four_evidence_color_classes_min2_cells==706
+          assert v.four_classes_no_shared_white_species_cells==61
+          assert r['two_positive_guild_flags_are_NOT_exclusive']
+          assert r['no_original_photo_downloads_or_original_RGB_ROI_inference']
+          assert r['unknown_photographic_flower_color_not_imputed']
+          assert r['MNAR_tipping_scenarios_not_run']
+          assert hashlib.sha256((root/'GloBI_positive_visit_colour_spatial_support.csv').read_bytes()).hexdigest()==r['result_csv_sha256']
+          print('MOIS_ALAN_SOURCE_POSITIVE_VISITOR_REAL_PHOTO_SUPPORT_AND_SHA_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-ALAN-2019-24-positive-moth-butterfly-evidence-colour-support-no-absence
+          path: GloBI_positive_visit_result_20261105/
+          retention-days: 90
+          if-no-files-found: error
