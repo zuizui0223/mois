@@ -70,6 +70,18 @@ class SharedSourceTaxonFixedEffects(unittest.TestCase):
         self.assertAlmostEqual(beta,float(full.params["log_light:is_island"]),places=6)
         self.assertTrue(result["interaction_geographic_spatial_cluster"]["estimable"])
         self.assertEqual(result["source"]["source_accepted_taxon_clusters"],24)
+        without=m.fit_sparse_taxon_FE(d,effect_cols=("region5","year"))
+        no_taxon=smf.wls(
+            "white_pp ~ log_light*is_island + log_pop"
+            " + bio5 + log_rain + elevation + log_attempts"
+            " + C(year) + C(region5)",
+            data=d,weights=d.photo_cell_equal_species_weight,
+        ).fit()
+        self.assertAlmostEqual(
+            without["interaction_geographic_spatial_cluster"]["beta"],
+            float(no_taxon.params["log_light:is_island"]),places=6)
+        self.assertNotIn("species",without["source"]["fixed_effect_cardinalities"])
+        self.assertEqual(without["source"]["original_taxon_photo_cell_years"],len(d))
 
     def test_interaction_ci_does_not_claim_precision_from_invalid_variance(self):
         x=m.interaction_stats(-2.5,-.1,12,500)
