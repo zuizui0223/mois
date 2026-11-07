@@ -59,8 +59,8 @@ jobs:
             --source-receipt src/viirs/source_year/${{ matrix.year }}/source_receipt.json \
             --viirs src/viirs/VIIRS_${{ matrix.year }}/values.csv \
             --viirs-receipt src/viirs/VIIRS_${{ matrix.year }}/receipt.json \
-            --population src/pop/pop${{ matrix.year }}/2024B_UC_${{ matrix.year }}_worldpop_sameyear_photo_landmass_popdensity.csv \
-            --pop-receipt src/pop/pop${{ matrix.year }}/source_receipt.json \
+            --population src/pop/2024B_UC_${{ matrix.year }}_worldpop_sameyear_photo_landmass_popdensity.csv \
+            --pop-receipt src/pop/source_receipt.json \
             --out actual_photo_colour_ALAN_${{ matrix.year }}
           python - <<'PY'
           import json,hashlib
