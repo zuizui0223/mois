@@ -2,7 +2,11 @@ name: MOIS 2025 original VIIRS and WorldPop R2024B UC source availability
 on:
   push:
     branches: [analysis/mois-viirs-popmatch-20261105]
-    paths: [.github/workflows/mois-2025-source-availability-original.yml]
+    paths:
+      - .github/workflows/mois-2025-source-availability-original.yml
+      - scripts/analysis/mois_global2025_original_source_20261107.py
+      - scripts/analysis/mois_global2025_VIIRS_WorldPopR2024B_UC_bulk_20261107.py
+      - tests/test_mois_global2025_VIIRS_WorldPopR2024B_UC_bulk_20261107.py
   workflow_dispatch:
 permissions: {contents: read}
 concurrency:
