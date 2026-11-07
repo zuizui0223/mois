@@ -30,6 +30,21 @@ class SameYearSourceTests(unittest.TestCase):
         self.assertEqual(m.COUNTS["last30630"],30630)
         self.assertEqual(len(m.COAST_SHA),64)
         self.assertEqual(len(m.PINS["canonical"]),64)
+    def test_island_light_interaction_refuses_eight_island_cells(self):
+        rows=[]
+        for k in range(8):
+            rows.append({"region5":str(k),"land_class":"island",
+                         "land_id":str(k),"white_pp":60+k})
+        for k in range(39):
+            rows.append({"region5":str(k),"land_class":"mainland",
+                         "land_id":"100","white_pp":40+k/10})
+        outcome=m.available_fit(pd.DataFrame(rows),"white_pp ~ 1",
+                     "region5",require_island_support=True)
+        self.assertFalse(outcome["estimable"])
+        self.assertEqual(outcome["reason"],
+                         "island_interaction_below_prespecified_support")
+        self.assertEqual(outcome["island_cells"],8)
+
     def test_insufficient_clusters_not_inferred(self):
         d=pd.DataFrame({"region5":["a","b"],"white_pp":[20,40]})
         result=m.available_fit(d,"white_pp ~ 1","region5")
