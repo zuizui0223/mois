@@ -123,6 +123,11 @@ def year_safeguards(year,d):
     result["cell_id_without_year"]=coord[1].values
     return result
 
+def common_geographic_support_blocks(cells):
+    """Only geographic blocks with observed island AND mainland cell-years."""
+    by_block=cells.groupby("region5",observed=True).is_island.agg(["min","max"])
+    return set(by_block.index[(by_block["min"]==0)&(by_block["max"]==1)])
+
 def test_generalizability(cells,formula):
     """Two empirical questions beyond the pooled coefficient.
 
@@ -147,8 +152,7 @@ def test_generalizability(cells,formula):
             "island_cell_years":int(kept.is_island.sum()),
             "spatial_blocks":int(kept.region5.nunique()),
             **stats}
-    by_block=cells.groupby("region5",observed=True).is_island.agg(["min","max"])
-    both=set(by_block.index[(by_block["min"]==0)&(by_block["max"]==1)])
+    both=common_geographic_support_blocks(cells)
     shared=cells.loc[cells.region5.isin(both)].copy()
     shared_island=int(shared.is_island.sum())
     co_support={
