@@ -1,0 +1,81 @@
+name: MOIS 2024 WorldPop unconstrained source reachability and no-data gap probe
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths: [.github/workflows/mois-2024-UC-R2024B-official-source-probe.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-2024-population-unconstrained-official-R2024B-header-probe
+  cancel-in-progress: false
+jobs:
+  official-source-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe only official 2024 unconstrained Global2 mosaic metadata and small response ranges
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests==2.32.5
+          mkdir -p source_receipt
+          python - <<'PY'
+          import requests,hashlib,json
+          from pathlib import Path
+          s=requests.Session()
+          s.headers.update({'User-Agent':'MOIS global flower ALAN scientific GeoTIFF 2024 unconstrained source-only reachability audit'})
+          sources=[
+            'https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2024B/2024/0_Mosaicked/v1/1km/unconstrained/global_pop_2024_UC_1km_R2024B_v1.tif',
+            'https://data.worldpop.org/GIS/Population/Global_2015_2030/R2024B/2024/0_Mosaicked/v1/1km/unconstrained/global_pop_2024_UC_1km_R2024B_v1.tif',
+          ]
+          r={'schema':'MOIS_worldpop_2024_official_unconstrained_R2024B_source_access_v1',
+             'reference_2024_constrained_release':'R2025A v1',
+             'candidate_unconstrained_release':'R2024B v1',
+             'same_year_but_DIFFERENT_population_model_release':True,
+             'no_source_series_mixed':True,'no_imputation_of_constrained_NODATA':True,
+             'no_photos_downloaded_or_ROI_reinferred':True,
+             'candidate_sources':[]}
+          for url in sources:
+              entry={'url':url}
+              try:
+                  head=s.head(url,timeout=25,allow_redirects=True)
+                  entry['head_status']=head.status_code
+                  entry['head_content_length']=head.headers.get('Content-Length')
+                  entry['head_accept_ranges']=head.headers.get('Accept-Ranges')
+                  entry['head_etag']=head.headers.get('ETag')
+                  # Stream only a tiny byte window. Abort if the provider ignores Range.
+                  response=s.get(url,headers={'Range':'bytes=0-16383'},timeout=45,stream=True)
+                  entry['range_status']=response.status_code
+                  entry['range_content_type']=response.headers.get('Content-Type')
+                  entry['range_content_range']=response.headers.get('Content-Range')
+                  entry['range_content_length']=response.headers.get('Content-Length')
+                  first=next(response.iter_content(chunk_size=16384),b'')
+                  response.close()
+                  entry['first_chunk_bytes']=len(first)
+                  entry['first_chunk_SHA256']=hashlib.sha256(first).hexdigest()
+                  entry['first_chunk_TIFF_header']=first[:4].hex()
+                  entry['first_chunk_has_TIFF_signature']=first[:4] in (
+                       bytes.fromhex('49492a00'), bytes.fromhex('4d4d002a'),
+                       bytes.fromhex('49492b00'), bytes.fromhex('4d4d002b'))
+                  entry['byte_range_supported']=response.status_code==206 and bool(entry['range_content_range'])
+              except Exception as e:
+                  entry['exception']=str(e)[:260]
+              r['candidate_sources'].append(entry)
+              print('MOIS_2024_UNCONSTRAINED_PROBE',json.dumps(entry,sort_keys=True),flush=True)
+          (Path('source_receipt')/'unconstrained2024_source_probe.json').write_text(
+               json.dumps(r,sort_keys=True,indent=2)+'\n')
+          print('MOIS_2024_UNCONSTRAINED_OFFICIAL_SOURCE_AUDITED',
+            json.dumps({'any_HTTP_200_or_206':any(e.get('range_status') in (200,206) and e.get('first_chunk_has_TIFF_signature')
+                     for e in r['candidate_sources']),
+               'any_HTTP206':any(e.get('byte_range_supported') for e in r['candidate_sources'])},
+               sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-WorldPop-2024-unconstrained-R2024B-source-and-range-audit
+          path: source_receipt/
+          retention-days: 90
+          if-no-files-found: error
