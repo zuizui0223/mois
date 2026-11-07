@@ -88,6 +88,10 @@ def run(canonical,shoreline,out):
             "Duplicate/missing original 2025 source sites")
     fields=["target_id","land_class","query_longitude","query_latitude",
             "n_attempted","n_strict9","source_subarms"]
+    all_knownland=out/"mois_2025_all73463_knownland_source.csv"
+    known[fields].to_csv(all_knownland,index=False,float_format="%.12g",lineterminator="\\n")
+    require(sha(all_knownland)=="45c5152e1edad997ff8749c645818996fb2b0bc03a2ab7c0753af446afaab143",
+            "2025 full knownland site manifest differs from independent original extraction")
     out.mkdir(parents=True)
     full=out/"mois_2025_full_photo_landmass_source.csv"
     q.to_csv(full,index=False,float_format="%.12g",lineterminator="\n")
@@ -123,6 +127,7 @@ def run(canonical,shoreline,out):
       "selected_4096_strict9_success":int(selected.n_strict9.sum()),
       "full_source_SHA256":sha(full),
       "selected_4096_SHA256":sha(target),
+      "all_knownland_site_SHA256":sha(all_knownland),
       "remaining_69367_SHA256":sha(rest),
       "remaining_69367_mainland":int(remaining.land_class.eq("mainland").sum()),
       "remaining_69367_island":int(remaining.land_class.eq("island").sum()),
