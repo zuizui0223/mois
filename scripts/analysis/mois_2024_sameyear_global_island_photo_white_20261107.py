@@ -264,7 +264,7 @@ def run(paths,out):
        "photo_cells":len(b),"same_year_population_cells":len(m),
        "islands":len(ids),"island_cells":len(island),
        "negative_island_slope_pp":core["beta"],
-       "island_mainland_light_interaction_pp":receipt["island_mainland_cross_section_light_interaction"]["beta"],
+       "island_mainland_light_interaction":receipt["island_mainland_cross_section_light_interaction"],
        "LOO_negative":int(loo.beta.lt(0).sum()),
        "LOO_significant_negative":int(loo.ci_high.lt(0).sum()),
        "bootstrap_CI":[boot["CI_low"],boot["CI_high"]]},sort_keys=True),flush=True)
