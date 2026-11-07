@@ -33,6 +33,13 @@ class TrueYearPhotoAlansourceTests(unittest.TestCase):
         x[0]["query_latitude"]=x[1]["query_latitude"]
         with self.assertRaisesRegex(ValueError,"Duplicate original raster"):
             p.verify_source(x,2019)
+    def test_real_2022_october_provider_error_is_not_light_zero(self):
+        error={"error":{"code":400,"message":"Invalid or missing input parameters.",
+                        "details":["Transformation is unavailable for the current image."]}}
+        self.assertTrue(p.original_2022_october_provider_error(2022,10,error))
+        self.assertFalse(p.original_2022_october_provider_error(2023,10,error))
+        self.assertFalse(p.original_2022_october_provider_error(2022,7,error))
+        self.assertFalse(p.original_2022_october_provider_error(2022,10,{"samples":[]}))
     def test_original_month_and_cloud_count(self):
         r=self.rows(2,2021)
         obj={"samples":[{"locationId":0,
