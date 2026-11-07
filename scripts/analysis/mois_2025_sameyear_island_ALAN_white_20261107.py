@@ -20,8 +20,18 @@ def run(paths,out):
     require(not out.exists(),"Refuse replacing old source results")
     require(sha(paths["canonical"])==PHOTO_SHA and sha(paths["wcvp"])==WCVP_SHA,
             "Frozen original photo or WCVP accepted-taxa source changed")
-    require(sha(paths["geo"])==GEO_SHA,
-            "Original 2025 landmass/source photo manifest SHA changed")
+    geo_proof=json.loads(Path(paths["geo_receipt"]).read_text())
+    require(geo_proof.get("all_knownland_site_SHA256")==SITES_SHA and
+            geo_proof.get("full_source_reference_SHA256")==GEO_SHA and
+            geo_proof.get("full_source_SHA256")==sha(paths["geo"]) and
+            geo_proof.get("known_mainland_targets")==63408 and
+            geo_proof.get("known_island_targets")==10055,
+            "2025 source reference or verified landmass/coordinate identity drift")
+    # Exact known-land source photo ID / land class / coordinates were pinned.
+    # Auxiliary GEOS area floating point bytes may vary; do not fake SHA identity.
+    require(geo_proof.get("full_source_bytes_identical_to_original") or
+            geo_proof.get("area_roundoff_exception_only_with_byte_identical_knownland_manifest"),
+            "Unverified 2025 full geometry source discrepancy")
     source=json.loads(Path(paths["numeric_receipt"]).read_text())
     require(source["source_photo_year"]==source["VIIRS_year"]==
             source["population_raster_year"]==2025 and
@@ -107,8 +117,8 @@ def run(paths,out):
     return output
 if __name__=="__main__":
     p=argparse.ArgumentParser()
-    for key in ("canonical","wcvp","geo","numeric","numeric_receipt"):
+    for key in ("canonical","wcvp","geo","geo_receipt","numeric","numeric_receipt"):
         p.add_argument("--"+key.replace("_","-"),dest=key,required=True,type=Path)
     p.add_argument("--out",type=Path,required=True)
     a=p.parse_args()
-    run({k:getattr(a,k) for k in ("canonical","wcvp","geo","numeric","numeric_receipt")},a.out)
+    run({k:getattr(a,k) for k in ("canonical","wcvp","geo","geo_receipt","numeric","numeric_receipt")},a.out)
