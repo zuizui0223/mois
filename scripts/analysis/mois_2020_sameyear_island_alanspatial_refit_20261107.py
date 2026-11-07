@@ -147,7 +147,19 @@ def make_frame(canonical,wcvp,env,shoreline):
     with_light["is_island"]=with_light.land_class.eq("island").astype(int)
     with_pop["is_island"]=with_pop.land_class.eq("island").astype(int)
     return original,d,with_light,with_pop
-def available_fit(d,form,cluster):
+def available_fit(d,form,cluster,*,require_island_support=False):
+    if require_island_support:
+        island=d.loc[d.land_class.eq("island")]
+        n_cells=len(island)
+        n_islands=int(island.land_id.nunique())
+        # This is a minimum-support check, not a p-value threshold.
+        # A tiny selected set of island cells can produce unstable
+        # extrapolating interaction coefficients under regional fixed effects.
+        if n_cells<30 or n_islands<10:
+            return {"estimable":False,"reason":"island_interaction_below_prespecified_support",
+                    "minimum_island_cells":30,"minimum_independent_islands":10,
+                    "island_cells":n_cells,"independent_islands":n_islands,
+                    "cells":len(d),"clusters":int(d[cluster].nunique())}
     if d[cluster].nunique()<5:
         return {"estimable":False,"reason":"fewer_than_five_independent_clusters",
                 "clusters":int(d[cluster].nunique()),"cells":len(d)}
@@ -172,7 +184,7 @@ def run(paths,shoreline,out):
     results={
       "global_pop2020":available_fit(m,global_form,"region5"),
       "global_pop2020_island_light_interaction":available_fit(
-            m,interaction_form,"region5")}
+            m,interaction_form,"region5",require_island_support=True)}
     island=m.loc[m.land_class.eq("island")].copy()
     info=island.groupby("land_id").agg(n=("target_id","nunique"),
                        light_n=("viirs_median","nunique"))
