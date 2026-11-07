@@ -49,8 +49,20 @@ jobs:
           python -m scripts.analysis.mois_global2025_original_source_20261107 \
             --canonical source/photos/canonical_observations_climate.csv.gz \
             --shoreline source/shoreline \
-            --out exact_2025_photo_geometry
-          echo 'de2cd14690383f7e66cff68c945cf2a6812b33b0511f0189aaea9f6d62ea37fc  exact_2025_photo_geometry/mois_2025_full_photo_landmass_source.csv' | sha256sum -c -
+            --out exact_2025_photo_geometry --allow-knownland-verified-geo-roundoff
+          echo '45c5152e1edad997ff8749c645818996fb2b0bc03a2ab7c0753af446afaab143  exact_2025_photo_geometry/mois_2025_all73463_knownland_source.csv' | sha256sum -c -
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path('exact_2025_photo_geometry')
+          rec=json.loads((p/'2025_source_receipt.json').read_text())
+          full=hashlib.sha256((p/'mois_2025_full_photo_landmass_source.csv').read_bytes()).hexdigest()
+          assert rec['full_source_SHA256']==full
+          assert rec['full_source_reference_SHA256']=='de2cd14690383f7e66cff68c945cf2a6812b33b0511f0189aaea9f6d62ea37fc'
+          assert rec['all_knownland_site_SHA256']=='45c5152e1edad997ff8749c645818996fb2b0bc03a2ab7c0753af446afaab143'
+          print('MOIS_2025_TRUE_SOURCE_IDS_VERIFIED_FULL_AREA_BYTES_IDENTICAL',
+                rec['full_source_bytes_identical_to_original'],flush=True)
+          PY
       - name: Actually estimate 2025 same-year all-island and mainland original ROI white versus light
         timeout-minutes: 9
         run: |
@@ -59,6 +71,7 @@ jobs:
             --canonical source/photos/canonical_observations_climate.csv.gz \
             --wcvp source/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
             --geo exact_2025_photo_geometry/mois_2025_full_photo_landmass_source.csv \
+            --geo-receipt exact_2025_photo_geometry/2025_source_receipt.json \
             --numeric source/numeric/numeric_2025/values.csv \
             --numeric-receipt source/numeric/numeric_2025/receipt.json \
             --out 2025_original_photo_sameyear_island_ALAN
