@@ -1,0 +1,105 @@
+name: MOIS verify WorldPop Global2 2024 official mosaic and 2024 satellite source
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths: [.github/workflows/mois-global2-2024-official-source-probe.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-global2-2024-r2025a-official-numerical-source-probe
+  cancel-in-progress: false
+jobs:
+  official-source-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read official Global2 mosaic directory; test HTTP range COG and public API; no photos
+        run: |
+          set -euo pipefail
+          python -m pip install -q requests==2.32.5 rasterio==1.4.3
+          mkdir -p receipt
+          python - <<'PY'
+          import requests,hashlib,json,re,xml.etree.ElementTree as ET
+          from pathlib import Path
+          session=requests.Session()
+          session.headers.update({'User-Agent':'MOIS botany official WorldPop Global2 R2025A v1 2024 population source verification'})
+          roots=[
+            'https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2025A/2024/0_Mosaicked/',
+            'https://data.worldpop.org/GIS/Population/Global_2015_2030/R2025A/2024/0_Mosaicked/',
+          ]
+          receipt={'schema':'MOIS_2024_official_WorldPop_Global2_source_probe_v1',
+                   'source_release':'Global2 R2025A v1',
+                   'source_year':2024,'units':'population count per 30-arc-second cell NOT density',
+                   'no_2020_Global1_values_substituted':True,
+                   'real_photo_downloads':0,'endpoints':[]}
+          seen=set()
+          for root in roots:
+              for suffix in ('','v1/','v1/1km/','v1/1km/constrained/','v1/1km_ua/','v1/1km_ua/constrained/'):
+                  url=root+suffix
+                  if url in seen:continue
+                  seen.add(url)
+                  try:
+                      r=session.get(url,timeout=18)
+                      record={'url':url,'status':r.status_code,'bytes':len(r.content),
+                              'sha256':hashlib.sha256(r.content).hexdigest(),
+                              'population_file_names':sorted(set(re.findall(r'global_pop_2024[^"<>\\s]*\\.tif',r.text)))[:20],
+                              'subfolders':sorted(set(re.findall(r'href="([^"?]+/)"',r.text)))[:30]}
+                      receipt['endpoints'].append(record)
+                      print('WORLDPOP_G2_INDEX',json.dumps(record)[:1100],flush=True)
+                  except Exception as e:
+                      receipt['endpoints'].append({'url':url,'error':str(e)[:250]})
+          possible=[
+            roots[0]+'v1/1km/constrained/global_pop_2024_CN_1km_R2025A_v1.tif',
+            roots[0]+'v1/1km_ua/constrained/global_pop_2024_CN_1km_R2025A_UA_v1.tif',
+            roots[0]+'v1/1km_ua/global_pop_2024_CN_1km_R2025A_UA_v1.tif',
+            roots[0]+'v1/1km/global_pop_2024_CN_1km_R2025A_v1.tif'
+          ]
+          for e in receipt['endpoints']:
+              if e.get('status')==200:
+                  for f in e['population_file_names']:
+                      possible.insert(0,e['url']+f)
+          seen=set();receipt['raster_sources']=[]
+          for url in possible:
+              if url in seen:continue
+              seen.add(url)
+              try:
+                  r=session.get(url,headers={'Range':'bytes=0-16383'},timeout=50,stream=True)
+                  data=next(r.iter_content(chunk_size=16384),b'')
+                  row={'url':url,'status':r.status_code,'content_type':r.headers.get('Content-Type'),
+                       'content_range':r.headers.get('Content-Range'),
+                       'content_length':r.headers.get('Content-Length'),
+                       'sample_sha256':hashlib.sha256(data).hexdigest(),
+                       'raster_header_is_tiff':data[:4] in (b'II*\\x00',b'MM\\x00*',b'II+\\x00',b'MM\\x00+')}
+                  r.close()
+                  receipt['raster_sources'].append(row)
+                  print('WORLDPOP_G2_RANGE_PROBE',json.dumps(row),flush=True)
+              except Exception as e:
+                  receipt['raster_sources'].append({'url':url,'error':str(e)[:240]})
+          for path in ('/openapi.json','/v3/openapi.json','/docs','/point'):
+              url='https://api.worldpop.org'+path
+              try:
+                  r=session.get(url,timeout=15)
+                  receipt.setdefault('API_probes',[]).append({'url':url,'status':r.status_code,
+                      'content_type':r.headers.get('Content-Type'),
+                      'first200':r.text[:200]})
+              except Exception as e:
+                  receipt.setdefault('API_probes',[]).append({'url':url,'error':str(e)[:180]})
+          (Path('receipt')/'global2_2024_official_source_probe.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          print('MOIS_OFFICIAL_2024_G2_SOURCE_PROBE_DONE',json.dumps({
+              'actual_index_200':sum(e.get('status')==200 for e in receipt['endpoints']),
+              'actual_raster_http206':sum(e.get('status')==206 and e.get('raster_header_is_tiff') for e in receipt['raster_sources']),
+              'first_valid_rasters':[e['url'] for e in receipt['raster_sources'] if e.get('status')==206 and e.get('raster_header_is_tiff')][:3]
+          },sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-worldpop-Global2-R2025A-v1-2024-source-raster-probe
+          path: receipt/
+          retention-days: 90
+          if-no-files-found: error
