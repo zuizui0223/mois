@@ -1,0 +1,111 @@
+name: MOIS actual Global2 R2024B UC 2019 2021 2022 2023 population per original site
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-2019-2023-R2024B-UC-real-population.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sameyear-original-population:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        year: [2019, 2021, 2022, 2023]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 33
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Load source preserving original population pixel units
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 rasterio==1.4.3 pyproj==3.7.2
+          python -m py_compile scripts/analysis/mois_global2019_2023_WorldPop_R2024B_UC.py
+      - name: Recover only preverified same-year original GSHHG site coordinates, NOT photographs
+        run: |
+          set -euo pipefail
+          mkdir -p original
+          gh run download 42337911536 --repo zuizui0223/mois \
+            --name mois-original-${{ matrix.year }}-global-mainland-island-monthly-VIIRS-source-SHA \
+            --dir original
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          year=${{ matrix.year }}
+          p=Path('original/source_year')/str(year)
+          a=json.loads((p/'source_receipt.json').read_text())
+          assert a['year']==year and a['no_new_original_photographs_or_ROI_inference']
+          f=p/f'mois_{year}_knownland_sites.csv'
+          assert f.exists() and hashlib.sha256(f.read_bytes()).hexdigest()==a['knownland_source_SHA256']
+          print('MOIS_WORLDPOP_ORIGINAL_YEAR_SITES_SOURCE_SHA',year,a['knownland_source_SHA256'],flush=True)
+          PY
+      - uses: actions/cache/restore@v4
+        with:
+          path: source_raster/${{ matrix.year }}/
+          key: mois-original-R2024B-unconstrained-pop-${{ matrix.year }}-global30arcsec-1km
+      - name: Fetch actual official same-year population raster R2024B v1 unconstrained
+        timeout-minutes: 17
+        run: |
+          set -euo pipefail
+          mkdir -p source_raster/${{ matrix.year }}
+          f=source_raster/${{ matrix.year }}/global_pop_${{ matrix.year }}_UC_1km_R2024B_v1.tif
+          if [ ! -f "$f" ]; then
+            curl --fail --location --retry 2 --connect-timeout 25 \
+              --speed-time 90 --speed-limit 1024 --max-time 880 \
+              'https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2024B/${{ matrix.year }}/0_Mosaicked/v1/1km/unconstrained/global_pop_${{ matrix.year }}_UC_1km_R2024B_v1.tif' \
+              --output "$f"
+          fi
+          test "$(stat -c%s "$f")" -gt 100000000
+          sha256sum "$f"
+      - name: Preserve official original year source raster SHA, geodesic area and full observed 2020-independent population densities
+        timeout-minutes: 8
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global2019_2023_WorldPop_R2024B_UC \
+            --year ${{ matrix.year }} \
+            --sites original/source_year/${{ matrix.year }}/mois_${{ matrix.year }}_knownland_sites.csv \
+            --population-raster source_raster/${{ matrix.year }}/global_pop_${{ matrix.year }}_UC_1km_R2024B_v1.tif \
+            --out pop${{ matrix.year }}
+          python - <<'PY'
+          import json,hashlib,pandas as pd
+          from pathlib import Path
+          year=${{ matrix.year }}
+          p=Path(f'pop{year}')
+          rec=json.loads((p/'source_receipt.json').read_text())
+          file=p/f'2024B_UC_{year}_worldpop_sameyear_photo_landmass_popdensity.csv'
+          d=pd.read_csv(file,dtype={'target_id':str})
+          assert len(d)==rec['original_photo_landmass_sites'] and d.target_id.is_unique
+          assert d.target_id.str.startswith(str(year)+'|').all()
+          assert rec['only_one_population_release_in_this_file']
+          assert rec['original_photo_year_equals_population_model_year']
+          assert rec['source_pixel_units'].startswith('estimated people')
+          assert rec['no_NODATA_imputed_as_zero'] and rec['new_photographs_or_ROI_inferred']==0
+          assert rec['quality']['valid']==d.population_status.eq('OK').sum()
+          assert d.loc[d.population_status.ne('OK'),'population_density_per_km2'].isna().all()
+          assert d.loc[d.population_status.eq('OK'),'population_density_per_km2'].ge(0).all()
+          assert hashlib.sha256(file.read_bytes()).hexdigest()==rec['population_values_SHA256']
+          print('MOIS_REAL_OFFICIAL_R2024B_UC_YEAR_POPULATION_SOURCE',year,
+                json.dumps({'source_sites':len(d),'population_valid':rec['quality']['valid'],
+                            'population_missing':len(d)-rec['quality']['valid'],
+                            'original_raster_SHA256':rec['official_original_raster_SHA256']},sort_keys=True),flush=True)
+          PY
+      - uses: actions/cache/save@v4
+        if: success()
+        with:
+          path: source_raster/${{ matrix.year }}/
+          key: mois-original-R2024B-unconstrained-pop-${{ matrix.year }}-global30arcsec-1km
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-original-${{ matrix.year }}-R2024B-UC-global-popdensity-photo-source
+          path: pop${{ matrix.year }}/
+          retention-days: 90
+          if-no-files-found: warn
