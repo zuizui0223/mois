@@ -16,7 +16,13 @@ import numpy as np
 import pandas as pd
 from scripts.analysis.mois_2024_sameyear_global_island_photo_white_20261107 import (
     COVARS, cell_id, cluster_fit)
-from scripts.analysis.mois_global2019_2023_original_photo_geography import YEAR
+# Frozen identifiers from the prior GSHHG source manifest (no heavy GIS import).
+YEAR={
+  2019:{"all":28082,"known":27020,"known_sha":"01f4e2d2e1c8bc9a1392f4143f693563bfa8ea1a0f65ba800e1caa450803831c"},
+  2021:{"all":47714,"known":45966,"known_sha":"f0d7cb134c09c74cccfb69199396ac30bc5b663d39dc5369d6e296d8c3a1cdca"},
+  2022:{"all":54163,"known":52075,"known_sha":"594fe8e729cf54aa44859a841b5d3e49e6a66fb85b217da8aff0160044e14df5"},
+  2023:{"all":62289,"known":59862,"known_sha":"e2825386f45a77da6e3dacdf714fc940cf9ab9cc5174671672b4d57466d04fba"}
+}
 
 PHOTO_SHA="f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c"
 WCVP_SHA="dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2"
