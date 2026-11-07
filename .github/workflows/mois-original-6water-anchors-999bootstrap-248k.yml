@@ -1,0 +1,88 @@
+name: MOIS expanded global original six-water-anchor 999-genus-maxT
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analysis/mois_original_6anchor_water_maxT_expanded.py"
+      - "tests/test_mois_original_6anchor_water_maxT_expanded.py"
+      - ".github/workflows/mois-original-6water-anchors-999bootstrap-248k.yml"
+      - "docs/MOIS_248K_ORIGINAL_METHOD_WATER_EXPANSION_20261017.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  expand-global-source-old-original-water-estimator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Execute old original 6 x 4 maxT 999-bootstrap synthetic regression gate
+        run: |
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 rasterio==1.4.3 scipy==1.15.2 pytest==8.4.2
+          python -m pytest -q tests/test_mois_original_6anchor_water_maxT_expanded.py
+      - name: Restore real 248312 original photographed-hue site geography and 19 WorldClim variables
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_photo_environment
+          gh run download 38992341847 --repo zuizui0223/mois \
+            --name mois-248312-REAL-site-worldclim19-bio-elev2p5m-terrain-monthnormal \
+            --dir original_photo_environment
+      - name: Fetch WorldClim 2.1 official global 10m annual water vapour-pressure climatology
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p official_worldclim/vapr
+          curl --fail --location --retry 3 --retry-delay 4 --connect-timeout 15 --max-time 420 \
+            "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_vapr.zip" \
+            --output official_worldclim/vapr/wc2.1_10m_vapr.zip
+          test -s official_worldclim/vapr/wc2.1_10m_vapr.zip
+          unzip -q official_worldclim/vapr/wc2.1_10m_vapr.zip -d official_worldclim/vapr
+          sha256sum official_worldclim/vapr/wc2.1_10m_vapr.zip
+      - name: Refit original six anchor 24 hue-direction maxT with actual enlarged photograph source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_original_6anchor_water_maxT_expanded \
+            --real-photo-worldclim-gzip \
+              original_photo_environment/mois_248312_original_photo_worldclim_static_monthly_normal_terrain.csv.gz \
+            --real-worldclim-receipt \
+              original_photo_environment/mois_248312_worldclim_static_month_normal_receipt.json \
+            --vapr-raster-dir official_worldclim \
+            --bootstrap 999 \
+            --output actual_original_sixwater_maxT
+          python - <<'PY'
+          import json,math
+          from pathlib import Path
+          q=json.loads(Path('actual_original_sixwater_maxT/mois_248k_original_six_anchor_moisture_maxT.json').read_text(),
+                       parse_constant=lambda x: (_ for _ in ()).throw(ValueError(x)))
+          assert q['source']['main']['n_original_classified_four_hues']==120807
+          for scope in ('global_expanded','historical_only'):
+              k=q['models'][scope]
+              assert k['status']=='OK' and k['n_bootstrap']==999
+              assert len(k['estimates'])==24
+              rain=next(x for x in k['estimates'] if x['anchor']=='wc_bio12' and x['hue']=='white')
+              assert math.isfinite(rain['point_pp_per_original_photo_env_sd'])
+              assert len(rain['scope_anchor_hue_maxT_ci95_pp'])==2
+          assert q['original_familywise_maxT'].startswith('24')
+          assert not q['FCP_within_species_D_W_local_photo_pair_statistic_not_reused'] is False
+          print('MOIS_REAL_248K_ORIGINAL_999_BOOTSTRAP_FOURHUE_6WATER_ANCHOR_MAXT_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-original-method-999bootstrap-global-6abiotic-anchor-water-four-hue-248k
+          path: actual_original_sixwater_maxT/
+          if-no-files-found: error
+          retention-days: 90
