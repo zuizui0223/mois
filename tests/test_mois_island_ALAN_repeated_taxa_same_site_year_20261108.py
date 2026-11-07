@@ -56,7 +56,7 @@ class GenuinePhotoTaxonSiteYearTests(unittest.TestCase):
                  photo_white_fraction=.4,white_pp=40.)])
         out=m.fit_within_real_species_site(d)
         self.assertFalse(out["estimable"])
-        self.assertIn("source",out["reason"])
+        self.assertIn("support",out["reason"])
     def test_reference_is_observed_same_species_not_new_plant_colour(self):
         import inspect
         s=inspect.getsource(m.run)
