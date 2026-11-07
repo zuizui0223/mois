@@ -89,7 +89,7 @@ def run(canonical,shoreline,out):
     fields=["target_id","land_class","query_longitude","query_latitude",
             "n_attempted","n_strict9","source_subarms"]
     all_knownland=out/"mois_2025_all73463_knownland_source.csv"
-    known[fields].to_csv(all_knownland,index=False,float_format="%.12g",lineterminator="\\n")
+    known[fields].to_csv(all_knownland,index=False,float_format="%.12g",lineterminator="\n")
     require(sha(all_knownland)=="45c5152e1edad997ff8749c645818996fb2b0bc03a2ab7c0753af446afaab143",
             "2025 full knownland site manifest differs from independent original extraction")
     out.mkdir(parents=True)
