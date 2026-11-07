@@ -1,0 +1,138 @@
+name: MOIS recover already measured P2 4096 strict original 9palette photos data-only
+on:
+  push:
+    branches: [feat/mois-bulk128-131072-20261026]
+    paths:
+      - .github/workflows/mois-recover-p2-4096-pixels-data-only.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-salvage-originalP2-4096-measured-numerical-ROI9-only
+  cancel-in-progress: false
+jobs:
+  recover-verified-P2-photo-termini:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OLD_RUN: '40329836782'
+      OLD_SHA: '46ae12e36f71c839a97c7424c56217e094b4c7e8'
+      SOURCE_TAG: mois-P2-first4096-tier07-one-taxon-one-photo-source-20261026-v1
+      RESULTS_TAG: mois-P2-first4096-actual-originalROI9-newtaxa-20261026-v1
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate real source original P2 nine-colour ID and unknown handling without photo download
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_collect_p2_first4096_original_roi9.py -v
+          python -m py_compile scripts/analysis/mois_collect_p2_first4096_original_roi9.py
+      - name: Authenticate original 8 actually completed image workers rather than rerunning them
+        run: |
+          set -euo pipefail
+          gh api "repos/$REPO/actions/runs/$OLD_RUN" > original_run.json
+          gh api "repos/$REPO/actions/runs/$OLD_RUN/jobs?per_page=100" > original_jobs.json
+          gh api "repos/$REPO/actions/runs/$OLD_RUN/artifacts?per_page=100" > original_artifacts.json
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          run=json.loads(Path('original_run.json').read_text())
+          jobs=json.loads(Path('original_jobs.json').read_text())['jobs']
+          artifacts=json.loads(Path('original_artifacts.json').read_text())['artifacts']
+          assert run['id']==int(os.environ['OLD_RUN'])
+          assert run['head_sha']==os.environ['OLD_SHA']
+          assert run['repository']['full_name']==os.environ['REPO']
+          by_name={a['name']:a for a in artifacts}
+          source=by_name['mois-P2-4096-source-lock']
+          assert source['id']==12655702612 and not source['expired']
+          verified={
+             '0':(12657044531,'sha256:125e0bad5a6d3dd1db61bc59f374e7f746ecb574171ff00c35ca7e3752d841ed'),
+             '1':(12657888429,'sha256:1271b572c8d098c44a91c089c8fe07f77f32ee270f1bc87efebffdee6aa202e5'),
+             '2':(12658243265,'sha256:674ac5b357fd15de1c8617e444fe8d6ea5769884e31b2b1381a489f42c507062'),
+             '3':(12656634702,'sha256:c1378a7844777f3923b3878be7e08187f1bf8fd6bf690bbf6c389a2f88c8111b'),
+             '4':(12657543781,'sha256:d461dd4caa61fe32f80c49817946ecebafda132d7062d9f5858e8346ebf6b055'),
+             '5':(12657969408,'sha256:8bec7102cec74d8f25c533a9a02fac179eb6cca199d0f1f393b8996956d1175d'),
+             '6':(12658460244,'sha256:3d837414a863768c0d7f178c72ae0409500cd9a9bf250c5a03b34fbcc43acadc'),
+             '7':(12658937352,'sha256:ac9f9b9159b26dcac1d233b904f65f0a83556fc6712c3448612f685918ad0b5f'),
+          }
+          original_workers=[j for j in jobs if j['name'].startswith('image-workers (')]
+          assert len(original_workers)==8
+          assert all(j['conclusion']=='failure' for j in original_workers)
+          assert all(any(s['name'].startswith('Seal original ROI terminal')
+                         and s['conclusion']=='failure' for s in j['steps'])
+                     for j in original_workers)
+          for group,(artifact_id,digest) in verified.items():
+              a=by_name['mois-P2-actualROI-group-'+group]
+              assert a['id']==artifact_id and a['digest']==digest and not a['expired']
+          print('MOIS_ALL8_REAL_P2_ORIGINAL_ROIS_ACQUIRED_BUT_RELEASE_WRITE_DENIED',flush=True)
+          PY
+      - name: Restore only SHA-pinned original source metadata and 8 numerical ROI terminal artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p source workers
+          gh release download "$SOURCE_TAG" --repo "$REPO" --dir source \
+            --pattern manifest.json \
+            --pattern selected_P2_photo_source_provenance.csv \
+            --pattern P2_photo_worker_shards.tar
+          echo '85c5f665632980cc1d91934fd256c9f13936c1acece848a6a23266c87fcacf35  source/manifest.json' | sha256sum -c -
+          echo '1f7b146a98d31b3f465f7b8deec6ac42cc644f877372885833461aedf8f1b806  source/selected_P2_photo_source_provenance.csv' | sha256sum -c -
+          echo 'caee91114a25316ce0bae41cb2eb777f01bfaebffebe5b804fe526ce8d1a565d  source/P2_photo_worker_shards.tar' | sha256sum -c -
+          tar -xf source/P2_photo_worker_shards.tar -C source
+          for group in 0 1 2 3 4 5 6 7; do
+            gh run download "$OLD_RUN" --repo "$REPO" \
+              --name "mois-P2-actualROI-group-$group" --dir "workers/group-$group"
+          done
+      - name: Reconcile 4096 original image pixel photo_IDs / taxa against their sealed FCP ROI9 fractions
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_collect_p2_first4096_original_roi9 \
+            --source source --workers workers --output p2_actual
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('p2_actual/mois_realP2_source_colours_and_taxon_coverage_receipt.json').read_text())
+          assert r['schema']=='mois_P2_real_original_photo_one_taxon_once_source_ROI9_v1'
+          assert r['new_P2_photo_IDs_and_unique_original_observations_attempted']==4096
+          assert r['new_P2_nominal_original_taxa_attempted']==4096
+          assert 0<=r['new_P2_strict9_original_ROIs']<=4096
+          assert r['new_P2_taxa_first_nine_palette_colours']==r['new_P2_strict9_original_ROIs']
+          assert r['new_P2_original_images_downloaded']+r['new_P2_failed_downloads']==4096
+          assert r['targeted_P5_old_supported_source_taxa']==0
+          assert r['additional_photo_image_inference_in_collector']==0
+          print('MOIS_REAL_P2_4096_ORIGINAL_COLOUR_PIXELS_RECOVERED_WITHOUT_REDOWLOAD',
+                json.dumps({k:r[k] for k in (
+                  'new_P2_strict9_original_ROIs','new_P2_taxa_first_nine_palette_colours',
+                  'new_P2_failed_downloads')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-rescued-p2-4096-full-original-photocolour-ROI9
+          path: p2_actual/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Preserve already-measured true original RGB results immutably as release
+        run: |
+          set -euo pipefail
+          if gh release view "$RESULTS_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p prior
+            gh release download "$RESULTS_TAG" --repo "$REPO" --dir prior \
+              --pattern mois_realP2_source_colours_and_taxon_coverage_receipt.json
+            cmp prior/mois_realP2_source_colours_and_taxon_coverage_receipt.json \
+                p2_actual/mois_realP2_source_colours_and_taxon_coverage_receipt.json
+            echo "MOIS_P2_REAL_ROI9_ALREADY_SEALED_SOURCE_UNCHANGED"
+          else
+            gh release create "$RESULTS_TAG" p2_actual/* --repo "$REPO" \
+              --target "$GITHUB_SHA" \
+              --title 'MOIS already acquired 4096 P2 original photo ROIs: 9palette and taxa gained' \
+              --notes 'Data-only recovery of eight genuine successful 512-photo frozen YOLO11/EfficientSAM ROI-v4 computation groups from run 40329836782. Previously failed ONLY on release permission; no original photo image redownloaded/reclassified by this workflow. 4096 source original photos/observations from distinct P2 taxa, all technical unknowns preserved; strict9 classification counts and achieved new taxon breadth measured from authentic photo pixels. Separate method from current bulk128 500px box Lab source; never pool naïvely or call unverified petal colour a biological native flower census.'
+            echo "MOIS_P2_REAL4096_ALREADY_MEASURED_9PALETTE_PHOTOS_ARCHIVED"
+          fi

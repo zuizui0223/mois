@@ -1,0 +1,187 @@
+name: MOIS bulk128 one-shot acquisition of 131072 real original photo ROIs
+on:
+  push:
+    branches: [feat/mois-bulk128-131072-20261026]
+    paths:
+      - .github/workflows/mois-bulk128-original-photo-acquire.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-original-bulk128-real-131072-photo-image-shards
+  cancel-in-progress: false
+jobs:
+  source-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert 131072 exact source-only original photo targets and 16 compact pack assets
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh release download mois-bulk128-tier10-source16-efficient-shards-v1 \
+            --repo "$REPO" --dir source \
+            --pattern manifest.json --pattern bundle_receipt.json
+          echo '7e975e701281ba812451acd48be7e91a7d17f2bbe6f9f53ad15ef4f8db9e557e  source/manifest.json' | sha256sum -c -
+          echo '38ba93789b3cf6412e9adfc82348154a83f6ea601efd5118953e7d7e36cfbede  source/bundle_receipt.json' | sha256sum -c -
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('source/manifest.json').read_text())
+          b=json.loads(Path('source/bundle_receipt.json').read_text())
+          assert m['new_photo_attempts_planned']==131072
+          assert m['selected_reference_photo_attempts']==32768
+          assert m['selected_targeted_photo_attempts']==98304
+          assert m['P5_targeted_photo_attempts']==0
+          assert m['group_ids']==list(range(128)) and m['worker_ids']==list(range(512))
+          assert b['original_source_manifest_SHA256']=='7e975e701281ba812451acd48be7e91a7d17f2bbe6f9f53ad15ef4f8db9e557e'
+          assert len(b['bundle_SHA256'])==16
+          print('MOIS_BULK128_ALL_131072_ORIGINAL_PHOTO_IDS_PREINFERENCE_VERIFIED',flush=True)
+          PY
+  original-photo-shards:
+    needs: source-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    strategy:
+      max-parallel: 16
+      fail-fast: false
+      matrix:
+        part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PART: ${{ matrix.part }}
+      INPUT_TAG: mois-bulk128-tier10-source16-efficient-shards-v1
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore only one SHA-signed 8-shard metadata packet, not the entire 131072 source
+        run: |
+          set -euo pipefail
+          grp=$((PART / 8))
+          printf -v grp_padded '%02d' "$grp"
+          mkdir -p source
+          gh release download "$INPUT_TAG" --repo "$REPO" --dir source \
+            --pattern manifest.json \
+            --pattern bundle_receipt.json \
+            --pattern "bulk128-source-group-$grp_padded.tar.gz"
+          python - <<'PY'
+          import json,os,hashlib
+          from pathlib import Path
+          p=Path('source');g=int(os.environ['PART'])//8
+          b=json.loads((p/'bundle_receipt.json').read_text())
+          file=p/f'bulk128-source-group-{g:02d}.tar.gz'
+          assert hashlib.sha256(file.read_bytes()).hexdigest()==b['bundle_SHA256'][file.name]
+          assert hashlib.sha256((p/'manifest.json').read_bytes()).hexdigest()==b['original_source_manifest_SHA256']
+          print('MOIS_BULK128_SMALL_8_SHARD_SOURCE_ASSET_VERIFIED',g,flush=True)
+          PY
+          tar -xzf "source/bulk128-source-group-$grp_padded.tar.gz" -C source
+          python - <<'PY'
+          import json,os,hashlib,csv
+          from pathlib import Path
+          p=Path('source');m=json.loads((p/'manifest.json').read_text())
+          part=int(os.environ['PART'])
+          assert hashlib.sha256((p/f'part-{part:03d}.receipt.json').read_bytes()).hexdigest()==m['per_128_shard_receipts_sha256'][str(part)]
+          sizes=[]
+          for unit in range(part*4,part*4+4):
+              f=p/'shards'/f'shard-{unit:03d}.csv'
+              assert hashlib.sha256(f.read_bytes()).hexdigest()==m['photo_shard_sha256'][str(unit)]
+              with f.open(newline='') as stream:
+                  rows=list(csv.DictReader(stream))
+              assert 0<len(rows)<=256
+              assert len({r['observation_id'] for r in rows})==len(rows)
+              sizes.append(len(rows))
+          assert sum(sizes)==1024
+          print('MOIS_BULK128_SHA_SIGNED_1024_NEW_PHOTOS_PER_WORKER',part,flush=True)
+          PY
+      - name: Reuse SHA-sealed exact photo results if this large shard was already processed
+        id: reuse
+        run: |
+          set -euo pipefail
+          printf -v s '%03d' "$PART"
+          echo "GROUP_TAG=mois-bulk128-real-original-ROI9-shard-$s-v1" >> "$GITHUB_ENV"
+          echo 'needs_image_inference=true' >> "$GITHUB_OUTPUT"
+          if gh release view "mois-bulk128-real-original-ROI9-shard-$s-v1" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p cached measured
+            gh release download "mois-bulk128-real-original-ROI9-shard-$s-v1" \
+              --repo "$REPO" --dir cached \
+              --pattern bulk128_completed_original_roi.tar.gz \
+              --pattern bulk128_completed_original_roi.sha256
+            (cd cached && sha256sum -c bulk128_completed_original_roi.sha256)
+            tar -xzf cached/bulk128_completed_original_roi.tar.gz -C measured
+            echo 'needs_image_inference=false' >> "$GITHUB_OUTPUT"
+            echo "MOIS_BULK128_REUSED_PRIOR_GENUINE_ORIGINAL_PHOTO_SHARD $PART"
+          fi
+      - name: Prepare unchanged FCP ROI-v4 YOLO11 + EfficientSAM models ONCE for 1024 photos
+        if: steps.reuse.outputs.needs_image_inference == 'true'
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          (cd "$RUNNER_TEMP/fcp" && bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam")
+      - name: ONE genuine 1024-photo S3 download pass and warm original full-resolution ROI
+        if: steps.reuse.outputs.needs_image_inference == 'true'
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-bulk128-S3-paced-fetch"
+          python -m scripts.acquisition.mois_warm_original_roi \
+            --source source --runtime "$RUNNER_TEMP/fcp" \
+            --sam "$RUNNER_TEMP/sam" --group "$PART" --output measured
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          part=int(os.environ['PART'])
+          files=[Path('measured')/f'shard_{u:03d}'/'receipt.json'
+                 for u in range(part*4,part*4+4)]
+          assert all(f.is_file() for f in files)
+          docs=[json.loads(f.read_text()) for f in files]
+          assert sum(x['attempted'] for x in docs)==1024
+          assert all(x['photo_colours_measured'] and not x['raw_licensed_image_bytes_persisted']
+                     for x in docs)
+          print('MOIS_BULK128_GENUINE_ORIGINAL_1024_ROI_WORK_DONE',
+                json.dumps({'part':part,'attempted':1024,
+                            'four_hue_classified':sum(x['classifiable'] for x in docs),
+                            'acquisition_failed':sum(x['acquisition_failed'] for x in docs)},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-bulk128-real-originalROI9-part-${{ matrix.part }}
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish immutable full 1024-photo numeric output per original shard
+        if: steps.reuse.outputs.needs_image_inference == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p signed
+          tar -czf signed/bulk128_completed_original_roi.tar.gz -C measured .
+          (cd signed && sha256sum bulk128_completed_original_roi.tar.gz > bulk128_completed_original_roi.sha256)
+          for retry in 1 2 3; do
+            if gh release create "$GROUP_TAG" \
+                 signed/bulk128_completed_original_roi.tar.gz \
+                 signed/bulk128_completed_original_roi.sha256 \
+                 --repo "$REPO" --target "$GITHUB_SHA" \
+                 --title "MOIS 128-shard real original image ROI9 part $PART" \
+                 --notes 'Exactly 1024 genuinely downloaded novel original photos, 4×256 signed warm FCP ROI-v4 terminals, full method unchanged, image bytes never redistributed, numeric nine-colour and technical unknowns preserved. Worker can be reused without further original image download or inference.'; then
+              echo "MOIS_BULK128_REAL_ORIGINAL_1024_SHA_SEALED $PART"
+              break
+            fi
+            if [ "$retry" -eq 3 ]; then exit 1; fi
+            sleep "$((retry*12))"
+          done

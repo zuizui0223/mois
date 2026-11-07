@@ -1,0 +1,238 @@
+name: MOIS 128-shard massive REAL 500px original photo flower-box Lab scan
+on:
+  push:
+    branches: [feat/mois-bulk128-131072-20261026]
+    paths:
+      - .github/workflows/mois-bulk128-real-medium-500px.yml
+  workflow_dispatch:
+    inputs:
+      resume_run_id:
+        description: "Optional earlier run ID with SHA-sealed completed or partial photo packets"
+        type: string
+        required: false
+        default: ""
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-128-source-photo-bulk500-original-20261026
+  cancel-in-progress: false
+jobs:
+  signed-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_TAG: mois-full93m-bulk128-tier10-131072-original-photo-source-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore frozen original 131072-photo source before any image pixels
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh release download "$SOURCE_TAG" --repo "$REPO" --dir source \
+            --pattern manifest.json \
+            --pattern bulk128_source_summary.csv \
+            --pattern bulk128_source_photo_shards.tar.gz
+          echo '7e975e701281ba812451acd48be7e91a7d17f2bbe6f9f53ad15ef4f8db9e557e  source/manifest.json' | sha256sum -c -
+          echo 'efe19bb147c439d14c9342b5a70a4ada6d4cb00da0494a8882653ec30520425d  source/bulk128_source_summary.csv' | sha256sum -c -
+          echo '61c0eee377f6edead471436d3f75b92700e54687e6b9dd0a417819a472c23dcb  source/bulk128_source_photo_shards.tar.gz' | sha256sum -c -
+          tar -xzf source/bulk128_source_photo_shards.tar.gz -C source
+      - name: Verify all 128 original photo source partitions, 512 model units and zero P5 targeted
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv,hashlib,json
+          from pathlib import Path
+          root=Path('source');m=json.loads((root/'manifest.json').read_text())
+          assert m['schema']=='mois_full_source_observation_sampling_cohort_v1'
+          assert m['sampling_schema']=='mois_original93m_tier10_bulk128_probability_reference_plus_gap_v1'
+          assert m['new_photo_attempts_planned']==131072
+          assert m['source_128_compute_shards']==128
+          assert m['work_units']==512 and m['group_ids']==list(range(128))
+          assert m['selected_reference_photo_attempts']==32768
+          assert m['selected_targeted_photo_attempts']==98304
+          assert m['P5_targeted_photo_attempts']==0
+          seen=set();observed=set()
+          for part in range(128):
+              rp=root/f'part-{part:03d}.receipt.json'
+              assert hashlib.sha256(rp.read_bytes()).hexdigest()==m['per_128_shard_receipts_sha256'][str(part)]
+              t=json.loads(rp.read_text())
+              assert t['selected_new_original_photo_IDs']==1024 and t['P5_targeted_original_photo_count']==0
+              for i in range(part*4,part*4+4):
+                  p=root/'shards'/f'shard-{i:03d}.csv'
+                  assert hashlib.sha256(p.read_bytes()).hexdigest()==m['photo_shard_sha256'][str(i)]
+                  with p.open(newline='') as fh:rows=list(csv.DictReader(fh))
+                  assert len(rows)==256
+                  for r in rows:
+                      assert r['photo_id'] not in seen and r['observation_id'] not in observed
+                      seen.add(r['photo_id']);observed.add(r['observation_id'])
+          assert len(seen)==len(observed)==131072
+          print('MOIS_ALL128_SHA_SIGNED_NEW_ORIGINAL_PHOTO_AND_OBSERVATION_IDS_CONFIRMED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-bulk128-131072-precolour-photo-source-v1
+          path: source/
+          retention-days: 90
+          if-no-files-found: error
+  medium-photo-shards:
+    needs: signed-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        part: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PART: ${{ matrix.part }}
+      RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+      ULTRALYTICS_OFFLINE: "True"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reuse signed source and original photo metadata; no 93m metadata scans
+        uses: actions/download-artifact@v4
+        with:
+          name: mois-bulk128-131072-precolour-photo-source-v1
+          path: source
+      - name: Restore previously completed original photo packets only on explicit recovery run
+        if: env.RESUME_RUN_ID != ''
+        run: |
+          set -euo pipefail
+          printf -v id '%03d' "$PART"
+          artifact="mois-bulk128-med500-part-$id"
+          if gh run download "$RESUME_RUN_ID" --repo "$REPO" --name "$artifact" --dir actual_medium; then
+              echo "MOIS_REUSED_PREVIOUS_PHOTO_PACKET_ARTIFACT $artifact"
+          else
+              echo "MOIS_NO_PREVIOUS_PHOTO_PACKET_ARTIFACT $artifact"
+              test ! -d actual_medium
+          fi
+      - name: Pin original FCP YOLO11 flower detector without loading EfficientSAM
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 Pillow==11.3.0 ultralytics==8.4.112 scikit-image==0.25.2 pandas==2.2.3
+          mkdir -p weights
+          git init -q "$RUNNER_TEMP/fcp-box"
+          git -C "$RUNNER_TEMP/fcp-box" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp-box" fetch -q --no-tags --depth=1 origin 9fae6ccdf684a46026f72ba12e98de2c5c54bf2a
+          git -C "$RUNNER_TEMP/fcp-box" show FETCH_HEAD:data/atlas/qualification/roi_v4_training/jrc_yolo11n_last_v4.pt > weights/jrc_yolo11n_last_v4.pt
+          echo 'f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5  weights/jrc_yolo11n_last_v4.pt' | sha256sum -c -
+      - name: Actually acquire and decode all 1024 source original medium RGB photos for one shard
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_bulk128_medium500_photo_worker \
+            --source source \
+            --output actual_medium \
+            --part "$PART" \
+            --weights weights/jrc_yolo11n_last_v4.pt \
+            --weights-sha256 f1aaeec4664fe2c178e5cf2bc1f508977bef3e4aa7b40613026cb8ae3de789d5 \
+            --requests-per-second 0.5 \
+            --workers 8
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          doc=json.loads(Path('actual_medium/bulk128_medium_photo_completion_receipt.json').read_text())
+          assert doc['schema']=='mois_bulk128_real_medium500_photo_flower_box_lab_from_signed_photo_roster_v1'
+          assert doc['original_source_part']==int(os.environ['PART'])
+          assert doc['expected_original_photos']==1024
+          assert doc['actually_medium_photo_IDs_attempted']==1024
+          assert doc['real_strict9_flower_pixel_vectors_generated']==0
+          assert not doc['raw_licensed_image_bytes_archived']
+          assert doc['reference_and_adaptive_targeted_are_distinct']
+          print('MOIS_BULK128_REAL1024_PHOTO_PIXEL_SOURCE_DATA_SEALED',doc['original_source_part'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-bulk128-med500-part-${{ matrix.part }}
+          path: actual_medium/
+          retention-days: 90
+          if-no-files-found: warn
+  combine-128-photo-shards:
+    needs: [signed-source,medium-photo-shards]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OUT_TAG: mois-bulk128-131072-genuine-medium500-flower-box-Lab-v1
+      OPENBLAS_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-bulk128-131072-precolour-photo-source-v1
+          path: source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-bulk128-med500-part-*
+          path: workers
+          merge-multiple: false
+      - name: Verify original photo/observation unique IDs, unknowns and all 128 real photo statuses
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_bulk128_medium500_global_reconcile \
+            --source-manifest source/manifest.json \
+            --source-summary source/bulk128_source_summary.csv \
+            --workers workers --output global_medium
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('global_medium/bulk128_real_medium_boxLab_completion_receipt.json')
+          r=json.loads(p.read_text())
+          assert r['schema']=='mois_bulk128_true_original_medium500_picture_pixel_complete_audit_v1'
+          assert r['128_frozen_original_taxon_photo_partitions_authenticated']==128
+          assert r['new_real_medium_picture_attempts']==131072
+          assert r['new_original_strict9_color_ROI_count']==0
+          assert r['prior_P5_gap_targeted_images']==0
+          assert r['all_unclassifiable_photo_IDs_preserved_as_unknown']
+          print('MOIS_131072_REAL_ORIGINAL_500PX_COMPLETE_NOT_STRICT9',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-bulk128-all131072-real-medium500-global-summary
+          path: global_medium/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish signed actual original image results without raw licensed images
+        run: |
+          set -euo pipefail
+          if gh release view "$OUT_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p previous
+            gh release download "$OUT_TAG" --repo "$REPO" --dir previous \
+              --pattern bulk128_real_medium_boxLab_completion_receipt.json
+            cmp previous/bulk128_real_medium_boxLab_completion_receipt.json \
+                global_medium/bulk128_real_medium_boxLab_completion_receipt.json
+            echo "MOIS_BULK128_500PX_COMPLETED_RELEASE_UNCHANGED"
+          else
+            for retry in 1 2 3; do
+              if gh release create "$OUT_TAG" global_medium/* \
+                   --repo "$REPO" --target "$GITHUB_SHA" \
+                   --title 'MOIS 131072 TRUE original 500px flower detection and Lab box-colour pixels' \
+                   --notes 'All 128 original photo source shards were SHA verified. Every 500px real S3 picture attempt is retained with unknown/detection status. Separate 32768 source reference and 98304 P1/P2/P3/P4 gap-targeted original photo designs. No P5 targeted images, no old measured image repeat, no raw photo redistribution, no full-resolution EfficientSAM or botanical petal-based strict 9-palette labels. This is NOT an unbiased global floral white fraction.'; then
+                echo "MOIS_ALL_131072_TRUE_500PX_PHOTO_PIXEL_DATA_IMMUTABLE"
+                break
+              fi
+              if [ "$retry" -eq 3 ]; then exit 1; fi
+              sleep "$((retry*15))"
+            done
+          fi

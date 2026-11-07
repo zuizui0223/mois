@@ -1,0 +1,90 @@
+name: MOIS bulk128 pack 16 tiny signed source groups for mass photo acquisition
+on:
+  push:
+    branches: [feat/mois-bulk128-131072-20261026]
+    paths:
+      - scripts/acquisition/mois_bulk128_pack_groups.py
+      - .github/workflows/mois-bulk128-pack16-source.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-bulk128-t10-16-small-source-artifact-packets
+  cancel-in-progress: false
+jobs:
+  partition-once:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      INPUT: mois-full93m-bulk128-tier10-131072-original-photo-source-v1
+      OUTPUT: mois-bulk128-tier10-source16-efficient-shards-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify source package exists, do not read 93m originals twice
+        id: gate
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/acquisition/mois_bulk128_pack_groups.py
+          echo 'need=true' >> "$GITHUB_OUTPUT"
+          if gh release view "$OUTPUT" --repo "$REPO" >/dev/null 2>&1; then
+            echo 'MOIS_PACK16_ALREADY_SEALED_NO_REFETCH_OR_REPACK'
+            echo 'need=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Restore only signed 19MB original 128-source bundle, never source photos
+        if: steps.gate.outputs.need == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p frozen unpacked
+          gh release download "$INPUT" --repo "$REPO" --dir frozen \
+            --pattern 'manifest.json' \
+            --pattern 'bulk128_source_photo_shards.tar.gz' \
+            --pattern 'bulk128_source_photo_shards.sha256'
+          echo '7e975e701281ba812451acd48be7e91a7d17f2bbe6f9f53ad15ef4f8db9e557e  frozen/manifest.json' | sha256sum -c -
+          echo '61c0eee377f6edead471436d3f75b92700e54687e6b9dd0a417819a472c23dcb  frozen/bulk128_source_photo_shards.tar.gz' | sha256sum -c -
+          (cd frozen && sha256sum -c bulk128_source_photo_shards.sha256)
+          tar -xzf frozen/bulk128_source_photo_shards.tar.gz -C unpacked
+          cp frozen/manifest.json unpacked/manifest.json
+      - name: Pack independently verifiable 8-shard source groups
+        if: steps.gate.outputs.need == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_bulk128_pack_groups \
+            --source unpacked --output groups
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          m=json.loads(Path('groups/bundle_receipt.json').read_text())
+          assert m['schema']=='mois_bulk128_compact16_read_only_group_bundles_v1'
+          assert m['group_count']==16
+          assert m['original_work_units']==512
+          assert m['new_original_photo_attempt_targets']==131072
+          assert m['original_source_manifest_SHA256']=='7e975e701281ba812451acd48be7e91a7d17f2bbe6f9f53ad15ef4f8db9e557e'
+          for file,digest in m['bundle_SHA256'].items():
+              assert hashlib.sha256((Path('groups')/file).read_bytes()).hexdigest()==digest
+          print('MOIS_ALL_16_COMPACT_BULK128_SOURCE_ASSETS_SHA_VERIFIED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.need == 'true'
+        with:
+          name: mois-128shard-efficient-original-source16-group-bundles
+          path: |
+            groups/
+            frozen/manifest.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Immutable release of only 16 small group assets (no licensed photo images)
+        if: steps.gate.outputs.need == 'true'
+        run: |
+          set -euo pipefail
+          gh release create "$OUTPUT" frozen/manifest.json \
+            groups/bundle_receipt.json groups/bulk128-source-group-*.tar.gz \
+            --repo "$REPO" --target "$GITHUB_SHA" \
+            --title 'MOIS 128 photo acquisition workers: sixteen compact source packets' \
+            --notes 'Exact SHA-audited 128 original photo source shards and 512 photo ROI work units packed in 16 small read-only sets (8 shards each), to avoid making every worker re-fetch entire source metadata. Immutable 131072 original photo ID roster with 32768 source-reference and 98304 P1/P2/P3/P4 gap targets, zero targeted P5. No actual original image bytes or colour in this package.'
+          echo 'MOIS_BULK128_SOURCE_PACKETS_FAST_AND_IMMUTABLE'

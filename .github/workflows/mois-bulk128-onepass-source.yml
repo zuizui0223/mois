@@ -1,0 +1,171 @@
+name: MOIS 128-shard one-pass mass photo source selection 131072
+on:
+  push:
+    branches: [feat/mois-bulk128-131072-20261026]
+    paths:
+      - scripts/acquisition/mois_bulk128_tier10_source.py
+      - tests/test_mois_bulk128_tier10_source.py
+      - .github/workflows/mois-bulk128-onepass-source.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-full93m-tier10-bulk128-onepass-photo-selection-source
+  cancel-in-progress: false
+jobs:
+  build-128-photo-shards:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 95
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_TAG: mois-full93m-bulk128-tier10-131072-original-photo-source-v1
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate 128 original photo source and taxonomic missingness contracts
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/acquisition/mois_bulk128_tier10_source.py
+          python -m unittest discover -s tests -p test_mois_bulk128_tier10_source.py -v
+      - name: Fast skip if the exact 128-shard source was already SHA-sealed
+        id: gate
+        run: |
+          set -euo pipefail
+          echo 'needed=true' >> "$GITHUB_OUTPUT"
+          if gh release view "$SOURCE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p already
+            gh release download "$SOURCE_TAG" --repo "$REPO" --dir already \
+              --pattern manifest.json --pattern bulk128_source_summary.csv
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('already/manifest.json').read_text())
+          assert d['sampling_schema']=='mois_original93m_tier10_bulk128_probability_reference_plus_gap_v1'
+          assert d['source_128_compute_shards']==128 and d['work_units']==512
+          assert d['P5_targeted_photo_attempts']==0
+          assert d['original_source_photo_IDs_and_observation_UUIDs_all_unique']
+          print('MOIS_128_SHARDS_ALREADY_PUBLISHED_SOURCE_NOT_RESELECTED',d['new_photo_attempts_planned'])
+          PY
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Download original 128 taxon shards packed in only 16 SHA-signed tier10 archives
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p tiers
+          for retry in 1 2 3; do
+            if gh release download mois-complete-93209351-original-photo-target-tiers-v1 \
+                --repo "$REPO" --dir tiers --clobber \
+                --pattern 'tier-10-group-*.tar' \
+                --pattern 'group-*-receipt.json' \
+                --pattern 'mois_all_original_photo_target_tiers_receipt.json'; then
+              break
+            fi
+            if [ "$retry" = 3 ]; then exit 1; fi
+            sleep "$((retry*15))"
+          done
+          test "$(find tiers -maxdepth 1 -name 'tier-10-group-*.tar' | wc -l)" -eq 16
+          test "$(find tiers -maxdepth 1 -name 'group-*-receipt.json' | wc -l)" -eq 16
+          echo '4ed5139e510ba8442d4cdb03f2b769d94fac942832b1d544d7a7925bc431255b  tiers/mois_all_original_photo_target_tiers_receipt.json' | sha256sum -c -
+      - name: Download existing taxon missingness ledger and ALL previous real / reserved photo IDs
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p data/priority data/old data/new data/pilot data/p2 data/gain
+          gh release download mois-original1043930-400710-source-taxon-coverage-priority-20261026-v2 \
+            --repo "$REPO" --dir data/priority \
+            --pattern mois_42111_taxon_priority_AFTER_400710_original9.csv.gz
+          gh run download 40187688390 --repo "$REPO" \
+            --name mois-1043930-latest-original-photo-four-hue-fully-signed-union \
+            --dir data/old
+          gh release download mois-real2048-new-source-photo-geo-season-stratified-ROI9-20261026-v1 \
+            --repo "$REPO" --dir data/new \
+            --pattern mois_true2048_biasbalanced_original_photo_ROI9_outcomes.parquet
+          gh release download mois-real20261026-novel64-source-geobalanced-original500px-floralLab-v1 \
+            --repo "$REPO" --dir data/pilot \
+            --pattern mois_bounded_new_taxon_original_photo_sampling_provenance.csv
+          gh release download mois-P2-first4096-tier07-one-taxon-one-photo-source-20261026-v1 \
+            --repo "$REPO" --dir data/p2 \
+            --pattern selected_P2_photo_source_provenance.csv
+          gh release download mois-original1045978-real401392-ROI9-42111taxon-bias-gap-delta-20261026-v1 \
+            --repo "$REPO" --dir data/gain \
+            --pattern real2048_newly_covered_93m_source_taxa.csv
+      - name: Select authentic up to 131072 never-processed originals ONCE and split into 128 large shards
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_bulk128_tier10_source \
+            --source tiers \
+            --registry tiers/mois_all_original_photo_target_tiers_receipt.json \
+            --priority data/priority/mois_42111_taxon_priority_AFTER_400710_original9.csv.gz \
+            --old-union data/old/mois_latest_1043930_true_original_photo_hue_observation.parquet \
+            --new2048 data/new/mois_true2048_biasbalanced_original_photo_ROI9_outcomes.parquet \
+            --pilot64 data/pilot/mois_bounded_new_taxon_original_photo_sampling_provenance.csv \
+            --p2-reserved data/p2/selected_P2_photo_source_provenance.csv \
+            --newcovered data/gain/real2048_newly_covered_93m_source_taxa.csv \
+            --target-per-shard 1024 --reference-per-shard 256 \
+            --output bulk128
+          python - <<'PY'
+          import json,hashlib,csv
+          from pathlib import Path
+          root=Path('bulk128')
+          m=json.loads((root/'manifest.json').read_text())
+          assert m['sampling_schema']=='mois_original93m_tier10_bulk128_probability_reference_plus_gap_v1'
+          assert m['source_tier']==10 and m['full_frame_photo_ids']==93209351
+          assert m['source_128_compute_shards']==128
+          assert m['work_units']==512 and m['group_ids']==list(range(128))
+          assert 128*256 <= m['new_photo_attempts_planned'] <= 131072
+          assert m['selected_reference_photo_attempts']==128*256
+          assert m['P5_targeted_photo_attempts']==0
+          assert m['new_photo_attempts_planned']==m['selected_reference_photo_attempts']+m['selected_targeted_photo_attempts']
+          for u in range(512):
+              f=root/'shards'/f'shard-{u:03d}.csv'
+              assert hashlib.sha256(f.read_bytes()).hexdigest()==m['photo_shard_sha256'][str(u)]
+              with f.open(newline='') as source:
+                  rows=list(csv.DictReader(source))
+              assert 0<len(rows)<=256
+          print('MOIS_FROZEN128_SHARDS_512_WORKUNITS_READY_REAL_IMAGE_QUEUE',
+                json.dumps({'shards':128,'new_photo_IDs':m['new_photo_attempts_planned'],
+                            'P5_targeted':0,'reference':m['selected_reference_photo_attempts'],
+                            'targeted':m['selected_targeted_photo_attempts']},
+                           sort_keys=True),flush=True)
+          PY
+      - name: Bundle compact original source photo metadata; preserve 128 SHA and missing strata receipts
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          tar -czf bulk128_source_photo_shards.tar.gz -C bulk128 \
+            shards provenance \
+            $(cd bulk128 && printf 'part-%03d.receipt.json ' $(seq 0 127))
+          sha256sum bulk128_source_photo_shards.tar.gz > bulk128_source_photo_shards.sha256
+          du -h bulk128_source_photo_shards.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.needed == 'true'
+        with:
+          name: mois-bulk128-authentic-original-photo-source-131072
+          path: |
+            bulk128/manifest.json
+            bulk128/bulk128_source_summary.csv
+            bulk128_source_photo_shards.tar.gz
+            bulk128_source_photo_shards.sha256
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish authenticated original 128-shard batch before any pixel fetch
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          gh release create "$SOURCE_TAG" \
+            bulk128/manifest.json bulk128/bulk128_source_summary.csv \
+            bulk128_source_photo_shards.tar.gz bulk128_source_photo_shards.sha256 \
+            --repo "$REPO" --target "$GITHUB_SHA" \
+            --title 'MOIS massive 128-shard original photo batch from already indexed 93m source' \
+            --notes 'Source-only: up to 128 times 1024 previously unattempted photo+observation IDs. 128 original taxon-modulo parts read through one signed tier10, not rescanning 93m. Per shard 256 randomized source-reference and at most 768 targeted P1/P2/P3/P4 flower-colour coverage rows, P5 targeted=0. Previous 1043930 originals + measured 2048 + distinct 64 Lab pilot + reserved 4096 exact photo and observation IDs excluded. Region, local season, per-taxon caps, technical unknowns and source inclusion limitations fully retained. No original photo image pixels downloaded or colour ROIs inferred by this SOURCE release.'
+          echo 'MOIS_MASS_ORIGINAL128_SHARDS_METADATA_PUBLISHED_NOT_REAL_PIXELS_YET'

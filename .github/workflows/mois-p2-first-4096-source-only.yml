@@ -1,0 +1,129 @@
+name: MOIS P2-first original tier07 source, up to 4096 uncoloured taxa
+on:
+  push:
+    branches: [feat/mois-p2-first-4096-20261026]
+    paths:
+      - scripts/acquisition/mois_p2_first_4096_source.py
+      - tests/test_mois_p2_first_4096_source.py
+      - .github/workflows/mois-p2-first-4096-source-only.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-P2-tier07-source-once
+  cancel-in-progress: false
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_TAG: mois-P2-first4096-tier07-one-taxon-one-photo-source-20261026-v1
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Source-only nonresponse and probability tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/acquisition/mois_p2_first_4096_source.py
+          python -m unittest discover -s tests -p test_mois_p2_first_4096_source.py -v
+      - name: Idempotent source release fast gate
+        id: gate
+        run: |
+          set -euo pipefail
+          echo 'needed=true' >> "$GITHUB_OUTPUT"
+          if gh release view "$SOURCE_TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p existing
+            gh release download "$SOURCE_TAG" --repo "$REPO" --dir existing --pattern manifest.json
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('existing/manifest.json').read_text())
+          assert x['P2_only_no_existing_strict9_source_taxa'] and x['source_P5_high_colour_taxa_targeted']==0
+          assert 512<=x['new_photo_attempts_planned']<=4096
+          print('MOIS_P2_SIGNED_SOURCE_ALREADY_ARCHIVED',x['new_photo_attempts_planned'])
+          PY
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Restore 16 original signed tier07 groups only (NOT 93m)
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p parent
+          gh release download mois-complete-93209351-original-photo-target-tiers-v1 \
+            --repo "$REPO" --dir parent --pattern 'tier-07-group-*.tar' \
+            --pattern 'group-*-receipt.json' \
+            --pattern 'mois_all_original_photo_target_tiers_receipt.json'
+          test "$(find parent -maxdepth 1 -name 'tier-07-group-*.tar' | wc -l)" -eq 16
+      - name: Load current 42111-taxon 400710 strict9 and all prior original photo IDs
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p data/priority data/old data/new data/pilot
+          gh release download mois-original1043930-400710-source-taxon-coverage-priority-20261026-v2 \
+            --repo "$REPO" --dir data/priority \
+            --pattern mois_42111_taxon_priority_AFTER_400710_original9.csv.gz
+          gh run download 40187688390 --repo "$REPO" \
+            --name mois-1043930-latest-original-photo-four-hue-fully-signed-union \
+            --dir data/old
+          gh release download mois-real2048-new-source-photo-geo-season-stratified-ROI9-20261026-v1 \
+            --repo "$REPO" --dir data/new \
+            --pattern mois_true2048_biasbalanced_original_photo_ROI9_outcomes.parquet
+          gh release download mois-real20261026-novel64-source-geobalanced-original500px-floralLab-v1 \
+            --repo "$REPO" --dir data/pilot \
+            --pattern mois_bounded_new_taxon_original_photo_sampling_provenance.csv
+      - name: Derive real novel taxon-once P2 source queue with signed photo and observation IDs
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_p2_first_4096_source \
+            --source parent --registry parent/mois_all_original_photo_target_tiers_receipt.json \
+            --priority data/priority/mois_42111_taxon_priority_AFTER_400710_original9.csv.gz \
+            --old-union data/old/mois_latest_1043930_true_original_photo_hue_observation.parquet \
+            --new2048 data/new/mois_true2048_biasbalanced_original_photo_ROI9_outcomes.parquet \
+            --pilot64 data/pilot/mois_bounded_new_taxon_original_photo_sampling_provenance.csv \
+            --target 4096 --batch 128 --output p2
+          python - <<'PY'
+          import csv,json,hashlib
+          from pathlib import Path
+          root=Path('p2');m=json.loads((root/'manifest.json').read_text())
+          n=m['new_photo_attempts_planned']
+          assert m['sampling_schema']=='mois_tier07_p2_zeroROI9_taxon_once_geoseason_original_photo_v1'
+          assert 512<=n<=4096
+          assert m['distinct_original_plant_taxa']==m['distinct_original_observations']==n
+          assert m['source_P5_high_colour_taxa_targeted']==0
+          assert m['prior_image_and_taxon_audit']['p2_taxa_remaining']==17727
+          assert m['full_tier07_source_audit']['photo_IDs_verified']>1000000
+          with (root/'selected_P2_photo_source_provenance.csv').open(newline='') as f:
+              rows=list(csv.DictReader(f))
+          assert len(rows)==len({r['photo_id'] for r in rows})==len({r['inat_taxon_id'] for r in rows})==len({r['original_observation_id'] for r in rows})==n
+          assert all(r['source_gap_priority']=='P2' and r['prior_strict9']=='0' for r in rows)
+          for i in m['worker_ids']:
+              f=root/'shards'/f'shard-{i:03d}.csv'
+              assert hashlib.sha256(f.read_bytes()).hexdigest()==m['photo_shard_sha256'][str(i)]
+          print('MOIS_P2_REAL_ORIGINAL_PHOTO_ID_AND_TAXON_QUEUE_SIGNED',n,flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.needed == 'true'
+        with:
+          name: mois-authentic-P2-photo-and-observation-new-targets
+          path: p2/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Immutable source release (no photo bytes or flower colour)
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          tar -cf P2_photo_worker_shards.tar -C p2 shards/
+          gh release create "$SOURCE_TAG" \
+            p2/manifest.json p2/selected_P2_photo_source_provenance.csv P2_photo_worker_shards.tar \
+            --repo "$REPO" --target "$GITHUB_SHA" \
+            --title 'MOIS P2 never-colour taxa: single original photo per unmeasured taxon' \
+            --notes 'Strictly metadata-only original source: scan 16 SHA-verified original tier07 archives once, never rescan 93m. Up to 4096 new observation/photo IDs from taxa with >=10 source photos and zero strict original nine-component colour after prior 1043930+2048 image attempts; distinct from 64 measured Lab-box pilot. No targeted P5 photos. Conditional source propensity only, not global flora sampling or verified open petals. No new real photo pixels in this release.'
+          echo 'MOIS_TRUE_P2_SOURCE_PHOTO_ROSTER_PUBLISHED_NOT_YET_MEASURED'

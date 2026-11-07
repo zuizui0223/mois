@@ -241,15 +241,18 @@ def fetch_decode_packet(rows, *, part, tier, download, workers,
             source_part=str(part), source_tier=str(tier),
             photo_license=row["photo_license"],
             source_arm=(
-                "bias_controlled_tier07_missing9_nonrepresentative_pilot"
-                if source_role=="bias_controlled_pilot"
-                else ("K1_signature_verified_calibration_only"
-                      if source_role=="K1_calibration" else SOURCE_ARM)),
+                "bulk128_tier10_source_selected_reference_and_gap_SEPARATE"
+                if source_role=="bulk128_selected"
+                else ("bias_controlled_tier07_missing9_nonrepresentative_pilot"
+                    if source_role=="bias_controlled_pilot"
+                    else ("K1_signature_verified_calibration_only"
+                          if source_role=="K1_calibration" else SOURCE_ARM))),
             # The tier07 precolour ledger holds its conditional phase
             # probabilities; never mark an outcome-selected supplement
             # as a unit-probability globally representative source.
             source_photo_inclusion_probability=(
-                "" if source_role in ("K1_calibration","bias_controlled_pilot")
+                "" if source_role in ("K1_calibration","bias_controlled_pilot",
+                                      "bulk128_selected")
                 else "1"),
             audit_stratum=audit_stratum(row["latitude"], row["observed_on"]),
             screen_status="error",
@@ -391,8 +394,9 @@ def scan_source(source, output, *, expected_source_sha256,
             (io_executor is not None and batch_size <= 256),
             "Prefetch must use one shared I/O executor and <=256 photos per packet")
     require(max_packets is None or max_packets > 0, "Invalid pilot limit")
-    require(source_role in ("full93m", "full93m_chunk", "K1_calibration", "bias_controlled_pilot"),
-            "A full source part, verified bounded source chunk, or K1 calibration is required")
+    require(source_role in ("full93m", "full93m_chunk", "K1_calibration",
+                            "bias_controlled_pilot", "bulk128_selected"),
+            "Only signed source, bounded calibration or bulk-selected photos are supported")
     chunk_role = source_role == "full93m_chunk"
     require((chunk_role and type(chunk_index) is int and chunk_index >= 0
              and isinstance(parent_source_sha256,str)
@@ -556,8 +560,13 @@ def scan_source(source, output, *, expected_source_sha256,
         "source_gzip_sha256": expected_source_sha256,
         "source_part": part, "source_tier": tier,
         "source_role": source_role,
-        "calibration_subset_not_global_census": source_role in ("K1_calibration", "bias_controlled_pilot"),
-        "outcome_conditioned_supplement_not_population_unbiased":source_role=="bias_controlled_pilot",
+        "calibration_subset_not_global_census": source_role in (
+            "K1_calibration","bias_controlled_pilot","bulk128_selected"),
+        "outcome_conditioned_supplement_not_population_unbiased":source_role in (
+            "bias_controlled_pilot","bulk128_selected"),
+        "complete_preselected_bulk128_photo_roster_not_full93m_census":(
+            source_role=="bulk128_selected" and max_packets is None
+            and total==expected_count),
         **({"source_parent_sha256": parent_source_sha256,
             "source_chunk_index": chunk_index,
             "entire_original_source_part_completed": False,
