@@ -28,7 +28,7 @@ def daterange(y,m):
     return f"{int(a.timestamp()*1000)},{int(b.timestamp()*1000)}"
 
 def validate_source_targets(rows):
-    require(1<=len(rows)<=4096,"out-of-range source target cohort")
+    require(1<=len(rows)<=40000,"out-of-range source target cohort")
     require(len({x['target_id'] for x in rows})==len(rows),"duplicate target_id")
     require(all(str(x['target_id']).startswith("2020|") for x in rows),
             "only source-year 2020 is supported with Global1 population")
@@ -78,10 +78,12 @@ def _one(plan,rows,out,offline):
     first,last=plan['start'],plan['start']+plan['n']
     points=rows[first:last]
     p=out/'raw'/plan['cache_name']
-    if offline:
+    if offline or p.is_file():
         require(p.is_file(),"offline original source response missing: "+str(p))
         raw=p.read_bytes()
+        reused=True
     else:
+        reused=False
         params=provider_params(plan['product'],plan['month'],points,year=2020)
         try:
             response=requests.get(SERVICE[plan['product']],params=params,timeout=85,
@@ -91,9 +93,11 @@ def _one(plan,rows,out,offline):
         # Store raw bytes also on non-200 responses, for audit.
         raw=response.content
         p.parent.mkdir(parents=True,exist_ok=True)
+        if response.status_code!=200:
+            (out/'failed').mkdir(parents=True,exist_ok=True)
+            (out/'failed'/plan['cache_name']).write_bytes(raw)
+            raise ValueError("provider HTTP "+str(response.status_code)+" "+str(plan))
         p.write_bytes(raw)
-        require(response.status_code==200,
-            "provider HTTP "+str(response.status_code)+" "+str(plan))
     try:obj=json.loads(raw)
     except ValueError as exc:raise ValueError("malformed raster response: "+str(plan)) from exc
     require(not obj.get('error'),"provider source error: "+str(obj.get('error')))
@@ -108,19 +112,21 @@ def _one(plan,rows,out,offline):
          "returned_samples":len(received),
          "value_statuses":{z:sum(x['status']==z for x in parsed)
                           for z in sorted({x['status'] for x in parsed})},
-         "source_replayed_not_refetched":offline,
+         "source_replayed_not_refetched":reused,
          "cache_name":plan['cache_name']}
     return plan,parsed,rec
 
-def run(targets,out,offline=False,workers=4):
+def run(targets,out,offline=False,workers=4,manifest_sha=MANIFEST_SHA,expected_rows=4096):
     require(1<=workers<=4,"maximum 4 concurrent provider queries")
     out=Path(out);out.mkdir(parents=True,exist_ok=True)
     source=Path(targets).read_bytes()
-    require(digest(source)==MANIFEST_SHA,"frozen global target selection SHA differs")
+    require(digest(source)==manifest_sha,"frozen global target selection SHA differs")
     rows=list(csv.DictReader(io.StringIO(source.decode())))
     validate_source_targets(rows)
     plans=plan_requests(rows)
-    assert len(rows)==4096 and len(plans)==64
+    require(len(rows)==expected_rows,"source cohort count changed")
+    require(len(plans)==4*math.ceil(len(rows)/512)+math.ceil(len(rows)/128),
+            "multipoint API plan count changed")
     # Each network request is for a disjoint product/month/position group.
     result={x['target_id']:dict(x) for x in rows}
     recs=[]
@@ -160,8 +166,8 @@ def run(targets,out,offline=False,workers=4):
             r[f'viirs_{m}_status']=="OK" for r in final for m in MONTHS),
         "population_valid_values":sum(r["population_global1_0_status"]=="OK" for r in final),
         "planned_API_requests":len(plans),
-        "API_requests_new":0 if offline else len(plans),
-        "API_requests_reused_from_saved_raw":len(plans) if offline else 0,
+        "API_requests_new":sum(not x["source_replayed_not_refetched"] for x in recs),
+        "API_requests_reused_from_saved_raw":sum(x["source_replayed_not_refetched"] for x in recs),
         "responses_source_SHA256":{p['cache_name']:x['original_response_sha256']
            for p,x in zip(plans,recs)},
         "original_raw_responses_retained":True,
@@ -189,5 +195,7 @@ if __name__=='__main__':
     p.add_argument('--out',required=True,type=Path)
     p.add_argument('--workers',type=int,default=4)
     p.add_argument('--offline',action='store_true')
+    p.add_argument('--expected-manifest-sha',default=MANIFEST_SHA)
+    p.add_argument('--expected-rows',type=int,default=4096)
     a=p.parse_args()
-    run(a.targets,a.out,a.offline,a.workers)
+    run(a.targets,a.out,a.offline,a.workers,a.expected_manifest_sha,a.expected_rows)
