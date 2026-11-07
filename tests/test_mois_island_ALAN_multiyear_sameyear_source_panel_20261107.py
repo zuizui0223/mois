@@ -31,6 +31,21 @@ class MultiyearPanelContracts(unittest.TestCase):
             "strict9_success":[4]})
         with self.assertRaisesRegex(ValueError,"original.*2023|2023.*changed"):
             m.year_safeguards(2023,frame)
+    def test_common_geographic_support_never_uses_island_only_blocks(self):
+        a=pd.DataFrame([
+            {"region5":"both","is_island":1,"year":2019},
+            {"region5":"both","is_island":0,"year":2021},
+            {"region5":"only_island","is_island":1,"year":2019},
+            {"region5":"only_island","is_island":1,"year":2025},
+            {"region5":"only_mainland","is_island":0,"year":2024}])
+        self.assertEqual(m.common_geographic_support_blocks(a),{"both"})
+    def test_generalisability_checks_leave_year_out_and_count_island_concentration(self):
+        import inspect
+        source=inspect.getsource(m.test_generalizability)
+        self.assertIn("for omitted in PHOTO_YEARS",source)
+        self.assertIn("largest_island_share_of_island_cell_years",source)
+        self.assertIn("common_geographic_support_blocks",source)
+
     def test_panel_model_has_year_AND_regional_geographic_effects(self):
         import inspect
         s=inspect.getsource(m.run)
