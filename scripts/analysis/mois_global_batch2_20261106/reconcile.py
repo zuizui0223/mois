@@ -109,7 +109,7 @@ if __name__=='__main__':
     v=pd.read_csv(a.values,dtype={'target_id':str},low_memory=False)
     result,receipt=merge_results(q,v)
     target=a.out/'GLOBAL_environment_queue_updated.csv.gz'
-    result.to_csv(target,index=False,compression={'method':'gzip','mtime':0})
+    result.to_csv(target,index=False,compression={'method':'gzip','compresslevel':1,'mtime':0})
     receipt['queue_input_sha256']=hashlib.sha256(a.queue.read_bytes()).hexdigest()
     receipt['values_input_sha256']=hashlib.sha256(a.values.read_bytes()).hexdigest()
     receipt['queue_output_sha256']=hashlib.sha256(target.read_bytes()).hexdigest()
