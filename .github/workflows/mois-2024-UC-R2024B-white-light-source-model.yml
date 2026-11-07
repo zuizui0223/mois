@@ -1,0 +1,92 @@
+name: MOIS 2024 global and island photographic white × light using separate UC population
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-2024-UC-R2024B-white-light-source-model.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-2024-independent-UC-R2024B-floral-white-ALAN-original-v1
+  cancel-in-progress: false
+jobs:
+  source-locked-UC-flowerlight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test same-original-photo and nonmixed population-source contracts
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 scipy==1.15.2 statsmodels==0.14.5
+          python -m unittest discover -s tests -p test_mois_2024_UC_R2024B_independent_photo_colour_ALAN.py -v
+          python -m py_compile scripts/analysis/mois_2024_UC_R2024B_independent_photo_colour_ALAN.py
+      - name: Retrieve only signed 2024 numerical data, accepted taxa and previously measured ROI9
+        run: |
+          set -euo pipefail
+          mkdir -p inputs/photos inputs/wcvp inputs/land inputs/CN inputs/UC
+          gh run download 41007444495 --repo zuizui0223/mois \
+            --name mois-nohuman-canonical-climate-joined-20261030 --dir inputs/photos
+          gh run download 39225659840 --repo zuizui0223/mois \
+            --name mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status --dir inputs/wcvp
+          gh run download 42328254130 --repo zuizui0223/mois \
+            --name mois-global2024-original4096-WPGlobal2-2024-VIIRS-raw-SHA --dir inputs/land
+          gh run download 42328567038 --repo zuizui0223/mois \
+            --name mois-global2024-rest62360-original-VIIRS-G2-all66456-source --dir inputs/CN
+          gh run download 42333953557 --repo zuizui0223/mois \
+            --name mois-2024-WorldPop-UC-R2024B-full-original-66456-population-source --dir inputs/UC
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  inputs/photos/canonical_observations_climate.csv.gz' | sha256sum -c -
+          echo 'dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2  inputs/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' | sha256sum -c -
+          echo 'f7f65e6bc167089b3034555c655e777f528ecdd29952ab7ee9833d8722f39267  inputs/land/original_source_2024/mois_2024_full_photo_landmass_source.csv' | sha256sum -c -
+          echo '6e0a077d496e90848d05d043bffae57e4772519f4572a457221c5ef4da0fb813  inputs/CN/result_rest2024/all2024_known_land_combined_values.csv' | sha256sum -c -
+          echo 'a07af611836d215fb7997c7f574729df10787f5a7cc9bfa1b67bf5a831d613dc  inputs/UC/2024_66k_UC_R2024B_fullcohort_values.csv' | sha256sum -c -
+      - name: Fit source-independent 2024 UC global and same-island photographic-white relation
+        timeout-minutes: 13
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_2024_UC_R2024B_independent_photo_colour_ALAN \
+            --canonical inputs/photos/canonical_observations_climate.csv.gz \
+            --wcvp inputs/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+            --photo-landmass inputs/land/original_source_2024/mois_2024_full_photo_landmass_source.csv \
+            --CN-environment inputs/CN/result_rest2024/all2024_known_land_combined_values.csv \
+            --UC-environment inputs/UC/2024_66k_UC_R2024B_fullcohort_values.csv \
+            --UC-receipt inputs/UC/UC_R2024B_source_receipt.json \
+            --out results_UC_original_photo_white
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path('results_UC_original_photo_white')
+          r=json.loads((p/'2024_UC_photo_white_source_receipt.json').read_text())
+          assert r['original_2024_photo_VIIRS_eligible_cells']==2091
+          assert r['previous_CN_photo_population_eligible_cells']==1617
+          assert r['new_UC_photo_population_eligible_cells']>=1500
+          assert r['new_UC_independent_islands']>=5
+          assert r['source_release_full_UC_R2024B_no_population_splicing'] is True
+          assert r['moth_effectiveness_not_measured']
+          assert r['new_original_photo_downloads_or_ROI_inferences']==0
+          assert r['no_MNAR_tipping_scenarios_run']
+          for f,expected in r['output_SHA256'].items():
+              assert hashlib.sha256((p/f).read_bytes()).hexdigest()==expected
+          print('MOIS_2024_UC_ONLY_ROI_LIGHT_ISLAND_SOURCE_SHAS_VERIFIED',json.dumps({
+             k:r[k] for k in ('previous_CN_photo_population_eligible_cells',
+                  'new_UC_photo_population_eligible_cells','new_UC_independent_islands',
+                  'new_UC_supported_island_cells','new_UC_island_beta_pp_per_loglight')},
+             sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-2024-UC-R2024B-exclusive-pop-source-photographic-white-island-mainland-results
+          path: results_UC_original_photo_white/
+          retention-days: 90
+          if-no-files-found: warn
