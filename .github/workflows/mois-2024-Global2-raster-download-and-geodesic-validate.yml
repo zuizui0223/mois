@@ -1,0 +1,102 @@
+name: MOIS verify full 2024 WorldPop Global2 R2025A 1km global population raster
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths: [.github/workflows/mois-2024-Global2-raster-download-and-geodesic-validate.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-worldpop-Global2-2024-mosaic-full-file-source-v1
+  cancel-in-progress: false
+jobs:
+  original-worldpop-raster:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 19
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install rasterio and geodesic pixel area tools
+        run: python -m pip install -q rasterio==1.4.3 pyproj==3.7.2 requests==2.32.5
+      - uses: actions/cache/restore@v4
+        with:
+          path: worldpop_raster/
+          key: mois-worldpop-2024-R2025A-v1-unadjusted1km-original-source
+      - name: Download complete public original WorldPop Global2 count raster (if not cached)
+        timeout-minutes: 12
+        run: |
+          set -euo pipefail
+          mkdir -p worldpop_raster
+          if [ ! -f worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif ]; then
+            curl --fail --location --retry 3 --connect-timeout 25 --speed-time 90 --speed-limit 1024 --max-time 650 \
+              'https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2025A/2024/0_Mosaicked/v1/1km/constrained/global_pop_2024_CN_1km_R2025A_v1.tif' \
+              --output worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif
+          fi
+          test "$(stat -c%s worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif)" -eq 289380599
+          sha256sum worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif
+      - name: Verify full original GeoTIFF CRS/resolution/nodata, calculate latitude-specific real pixel area
+        run: |
+          set -euo pipefail
+          mkdir -p receipt
+          python - <<'PY'
+          import rasterio,pyproj,json,hashlib,math
+          from pathlib import Path
+          p=Path('worldpop_raster/global_pop_2024_CN_1km_R2025A_v1.tif')
+          sha=hashlib.sha256(p.read_bytes()).hexdigest()
+          geod=pyproj.Geod(ellps='WGS84')
+          info={'source':'WorldPop Global2 Population Counts','release':'R2025A v1',
+            'source_year':2024,'units':'population count per raster pixel, NOT population density',
+            'source_url':'https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2015_2030/R2025A/2024/0_Mosaicked/v1/1km/constrained/global_pop_2024_CN_1km_R2025A_v1.tif',
+            'original_file_bytes':p.stat().st_size,'original_file_SHA256':sha,
+            'sampling':'rasterio nearest pixel original EPSG:4326 grid',
+            'area_conversion':'pyproj Geod(ellps=WGS84) exact pixel polygon area in km2',
+            'not_Global1_2000_2020':True,'not_different_source_year':True,
+            'new_photo_downloads_or_ROI_inference':0,
+            'example_sites':[]}
+          with rasterio.open(p) as ds:
+              info.update({'driver':ds.driver,'CRS':ds.crs.to_string(),'width':ds.width,
+                           'height':ds.height,'number_bands':ds.count,
+                           'transform':list(ds.transform),'resolution':list(ds.res),
+                           'no_data':ds.nodata,'bounds':list(ds.bounds),
+                           'tiled':ds.is_tiled,'profile':{k:str(v) for k,v in ds.profile.items()}})
+              assert ds.count==1 and ds.crs.to_epsg()==4326
+              assert abs(ds.res[0]-1/120)<1e-6 and abs(ds.res[1]-1/120)<1e-6
+              pts=[('Honshu',139.7,35.7),('Taiwan',121.52,25.04),
+                   ('UK',-0.125,51.507),('North Island NZ',174.76,-36.85),
+                   ('New York',-74.0,40.7),('Australia',151.21,-33.87),
+                   ('Vancouver Island',-123.36,48.43),('Alaska',-149.9,61.2),
+                   ('Greenland',-51.73,64.18)]
+              for name,lon,lat in pts:
+                  row,col=ds.index(lon,lat)
+                  if 0<=row<ds.height and 0<=col<ds.width:
+                      count=float(next(ds.sample([(lon,lat)]))[0])
+                      left,bottom,right,top=rasterio.windows.bounds(
+                         rasterio.windows.Window(col,row,1,1),ds.transform)
+                      area,_=geod.polygon_area_perimeter(
+                        [left,right,right,left],[bottom,bottom,top,top])
+                      area=abs(area)/1e6
+                      density=count/area if (math.isfinite(count) and count>=0 and
+                             count!=ds.nodata and area>0) else None
+                      info['example_sites'].append({'site':name,'lon':lon,'lat':lat,
+                        'population_count_per_pixel':count,'geodesic_pixel_km2':area,
+                        'density_per_km2':density,'nodata':count==ds.nodata})
+          (Path('receipt')/'WorldPop_Global2_2024_original_geotiff_receipt.json').write_text(
+               json.dumps(info,indent=2,sort_keys=True)+'\n')
+          print('MOIS_WP2024_G2_ORIGINAL_FULL_RASTER_SHA_VERIFIED',
+             json.dumps({k:info[k] for k in ('original_file_SHA256','original_file_bytes',
+               'CRS','width','height','resolution','no_data','tiled','example_sites')},
+               sort_keys=True)[:4800],flush=True)
+          PY
+      - uses: actions/cache/save@v4
+        with:
+          path: worldpop_raster/
+          key: mois-worldpop-2024-R2025A-v1-unadjusted1km-original-source
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-worldpop-Global2-2024-full-geotiff-SHA-and-density-source-receipt
+          path: receipt/
+          retention-days: 90
+          if-no-files-found: error
