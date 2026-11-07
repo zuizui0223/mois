@@ -139,7 +139,7 @@ jobs:
                       loc=sample['location']
                       if abs(loc['x']-float(old.query_longitude))>1e-7 or abs(loc['y']-float(old.query_latitude))>1e-7:
                           raise ValueError('Sample location does not match photo-independent selected source')
-                      band=[float(s) for s in re.split(r'[,\\s]+',str(sample['value']).strip())]
+                      band=[float(s) for s in re.split(r'[,\s]+',str(sample['value']).strip())]
                       if not all(math.isfinite(v) for v in band):raise ValueError('Nonfinite band')
                       if len(band)!=(2 if product=='viirs' else 1):raise ValueError('Raw VIIRS/WorldPop band count changed')
                       value,cloud=expected_by_loc[i]
