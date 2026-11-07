@@ -56,6 +56,19 @@ def params(year,month,rows):
         "returnFirstValueOnly":"true","outFields":"*","interpolation":"RSP_NearestNeighbor",
         "time":f"{int(start.timestamp()*1000)},{int(end.timestamp()*1000)}"}
 
+def original_2022_october_provider_error(year,month,obj):
+    """Never convert this provider 400 transformation error to a zero light pixel.
+
+    The original source has 200 HTTP with per-provider raster error 400;
+    its missing numerical values remain unavailable even when 3 other months work.
+    """
+    if year!=2022 or month!=10:return False
+    err=obj.get("error") if isinstance(obj,dict) else None
+    if not isinstance(err,dict):return False
+    return (err.get("code")==400 and
+            err.get("message")=="Invalid or missing input parameters." and
+            all("Transformation is unavailable" in str(x) for x in (err.get("details") or [])))
+
 def one(plan,year,rows,out,offline):
     month,start,n=plan
     subset=rows[start:start+n]
@@ -76,8 +89,12 @@ def one(plan,year,rows,out,offline):
         path.write_bytes(raw);reused=False
     try:obj=json.loads(raw)
     except ValueError as e:raise ValueError("Original provider bytes not JSON "+filename) from e
-    require(not obj.get("error"),"Source provider error "+filename)
-    vals=extract_samples("viirs",month,subset,obj,year=year)
+    if original_2022_october_provider_error(year,month,obj):
+        vals=[{"status":"PROVIDER_RASTER_400","value":None,"cloud":None}
+              for _ in subset]
+    else:
+        require(not obj.get("error"),"Source provider error "+filename)
+        vals=extract_samples("viirs",month,subset,obj,year=year)
     require(len(vals)==n,"Source VIIRS dropped original locations")
     return plan,vals,{"file":filename,"raw_SHA256":digest(raw),
                      "new_request":not reused,"source_year":year,"month":month,
@@ -123,6 +140,9 @@ def run(year,targets,out,offline=False,workers=4):
        "source_mainland_sites":sum(r["land_class"]=="mainland" for r in results),
        "VIIRS_months":[1,4,7,10],
        "source_VIIRS_at_least3months_sites":sum(r["viirs_available"] for r in results),
+       "source_provider_errors_retained_as_missing":sum(
+           r.get("viirs_10_status")=="PROVIDER_RASTER_400" for r in results),
+       "2022_oct_source_error_not_equal_to_zero_or_official_monthly_data":True,
        "source_VIIRS_fewer3months_sites":sum(not r["viirs_available"] for r in results),
        "valid_monthly_VIIRS_values":sum(r[f"viirs_{m}_status"]=="OK"
                                       for r in results for m in MONTHS),
