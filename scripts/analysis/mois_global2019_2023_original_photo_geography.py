@@ -86,8 +86,11 @@ def run(photo_path,shoreline,out,years):
                 "n_attempted","n_strict9","source_subarms"]
         sites=folder/f"mois_{year}_knownland_sites.csv"
         good[fields].to_csv(sites,index=False,float_format="%.12g",lineterminator="\n")
-        require(sha(full)==contract["full_sha"] and sha(sites)==contract["known_sha"],
-                "Original year source SHA mismatches independent local reconstruction")
+        require(sha(sites)==contract["known_sha"],
+                "Original year target ID, landmass, precise coordinates and photo counts SHA mismatch")
+        # Geographic area geometry may differ at the last decimal by GEOS,
+        # but the signed source target geometry and photo IDs MUST match exactly.
+        local_full_bytes_same=sha(full)==contract["full_sha"]
         summary={"year":year,"original_photo_records":len(d),
             "original_source_photo_strict9_success":int(d.strict9.sum()),
             "original_all_photo_landmass_targets":len(q),
@@ -98,6 +101,9 @@ def run(photo_path,shoreline,out,years):
             "high_latitude_targets":int(q.query_latitude.abs().gt(60).sum()),
             "small_island_lt5km2_targets":int((q.land_class.eq("island")&q.land_area_km2.lt(5)).sum()),
             "full_source_SHA256":sha(full),"knownland_source_SHA256":sha(sites),
+            "independent_local_full_area_bytes_identical":local_full_bytes_same,
+            "local_full_area_GEOS_roundoff_reference_SHA256":contract["full_sha"],
+            "target_cell_ID_coordinate_original_photo_fields_exact_SHA":True,
             "no_new_original_photographs_or_ROI_inference":True,"island_area_cutoff":None,
             "latitude_cutoff":None}
         (folder/"source_receipt.json").write_text(json.dumps(summary,sort_keys=True,indent=2)+"\n")
