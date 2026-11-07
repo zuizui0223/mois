@@ -1,0 +1,102 @@
+name: MOIS 2024 original 2024 VIIRS+Global2 photo-white spatial and island LOIO bootstrap
+on:
+  push:
+    branches: [analysis/mois-viirs-popmatch-20261105]
+    paths:
+      - .github/workflows/mois-2024-original-sameyear-ALAN-island-white-empirical.yml
+      - scripts/analysis/mois_2024_sameyear_global_island_photo_white_20261107.py
+      - tests/test_mois_2024_sameyear_global_island_photo_white_20261107.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-original-2024-G2-ALAN-floral-white-spatial-island-robustness
+  cancel-in-progress: false
+jobs:
+  original-source-signatures-and-spatial-white-models:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run source identity, cell uniqueness and independent island guards
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 scipy==1.15.2 statsmodels==0.14.5
+          python -m unittest discover -s tests -p test_mois_2024_sameyear_global_island_photo_white_20261107.py -v
+          python -m py_compile scripts/analysis/mois_2024_sameyear_global_island_photo_white_20261107.py
+      - name: Download existing original SHA-locked photograph, accepted species, VIIRS Global2 and global landmass source only
+        run: |
+          set -euo pipefail
+          mkdir -p sources/photos sources/wcvp sources/landmass sources/sameyear
+          gh run download 41007444495 --repo zuizui0223/mois \
+            --name mois-nohuman-canonical-climate-joined-20261030 --dir sources/photos
+          gh run download 39225659840 --repo zuizui0223/mois \
+            --name mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status --dir sources/wcvp
+          gh run download 42328254130 --repo zuizui0223/mois \
+            --name mois-global2024-original4096-WPGlobal2-2024-VIIRS-raw-SHA --dir sources/landmass
+          gh run download 42328567038 --repo zuizui0223/mois \
+            --name mois-global2024-rest62360-original-VIIRS-G2-all66456-source --dir sources/sameyear
+          echo 'f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c  sources/photos/canonical_observations_climate.csv.gz' | sha256sum -c -
+          echo 'dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2  sources/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' | sha256sum -c -
+          echo 'f7f65e6bc167089b3034555c655e777f528ecdd29952ab7ee9833d8722f39267  sources/landmass/original_source_2024/mois_2024_full_photo_landmass_source.csv' | sha256sum -c -
+          echo '6e0a077d496e90848d05d043bffae57e4772519f4572a457221c5ef4da0fb813  sources/sameyear/result_rest2024/all2024_known_land_combined_values.csv' | sha256sum -c -
+      - name: Independently calculate actual source 2024 global and within-island white ROI association, LOIO and cluster bootstrap
+        timeout-minutes: 14
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_2024_sameyear_global_island_photo_white_20261107 \
+            --canonical sources/photos/canonical_observations_climate.csv.gz \
+            --wcvp sources/wcvp/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+            --photo-landmass sources/landmass/original_source_2024/mois_2024_full_photo_landmass_source.csv \
+            --sameyear-2024-environment sources/sameyear/result_rest2024/all2024_known_land_combined_values.csv \
+            --out original_2024_photo_alanspatial_results
+          python - <<'PY'
+          import hashlib,json,math,pandas as pd
+          from pathlib import Path
+          p=Path('original_2024_photo_alanspatial_results')
+          rec=json.loads((p/'source_receipt.json').read_text())
+          assert rec['photo_eligible_VIIRS_cells']==2091
+          assert rec['photo_eligible_with_sameyear_2024_population_cells']==1617
+          assert rec['within_island_num_cells']==142
+          assert rec['within_island_num_independent_islands']==17
+          models=pd.read_csv(p/'2024_sameyear_original_white_vs_nightlight_models.csv')
+          global_pop=models.loc[models.model.eq('VIIRS_pop2024_region_adjusted')].iloc[0]
+          island=models.loc[models.model.eq('within_same_island_pop2024_islandFE')].iloc[0]
+          assert abs(global_pop.beta-(-1.053244))<1e-4
+          assert abs(island.beta-(-4.884245))<1e-4
+          assert math.isclose(island.ci_low,-8.297767,rel_tol=1e-4)
+          assert math.isclose(island.ci_high,-1.470723,rel_tol=1e-4)
+          assert rec['leave_one_island_out_count']==17
+          assert rec['leave_one_island_out_all_negative'] is True
+          assert rec['leave_one_island_out_significant_nominal_95_negative']==16
+          bootstrap=rec['island_replacement_cluster_bootstrap']
+          assert bootstrap['bootstrap_samples']==1500
+          assert bootstrap['CI_low']<0<bootstrap['CI_high']
+          assert rec['repeated_same_accepted_species_island_groups']==83
+          assert rec['source_SHA256']['sameyear_2024_environment']=='6e0a077d496e90848d05d043bffae57e4772519f4572a457221c5ef4da0fb813'
+          assert rec['unknown_photo_colours_NOT_imputed']
+          assert rec['new_photos_downloaded_or_ROI_inferred']==0
+          for name,sha in rec['output_SHA256'].items():
+              assert hashlib.sha256((p/name).read_bytes()).hexdigest()==sha,name
+          print('MOIS_2024_SOURCE_INDEPENDENT_17ISLAND_LOIO_BOOTSTRAP_CONFIRMED',json.dumps({
+             'global_light_beta':float(global_pop.beta),
+             'within_island_beta':float(island.beta),
+             'islands':17,'cells':142,'LOO_all_negative':True,
+             'LOO_nominally_significant_negative':16,'bootstrap95CI_zero_included':True},
+             sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-2024-source-G2-ALAN-white-global-and-island-FE-LOIO-bootstrap
+          path: original_2024_photo_alanspatial_results/
+          retention-days: 90
+          if-no-files-found: error
