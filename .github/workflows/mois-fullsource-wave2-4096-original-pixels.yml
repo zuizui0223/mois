@@ -1,0 +1,86 @@
+name: MOIS full 3.43M original source - second disjoint 4096 REAL photo ROI-v4 pixels
+
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_measure_original_new_photos_roi_v4.py
+      - .github/workflows/mois-fullsource-wave2-4096-original-pixels.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-source-outside-106376-new4096-original-pixels-20261017
+  cancel-in-progress: false
+
+jobs:
+  actually-classify-second-original-photo-wave:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download original-source second 4096 real photo IDs outside the previous 106376 source sample
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p original_plan
+          gh run download 38995068942 --repo zuizui0223/mois \
+            --name mois-full3430502-original-3420814-unmeasured-second-4096-photo-source-WAVE2 \
+            --dir original_plan
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('original_plan/mois_first4096_original_source_only_freeze.json').read_text())
+          assert d['original_complete_source_photo_ids']==3430502
+          assert d['new_original_unmeasured_source_photo_ids']==3420814
+          assert d['new_unmeasured_source_photo_ids_outside_first_screen']==3315910
+          assert d['first_wave_original_source_photo_ids']==4096
+          assert d['first_wave_distinct_source_observers']==4096
+          assert d['no_photo_colour_or_fitness_or_bloom_label_used']
+          print('MOIS_TRUE_FULL_SOURCE_SECOND_4096_PIXEL_WAVE_ADMITTED')
+          PY
+      - name: Restore the same pinned original 100k MOIS flower-ROI method from FCP and its fixed model files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp_source"
+          git -C "$RUNNER_TEMP/fcp_source" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp_source" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp_source" checkout -q --detach FETCH_HEAD
+          python -m pip install -q 'numpy<3' 'pandas<3' scipy Pillow ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp_source"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/mois_original_sam"
+      - name: MEASURE actual NEW source-photo pixels with the same frozen ROI-v4 four-colour classifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp_source"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-full-original-S3-rate"
+          number=${{ matrix.shard }}
+          indexed=$(printf '%02d' "$number")
+          python -m scripts.analysis.mois_measure_original_new_photos_roi_v4 \
+            --photo-shard "original_plan/mois_source_only_shard_${indexed}_256.csv" \
+            --precolour-receipt original_plan/mois_first4096_original_source_only_freeze.json \
+            --shard-id "$number" \
+            --fcp-runtime-root "$RUNNER_TEMP/fcp_source" \
+            --original-sam "$RUNNER_TEMP/mois_original_sam" \
+            --outdir "mois_full_new4096_shard_${indexed}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-full3430502-second4096-original-realROI-shard-${{ matrix.shard }}
+          path: mois_full_new4096_shard_*/
+          if-no-files-found: warn
+          retention-days: 90
