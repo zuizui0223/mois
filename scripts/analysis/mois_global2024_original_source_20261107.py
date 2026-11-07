@@ -16,6 +16,7 @@ from scripts.analysis.mois_global_2020_GSHHG_scope_20261107 import (
 CANONICAL_SHA="f033661d76e07898a5c13199a55c5d0ce6e55353daa48b0058c456979e90644c"
 SOURCE_2024_FULL_MANIFEST_SHA="f7f65e6bc167089b3034555c655e777f528ecdd29952ab7ee9833d8722f39267"
 SELECTED_4096_SHA="541b6134090b61a285ffa9c45ee3df8a382e66ae5628c394ca0c4d47af9207a0"
+REMAINING_62360_SHA="a792602a05735c5049c960a80fc6a75f4a1241c0a3abaa9769f452330559bf2d"
 COAST_SHA="8dbbe7e071e77e9e75f2d639239099ebca8d5c16d6a07df8169729d49f15cf41"
 
 def require(ok,msg):
@@ -79,7 +80,12 @@ def run(canonical,shoreline,out):
             "2024 true mainland/island denominator changed")
     known["blind_hash"]=known.target_id.map(
         lambda s:hashlib.sha256(("MOIS-global-2024-v1|"+s).encode()).hexdigest())
-    selected=known.sort_values("blind_hash").head(4096).copy()
+    ordered=known.sort_values("blind_hash")
+    selected=ordered.head(4096).copy()
+    remaining=ordered.iloc[4096:].copy()
+    require(len(remaining)==62360 and remaining.target_id.is_unique and
+            not set(selected.target_id)&set(remaining.target_id),
+            "Duplicate/missing original 2024 source sites")
     fields=["target_id","land_class","query_longitude","query_latitude",
             "n_attempted","n_strict9","source_subarms"]
     out.mkdir(parents=True)
@@ -91,6 +97,10 @@ def run(canonical,shoreline,out):
     selected[fields].to_csv(target,index=False,float_format="%.12g",lineterminator="\n")
     require(sha(target)==SELECTED_4096_SHA,
             "Independent 2024 4096 selected source SHA differs")
+    rest=out/"mois_2024_remaining62360_source.csv"
+    remaining[fields].to_csv(rest,index=False,float_format="%.12g",lineterminator="\n")
+    require(sha(rest)==REMAINING_62360_SHA,
+            "Independent 2024 remaining62360 source SHA differs")
     report={
       "schema":"MOIS_2024_GSHHG_original_global_land_all_islands_v1",
       "canonical_source_SHA256":CANONICAL_SHA,
@@ -113,6 +123,9 @@ def run(canonical,shoreline,out):
       "selected_4096_strict9_success":int(selected.n_strict9.sum()),
       "full_source_SHA256":sha(full),
       "selected_4096_SHA256":sha(target),
+      "remaining_62360_SHA256":sha(rest),
+      "remaining_62360_mainland":int(remaining.land_class.eq("mainland").sum()),
+      "remaining_62360_island":int(remaining.land_class.eq("island").sum()),
       "selection_independent_of_flower_colour_or_ROI":True,
       "no_minimum_island_area_km2":None,
       "latitude_exclusion":None,
