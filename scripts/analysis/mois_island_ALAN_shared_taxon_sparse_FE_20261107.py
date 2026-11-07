@@ -137,8 +137,10 @@ def interaction_stats(beta,variance,clusters,n):
             "p":float(2*student_t.sf(abs(tstat),df)),
             "df":df,"clusters":int(clusters)}
 
-def fit_sparse_taxon_FE(frame):
-    """True taxon FE + geography/year fixed effects, per-cell equal weights."""
+def fit_sparse_taxon_FE(frame,effect_cols=("species","region5","year")):
+    """Same genuine source rows; optionally add accepted-taxon FE to geography/year."""
+    panel.require(set(effect_cols) in ({"species","region5","year"},{"region5","year"}),
+                  "Only source-based nested taxon vs non-taxon fixed-effect models")
     panel.require(len(frame)>=300 and frame.region5.nunique()>=10 and
                   frame[SPECIES].nunique()>=20 and frame.is_island.sum()>=40,
                   "Too little actual same-taxonomy island/mainland support")
@@ -152,7 +154,7 @@ def fit_sparse_taxon_FE(frame):
     panel.require(np.isfinite(variables).all(),
                   "True original WCVP photos have nonfinite predictors")
     weights=d.photo_cell_equal_species_weight.to_numpy(float)
-    fe,levels=sparse_fixed_effect_design(d)
+    fe,levels=sparse_fixed_effect_design(d,cols=effect_cols)
     partial,solver_diagnostics=residualize_against_FEs(fe,weights,variables)
     x=partial[:,:-1]
     y=partial[:,-1]
@@ -179,6 +181,7 @@ def fit_sparse_taxon_FE(frame):
        "source_accepted_taxon_clusters":n_taxa,
        "observed_geographic_taxon_intersection_clusters":n_pairs,
        "fixed_effect_cardinalities":levels,
+       "exact_fixed_effect_definition":list(effect_cols),
        "weighted_cell_sum_per_cell_is_one":True,
        "genuine_source_photo_roi_not_missingness_label":True,
        "no_external_genetic_or_true_native_species_phenotype_inference":True,
@@ -193,7 +196,7 @@ def fit_sparse_taxon_FE(frame):
       "interaction_accepted_taxon_cluster":interaction_stats(beta[j],v_taxon[j,j],n_taxa,len(d)),
       "interaction_two_way_spatial_plus_taxon_cluster":interaction_stats(
          beta[j],v_two[j,j],min(n_geo,n_taxa),len(d)),
-      "fixed_effects_are_actual_accepted_taxa_region5_and_observation_year":True,
+      "fixed_effects_are_actual_accepted_taxa_region5_and_observation_year":("species" in effect_cols),
       "cell_weight_is_one_across_all_shared_taxa":True,
       "year_geography_may_still_confound_unmatched_distant_source_areas":True,
     }
@@ -215,7 +218,17 @@ def run(paths,out):
     for label,cohort in [("strict_original",strict),("measured_2species",broader)]:
         direct,original_support=true_crossland_accepted_taxa(species,cohort)
         fit=fit_sparse_taxon_FE(direct)
-        result[label]={"source_support":original_support,"source_same_taxon_FE_fit":fit}
+        without_taxon=fit_sparse_taxon_FE(direct,effect_cols=("region5","year"))
+        original_beta=fit["interaction_geographic_spatial_cluster"]["beta"]
+        no_taxon_beta=without_taxon["interaction_geographic_spatial_cluster"]["beta"]
+        result[label]={
+            "source_support":original_support,
+            "source_same_taxon_FE_fit":fit,
+            "identical_source_rows_without_taxon_FE":without_taxon,
+            "taxon_FE_addition_point_estimate_change":float(original_beta-no_taxon_beta),
+            "same_source_rows_weights_photographic_outcomes_all_covariates_year_and_region":True,
+            "coefficient_difference_has_no_independent_standard_error_or_causal_meaning":True,
+        }
     out.mkdir(parents=True)
     receipt={
       "schema":"MOIS_same_accepted_taxon_both_land_classes_sparse_FE_20261107_v1",
