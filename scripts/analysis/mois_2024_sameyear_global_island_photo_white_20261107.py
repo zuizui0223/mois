@@ -92,7 +92,7 @@ def cluster_fit(data,formula,cluster):
     fit=sf.ols(formula,data).fit(cov_type="cluster",
         cov_kwds={"groups":data[cluster]},use_t=True)
     out={}
-    for term in ("log_light","is_island"):
+    for term in ("log_light","is_island","log_light:is_island"):
         if term not in fit.params:continue
         lo,hi=fit.conf_int().loc[term]
         out[term]={"beta":float(fit.params[term]),
@@ -145,7 +145,9 @@ def run(paths,out):
       ("VIIRS_pop2024_region_adjusted",m,
         "white_pp ~ log_light + log_pop + "+COVARS+" + C(region5)","region5"),
       ("VIIRS_pop2024_island_indicator",m,
-        "white_pp ~ is_island + log_light + log_pop + "+COVARS+" + C(region5)","region5")]
+        "white_pp ~ is_island + log_light + log_pop + "+COVARS+" + C(region5)","region5"),
+      ("VIIRS_pop2024_island_light_interaction",m,
+        "white_pp ~ log_light * is_island + log_pop + "+COVARS+" + C(region5)","region5")]
     for name,d,form,cluster in models:
         for term,stat in cluster_fit(d,form,cluster).items():
             fits.append({"model":name,"term":term,"cells":len(d),
@@ -247,6 +249,10 @@ def run(paths,out):
       "repeated_same_species_fixed_effect_exploratory_nominal":species_fit,
       "repeated_same_species_sign_groups_n":len(groups),
       "repeated_same_species_negative_signs":int(np.sum(np.array(groups)<0)),
+      "island_mainland_cross_section_light_interaction":next(
+          x for x in fits if x["model"]=="VIIRS_pop2024_island_light_interaction"
+          and x["term"]=="log_light:is_island"),
+      "island_light_interaction_not_a_causal_or_botanical_species_rate_effect":True,
       "multiple_model_search_exploratory":True,
       "new_photos_downloaded_or_ROI_inferred":0,
       "unknown_photo_colours_NOT_imputed":True,
@@ -258,6 +264,7 @@ def run(paths,out):
        "photo_cells":len(b),"same_year_population_cells":len(m),
        "islands":len(ids),"island_cells":len(island),
        "negative_island_slope_pp":core["beta"],
+       "island_mainland_light_interaction_pp":receipt["island_mainland_cross_section_light_interaction"]["beta"],
        "LOO_negative":int(loo.beta.lt(0).sum()),
        "LOO_significant_negative":int(loo.ci_high.lt(0).sum()),
        "bootstrap_CI":[boot["CI_low"],boot["CI_high"]]},sort_keys=True),flush=True)
