@@ -34,11 +34,13 @@ class MultiyearPanelContracts(unittest.TestCase):
     def test_common_geographic_support_never_uses_island_only_blocks(self):
         a=pd.DataFrame([
             {"region5":"both","is_island":1,"year":2019},
-            {"region5":"both","is_island":0,"year":2021},
+            {"region5":"both","is_island":0,"year":2019},
+            {"region5":"cross_year_only","is_island":1,"year":2019},
+            {"region5":"cross_year_only","is_island":0,"year":2021},
             {"region5":"only_island","is_island":1,"year":2019},
             {"region5":"only_island","is_island":1,"year":2025},
             {"region5":"only_mainland","is_island":0,"year":2024}])
-        self.assertEqual(m.common_geographic_support_blocks(a),{"both"})
+        self.assertEqual(m.common_geographic_support_blocks(a),{(2019,"both")})
     def test_generalisability_checks_leave_year_out_and_count_island_concentration(self):
         import inspect
         source=inspect.getsource(m.test_generalizability)
