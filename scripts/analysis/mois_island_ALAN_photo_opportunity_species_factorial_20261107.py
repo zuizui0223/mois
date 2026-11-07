@@ -169,6 +169,61 @@ def matched_opportunity_estimate(frame):
         "photo_attempts_and_species_count_not_direct_nuisance_selection_model":True,
         "not_eligible_for_population_causal_inference":True}
 
+def disjoint_original_measured_source_classes(cohorts):
+    """Observed four-cell partition, not an invented missingness category.
+
+    Each cell-year is in exactly one class:
+    - strict (5+ photo; 3+ accepted measured species);
+    - new solely by permitting 3-4 photos while maintaining ≥3 species;
+    - new solely by permitting 2 species while maintaining ≥5 photos;
+    - newly allowed only by simultaneous 3-4 photos AND exactly 2 species.
+
+    This makes the observed nonadditive 2×2 cohort enlargement inspectable
+    without modifying original ROI or inventing missing species colours.
+    """
+    name={"strict":"strict_5photos_3species",
+          "photo":"photos_only_3photos_3species",
+          "species":"species_only_5photos_2species",
+          "both":"both_3photos_2species"}
+    full=cohorts[name["both"]]
+    a=set(cohorts[name["strict"]].target_id)
+    b=set(cohorts[name["photo"]].target_id)
+    c=set(cohorts[name["species"]].target_id)
+    d=set(full.target_id)
+    panel.require(a==b.intersection(c),"The observed 2×2 strict cohort is not photo∩species")
+    partition={
+       "strict_original":a,
+       "photo_requirement_only_relaxed":b-a,
+       "species_requirement_only_relaxed":c-a,
+       "joint_photo_and_species_relaxation_only":d-(b|c),
+    }
+    all_ids=set().union(*partition.values())
+    panel.require(all_ids==d and
+                  sum(map(len,partition.values()))==len(d),
+                  "Disjoint observational source cohort classes lost/duplicated photos")
+    out={}
+    for label,ids in partition.items():
+        rows=full.loc[full.target_id.isin(ids)]
+        is_island=rows.is_island.eq(1)
+        def summarize_land(x):
+            return {
+              "cell_years":int(len(x)),
+              "white_ROI_mean_pp":float(x.white_pp.mean()) if len(x) else None,
+              "median_source_VIIRS":float(x.viirs_median.median()) if len(x) else None,
+              "median_source_original_photo_attempts":float(x.photo_attempts.median()) if len(x) else None,
+              "median_observed_accepted_species":float(x.accepted_species_n.median()) if len(x) else None,
+            }
+        out[label]={
+          "cell_years":len(rows),
+          "island_cell_years":int(is_island.sum()),
+          "mainland_cell_years":int((~is_island).sum()),
+          "source_years":{str(int(y)):int(n) for y,n in rows.groupby("year").size().items()},
+          "island":summarize_land(rows.loc[is_island]),
+          "mainland":summarize_land(rows.loc[~is_island]),
+          "source_measured_only_true_original_strict9_colour":True,
+        }
+    return out
+
 def run(paths,out):
     out=Path(out)
     panel.require(not out.exists(),"Cannot overwrite original measured source cohorts")
@@ -184,6 +239,7 @@ def run(paths,out):
                       set(frame.target_id).issubset(last),
                       "Factorial nested source cohort was not actually observed: "+key)
     counts={key:diagnostic_counts(frame) for key,frame in cohorts.items()}
+    disjoint_classes=disjoint_original_measured_source_classes(cohorts)
     models={key:{"global_interaction":genuine_light_slope(frame),
                  "sameyear5degree_comparison":direct_sameyear_slope(frame)}
             for key,frame in cohorts.items()}
@@ -218,6 +274,7 @@ def run(paths,out):
        "observed_count_only_no_estimated_missing_colour":True,
        "strict_primary_reference_unchanged":True,
        "source_quality_tier_counts":counts,
+       "disjoint_source_photo_species_2x2_classes":disjoint_classes,
        "source_quality_tier_models":models,
        "observed_gate_relaxation_coefficient_differences":changes,
        "same_year_geographic_photo_species_strata_common_support":exact,
@@ -236,7 +293,8 @@ def run(paths,out):
         json.dumps(receipt,sort_keys=True,indent=2)+"\n")
     print("MOIS_OBSERVED_PHOTO_SPECIES_OPPORTUNITY_FACTORIAL",
           json.dumps({
-             "counts":counts,"models":models,"gate_coefficient_differences":changes,
+             "counts":counts,"models":models,"disjoint_classes":disjoint_classes,
+             "gate_coefficient_differences":changes,
              "exact_photo_species_common_support":exact},sort_keys=True),flush=True)
     return receipt
 
