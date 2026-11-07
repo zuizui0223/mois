@@ -29,6 +29,14 @@ def time_range(m):
     a=dt.datetime(YEAR,m,1,tzinfo=dt.timezone.utc)
     b=dt.datetime(YEAR,m,calendar.monthrange(YEAR,m)[1],23,59,59,tzinfo=dt.timezone.utc)
     return f'{int(a.timestamp()*1000)},{int(b.timestamp()*1000)}'
+def get_samples_params(rows,month):
+    check(month in MONTHS and 1<=len(rows)<=512,"Invalid same-year VIIRS source month or batch")
+    pts=[[float(r["query_longitude"]),float(r["query_latitude"])] for r in rows]
+    geometry={"points":pts,"spatialReference":{"wkid":4326}}
+    return {"f":"json","geometryType":"esriGeometryMultipoint",
+       "geometry":json.dumps(geometry,separators=(",",":")),
+       "returnFirstValueOnly":"true","outFields":"*",
+       "interpolation":"RSP_NearestNeighbor","time":time_range(month)}
 def validate_targets(rows,expected):
     check(len(rows)==expected and len({r["target_id"] for r in rows})==len(rows),"2024 ID cohort changed")
     check(all(str(r["target_id"]).startswith("2024|") and
@@ -98,12 +106,7 @@ def viirs_task(plan,rows,out,offline):
         check(path.is_file(),"Original monthly source bytes missing on offline replay")
         raw=path.read_bytes();reused=True
     else:
-        pts=[[float(r["query_longitude"]),float(r["query_latitude"])] for r in subset]
-        geometry={"points":pts,"spatialReference":{"wkid":4326}}
-        params={"f":"json","geometryType":"esriGeometryMultipoint",
-           "geometry":json.dumps(geometry,separators=(",",":")),
-           "returnFirstValueOnly":"true","outFields":"*",
-           "interpolation":"RSP_NearestNeighbor","time":time_range(month)}
+        params=get_samples_params(subset,month)
         try:
             r=requests.get(VIIRS,params=params,timeout=90,
                headers={"User-Agent":"MOIS 2024 original all-land raw radiance source sampling"})
