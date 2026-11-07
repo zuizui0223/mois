@@ -47,6 +47,24 @@ class OpportunityTierTests(unittest.TestCase):
         subset,groups=m.exact_year_block_support(df)
         self.assertEqual(groups,{(2023,"B")})
         self.assertEqual(len(subset),2)
+    def test_additional_measured_pairs_separated_from_existing_strict_groups(self):
+        # Original strict cohort has one island+mainland pair in 2019/A;
+        # newly-measured rows create a new 2021/B paired year×region.
+        strict=pd.DataFrame([
+          dict(target_id="2019|1_1|1",year=2019,region5="A",is_island=1),
+          dict(target_id="2019|1_2|2",year=2019,region5="A",is_island=0),
+          dict(target_id="2021|1_3|1",year=2021,region5="B",is_island=1)])
+        measured=pd.concat([strict,pd.DataFrame([
+          dict(target_id="2021|1_4|2",year=2021,region5="B",is_island=0),
+          dict(target_id="2019|1_5|1",year=2019,region5="A",is_island=1)])],
+          ignore_index=True)
+        result=m.provenance_of_expanded_co_support(strict,measured)
+        self.assertEqual(result["old_strict_paired_year_region_groups"],1)
+        self.assertEqual(result["new_measured_paired_year_region_groups"],2)
+        self.assertEqual(result["newly_paired_year_region_groups"],1)
+        self.assertEqual(result["new_original_strict9_measured_added_cell_years"],2)
+        self.assertEqual(result["newly_added_cells_in_previously_paired_groups"],1)
+        self.assertFalse(result["measured_2species_only_new_paired_blocks"]["estimable"])
     def test_auxiliary_tier_cohort_not_primary_strict_claim(self):
         source=inspect.getsource(m.run)
         self.assertIn("strict_primary_preserved",source)
