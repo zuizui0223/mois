@@ -67,5 +67,23 @@
     "n_within_site_seasonal_climate_effects_estimated": 0,
     "source_receipt": "docs/MOIS_SEASONAL_FCP_SOURCE_TRANSFER_20261016.json",
     "notes": "Not added to the historical 100543/45953 classifier denominator"
+  },
+  "current_scope_20261108": {
+    "research_home": "zuizui0223/mois",
+    "primary_scientific_axis": "moisture availability versus globally photographed floral-colour composition",
+    "covariates_not_standalone_research_programmes": [
+      "elevation",
+      "temperature",
+      "solar radiation",
+      "season",
+      "taxonomy",
+      "geography",
+      "soil"
+    ],
+    "ALAN_island_light_research_repository": "zuizui0223/alan",
+    "ALAN_migrated_source": "zuizui0223/mois PR #199, head 63458d81836822126851489352ad29597a87e4d2",
+    "MOIS_is_not_the_active_home_for_ALAN": true,
+    "existing_historical_docs_and_source_preserved": true,
+    "experimental_or_causal_flower_selection_claims": false
   }
 }
