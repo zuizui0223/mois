@@ -1,0 +1,173 @@
+{
+  "schema": "mois_bias_first_source_coverage_gate_v1",
+  "date": "2026-10-26",
+  "source_release": "mois-original1043930-source-structure-42111-taxon-colour-gaps-20261026-v1",
+  "frame_source_original_photos": 93209351,
+  "frame_source_nominal_taxa": 42111,
+  "measured_source_attempts": 1043930,
+  "measured_strict9_valid": 390541,
+  "observed_taxa_with_source_photos_zero_strict9": 20868,
+  "taxa_no_source_photos": 16,
+  "strata": [
+    {
+      "priority": "P2",
+      "taxa": 17818,
+      "source_photos": 2275692,
+      "strict9": 0,
+      "decision": "first: choose previous attempts 0-1; audit >=5 previous failures"
+    },
+    {
+      "priority": "P3",
+      "taxa": 12923,
+      "source_photos": 10431283,
+      "strict9": 28283,
+      "decision": "second: independent local season/year/geography"
+    },
+    {
+      "priority": "P1",
+      "taxa": 3050,
+      "source_photos": 14878,
+      "strict9": 0,
+      "decision": "census limited available source, do not hide unobservable taxa"
+    },
+    {
+      "priority": "P4",
+      "taxa": 3026,
+      "source_photos": 6884970,
+      "strict9": 18962,
+      "decision": "only low joint-support cells"
+    },
+    {
+      "priority": "P5",
+      "taxa": 5278,
+      "source_photos": 73602528,
+      "strict9": 343296,
+      "decision": "reference-cohort/control only"
+    },
+    {
+      "priority": "P0",
+      "taxa": 16,
+      "source_photos": 0,
+      "strict9": 0,
+      "decision": "unfixable within 93m source frame"
+    }
+  ],
+  "recorded_geographic_strict9": [
+    {
+      "region": "N_temperate",
+      "attempts": 670525,
+      "strict9": 279988
+    },
+    {
+      "region": "N_tropical",
+      "attempts": 85111,
+      "strict9": 21431
+    },
+    {
+      "region": "S_temperate",
+      "attempts": 194446,
+      "strict9": 62505
+    },
+    {
+      "region": "S_tropical",
+      "attempts": 46312,
+      "strict9": 7354
+    },
+    {
+      "region": "S_subpolar",
+      "attempts": 29,
+      "strict9": 4
+    }
+  ],
+  "source_selection_inputs_needed": [
+    "original_photo_id",
+    "observation_uuid",
+    "observer_id",
+    "source_taxon_id",
+    "accepted_taxon_or_unresolved",
+    "family",
+    "recorded_date",
+    "month",
+    "local_season",
+    "latitude",
+    "longitude",
+    "equal_area_cell",
+    "island_landmass",
+    "prior_attempted_photo_IDs",
+    "reserved_photo_IDs",
+    "prior_observation_IDs",
+    "reserved_observation_IDs",
+    "last_ROI_state",
+    "prior_strict9_count",
+    "original_source_frame_opportunity_count",
+    "source_arm"
+  ],
+  "required_outputs": [
+    "source_gap_matrix.csv",
+    "targeted_original_photo_queue.csv",
+    "selection_receipt.json",
+    "coverage_before_after.csv"
+  ],
+  "freeze_and_dedup_before_inference": true,
+  "prioritize_independent_observations": true,
+  "preserve_zero_colours_without_imputation": true,
+  "do_not_pretend_targeted_sample_is_probability_frame": true,
+  "no_further_images_downloaded_in_this_change": true,
+  "pilot_64_source": "mois-real20261026-novel64-source-geobalanced-original500px-floralLab-v1",
+  "pilot_64_is_original_STRICT9": false,
+  "notes": "Operational priorities only; full taxon × place × season joint availability not inferable from audited one-way marginals.",
+  "executed_original_photo_measurement_20261026": {
+    "source_2048_release": "mois-original93m-tier07-geoseason-balanced-2048-botharms-source-20261026-v1",
+    "real_2048_release": "mois-real2048-new-source-photo-geo-season-stratified-ROI9-20261026-v1",
+    "real_2048_taxon_gain_release": "mois-original1045978-real401392-ROI9-42111taxon-bias-gap-delta-20261026-v1",
+    "photo_attempts_before": 1043930,
+    "strict9_before": 400710,
+    "independent_photo_attempts_new": 2048,
+    "new_strict9": 682,
+    "independent_reference": {
+      "attempts": 256,
+      "strict9": 88
+    },
+    "targeted": {
+      "attempts": 1792,
+      "strict9": 594,
+      "prior_P2_attempts": 258,
+      "prior_P2_new_taxa": 85,
+      "prior_P5_attempts": 788,
+      "northern_tropical_attempts": 347,
+      "southern_tropical_attempts": 410
+    },
+    "photo_attempts_after": 1045978,
+    "strict9_after": 401392,
+    "source_frame_taxa_with_strict9_before": 21235,
+    "source_frame_taxa_with_strict9_after": 21320,
+    "source_frame_taxa_with_no_strict9_after": 20791,
+    "separate_real_64Lab_pilot_overlap_photo_ID": 0,
+    "separate_real_64Lab_pilot_overlap_observation_UUID": 0,
+    "new_taxa_reaching_five_valid9": 43,
+    "new_taxa_reaching_ten_valid9": 9,
+    "data_only_collector_run": 40320974849,
+    "data_only_gap_audit_run": 40322462057,
+    "new_image_Roi_inferences_in_collector_or_gap_audit": 0
+  },
+  "next_acquisition_gate_after_real2048": {
+    "status": "POLICY_ONLY_NO_NEW_SOURCE_PHOTO_QUEUE_OR_NEW_ROI_RESULTS_CLAIMED",
+    "primary_gap": "P2_no_existing_strict9_but_10plus_full93m_source_photo_opportunities",
+    "p2_taxa_remaining": 17727,
+    "p2_minimum_fraction_of_targeted_new_photo_slots_when_eligible_source_observations_exist": 0.6,
+    "p5_targeted_new_photo_slots_default": 0,
+    "p5_exception": "separate_source_randomized_reference_or_explicit_shared_genus/geocell matching arm",
+    "source_scope": "source-full93m-with-current-42111-taxonomy-and-genuine_photoID+observation_UUID_dedup",
+    "priority_within_P2": "0-1 prior attempts before >=5 prior failed original ROI photo attempts; audit visible flower/ROI first where repeated failures",
+    "joint_balance_keys": [
+      "latitude_region",
+      "recorded_local_season",
+      "source_taxon_id",
+      "equal_area_geocell_if_supported"
+    ],
+    "new_future_p2_targeted_photo_selection_probabilities": "SOURCE_DESIGN_ONLY_CONDITIONAL_NOT_GLOBAL_FLORA_IPW",
+    "full_before_after_photo_and_observation_dedup_required": true,
+    "reference_and_targeted_source_results_must_remain_separate": true,
+    "not_new_global_white_prevalence_estimate": true
+  }
+}
