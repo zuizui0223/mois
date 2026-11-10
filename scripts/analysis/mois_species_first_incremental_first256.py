@@ -131,7 +131,7 @@ def next_wave(catalogue, combined, first, candidates, *, quota=1024):
     for field in ("inat_taxon_id", "photo_id", "observation_id"):
         candidates[field] = candidates[field].fillna("").astype(str).str.strip()
     require(candidates.photo_id.is_unique and
-            candidates.photo_id.str.fullmatch(r"\\d+").all(),
+            candidates.photo_id.str.fullmatch(r"\d+").all(),
             "Source fallback photo IDs invalid/duplicated")
     require(candidates[["inat_taxon_id", "observation_id"]].duplicated().sum() == 0,
             "Source fallback observation reused for same taxon")
