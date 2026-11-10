@@ -54,12 +54,38 @@ def read_first_wave(source, result, receipt, *, sha_check=True):
     require(set(src.photo_id) == set(measured.photo_id),
             "Source-measured original photo identities mismatch")
     report = json.loads(Path(receipt).read_text())
+    # The frozen ROI-v4 worker signs shard_000/photos.csv. The downstream
+    # zero9_first256_true_original_photo9_and_unknowns.csv is a DIFFERENT,
+    # derived file with an added strict9 flag and erased ambiguous fractions.
+    # Never compare the derivative's bytes to the untouched worker's SHA.
+    worker_terminal = Path(result).parent / "shard_000" / "photos.csv"
+    if not worker_terminal.is_file() and not sha_check:
+        worker_terminal = Path(result)  # small synthetic test only
+    require(worker_terminal.is_file(), "Missing original signed worker photo CSV")
     require(report.get("attempted") == FIRST_ATTEMPTS and
-            report.get("downloaded") >= 0 and
-            report.get("photos_sha256") == sha256(result) and
+            isinstance(report.get("downloaded"), int) and
+            report.get("photos_sha256") == sha256(worker_terminal) and
             report.get("source_sha256") == sha256(source) and
             report.get("photo_colours_measured") is True,
-            "Signed ROI actual terminal is not the frozen source shard")
+            "Signed original worker ROI terminal mismatch")
+    original = pd.read_csv(worker_terminal, dtype=str, keep_default_na=False)
+    require(len(original) == len(measured) == FIRST_ATTEMPTS and
+            original.photo_id.is_unique and
+            set(original.photo_id) == set(measured.photo_id),
+            "Derived nine-colour result lost worker original photo IDs")
+    preserved = ["photo_id", "inat_taxon_id", "observation_id",
+                 "morph", "measurement_status", "image_sha256"]
+    preserved = [c for c in preserved if c in original.columns and c in measured.columns]
+    a = original.sort_values("photo_id", kind="stable")[preserved].reset_index(drop=True)
+    b = measured.sort_values("photo_id", kind="stable")[preserved].reset_index(drop=True)
+    require(a.equals(b), "Derived ROI9 source taxon/observation/status/image hash differs from signed terminal")
+    orig = original.set_index("photo_id")
+    derived = measured.set_index("photo_id")
+    matched = derived.morph.isin(HUES)
+    pixel_cols = ["flower_fraction_" + c for c in PALETTE]
+    require((orig.loc[derived.index[matched], pixel_cols].astype(str).to_numpy() ==
+             derived.loc[matched, pixel_cols].astype(str).to_numpy()).all(),
+            "Numerical nine-palette values changed after original worker terminal")
     d = src[["photo_id", "inat_taxon_id", "observation_id"]].merge(
         measured, on="photo_id", suffixes=("_source", "_measured"),
         how="inner", validate="one_to_one")
