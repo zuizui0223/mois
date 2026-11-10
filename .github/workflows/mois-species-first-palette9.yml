@@ -1,0 +1,83 @@
+name: MOIS species-first 9-palette catalogue from frozen source (no image fetch)
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_species_first_palette9.py
+      - tests/test_mois_species_first_palette9.py
+      - .github/workflows/mois-species-first-palette9.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-species-first-source-9palette-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build-source-backed-species-atlas:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      ROI_TAG: mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1
+      TAXON_TAG: mois-full-93209351-FCP-U100-complete-42111-original-photo-source-v1
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate code and independent-observation stopping rules
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_species_first_palette9.py -v
+      - name: Restore immutable photo ROI9, taxon counts and source species names
+        run: |
+          set -euo pipefail
+          mkdir -p input
+          gh release download "$ROI_TAG" --repo "$REPO" --dir input \
+            --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --pattern mois_42111_original_taxon_9palette_before_after.csv.gz
+          gh release download "$TAXON_TAG" --repo "$REPO" --dir input \
+            --pattern full42111_nominal_taxa_original_U100_source_eligibility.csv
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          originals={
+            'mois_1181146_unique_original_photo_continuous9_by_arm.parquet':'3fbd0f0ec7eb347b3bbc7ab509ec9312ec6d797ed932dcf7bb425959898c3835',
+            'mois_42111_original_taxon_9palette_before_after.csv.gz':'ea602238f3cd152fdd2e36e9ce4bcbc77b795a35dce802e9305f6f6cddd77fb8',
+            'full42111_nominal_taxa_original_U100_source_eligibility.csv':'6adab400c72932ab1079cdb66632018e90b14f20af2aaf53d6a8521dd8eb8441',
+          }
+          for filename, expected in originals.items():
+              actual=sha256(Path('input')/filename)
+              assert actual==expected,(filename,actual,expected)
+          print('MOIS_AUTHENTIC_SOURCE_THREE_SHA_VERIFIED')
+          PY
+      - name: Measure taxonomic breadth of all existing nine-palette photos (NO new image inference)
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_species_first_palette9 \
+            --photos input/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --source-taxa input/full42111_nominal_taxa_original_U100_source_eligibility.csv \
+            --coverage input/mois_42111_original_taxon_9palette_before_after.csv.gz \
+            --output species_first
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result=json.loads(Path('species_first/mois_species_first_receipt.json').read_text())
+          assert result['source_photo_attempts']==1181146,result
+          assert result['strict_nine_palette_original_photos']==451643,result
+          assert result['nominal_source_taxa']==42111,result
+          assert result['taxa_with_any_strict9']==30048,result
+          assert result['taxa_no_strict9']==12063,result
+          assert result['new_original_photos_downloaded']==0,result
+          print('MOIS_REAL_SOURCE_9PALETTE_SPECIES_FIRST_SUCCEEDED',result['hue_status_counts'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-42111-species-first-9palette-and-GBIF-name-roster
+          path: species_first/
+          retention-days: 90
+          if-no-files-found: warn
