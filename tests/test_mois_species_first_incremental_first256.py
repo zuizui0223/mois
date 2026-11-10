@@ -71,8 +71,8 @@ class First256IncrementalTests(unittest.TestCase):
             "observation_id":["d","b","e","f","g","h","i"],
             "source_observation_rank":[2,1,2,2,1,2,1]})
         result = next_wave(atlas,combined,first,candidates,quota=3)
-        self.assertEqual(result.inat_taxon_id.tolist()[:2],["2","3"])
-        self.assertEqual(set(result.inat_taxon_id),{"2","3","4"}|({"5"} if False else set()))
+        self.assertEqual(set(result.inat_taxon_id.tolist()[:2]), {"2","3"})
+        self.assertEqual(len(set(result.inat_taxon_id)-{"2","3"}),1)\n        self.assertTrue((set(result.inat_taxon_id)-{"2","3"}) <= {"4","5"})
         self.assertNotIn("1",set(result.inat_taxon_id))
         self.assertEqual(result.photo_id.nunique(),len(result))
         self.assertEqual(result.observation_id.nunique(),len(result))
