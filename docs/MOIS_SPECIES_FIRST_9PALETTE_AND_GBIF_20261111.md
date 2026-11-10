@@ -47,3 +47,24 @@ The subsequent SHA-verified original-terminal-versus-derived-file replay in [run
 **Critical validation fix:** The original frozen worker receipt SHA refers to `measured/shard_000/photos.csv`, not the derived `measured/zero9_first256_true_original_photo9_and_unknowns.csv`. The revised replay separately verifies the original terminal byte SHA, then checks all derived photo, observation, taxon, raw status, image identity, and successful nine numerical fraction strings against that immutable raw terminal. This guard passed on genuine pixels. Three synthetic incremental tests and three original species-first catalogue tests also passed. No historical original photographs were downloaded again.
 
 No GBIF occurrence points have yet been retrieved. A species-wide photograph label attached to occurrence points is a *species-level trait overlay*, not observational evidence that a geographically polymorphic species has that colour at each GBIF location.
+
+## 2026-11-11 08:38 JST — wave2 genuine 1,024 measured and appended; next 1,024 targeted
+
+The completed wave2 1,024-original-photo inference run **42913236517** succeeded (2026-11-11 08:13 JST): **363 genuine strict numeric nine-palette ROI images, 278 clear dominant-hue labels, 661 nonresponse**. The four signed original worker receipts were recovered and checked against the derived all-1024 row set, without replaying any prior image.
+
+The subsequent signature-audited true-photo append in [run 42925844766](https://github.com/zuizui0223/mois/actions/runs/42925844766) completed the source-processing job **SUCCESS**. It separated the **357 newly colour-supported nominal taxa** from six strict9 images measured in already colour-supported taxa. Full 42,111 nominal-source-taxon conservation, no repeated photo ID and no repeated independent observation ID were verified.
+
+| Authenticated frozen and incremental result | Count |
+|---|---:|
+| Cumulative distinct original-photo processing attempts | **1,182,426** |
+| Cumulative authentic original numerical ROI9 successes | **452,097** |
+| Nominal taxa with at least one strict ROI9 photo | **30,496** |
+| Nominal taxa with no strict ROI9 photo | **11,615** |
+| Nominal taxa with any provisional dominant one-of-nine palette label | **28,312** |
+| Wave2 newly first-covered strict9 taxa | **357** |
+| Third-wave chosen distinct new nominal taxa with not-yet-attempted original photo | **1,024** |
+| Third-wave retry-unclear taxa | **0** |
+
+The third-wave selection deliberately prioritizes taxon breadth: 1,024 source taxa without recent one-photo measurement, each with one never-before-attempted photo and independent observation UUID, and no observed dominant nine-palette label. A provisional dominant hue is sufficient to stop **routine** extra photographs operationally, not to declare botanical flower-colour fixation. Original image colour measurement for the third wave is a separate job in run 42925844766. Do not count its pixels until the terminal and signed original numerical receipt are completed.
+
+Reproducible complete 42,111-taxon catalogue after 1,280 new original photos, 1,024-new-taxon queue, 9-colour numeric wave2 delta and 42,111 GBIF-name matching roster are included in [run 42925844766 artifact](https://github.com/zuizui0223/mois/actions/runs/42925844766). GBIF occurrence records **have not** been downloaded or joined; accepted-name reconciliation and species-by-grid distribution remain downstream tasks, explicitly separated from photos. These data are photographed flower-region colour proxies, not botanical proof of true petals, native or globally fixed colour.
