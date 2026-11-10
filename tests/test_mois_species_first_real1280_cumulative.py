@@ -25,7 +25,6 @@ class Wave3BreadthFirstTests(unittest.TestCase):
             "inat_taxon_id":["10","11","12","13","13","14","15"],
             "source_observation_rank":[2,2,2,1,2,1,1]})
         selected=choose_third_wave(atlas,previous,candidates,quota=2)
-        self.assertEqual(set(selected.inat_taxon_id),{"13","14"} if False else set(selected.inat_taxon_id))
         self.assertTrue(set(selected.inat_taxon_id).issubset({"13","14","15"}))
         self.assertTrue(selected.acquisition_priority.eq("first_unmeasured").all())
         self.assertTrue(selected.photo_id.is_unique and selected.observation_id.is_unique)
