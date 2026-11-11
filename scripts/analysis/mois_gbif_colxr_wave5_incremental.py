@@ -71,7 +71,7 @@ def run(atlas,prior_names,prior_receipt,output,*,batch_size=200,pause=1.0):
     old=pd.read_csv(prior_names,compression="infer",dtype=str,keep_default_na=False)
     receipt=json.loads(Path(prior_receipt).read_text())
     require(receipt.get("schema")=="mois_species_first_real_wave4_gbif_colxr_new_names_v1"
-            and receipt.get("cumulative_exact_accepted_colxr_species")==PRIOR_ACCEPTED
+            and receipt.get("current_exact_colxr_accepted_species")==PRIOR_ACCEPTED
             and receipt.get("signed_file_SHA256",{}).get(Path(prior_names).name)==
                 source_sha(prior_names),
             "Prior GBIF wave4 complete accepted name SHA is not authenticated")
