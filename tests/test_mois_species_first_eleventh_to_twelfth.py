@@ -59,7 +59,7 @@ class TestEleventhToTwelfth(unittest.TestCase):
             "colour_measured": False,
             "source_previous_attempts": w.PRIOR_PHOTOS,
             "source_prior_no_reused_original_photo_or_observation": True,
-            "work_units": 16, "worker_ids": list(range(8)),
+            "work_units": 8, "worker_ids": list(range(8)),
             "new_photo_attempts_planned": 2048,
             "photo_shard_sha256": sourcehashes,
         }))
@@ -150,7 +150,7 @@ class TestEleventhToTwelfth(unittest.TestCase):
         old_ids = pd.DataFrame({"photo_id": ["5","6"],
                                 "observation_id": ["past-1","past-2"],
                                 "inat_taxon_id": ["1","2"]})
-        possible = taxa[supported + 1800:supported + 3812]
+        possible = taxa[supported + 1800:supported + 1812]
         options = pd.DataFrame({
             "photo_id": [str(8000000 + j) for j in range(12)],
             "observation_id": [f"twelfth-obs-{j}" for j in range(12)],
