@@ -285,12 +285,12 @@ def run(atlas, source, workers, audited, previous, global_options, output, *, qu
 if __name__ == "__main__":
     a = argparse.ArgumentParser(description=__doc__)
     for k in ("atlas", "source", "workers", "audited", "baseline",
-              "first", "second", "third", "fourth", "fifth", "sixth", "seventh",
+              "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth",
               "global-options", "output"):
         a.add_argument("--" + k, required=True)
     a.add_argument("--quota", type=int, default=4096)
     v = a.parse_args()
     run(v.atlas, v.source, v.workers, v.audited,
         {k: getattr(v, k) for k in ("baseline", "first", "second",
-                                   "third", "fourth", "fifth", "sixth", "seventh")},
+                                   "third", "fourth", "fifth", "sixth", "seventh", "eighth")},
         v.global_options, v.output, quota=v.quota)
