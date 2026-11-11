@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """GBIF COL XR exact name match for ONLY newly nine-hue-labelled MOIS wave6 taxa.
 
-The 27,394 prior GBIF accepted species keys and their exact nine observed
+The 27,666 prior GBIF accepted species keys and their exact nine observed
 original-photo fractions are reused from an immutable receipt. This is a
 species-level trait/accepted-name relation, NOT a site-colour measurement.
 """
@@ -24,10 +24,10 @@ from scripts.analysis.mois_gbif_colxr_nine_colour_traits_bridge import build_tra
 from scripts.analysis.mois_gbif_colxr_sql_isea3h_requests import make_requests
 
 SCHEMA="mois_species_first_real_wave6_gbif_colxr_new_names_v1"
-PHOTO_ATLAS_SHA="650fa24c27d972b7c67fac99734a873b489a2a51be1a0d34c59005d68dbe357c"
+PHOTO_ATLAS_SHA="df4d4ce1944182be7dbf30ea072168557aa9d3222540690f6cc56bda9deab640"
 PRIOR_ACCEPTED=27666
 PRIOR_HUE_LABELS=29168
-AFTER_WAVE5_HUE_LABELS=29168
+AFTER_WAVE6_HUE_LABELS=30255
 SOURCE_TAXA=42111
 
 
@@ -37,7 +37,7 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
         new[field]=new[field].fillna("").astype(str).str.strip()
     require(len(new)==SOURCE_TAXA and new.inat_taxon_id.is_unique,
             "Updated original-source 42,111 nominal taxa not unique")
-    require(int(new.dominant_hue9.isin(PALETTE).sum())==AFTER_WAVE5_HUE_LABELS,
+    require(int(new.dominant_hue9.isin(PALETTE).sum())==AFTER_WAVE6_HUE_LABELS,
             "Genuine sixth wave 1087 newly labelled nine-hue taxa absent")
     old=old_crosswalk.copy()
     for field in ("inat_taxon_id","species","source_hue9","hue_status",
@@ -58,7 +58,7 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
     newnames=new.loc[new.dominant_hue9.isin(PALETTE) &
                      new.species.str.match(NAME_RULE) &
                      ~new.inat_taxon_id.isin(old.inat_taxon_id)].copy()
-    require(0<len(newnames)<=AFTER_WAVE5_HUE_LABELS-PRIOR_HUE_LABELS,
+    require(0<len(newnames)<=AFTER_WAVE6_HUE_LABELS-PRIOR_HUE_LABELS,
             "Unexpectedly many source names newly labelled from wave6")
     return newnames.sort_values("inat_taxon_id").reset_index(drop=True)
 
@@ -70,11 +70,11 @@ def run(atlas,prior_names,prior_receipt,output,*,batch_size=200,pause=1.0):
             "Wave6 original nine-fraction image atlas SHA changed")
     old=pd.read_csv(prior_names,compression="infer",dtype=str,keep_default_na=False)
     receipt=json.loads(Path(prior_receipt).read_text())
-    require(receipt.get("schema")=="mois_species_first_real_wave4_gbif_colxr_new_names_v1"
+    require(receipt.get("schema")=="mois_species_first_real_wave5_gbif_colxr_new_names_v1"
             and receipt.get("current_exact_colxr_accepted_species")==PRIOR_ACCEPTED
             and receipt.get("signed_file_SHA256",{}).get(Path(prior_names).name)==
                 source_sha(prior_names),
-            "Prior GBIF wave4 complete accepted name SHA is not authenticated")
+            "Prior GBIF wave5 complete accepted name SHA is not authenticated")
     df=pd.read_csv(atlas,compression="infer",dtype={"inat_taxon_id":str})
     to_match=select_incremental_hue_names(df,old)
     response=classify_new_rows(to_match,batch_size=batch_size,pause=pause)
@@ -103,7 +103,7 @@ def run(atlas,prior_names,prior_receipt,output,*,batch_size=200,pause=1.0):
     info={
         "schema":SCHEMA,
         "photo_source_taxa":SOURCE_TAXA,
-        "photo_source_taxa_dominant_hue":AFTER_WAVE5_HUE_LABELS,
+        "photo_source_taxa_dominant_hue":AFTER_WAVE6_HUE_LABELS,
         "previous_gbif_accepted_species":PRIOR_ACCEPTED,
         "new_nine_hue_nominal_taxa_queried":len(to_match),
         "new_exact_colxr_accepted_species":int(
