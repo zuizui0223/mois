@@ -68,3 +68,34 @@ The subsequent signature-audited true-photo append in [run 42925844766](https://
 The third-wave selection deliberately prioritizes taxon breadth: 1,024 source taxa without recent one-photo measurement, each with one never-before-attempted photo and independent observation UUID, and no observed dominant nine-palette label. A provisional dominant hue is sufficient to stop **routine** extra photographs operationally, not to declare botanical flower-colour fixation. Original image colour measurement for the third wave is a separate job in run 42925844766. Do not count its pixels until the terminal and signed original numerical receipt are completed.
 
 Reproducible complete 42,111-taxon catalogue after 1,280 new original photos, 1,024-new-taxon queue, 9-colour numeric wave2 delta and 42,111 GBIF-name matching roster are included in [run 42925844766 artifact](https://github.com/zuizui0223/mois/actions/runs/42925844766). GBIF occurrence records **have not** been downloaded or joined; accepted-name reconciliation and species-by-grid distribution remain downstream tasks, explicitly separated from photos. These data are photographed flower-region colour proxies, not botanical proof of true petals, native or globally fixed colour.
+
+## 2026-11-11 12:04 JST — actual third wave 361 new strict9 taxa appended, fourth wave source frozen
+
+Source-proven first256 + next1024 + third1024 each used distinct original photo IDs and independent observations, and the [signed third-wave worker run 42925844766](https://github.com/zuizui0223/mois/actions/runs/42925844766) ended SUCCESS: 1,024 authentic original photo ROI-v4 attempts, **361 strict9 numeric successes, 279 confident single-palette photo labels, 663 technical unknown**.
+
+The third-wave exact-photo append and fourth wave queue [run 42950141749](https://github.com/zuizui0223/mois/actions/runs/42950141749) completed its first job SUCCESS after preserving all 42,111 original nominal taxa and rejecting any repeated image or observation UUID:
+
+| Metric after all three new real image waves | Audited result |
+|---|---:|
+| Original photo attempts including original four-arm baseline | **1,183,450** |
+| Real strict nine-palette numeric image ROIs | **452,458** |
+| Original source taxa with at least one strict9 photo | **30,857** |
+| Original source taxa with no strict9 photo | **11,254** |
+| Original source taxa with any sampled dominant palette9 | **28,591** |
+| Third-wave strictly new taxa with numerical nine-colour evidence | **361** |
+| New fourth-wave first-photo opportunities | **1,024** |
+| Fourth-wave retries to previously attempted taxa | **0** |
+
+Updated immutable taxon atlas / genuine 1,024 image numerical delta / 1,024 next-first-photo queue and signed receipt: [GitHub Actions artifact 13824971351](https://github.com/zuizui0223/mois/actions/runs/42950141749/artifacts/13824971351). The **fourth** 1,024 original images were submitted to the separate ROI-v4 compute job in the same run; they cannot be added before successful original terminals are inspected.
+
+Initial run failed due to incomplete small-fixture sample size; tests were updated to preserve the mandatory 1,024-photo live count. The next failure reflected a GH artifact ZIP root-directory mismatch; source paths were corrected. A subsequent failure was traced to pandas turning missing `dominant_hue9` strings into NaN, which excluded all unresolved species from the new queue. Only string-missing status fields are normalized; numerical strict ROI9 remains untouched. A synthetic regression now protects against this selection error. The first job subsequently completed SUCCESS with all real image/source SHA checks intact.
+
+## 2026-11-11 — GBIF source identities and actual distribution capability
+
+The all-nine-hue GBIF v2 COL XR calibrated name matching [run 42932546397](https://github.com/zuizui0223/mois/actions/runs/42932546397) queried **28,309** named source taxa with photographed dominant hues. Of these **26,852** were *exact, accepted, species rank, botanical kingdom* with unique COL XR keys; the remaining **1,457** names were withheld from automatic joining (synonym, higher rank, fuzzy or unmatched). Earlier 138 known accepted GET matches reproduced identically under the batch query. These counts refer to a named subset of the pre-third-wave 28,312 photographic hue labels, and exclude newly named wave3 taxa pending incremental matching.
+
+The actual [26,852 accepted-species × nine continuous photo-colour fractions trait bridge](https://github.com/zuizui0223/mois/actions/runs/42934483448/artifacts/13816937878) completed SUCCESS: **14,435** taxa have a photographed single-hue evidence status and **12,417** have multiple hue records/candidates. The latter does **not** establish spatially variable genetics; both categories are photo-derived estimates, not botanical confirmation of petals.
+
+For occurrences, an independently executed small accepted-species pilot read complete filtered GBIF pages for **nine** species into **213** EPSG:6933 100-km species-grid records; two further high-occurrence species were excluded by an explicit completeness cap [run 42931715566](https://github.com/zuizui0223/mois/actions/runs/42931715566). A second, colour-stratified 45 accepted species pilot was started in [run 42950078270](https://github.com/zuizui0223/mois/actions/runs/42950078270); retrieve its actual success receipt before making any claim about its outputs.
+
+For full worldwide distribution coverage, the validated GBIF SQL spatial cube is **108 requests** × max 250 COL XR accepted species keys, ISEA3H resolution 8 (roughly 7,774 km² per cell). The public GBIF SQL validator returned HTTP 201 for the original COL XR syntax [run 42933021921](https://github.com/zuizui0223/mois/actions/runs/42933021921), but **the 108 bulk downloads have not been authenticated, submitted or assigned DOIs**. Hence full global species-by-grid occupancy, rainfall associations and causal ecological conclusions are not yet observed from GBIF. A species-level photographed palette overlaid on GBIF grid occupancy does *not* imply the flower colour is measured at each occurrence location.
