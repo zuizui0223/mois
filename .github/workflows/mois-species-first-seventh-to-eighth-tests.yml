@@ -1,0 +1,26 @@
+name: MOIS seventh to eighth signed append dry regression
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_species_first_seventh_to_eighth.py
+      - tests/test_mois_species_first_seventh_to_eighth.py
+      - .github/workflows/mois-species-first-seventh-to-eighth-tests.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-staged-eighth-gate-without-real-photo-fetch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Do not start wave8 while wave7 original signed terminal is incomplete
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m compileall -q scripts/analysis/mois_species_first_seventh_to_eighth.py
+          python -m unittest discover -s tests -p test_mois_species_first_seventh_to_eighth.py -v
