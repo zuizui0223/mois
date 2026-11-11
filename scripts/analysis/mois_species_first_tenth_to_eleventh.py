@@ -216,8 +216,28 @@ def append_with_retries(atlas, tenth, previous, options, *, quota=4096,
                      ignore_index=True)
     require(len(used) == expected_previous + 4096 and used.photo_id.is_unique,
             "Tenth appended source inventory not unique")
-    choices = choose_third_wave(updated, used, options, quota=quota)
-    require(len(choices) == quota and choices.photo_id.is_unique and
+    # The frozen candidate metadata may be exhausted before 4,096 distinct
+    # eligible taxa remain. Never reuse photo/observation IDs or invent rows:
+    # acquire the largest complete 256-photo multiple actually available.
+    known_photos = set(used.photo_id.fillna("").astype(str))
+    known_obs = set(used.observation_id.fillna("").astype(str)) - {""}
+    pool = options.loc[~options.photo_id.astype(str).isin(known_photos) &
+                       options.observation_id.astype(str).ne("") &
+                       ~options.observation_id.astype(str).isin(known_obs)].copy()
+    pool = pool.merge(updated[["inat_taxon_id", "hue_status", "dominant_hue9"]],
+                      on="inat_taxon_id", how="inner", validate="many_to_one")
+    pool = pool.loc[pool.dominant_hue9.eq("") &
+                    pool.hue_status.isin(["no_strict9", "mixed_image_unresolved"])]
+    available = int(pool.inat_taxon_id.nunique())
+    granularity = 256 if quota >= 256 else 1
+    eligible_quota = (min(quota, available) // granularity) * granularity
+    print("MOIS_ELEVENTH_ELIGIBLE_FROZEN_ORIGINAL_PHOTO_TAXA",
+          {"eligible_distinct_taxa": available, "requested": quota,
+           "safe_photo_quota": eligible_quota}, flush=True)
+    require(eligible_quota > 0,
+            "Signed original-photo fallback inventory exhausted; new authentic photo metadata is necessary")
+    choices = choose_third_wave(updated, used, options, quota=eligible_quota)
+    require(len(choices) == eligible_quota and choices.photo_id.is_unique and
             choices.observation_id.is_unique and choices.inat_taxon_id.is_unique and
             choices.acquisition_priority.isin(["first_unmeasured", "retry_unclear"]).all(),
             "Eleventh original photo source queue is not complete/unique")
@@ -269,6 +289,8 @@ def run(atlas, source, workers, audited, previous, global_options, output, *, qu
         "source_taxa_with_clear_sampled_nine_palette": int(updated.dominant_hue9.ne("").sum()),
         "source_taxa_without_nineROI": int(updated.after_strict9.eq(0).sum()),
         "eleventh_source_distinct_new_photo_observation_taxon": len(next_queue),
+        "eleventh_source_photo_quota": len(next_queue),
+        "eleventh_source_requested_photo_quota": quota,
         "eleventh_source_first_unmeasured": int(next_queue.acquisition_priority.eq("first_unmeasured").sum()),
         "eleventh_source_retry_unclear": int(next_queue.acquisition_priority.eq("retry_unclear").sum()),
         "prior_photo_or_observation_ID_reused": False,
