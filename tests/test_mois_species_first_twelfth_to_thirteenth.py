@@ -48,7 +48,7 @@ class TestTwelfthToThirteenth(unittest.TestCase):
             receipt = folder / "receipt.json"
             receipt.write_text(json.dumps({
                 "schema": "mois_full_original93m_real_RGB_photo_unit_v1",
-                "shard": i, "attempted": 256, "photo_colours_measured": True,
+                "shard": i, "attempted": len(n), "photo_colours_measured": True,
                 "source_sha256": sha256(p), "photos_sha256": sha256(terminal),
             }))
             receipts[str(i)] = sha256(receipt)
