@@ -1,0 +1,92 @@
+name: MOIS verified GBIF COL XR 144-name replay plus real 100km distribution pilot
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_gbif_colxr_real144_replay.py
+      - scripts/analysis/mois_gbif_colxr_occurrence_grid_pilot.py
+      - tests/test_mois_gbif_colxr_occurrence_grid_pilot.py
+      - .github/workflows/mois-gbif-colxr-replay144-realgrid.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-colxr-real144-replay-100km-gbif-occurrence-pilot
+  cancel-in-progress: false
+jobs:
+  colxr-name-and-real-occurrences:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PILOT_RUN: '42930778507'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify scientific-name matching and equal-area geographic tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyproj==3.7.1
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_nine_palette_name_pilot.py -v
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_occurrence_grid_pilot.py -v
+      - name: Fetch signed exact GBIF v2 original 144 real responses, without additional matching requests
+        run: |
+          set -euo pipefail
+          mkdir -p original
+          gh run download "$PILOT_RUN" --repo "$REPO" \
+            --name mois-gbif-colxr-v2-9palette-real-species-name-crosswalk-pilot \
+            --dir original
+          python - <<'PY'
+          from scripts.analysis.mois_gbif_colxr_real144_replay import (
+              ORIGINAL_CSV_SHA,ORIGINAL_RAW_SHA,sha)
+          source='original/gbif_colxr_v2_species_name_pilot.csv'
+          raw='original/gbif_colxr_v2_raw_responses.jsonl.gz'
+          assert sha(source)==ORIGINAL_CSV_SHA,('source',sha(source))
+          assert sha(raw)==ORIGINAL_RAW_SHA,('raw',sha(raw))
+          print('MOIS_REAL144_GBIF_SOURCE_REPLAY_PINNED_SHA_VALID',flush=True)
+          PY
+      - name: Reclassify actual 144 COL XR v2 matches with diagnostics.matchType and reject false species keys
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_real144_replay \
+            --original-csv original/gbif_colxr_v2_species_name_pilot.csv \
+            --raw original/gbif_colxr_v2_raw_responses.jsonl.gz \
+            --output corrected
+          python - <<'PY'
+          import json
+          d=json.load(open('corrected/receipt.json'))
+          assert d['exact_accepted_species']==138,d
+          assert d['no_GBIF_requeries_for_correction'] is True
+          assert sum(d['status_counts'].values())==144
+          print('MOIS_138_TRUE_GBIF_COLXR_EXACT_ACCEPTED_SPECIES',d['status_counts'],flush=True)
+          PY
+      - name: GBIF real records for small accepted species, complete filtered pages to EPSG6933 100km cells
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_occurrence_grid_pilot \
+            --matches corrected/mois_real144_gbif_colxr_reinterpreted_names.csv \
+            --max-per-hue 1 --max-occurrences 1200 \
+            --output distribution
+          python - <<'PY'
+          import json
+          d=json.load(open('distribution/receipt.json'))
+          assert d['schema']=='mois_gbif_colxr_exact_species_100km_grid_pilot_v1'
+          assert d['source_GBIF_taxonomy']=='COL XR'
+          assert d['photo_hue_at_GBIF_locations_measured'] is False
+          print('MOIS_REAL_GBIF_GRID_PILOT_QC_COMPLETE',d['status_counts'],d['species_grid_rows'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-gbif-real144-corrected138-colxr-100km-actual-occurrence-pilot
+          path: |
+            corrected/
+            distribution/
+          retention-days: 90
+          if-no-files-found: warn
