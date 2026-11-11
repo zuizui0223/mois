@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """GBIF COL XR exact name match for ONLY newly nine-hue-labelled MOIS wave10 taxa.
 
-The 30,682 prior GBIF accepted species keys and their exact nine observed
+The 31,585 prior GBIF accepted species keys and their exact nine observed
 original-photo fractions are reused from an immutable receipt. This is a
 species-level trait/accepted-name relation, NOT a site-colour measurement.
 """
@@ -24,7 +24,7 @@ from scripts.analysis.mois_gbif_colxr_nine_colour_traits_bridge import build_tra
 from scripts.analysis.mois_gbif_colxr_sql_isea3h_requests import make_requests
 
 SCHEMA="mois_species_first_real_wave10_gbif_colxr_new_names_v1"
-PHOTO_ATLAS_SHA="bb04ebdb64b1b151484ba04a48bd24900b7126f27971567b59ec5b21c76eb2e2"
+PHOTO_ATLAS_SHA="1ea01b3f72d9fd24b9e1b994faad8870e97e5f8ca148b0339f11fb20d92e8be0"
 PRIOR_ACCEPTED=31585
 PRIOR_HUE_LABELS=33345
 AFTER_WAVE10_HUE_LABELS=34251
