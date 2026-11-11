@@ -1,0 +1,61 @@
+name: MOIS GBIF COL XR verified 138-source SQL ISEA3H global-grid query validation
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_gbif_colxr_sql_isea3h_requests.py
+      - tests/test_mois_gbif_colxr_sql_isea3h_requests.py
+      - .github/workflows/mois-gbif-colxr-isea3h-sql-validate.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  public-sql-syntax-validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      MATCH_RUN: '42931715566'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify COLXR accepted-only SQL source, no API calls in tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_sql_isea3h_requests.py -v
+      - name: Fetch exact 138 actual COL XR accepted names and keys from completed GET audit
+        run: |
+          set -euo pipefail
+          mkdir -p colxr
+          gh run download "$MATCH_RUN" --repo "$REPO" \
+            --name mois-gbif-real144-corrected138-colxr-100km-actual-occurrence-pilot \
+            --dir colxr
+          test -f colxr/corrected/mois_real144_138_exact_accepted_species_keys.csv
+      - name: Prepare 138-accepted-species all-global equal area query and validate public SQL only
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_sql_isea3h_requests \
+            --source colxr/corrected/mois_real144_138_exact_accepted_species_keys.csv \
+            --chunk-size 250 --validate --output sql
+          python - <<'PY'
+          import json
+          d=json.load(open('sql/receipt.json'))
+          assert d['source_colxr_species_key_count']==138
+          assert d['sql_request_count']==1
+          assert d['user_authenticated_GBIF_download_submitted'] is False
+          print('MOIS_138_COLXR_GLOBAL_ISEA3H_SQL_PUBLIC_VALIDATOR_STATUS',
+                d['public_validator_response'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-GBIF-138-accepted-COLXR-global-isea3h-r8-SQL-request-validator-only
+          path: sql/
+          retention-days: 90
+          if-no-files-found: warn
