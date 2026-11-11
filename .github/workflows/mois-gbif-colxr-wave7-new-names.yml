@@ -34,7 +34,7 @@ jobs:
           set -euo pipefail
           python -m pip install -q numpy==2.1.3 pandas==2.2.3
           python -m unittest discover -s tests -p test_mois_gbif_colxr_wave7_incremental.py -v
-      - name: Fetch SHA authenticated cumulative sixth original 9ROI atlas and fifth COL XR accepted name registry
+      - name: Fetch SHA authenticated seventh original atlas and sixth COL XR accepted name registry
         run: |
           set -euo pipefail
           mkdir -p updated previous
@@ -54,7 +54,7 @@ jobs:
           assert r['source_taxa_with_clear_sampled_nine_palette']==31373
           assert source_sha(atlas)==r['output_sha256']['atlas']
           old=json.loads(Path('previous/receipt.json').read_text())
-          assert old['schema']=='mois_species_first_real_wave7_gbif_colxr_new_names_v1'
+          assert old['schema']=='mois_species_first_real_wave6_gbif_colxr_new_names_v1'
           assert old['current_exact_colxr_accepted_species']==28687
           oldnames=Path('previous/all_current_photo9_gbif_colxr_names.csv.gz')
           assert source_sha(oldnames)==old['signed_file_SHA256'][oldnames.name]
