@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Synthetic regressions of 8 signed twelfth shards, 9 ROI sums and independent observations
+      - name: Synthetic regressions of 5 signed twelfth shards, 9 ROI sums and independent observations
         run: |
           set -euo pipefail
           python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
@@ -58,7 +58,7 @@ jobs:
           assert d['frozen_original_manifest_sha256']=='08acfdbbda4d7195c26f71ff702c80c0f5f9735e2221eef534fb58577c97c914'
           PY
           echo "ready=true" >> "$GITHUB_OUTPUT"
-      - name: Restore historical signed photo ledgers and 11th actual original-photo receipts, never image data
+      - name: Restore historical signed photo ledgers and twelfth authentic original-photo receipts, never image data
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
@@ -75,10 +75,10 @@ jobs:
           gh run download 43013636142 --repo "$REPO" --name mois-ninth4096-real-append-tenth4096-prioritized-photo-source --dir tenth
           gh run download 43039164891 --repo "$REPO" --name mois-tenth4096-real-append-eleventh4096-prioritized-photo-source --dir eleventh
           gh run download "$OLD_RUN" --repo "$REPO" --name mois-eleventh2048-verified-append-twelfth-prioritized-original-source --dir twelfth
-          gh run download "$OLD_RUN" --repo "$REPO" --name mois-twelfth11-real-original-photo-nineROI-audit --dir audit11
+          gh run download "$OLD_RUN" --repo "$REPO" --name mois-twelfth11-real-original-photo-nineROI-audit --dir audit12
           for g in 0 1; do gh run download "$OLD_RUN" --repo "$REPO" --name "mois-twelfth11-real-original-worker-$g" --dir "workers/mois-twelfth11-real-original-worker-$g"; done
           gh run download 43050923306 --repo "$REPO" --name mois-global-16groups-full93m-zero9-depth10-fresh-photo-fallbacks --dir global
-      - name: Recompute all 8 original twelfth SHA receipts, append observed 9 ROI with unknown retention, select genuine unmeasured photos
+      - name: Recompute all 5 original twelfth SHA receipts, append observed 9 ROI with unknown retention, select genuine unmeasured photos
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
