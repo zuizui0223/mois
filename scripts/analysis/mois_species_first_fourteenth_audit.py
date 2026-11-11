@@ -27,7 +27,7 @@ def run(source,workers,output):
     allframes=[];receipts={}
     for i in range(manifest["work_units"]):
         source_file=source/"shards"/f"shard-{i:03d}.csv"
-        p=workers/f"mois-fourteenth13-real-original-worker-{i//4}"/f"shard_{i:03d}"
+        p=workers/f"mois-fourteenth14-real-original-worker-{i//4}"/f"shard_{i:03d}"
         terminal=p/"photos.csv";receipt=p/"receipt.json"
         require(source_file.is_file() and terminal.is_file() and receipt.is_file(),
                 "Incomplete fourteenth real original worker photo shard "+str(i))

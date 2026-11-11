@@ -37,6 +37,7 @@ jobs:
           set -euo pipefail
           python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
           python -m unittest discover -s tests -p test_mois_species_first_twelfth_to_thirteenth.py -v
+          python -m unittest discover -s tests -p test_mois_species_first_wave14_artifact_paths.py -v
           python -m py_compile scripts/analysis/mois_species_first_thirteenth_to_fourteenth.py scripts/analysis/mois_species_first_fourteenth_audit.py
       - name: Gate on completed thirteenth signed original pixel terminal; refuse duplicate source
         id: gate

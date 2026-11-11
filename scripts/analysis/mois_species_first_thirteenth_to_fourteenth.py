@@ -60,7 +60,7 @@ def read_thirteenth(source, workers, audited):
     rows = []
     for i in range(11):
         src = source / "shards" / f"shard-{i:03d}.csv"
-        folder = workers / f"mois-thirteenth11-real-original-worker-{i//4}" / f"shard_{i:03d}"
+        folder = workers / f"mois-thirteenth13-real-original-worker-{i//4}" / f"shard_{i:03d}"
         terminal, receipt = folder / "photos.csv", folder / "receipt.json"
         require(src.is_file() and terminal.is_file() and receipt.is_file(),
                 f"Missing actual thirteenth worker source/photo receipt {i}")
