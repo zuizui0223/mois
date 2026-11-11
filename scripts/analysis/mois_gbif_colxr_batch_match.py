@@ -39,7 +39,7 @@ def match_batch(names,*,tries=3):
                        ensure_ascii=False,separators=(",",":")).encode("utf-8")
     # Checklist defaults to COL XR on current GBIF v2 match service.
     # The explicit 138-species calibration rejects any default dataset drift.
-    req=Request(API,data=payload,method="POST",headers={
+    req=Request(API+"?checklistKey="+COL_XR,data=payload,method="POST",headers={
         "Accept":"application/json","Content-Type":"application/json",
         "User-Agent":"MOIS-floral-colour-global-species-name-research/1.0"})
     last=None
