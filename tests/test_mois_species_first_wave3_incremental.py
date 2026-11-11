@@ -53,5 +53,22 @@ class ThirdWaveIncrementalTests(unittest.TestCase):
             add_to_catalogue(a,b,expected_photos=1)
 
 
+    def test_csv_empty_hue_nan_remains_an_eligible_zero_colour_taxon(self):
+        src=pd.DataFrame([
+            {"inat_taxon_id":str(i+1),"hue_status":"no_strict9",
+             "dominant_hue9":float("nan"),"observed_hue9_set":float("nan"),
+             "after_photo_attempts":0,"after_strict9":0,
+             "independent_roi9_observations":0,"distinct_palette_votes":0,
+             "ambiguous_observation_rois":0,"next_measure_priority":0}
+             for i in range(42111)])
+        third=pd.DataFrame([{"inat_taxon_id":"1","photo_id":"100",
+            "observation_id":"independent-1","strict9":False,"dominant_label9":""}])
+        updated=add_to_catalogue(src,third,expected_photos=1)
+        zeros=updated.loc[updated.after_strict9.eq(0)]
+        self.assertEqual(len(zeros),42111)
+        self.assertTrue(zeros.dominant_hue9.eq("").all())
+        self.assertTrue(zeros.observed_hue9_set.eq("").all())
+
+
 if __name__=="__main__":
     unittest.main()
