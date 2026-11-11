@@ -87,6 +87,11 @@ def add_to_catalogue(atlas,third,*,expected_photos=1024):
         new[key]=new[key].fillna("").astype(str)
     require(len(new)==expected_photos and new.photo_id.is_unique and new.inat_taxon_id.is_unique,
             "Third-wave authentic photo selection changed")
+    # pandas.read_csv converts empty historical hue strings to NaN, which
+    # falsely hides thousands of as-yet-uncoloured taxa from the next queue.
+    # Normalize only textual missing hue states; never impute numeric ROIs.
+    for field in ("dominant_hue9","observed_hue9_set"):
+        prior[field]=prior[field].fillna("").astype(str)
     prior=prior.set_index("inat_taxon_id")
     require(new.inat_taxon_id.isin(prior.index).all(),
             "Third-wave source taxon outside prior 42111 census")
