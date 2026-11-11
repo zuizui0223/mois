@@ -39,7 +39,7 @@ class GbifColXrMatchTests(unittest.TestCase):
                              "species":f"Plantus_{p} epithet{i}",
                              "dominant_hue9":p,"hue_status":"provisional_single"})
         for i,r in enumerate(rows):
-            r["species"]="Plantus epithet"+str(i)
+            r["species"]="Plantus epithet"+chr(97+i)
         rows.append({"inat_taxon_id":"501","species":"Plantus",
                      "dominant_hue9":"white","hue_status":"provisional_single"})
         rows.append({"inat_taxon_id":"502","species":"Plantus epithet",
