@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit one partial shard of twelfth original-photo RGB9 ROI-v4 worker units, only real images."""
+"""Audit one or more full or partial shards of twelfth original-photo RGB9 ROI-v4 worker units, only real images."""
 from __future__ import annotations
 import argparse, json
 from pathlib import Path
@@ -19,11 +19,11 @@ def run(source,workers,output):
     require(manifest.get("schema")=="mois_full_source_observation_sampling_cohort_v1" and
             manifest.get("source_arm")=="MOIS_SPECIES_FIRST_TWELFTH_PRIORITIZED4096" and
             manifest.get("colour_measured") is False and
-            manifest.get("work_units") == 1 and
+            1 <= int(manifest.get("work_units",0)) <= 16 and
             manifest.get("worker_ids")==list(range(manifest["work_units"])) and
-            1 <= int(manifest.get("new_photo_attempts_planned",0)) <= 256 and
+            1 <= int(manifest.get("new_photo_attempts_planned",0)) <= 4096 and
             manifest.get("source_previous_attempts")==1208026,
-            "Twelfth original-photo manifest does not describe one new independent genuine partial shard")
+            "Twelfth original-photo manifest does not describe one to sixteen genuine disjoint shards, with optional final partial shard")
     allframes=[];receipts={}
     for i in range(manifest["work_units"]):
         source_file=source/"shards"/f"shard-{i:03d}.csv"
@@ -35,14 +35,14 @@ def run(source,workers,output):
                 "Twelfth frozen original-photo source SHA drift")
         r=json.loads(receipt.read_text())
         require(r.get("schema")=="mois_full_original93m_real_RGB_photo_unit_v1" and
-                r.get("attempted")==manifest["new_photo_attempts_planned"] and r.get("shard")==i and
+                r.get("attempted")==len(pd.read_csv(source_file)) and r.get("shard")==i and
                 r.get("source_sha256")==sha256(source_file) and
                 r.get("photos_sha256")==sha256(terminal) and
                 r.get("photo_colours_measured") is True,
                 "Twelfth original photo inference worker receipt SHA mismatch")
         a=pd.read_csv(source_file,dtype=str,keep_default_na=False)
         b=pd.read_csv(terminal,dtype=str,keep_default_na=False)
-        require(len(a)==len(b)==manifest["new_photo_attempts_planned"] and a.photo_id.is_unique and b.photo_id.is_unique and
+        require(1<=len(a)==len(b)<=256 and a.photo_id.is_unique and b.photo_id.is_unique and
                 set(a.photo_id)==set(b.photo_id),
                 "Twelfth worker photo-ID mismatch")
         for k in ("inat_taxon_id","observation_id"):
