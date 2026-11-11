@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 import pandas as pd
 
-from scripts.analysis import mois_gbif_colxr_wave4_incremental as m
+from scripts.analysis import mois_gbif_colxr_wave5_incremental as m
 
 
 class Wave5GBIFIncrementTests(unittest.TestCase):
