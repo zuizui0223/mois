@@ -156,3 +156,125 @@ jobs:
             source/
           retention-days: 90
           if-no-files-found: error
+
+  measure-original-wave5-1024:
+    needs: append-exact-fourth
+    if: needs.append-exact-fourth.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-fourth-genuine-ROI9-append-and-fifth1024-new-species-photo-source
+          path: selected
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate frozen 1024 independent photo and observation identifiers before new pixels
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import pandas as pd
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          src=Path('selected/source')
+          m=json.loads((src/'manifest.json').read_text())
+          assert m['schema']=='mois_full_source_observation_sampling_cohort_v1'
+          assert m['source_arm']=='MOIS_SPECIES_FIRST_FIFTH_NEW_ZERO9_1024'
+          assert m['new_photo_attempts_planned']==1024 and m['source_prior_no_reused_original_photo_or_observation'] is True
+          tabs=[]
+          for i in range(4):
+              path=src/'shards'/f'shard-{i:03d}.csv'
+              assert sha256(path)==m['photo_shard_sha256'][str(i)]
+              d=pd.read_csv(path,dtype=str,keep_default_na=False)
+              assert len(d)==256 and d.photo_id.is_unique and d.inat_taxon_id.is_unique and d.observation_id.is_unique
+              tabs.append(d)
+          joined=pd.concat(tabs,ignore_index=True)
+          assert len(joined)==joined.photo_id.nunique()==joined.observation_id.nunique()==joined.inat_taxon_id.nunique()==1024
+          assert joined.photo_url_large.str.startswith('https://inaturalist-open-data.s3.amazonaws.com/photos/').all()
+          print('MOIS_FIFTH_SOURCE1024_FROZEN_ORIGINAL_PHOTO_OBSERVATION_TAXA_VERIFIED',flush=True)
+          PY
+      - name: Bootstrap original FCP model/contract frozen for comparison with prior waves
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Download and measure exactly 1024 NEW original flowers, no re-inference
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-species-first-fifth-provider"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work \
+            --source selected/source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --group 0 --output measured
+      - name: Validate all original terminal signatures and preserve nine-colour unknowns
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import numpy as np
+          import pandas as pd
+          from scripts.acquisition.mois_full_index_real_original_photo_measure import sha,HUES
+          from scripts.analysis.mois_species_first_palette9 import PALETTE,class_labels
+          allrows=[]; hashes={}
+          for i in range(4):
+              source=Path('selected/source/shards')/f'shard-{i:03d}.csv'
+              original=Path('measured')/f'shard_{i:03d}'/'photos.csv'
+              receipt=Path('measured')/f'shard_{i:03d}'/'receipt.json'
+              a=pd.read_csv(source,dtype=str,keep_default_na=False)
+              d=pd.read_csv(original,dtype=str,keep_default_na=False)
+              r=json.loads(receipt.read_text())
+              assert len(a)==len(d)==256 and a.photo_id.is_unique and d.photo_id.is_unique
+              assert set(a.photo_id)==set(d.photo_id)
+              assert a.set_index('photo_id').sort_index().observation_id.equals(d.set_index('photo_id').sort_index().observation_id)
+              assert a.set_index('photo_id').sort_index().inat_taxon_id.equals(d.set_index('photo_id').sort_index().inat_taxon_id)
+              assert r['source_sha256']==sha(source) and r['photos_sha256']==sha(original)
+              assert r['photo_colours_measured'] is True
+              hashes[str(i)]=sha(receipt);allrows.append(d)
+          frame=pd.concat(allrows,ignore_index=True)
+          assert len(frame)==frame.photo_id.nunique()==frame.observation_id.nunique()==frame.inat_taxon_id.nunique()==1024
+          cols=['flower_fraction_'+p for p in PALETTE]
+          values=frame[cols].apply(pd.to_numeric,errors='coerce').to_numpy(float)
+          strict=(frame.morph.isin(HUES).to_numpy(bool)&
+                  np.isfinite(values).all(axis=1)&(values>=0).all(axis=1)&
+                  (values<=1.00001).all(axis=1)&
+                  (np.abs(np.nan_to_num(values,nan=0).sum(axis=1)-1)<=0.001))
+          labels=np.full(1024,'',dtype=object)
+          labels[strict]=class_labels(values[strict])
+          record={'schema':'mois_species_first_fifth1024_authentic_originalROI9_v1',
+                  'original_photo_attempts':1024,
+                  'strict_original_numeric_nineROI':int(strict.sum()),
+                  'dominant_nine_palette_photos':int((labels!='').sum()),
+                  'technical_unknowns':int((~strict).sum()),
+                  'original_worker_receipts_sha256':hashes,
+                  'independent_photo_observation_taxon':True,
+                  'species_wide_colour_fixed_proven':False,
+                  'GBIF_occurrences_downloaded':0}
+          frame['strict9_original_photo_numeric']=strict
+          frame['dominant_hue9_label']=labels
+          for col in cols:frame.loc[~strict,col]=''
+          frame.to_csv('measured/mois_fifth1024_true_original9_and_unknowns.csv.gz',index=False,compression='gzip')
+          Path('measured/fifth1024_receipt.json').write_text(json.dumps(record,indent=2,sort_keys=True)+'\n')
+          print('MOIS_SPECIES_FIRST_FIFTH1024_REAL_ORIGINAL_RGB9',json.dumps(record,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-species-first-fifth1024-real-original9
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
