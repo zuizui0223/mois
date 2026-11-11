@@ -78,14 +78,14 @@ def observed_data(source_dir,actual_dir):
     return frame,chosen,signatures
 
 
-def add_to_catalogue(atlas,third):
+def add_to_catalogue(atlas,third,*,expected_photos=1024):
     prior=atlas.copy()
     require(len(prior)==42111 and prior.inat_taxon_id.is_unique,
             "Full source taxon ledger absent")
     new=third.copy()
     for key in ("inat_taxon_id","photo_id","observation_id"):
         new[key]=new[key].fillna("").astype(str)
-    require(len(new)==1024 and new.photo_id.is_unique and new.inat_taxon_id.is_unique,
+    require(len(new)==expected_photos and new.photo_id.is_unique and new.inat_taxon_id.is_unique,
             "Third-wave authentic photo selection changed")
     prior=prior.set_index("inat_taxon_id")
     require(new.inat_taxon_id.isin(prior.index).all(),
