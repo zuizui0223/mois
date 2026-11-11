@@ -54,7 +54,9 @@ def inspect_response(payload,input_name):
     if not isinstance(payload,dict):
         return dict(status="api_schema_unrecognized",key="",matchType="",candidate_canonical="")
     usage=payload.get("usage") or {}
-    match_type=payload.get("matchType","")
+    diagnostics=payload.get("diagnostics") or {}
+    if not isinstance(diagnostics,dict):diagnostics={}
+    match_type=payload.get("matchType") or diagnostics.get("matchType","")
     if not isinstance(usage,dict):
         usage={}
     accepted=payload.get("acceptedUsage") or {}
