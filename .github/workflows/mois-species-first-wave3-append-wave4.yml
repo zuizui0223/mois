@@ -75,7 +75,7 @@ jobs:
           set -euo pipefail
           python -m scripts.analysis.mois_species_first_wave3_incremental \
             --prior-atlas second/global_after1280/mois_global_42111_species_first_after1280.csv.gz \
-            --source second/source --actual global/measured \
+            --source second/source --actual global \
             --global-options fallback/mois_global_species_first_zero9_fallback_photo_options.csv.gz \
             --old-photos frozen/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
             --first-delta first/updated/mois_genuine_first256_strict9_append_only.parquet \
