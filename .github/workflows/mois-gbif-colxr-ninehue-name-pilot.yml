@@ -1,0 +1,72 @@
+name: MOIS GBIF COL XR real v2 species-name matching pilot across 9 measured floral colours
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_gbif_colxr_nine_palette_name_pilot.py
+      - tests/test_mois_gbif_colxr_nine_palette_name_pilot.py
+      - .github/workflows/mois-gbif-colxr-ninehue-name-pilot.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-gbif-colxr-9hue-source-backed-pilot
+  cancel-in-progress: false
+jobs:
+  gbif-real-taxonomic-crosswalk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      CAT_RUN: '42925844766'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test conservative taxonomic interpretation and source hue sampling
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_nine_palette_name_pilot.py -v
+      - name: Download ONLY the authenticated existing all-42111 hue catalog with scientific names
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh run download "$CAT_RUN" --repo "$REPO" \
+            --name mois-real1280-wave2-cumulative-9palette-and-fresh-wave3-source \
+            --dir source
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          f=Path('source/global_after1280/mois_42111_species_palette9_GBIF_name_roster.csv.gz')
+          expected='38e456db80a120eea8a500dca389923123b3a26d6fcd65c5281bf2699e0866c0'
+          observed=hashlib.sha256(f.read_bytes()).hexdigest()
+          assert observed==expected,(observed,expected)
+          print('MOIS_GBIF_NAME_SOURCE_EXISTING_42111_SIGNED_SHA_MATCH',flush=True)
+          PY
+      - name: Perform real GBIF v2 COL XR fuzzy-name-service requests; exact matches only accepted
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_nine_palette_name_pilot \
+            --source source/global_after1280/mois_42111_species_palette9_GBIF_name_roster.csv.gz \
+            --output matched --per-hue 16 --min-delay 0.4
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('matched/receipt.json').read_text())
+          assert d['schema']=='mois_species_first_gbif_colxr_v2_name_pilot_v1'
+          assert d['colour_classes_sampled']>=5 and d['nominal_taxa_attempted']>=30
+          print('MOIS_GBIF_MATCH_ACTUAL_API_OUTCOMES',d['match_status_counts'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-gbif-colxr-v2-9palette-real-species-name-crosswalk-pilot
+          path: matched/
+          retention-days: 90
+          if-no-files-found: warn
