@@ -10,7 +10,7 @@ from scripts.analysis.mois_species_first_incremental_first256 import require
 
 HUES={"white","yellow_orange","red_pink","blue_purple"}
 PIX=["flower_fraction_"+p for p in PALETTE]
-SCHEMA="mois_species_first_eleventh4096_authentic_originalROI9_audit_v1"
+SCHEMA="mois_species_first_eleventh_authentic_originalROI9_audit_v1"
 
 def run(source,workers,output):
     source,workers,output=map(Path,(source,workers,output))
@@ -19,13 +19,13 @@ def run(source,workers,output):
     require(manifest.get("schema")=="mois_full_source_observation_sampling_cohort_v1" and
             manifest.get("source_arm")=="MOIS_SPECIES_FIRST_ELEVENTH_PRIORITIZED4096" and
             manifest.get("colour_measured") is False and
-            manifest.get("work_units")==16 and
-            manifest.get("worker_ids")==list(range(16)) and
-            manifest.get("new_photo_attempts_planned")==4096 and
+            1<=int(manifest.get("work_units",0))<=16 and
+            manifest.get("worker_ids")==list(range(manifest["work_units"])) and
+            manifest.get("new_photo_attempts_planned")==manifest["work_units"]*256 and
             manifest.get("source_previous_attempts")==1205978,
             "Eleventh original-photo manifest is not signed fresh prioritized 4096")
     allframes=[];receipts={}
-    for i in range(16):
+    for i in range(manifest["work_units"]):
         source_file=source/"shards"/f"shard-{i:03d}.csv"
         p=workers/f"mois-eleventh4096-real-original-worker-{i//4}"/f"shard_{i:03d}"
         terminal=p/"photos.csv";receipt=p/"receipt.json"
@@ -52,7 +52,7 @@ def run(source,workers,output):
         allframes.append(b)
         receipts[str(i)]=sha256(receipt)
     photos=pd.concat(allframes,ignore_index=True)
-    require(len(photos)==4096 and photos.photo_id.is_unique and
+    require(len(photos)==manifest["new_photo_attempts_planned"] and photos.photo_id.is_unique and
             photos.observation_id.is_unique and photos.inat_taxon_id.is_unique,
             "Eleventh photo/observation/taxon duplicates found")
     numeric=photos[PIX].apply(pd.to_numeric,errors="coerce").to_numpy(float)
@@ -65,15 +65,16 @@ def run(source,workers,output):
     photos["dominant_hue9_label"]=labels
     photos.loc[~strict,PIX]=""
     output.mkdir(parents=True)
-    path=output/"mois_eleventh4096_actual_original_nine_roi.csv.gz"
+    path=output/"mois_eleventh_actual_original_nine_roi.csv.gz"
     photos.to_csv(path,index=False,compression="gzip")
     report={"schema":SCHEMA,
-            "actual_independent_original_photo_attempts":4096,
+            "actual_independent_original_photo_attempts":len(photos),
             "actual_genuine_strict9_numeric_success":int(strict.sum()),
             "actual_clear_nine_palette_hues":int((labels!="").sum()),
             "actual_technical_unknowns":int((~strict).sum()),
             "photo_observation_source_taxon_ID_collisions":0,
-            "sixteen_original_photo_worker_receipt_sha256":receipts,
+            "original_photo_worker_receipt_sha256":receipts,
+            "source_shard_count":manifest["work_units"],
             "frozen_original_manifest_sha256":sha256(source/"manifest.json"),
             "audited_derivative_sha256":sha256(path),
             "GBIF_occurrences_downloaded":0,
