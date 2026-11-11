@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """GBIF COL XR exact name match for ONLY newly nine-hue-labelled MOIS wave8 taxa.
 
-The 28,687 prior GBIF accepted species keys and their exact nine observed
+The 29,736 prior GBIF accepted species keys and their exact nine observed
 original-photo fractions are reused from an immutable receipt. This is a
 species-level trait/accepted-name relation, NOT a site-colour measurement.
 """
@@ -24,10 +24,10 @@ from scripts.analysis.mois_gbif_colxr_nine_colour_traits_bridge import build_tra
 from scripts.analysis.mois_gbif_colxr_sql_isea3h_requests import make_requests
 
 SCHEMA="mois_species_first_real_wave8_gbif_colxr_new_names_v1"
-PHOTO_ATLAS_SHA="PENDING_VERIFIED_EIGHTH_ATLAS_SHA"
+PHOTO_ATLAS_SHA="bce7cdd9388e11a0ddb2e987b68d6729709180125fbb6a4bd98901ee6f377770"
 PRIOR_ACCEPTED=29736
 PRIOR_HUE_LABELS=31373
-AFTER_WAVE7_HUE_LABELS=31373
+AFTER_WAVE8_HUE_LABELS=32383
 SOURCE_TAXA=42111
 
 
@@ -37,7 +37,7 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
         new[field]=new[field].fillna("").astype(str).str.strip()
     require(len(new)==SOURCE_TAXA and new.inat_taxon_id.is_unique,
             "Updated original-source 42,111 nominal taxa not unique")
-    require(int(new.dominant_hue9.isin(PALETTE).sum())==AFTER_WAVE7_HUE_LABELS,
+    require(int(new.dominant_hue9.isin(PALETTE).sum())==AFTER_WAVE8_HUE_LABELS,
             "Genuine eighth wave 1010 newly labelled nine-hue taxa absent")
     old=old_crosswalk.copy()
     for field in ("inat_taxon_id","species","source_hue9","hue_status",
@@ -58,7 +58,7 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
     newnames=new.loc[new.dominant_hue9.isin(PALETTE) &
                      new.species.str.match(NAME_RULE) &
                      ~new.inat_taxon_id.isin(old.inat_taxon_id)].copy()
-    require(0<len(newnames)<=AFTER_WAVE7_HUE_LABELS-PRIOR_HUE_LABELS,
+    require(0<len(newnames)<=AFTER_WAVE8_HUE_LABELS-PRIOR_HUE_LABELS,
             "Unexpectedly many source names newly labelled from wave8")
     return newnames.sort_values("inat_taxon_id").reset_index(drop=True)
 
@@ -103,7 +103,7 @@ def run(atlas,prior_names,prior_receipt,output,*,batch_size=200,pause=1.0):
     info={
         "schema":SCHEMA,
         "photo_source_taxa":SOURCE_TAXA,
-        "photo_source_taxa_dominant_hue":AFTER_WAVE7_HUE_LABELS,
+        "photo_source_taxa_dominant_hue":AFTER_WAVE8_HUE_LABELS,
         "previous_gbif_accepted_species":PRIOR_ACCEPTED,
         "new_nine_hue_nominal_taxa_queried":len(to_match),
         "new_exact_colxr_accepted_species":int(
