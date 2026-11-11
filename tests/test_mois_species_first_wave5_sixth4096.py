@@ -64,17 +64,18 @@ class FifthWaveAndSixthSpeciesBreadth(unittest.TestCase):
     def test_only_new_taxa_are_reached_in_following_source(self):
         taxa=[str(i) for i in range(1,42112)]
         count=31235
+        labelled=28881
         d=pd.DataFrame({
             "inat_taxon_id":taxa,
-            "hue_status":["provisional_single"]*count+["no_strict9"]*(42111-count),
-            "dominant_hue9":["white"]*count+[""]*(42111-count),
-            "observed_hue9_set":["white"]*count+[""]*(42111-count),
+            "hue_status":["provisional_single"]*labelled+["mixed_image_unresolved"]*(count-labelled)+["no_strict9"]*(42111-count),
+            "dominant_hue9":["white"]*labelled+[""]*(42111-labelled),
+            "observed_hue9_set":["white"]*labelled+[""]*(42111-labelled),
             "after_strict9":[1]*count+[0]*(42111-count),
             "after_photo_attempts":[1]*count+[0]*(42111-count),
             "independent_roi9_observations":[1]*count+[0]*(42111-count),
-            "distinct_palette_votes":[1]*count+[0]*(42111-count),
+            "distinct_palette_votes":[1]*labelled+[0]*(42111-labelled),
             "ambiguous_observation_rois":[0]*42111,
-            "next_measure_priority":[2]*count+[0]*(42111-count)
+            "next_measure_priority":[2]*labelled+[1]*(count-labelled)+[0]*(42111-count)
         })
         for p in PALETTE:d["observed_mean_"+p]=[1.0 if p=="white" else 0.0]*count+[np.nan]*(42111-count)
         newtaxa=taxa[count:count+1024]
