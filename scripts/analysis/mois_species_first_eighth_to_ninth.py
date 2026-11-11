@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Append genuine eighth original image ROI9 and freeze an ninth 4096-photo source.
+"""Append genuine eighth original image ROI9 and freeze a ninth 4096-photo source.
 
 The eighth consists of 4096 previously unattempted photographs of still-unlabelled
 source taxa; all are new image retries, none are new first-time targeted taxa.
@@ -285,7 +285,7 @@ def run(atlas, source, workers, audited, previous, global_options, output, *, qu
 if __name__ == "__main__":
     a = argparse.ArgumentParser(description=__doc__)
     for k in ("atlas", "source", "workers", "audited", "baseline",
-              "first", "second", "third", "fourth", "fifth", "sixth",
+              "first", "second", "third", "fourth", "fifth", "sixth", "seventh",
               "global-options", "output"):
         a.add_argument("--" + k, required=True)
     a.add_argument("--quota", type=int, default=4096)
