@@ -1,0 +1,158 @@
+name: MOIS species-first wave4 original ROI9 append and wave5 zero-colour-first sources
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_species_first_wave4_incremental.py
+      - tests/test_mois_species_first_wave4_incremental.py
+      - .github/workflows/mois-species-first-wave4-append-wave5.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-species-first-wave4append-new-wave5
+  cancel-in-progress: false
+jobs:
+  test-new-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prove actual new-source photo/observation disjointness and unknown preservation
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_species_first_wave4_incremental.py -v
+          python -m unittest discover -s tests -p test_mois_species_first_wave3_incremental.py -v
+  append-exact-fourth:
+    needs: test-new-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      WAVE4_RUN: '42950141749'
+      PREVIOUS_RUN: '42925844766'
+      FIRST_RUN: '42913236517'
+      GLOBAL_CANDIDATE_RUN: '42846819580'
+      BASE_TAG: mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require actual ORIGINAL fourth-wave image inference SUCCESS before admitting numeric hues
+        id: gate
+        run: |
+          set -euo pipefail
+          echo 'ready=false' >> "$GITHUB_OUTPUT"
+          state=$(gh run view "$WAVE4_RUN" --repo "$REPO" --json conclusion --jq '.conclusion')
+          if [ "$state" != success ]; then
+            echo "Original fourth-wave photo work not yet complete with success; no new photo or GBIF labels admitted: $state"
+            exit 0
+          fi
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+      - name: Read verified prior 3 genuine original photo deltas, and newly finished 4th original photo workers
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          mkdir -p baseline first second fourth candidate
+          gh release download "$BASE_TAG" --repo "$REPO" --dir baseline \
+            --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet
+          gh run download "$FIRST_RUN" --repo "$REPO" \
+            --name mois-first256-91species-appended-and-next1024-palette-source \
+            --dir first
+          gh run download "$PREVIOUS_RUN" --repo "$REPO" \
+            --name mois-real1280-wave2-cumulative-9palette-and-fresh-wave3-source \
+            --dir second
+          gh run download "$WAVE4_RUN" --repo "$REPO" \
+            --name mois-real2304-wave3-361spec-9palette-and-fresh-wave4-source \
+            --dir fourth
+          gh run download "$WAVE4_RUN" --repo "$REPO" \
+            --name mois-species-first-fourth1024-true-originalROI9 \
+            --dir actual
+          gh run download "$GLOBAL_CANDIDATE_RUN" --repo "$REPO" \
+            --name mois-global-16groups-full93m-zero9-next-first-photo-and-fallbacks \
+            --dir candidate
+      - name: Append genuinely measured fourth-wave ROI9 to all 42111 taxon atlas
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_species_first_wave4_incremental \
+            --prior-atlas fourth/cumulative/mois_species_first_42111_after2304.csv.gz \
+            --source fourth/source --actual actual \
+            --old-photos baseline/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --first-delta first/updated/mois_genuine_first256_strict9_append_only.parquet \
+            --second-delta second/global_after1280/mois_real1024_wave2_original9_photo_delta.parquet \
+            --third-delta fourth/cumulative/mois_wave3_actual1024_strict9_photo_delta.parquet \
+            --options candidate/mois_global_species_first_zero9_fallback_photo_options.csv.gz \
+            --quota 1024 --output after_wave4
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import pandas as pd
+          d=json.loads(Path('after_wave4/receipt.json').read_text())
+          assert d['schema']=='mois_species_first_fourth1024_original_roi9_incremental_v1'
+          assert d['source_taxa_in_frame']==42111
+          assert d['new_original_photo_attempts']==1024
+          assert d['new_taxa_with_first_numeric_strict9']>0
+          assert d['taxa_with_any_numeric_strict9']==30857+d['new_taxa_with_first_numeric_strict9']
+          assert d['next_wave5_new_taxa']==1024
+          assert d['next_wave5_retry_unclear']==0
+          assert d['source_photo_observation_overlap']==0
+          print('MOIS_NEW_FOURTH_WAVE_REAL9_TAXA_COUNT',json.dumps({
+              k:d[k] for k in ('original_cumulative_photo_attempts',
+                  'original_cumulative_numeric_strict9','taxa_with_any_numeric_strict9',
+                  'taxa_with_sampled_dominant_nine_palette','next_wave5_new_taxa')},
+              sort_keys=True),flush=True)
+          PY
+      - name: Freeze 4 independent 256-photo fifth-wave source shards (NO pixels yet)
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p source/shards
+          python - <<'PY'
+          import pandas as pd,json
+          from pathlib import Path
+          from scripts.acquisition.mois_full_index_real_original_photo_measure import sha
+          q=pd.read_csv('after_wave4/mois_wave5_next1024_new_taxa_source.csv',
+                        dtype=str,keep_default_na=False)
+          assert len(q)==1024 and q.photo_id.is_unique and q.observation_id.is_unique and q.inat_taxon_id.is_unique
+          files={}
+          for j in range(4):
+              rows=q.loc[q.shard==str(j)].copy()
+              assert len(rows)==256
+              file=Path('source/shards')/f'shard-{j:03d}.csv'
+              rows.to_csv(file,index=False,lineterminator='\n')
+              files[str(j)]=sha(file)
+          manifest={'schema':'mois_full_source_observation_sampling_cohort_v1',
+                    'source_arm':'MOIS_SPECIES_FIRST_FIFTH_NEW_ZERO9_1024',
+                    'colour_measured':False,
+                    'work_units':4,'worker_ids':[0,1,2,3],
+                    'new_photo_attempts_planned':1024,
+                    'source_global_original_photo_opportunities':93209351,
+                    'source_previous_fourth_photo_attempts_plus_baseline':1184474,
+                    'source_prior_no_reused_original_photo_or_observation':True,
+                    'photo_shard_sha256':files}
+          Path('source/manifest.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')
+          print('MOIS_NEW_FIFTH1024_SOURCE_FROZEN',files,flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-fourth-genuine-ROI9-append-and-fifth1024-new-species-photo-source
+          path: |
+            after_wave4/
+            source/
+          retention-days: 90
+          if-no-files-found: error
