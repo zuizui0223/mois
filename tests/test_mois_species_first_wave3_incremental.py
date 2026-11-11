@@ -29,7 +29,7 @@ class ThirdWaveIncrementalTests(unittest.TestCase):
         for c in palette:
             a["strict9_"+c]=[1.0 if c=="purple" else 0.0,
                              1.0/9 if c in palette else 0, float("nan")]
-        revised=add_to_catalogue(src,a).set_index("inat_taxon_id")
+        revised=add_to_catalogue(src,a,expected_photos=3).set_index("inat_taxon_id")
         self.assertEqual(revised.loc["1","hue_status"],"provisional_single")
         self.assertEqual(revised.loc["1","dominant_hue9"],"purple")
         self.assertEqual(revised.loc["2","hue_status"],"mixed_image_unresolved")
@@ -50,7 +50,7 @@ class ThirdWaveIncrementalTests(unittest.TestCase):
                         "observation_id":["u"],"strict9":[True],
                         "dominant_label9":["white"]})
         with self.assertRaisesRegex(ValueError,"already had"):
-            add_to_catalogue(a,b)
+            add_to_catalogue(a,b,expected_photos=1)
 
 
 if __name__=="__main__":
