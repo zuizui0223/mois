@@ -21,7 +21,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPO: zuizui0223/mois
       TENTH_APPENDED_RUN: '43039164891'
-      PRIOR_TENTH_COLXR_RUN: '43013934956'
+      PRIOR_NINTH_COLXR_RUN: '43013934956'
       OPENBLAS_NUM_THREADS: '1'
       PYTHONUNBUFFERED: '1'
     steps:
@@ -34,13 +34,13 @@ jobs:
           set -euo pipefail
           python -m pip install -q numpy==2.1.3 pandas==2.2.3
           python -m unittest discover -s tests -p test_mois_gbif_colxr_wave10_incremental.py -v
-      - name: Fetch SHA authenticated tenth original atlas and eighth COL XR accepted name registry
+      - name: Fetch SHA authenticated tenth original atlas and ninth COL XR accepted name registry
         run: |
           set -euo pipefail
           mkdir -p updated previous
           gh run download "$TENTH_APPENDED_RUN" --repo "$REPO" \
             --name mois-tenth4096-real-append-eleventh4096-prioritized-photo-source --dir updated
-          gh run download "$PRIOR_TENTH_COLXR_RUN" --repo "$REPO" \
+          gh run download "$PRIOR_NINTH_COLXR_RUN" --repo "$REPO" \
             --name mois-gbif-colxr-ninth-only-new-962-hue-realphoto-accepted-nine-fractions --dir previous
           python - <<'PY'
           from pathlib import Path
@@ -58,12 +58,12 @@ jobs:
           assert old['current_exact_colxr_accepted_species']==31585
           oldnames=Path('previous/all_current_photo9_gbif_colxr_names.csv.gz')
           assert source_sha(oldnames)==old['signed_file_SHA256'][oldnames.name]
-          print('MOIS_TENTH_ATLAS_AND_PREVIOUS_30682_GBIF_ACCEPTED_SHA_SIGNED',flush=True)
+          print('MOIS_TENTH_ATLAS_AND_PREVIOUS_31585_GBIF_ACCEPTED_SHA_SIGNED',flush=True)
           PY
       - name: Run official GBIF v2 COL XR only for tenth newly hue-labelled 906 nominal source taxa
         run: |
           set -euo pipefail
-          python -m scripts.analysis.mois_gbif_colxr_wave9_incremental \
+          python -m scripts.analysis.mois_gbif_colxr_wave10_incremental \
             --atlas updated/updated/mois_species_first_42111_after_tenth.csv.gz \
             --prior-names previous/all_current_photo9_gbif_colxr_names.csv.gz \
             --prior-receipt previous/receipt.json \
@@ -73,7 +73,7 @@ jobs:
           from pathlib import Path
           r=json.loads(Path('wave10_colxr/receipt.json').read_text())
           assert r['schema']=='mois_species_first_real_wave10_gbif_colxr_new_names_v1'
-          assert r['photo_source_taxa_dominant_hue']==33345
+          assert r['photo_source_taxa_dominant_hue']==34251
           assert 0<r['new_nine_hue_nominal_taxa_queried']<=906
           assert 0<=r['new_exact_colxr_accepted_species']<=906
           assert r['previous_gbif_accepted_species']==31585
