@@ -31,6 +31,14 @@ class GbifColXrMatchTests(unittest.TestCase):
         self.assertEqual(inspect_response(accepted,"Campanula unrelated")["status"],
                          "canonical_disagreement_review")
 
+    def test_real_v2_diagnostics_nested_match_type(self):
+        real_v2={"usage":{"key":"34RMK","canonicalName":"Dendrophthoe curvata",
+                          "rank":"SPECIES","status":"ACCEPTED"},
+                 "diagnostics":{"matchType":"EXACT","confidence":97}}
+        r=inspect_response(real_v2,"Dendrophthoe curvata")
+        self.assertEqual(r["status"],"colxr_exact_accepted_species")
+        self.assertEqual(r["key"],"34RMK")
+
     def test_pilot_species_id_unique_and_hue_stratified(self):
         rows=[]
         for p in ("white","yellow","red"):
