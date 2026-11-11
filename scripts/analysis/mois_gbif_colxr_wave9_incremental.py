@@ -24,7 +24,7 @@ from scripts.analysis.mois_gbif_colxr_nine_colour_traits_bridge import build_tra
 from scripts.analysis.mois_gbif_colxr_sql_isea3h_requests import make_requests
 
 SCHEMA="mois_species_first_real_wave9_gbif_colxr_new_names_v1"
-PHOTO_ATLAS_SHA="__SIGNED_NINTH_ATLAS_SHA__"
+PHOTO_ATLAS_SHA="c393dba2171d75f60867eae1de155fb3cc0513d94d4adccd164b242828ae9949"
 PRIOR_ACCEPTED=30682
 PRIOR_HUE_LABELS=32383
 AFTER_WAVE9_HUE_LABELS=33345
@@ -38,7 +38,7 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
     require(len(new)==SOURCE_TAXA and new.inat_taxon_id.is_unique,
             "Updated original-source 42,111 nominal taxa not unique")
     require(int(new.dominant_hue9.isin(PALETTE).sum())==AFTER_WAVE9_HUE_LABELS,
-            "Genuine eighth wave 962 newly labelled nine-hue taxa absent")
+            "Genuine ninth wave 962 newly labelled nine-hue taxa absent")
     old=old_crosswalk.copy()
     for field in ("inat_taxon_id","species","source_hue9","hue_status",
                   "status","key","COL_XR_checklistKey"):
