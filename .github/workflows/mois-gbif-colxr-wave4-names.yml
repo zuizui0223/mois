@@ -1,0 +1,95 @@
+name: MOIS GBIF COL XR real wave4 290 hue newly named accepted species incremental
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_gbif_colxr_wave4_incremental.py
+      - tests/test_mois_gbif_colxr_wave4_incremental.py
+      - .github/workflows/mois-gbif-colxr-wave4-names.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-gbif-colxr-originalwave4-290hue-incremental
+  cancel-in-progress: false
+jobs:
+  actual-gbif-name-update:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      WAVE4_ATLAS_RUN: '42959597251'
+      PRIOR_COLXR_RUN: '42956460881'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test incremental GBIF identities, preserve accepted names and original photo fractions
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_wave4_incremental.py -v
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_new_hue_incremental.py -v
+      - name: Restore signed actual photo wave4 42111-taxon atlas and 27119 accepted COL XR names
+        run: |
+          set -euo pipefail
+          mkdir -p newphoto previous
+          gh run download "$WAVE4_ATLAS_RUN" --repo "$REPO" \
+            --name mois-fourth-genuine-ROI9-append-and-fifth1024-new-species-photo-source \
+            --dir newphoto
+          gh run download "$PRIOR_COLXR_RUN" --repo "$REPO" \
+            --name mois-gbif-colxr-new-wave3-photo-hue-names-and-9fraction-species-traits \
+            --dir previous
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.analysis.mois_gbif_colxr_batch_match import source_sha
+          photo=Path('newphoto/after_wave4/mois_42111_species_first_after3328.csv.gz')
+          rec=json.loads(Path('newphoto/after_wave4/receipt.json').read_text())
+          assert rec['schema']=='mois_species_first_fourth1024_original_roi9_incremental_v1'
+          assert rec['taxa_with_any_numeric_strict9']==31235
+          assert rec['taxa_with_sampled_dominant_nine_palette']==28881
+          assert source_sha(photo)==rec['output_SHA256']['atlas']
+          previous=json.loads(Path('previous/receipt.json').read_text())
+          assert previous['schema']=='mois_incremental_actual_wave3_photo9_gbif_colxr_match_v1'
+          assert previous['cumulative_exact_accepted_colxr_species']==27119
+          p=Path('previous/mois_all_current_named_hue_taxa_colxr_matches.csv.gz')
+          assert source_sha(p)==previous['outputs_SHA256'][p.name]
+          print('MOIS_REAL_WAVE4_ATLAS_AND_27119_PRIOR_COLXR_KEYS_SOURCE_AUTHENTICATED',flush=True)
+          PY
+      - name: Resolve ONLY 290 newly colour labelled source taxa, retaining unresolved as unknown
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_wave4_incremental \
+            --atlas newphoto/after_wave4/mois_42111_species_first_after3328.csv.gz \
+            --prior-names previous/mois_all_current_named_hue_taxa_colxr_matches.csv.gz \
+            --prior-receipt previous/receipt.json \
+            --output wave4_names --batch-size 200 --pause 1.0
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          rec=json.loads(Path('wave4_names/receipt.json').read_text())
+          assert rec['schema']=='mois_species_first_real_wave4_gbif_colxr_new_names_v1'
+          assert 1<=rec['new_nine_hue_nominal_taxa_queried']<=290
+          assert rec['previous_gbif_accepted_species']==27119
+          assert rec['current_exact_colxr_accepted_species']>=27119
+          assert rec['current_GBIF_species_numeric9_fractional_traits']==rec['current_exact_colxr_accepted_species']
+          assert rec['GBIF_ISEA3H_SQL_request_count']>=109
+          assert not rec['GBIF_authenticated_bulk_occurrence_download_submitted']
+          print('MOIS_COLXR_REAL_WAVE4_NEW_9HUE_ACCEPTED_SPECIES',
+                json.dumps({k:rec[k] for k in ('new_nine_hue_nominal_taxa_queried',
+                   'new_exact_colxr_accepted_species','current_exact_colxr_accepted_species',
+                   'GBIF_ISEA3H_SQL_request_count')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-gbif-colxr-wave4-newly-290-photo-coloured-species-accepted-and-nine-fractions
+          path: wave4_names/
+          retention-days: 90
+          if-no-files-found: warn
