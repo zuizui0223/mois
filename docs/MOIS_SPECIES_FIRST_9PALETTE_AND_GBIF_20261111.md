@@ -126,3 +126,26 @@ The fourth 1,024-photo original ROI-v4 image inference is still in progress in [
 The workflow intentionally checks the *entire real wave4 photo run's successful conclusion* before admitting a new numeric nine-palette success or generating a fifth-wave source queue. Its first source-free validation run completed successfully but **skipped image-result append** because wave4 had not yet completed. When genuine wave4 image terminal results are available, the code can verify four signed 256-photo receipts and produce a new 42,111-taxon catalogue and a disjoint next 1,024 *first-photo-of-previously-uncoloured-taxon* queue. The source data and software were not used to invent wave4 ROI success counts; no newer cumulative species-coverage count is claimed yet.
 
 **Unchanged inference boundary:** All ROI values come from original observed image pixels with computer-vision flower-region masks. A given photo's dominant palette is an *operational photographed colour label*, not certainty of species fixation, pigment concentration, UV reflectance, local colour at GBIF occurrence points or native/wild plant abundance.
+
+
+## 2026-11-11 fourth original-image wave signed and fifth source/GBIF COL XR updated
+
+The completed original photo fourth-wave ROI-v4 inference [run 42950141749](https://github.com/zuizui0223/mois/actions/runs/42950141749) produced **1,024 never-before-attempted distinct species-photo/observation pairs**: **378** authentic strict original nine-colour fraction vectors, of which **290** had a clear dominant one-of-nine palette, and **646** were technical unknown. All four signed original worker terminal SHAs and original photo/observation/taxon identities were confirmed before adding any numerical colour to the catalogue.
+
+A distinct, SHA-verified append job [run 42959597251](https://github.com/zuizui0223/mois/actions/runs/42959597251) completed SUCCESS, with an immutable delta plus new independent fifth-wave source. After the true fourth-wave delta:
+- Original-photo processing attempts: **1,184,474** unique photos.
+- Genuine nine-palette numerical ROI outcomes: **452,836** measured photos.
+- Source nominal taxa having any strict9 original-image evidence: **31,235** / 42,111.
+- Source nominal taxa with a recorded dominant photo nine-palette label: **28,881**.
+- Source nominal taxa still without any genuine nine-palette ROI: **10,876**.
+- The next batch contains **1,024** as-yet-uncoloured taxa, each with one new photographic/observation ID, zero ID overlaps or already-coloured species. It was signed into four 256-original-photo source shards.
+
+The fifth wave's true original-pixel inference was **started** in [run 42959597251](https://github.com/zuizui0223/mois/actions/runs/42959597251). Its returned success count must not be assumed until all image workers finish and their signed terminal receipts are authenticated. The 42,111-taxon updated atlas, original strict9 delta, fifth-wave original source and audited counters: [artifact 13828163364](https://github.com/zuizui0223/mois/actions/runs/42959597251/artifacts/13828163364).
+
+### Actual GBIF v2 COL XR accepted-species incremental name and trait linkage
+
+Only the **290** new, photographed clear-hue source taxa added in fourth-wave photos were sent through current GBIF v2 COL XR batch matching, while preserving the exact prior **27,119** COL XR accepted species keys without re-querying them. [Run 42959945602](https://github.com/zuizui0223/mois/actions/runs/42959945602) completed SUCCESS with **275 additional strict exact accepted species** and **15** unresolved/review taxa, for **27,394** accepted unique COL XR species keys paired to all nine observed colour fractions and photographed multi/single-hue evidence states. These do not imply colour fixation or local flower colour at each GBIF occurrence location.
+
+The complete current COL XR accepted-species × original nine-fraction trait table, unresolved names, and **110 prepared** ISEA3H-resolution-8 worldwide grid-download SQL request JSONs are [artifact 13828078781](https://github.com/zuizui0223/mois/actions/runs/42959945602/artifacts/13828078781). All SQL files remain **unsubmitted**: they require GBIF-authorized download credentials; no fictitious worldwide grid occupancy has been inferred from accepted names. Prior real pilot for nine colour classes queried 45 accepted species; 28 with fully enumerated presence data yielded 1,296 species × 100-km equal-area grid rows, whereas 17 high-occurrence species remained explicitly outside completeness cap.
+
+These numbers represent **photo-based operational trait coverage**, not a complete census of botanical species, native flora, true petal hue, species-wide fixed colour, or globally unbiased prevalence estimates.
