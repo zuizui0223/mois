@@ -38,7 +38,7 @@ def api_page(taxon_key,offset=0,limit=300,*,attempts=3):
     for i in range(attempts):
         try:
             with urlopen(req,timeout=30) as f:
-                return json.loads(f.read(2500000))
+                return json.loads(f.read(15000000))
         except HTTPError as e:
             last=e
             if e.code not in (429,500,502,503,504):break
@@ -86,10 +86,12 @@ def run(name_match_csv,output,*,max_per_hue=1,max_occurrences=1200):
     require(len(accepted)>0,"No actually matched COL XR exact accepted species")
     output.mkdir(parents=True)
     projection=Transformer.from_crs("EPSG:4326","EPSG:6933",always_xy=True)
-    selected=Counter();source=[];gridrows=[]
+    selected=Counter();considered=Counter();source=[];gridrows=[]
     for row in accepted.itertuples(index=False):
         if selected[row.dominant_hue9]>=max_per_hue:continue
-        selected[row.dominant_hue9]+=1  # at most one target per hue in pilot
+        considered[row.dominant_hue9]+=1
+        if considered[row.dominant_hue9]>8:
+            continue
         record={"inat_taxon_id":row.inat_taxon_id,
                 "source_species":row.source_species,
                 "GBIF_colxr_accepted_species_key":row.key,
@@ -116,6 +118,7 @@ def run(name_match_csv,output,*,max_per_hue=1,max_occurrences=1200):
                     cells[(x,y)]+=1
                 time.sleep(0.3)
             require(len(seen)==count,"GBIF paginated occurrence count changed during pilot")
+            selected[row.dominant_hue9]+=1
             record.update(status="all_filtered_occurrences_enumerated",
                           original_georeferenced_records=len(seen),
                           quality_retained_records=sum(cells.values()),
@@ -141,7 +144,8 @@ def run(name_match_csv,output,*,max_per_hue=1,max_occurrences=1200):
     report={"schema":SCHEMA,"source_GBIF_taxonomy":"COL XR",
             "source_checklistKey":COL_XR,"api_source":API,
             "sample_species_queried":len(summary),
-            "hue_categories_queried":len(selected),
+            "hue_categories_queried":len(considered),
+            "hue_categories_with_enumerated_species":len(selected),
             "status_counts":{str(k):int(v) for k,v in summary.status.value_counts().items()},
             "successfully_enumerated_species":int(summary.status.eq("all_filtered_occurrences_enumerated").sum()),
             "species_grid_rows":len(grids),
