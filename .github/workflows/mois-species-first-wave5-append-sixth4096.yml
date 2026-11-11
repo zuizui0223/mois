@@ -197,3 +197,90 @@ jobs:
           path: measured/
           retention-days: 90
           if-no-files-found: warn
+
+  audit-sixth-4096:
+    needs: [genuine-fifth-append, sixth-real-photo-workers]
+    if: needs.genuine-fifth-append.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-fifth1024-9roi-integrated-and-sixth4096-source
+          path: frozen
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-sixth4096-genuine-original-worker-*
+          path: outcomes
+          merge-multiple: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Exact-source terminal SHA for 16 x 256 independent new species photographs
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import numpy as np
+          import pandas as pd
+          from scripts.analysis.mois_species_first_palette9 import PALETTE,class_labels,sha256
+          from scripts.acquisition.mois_full_index_real_original_photo_measure import HUES
+          manifest=json.loads(Path('frozen/source/manifest.json').read_text())
+          assert manifest['source_arm']=='MOIS_SPECIES_FIRST_SIXTH_NEW4096'
+          assert manifest['work_units']==16 and len(manifest['worker_ids'])==16
+          allframes=[];proof={}
+          for index in range(16):
+              source=Path('frozen/source/shards')/f'shard-{index:03d}.csv'
+              work=Path('outcomes')/f'mois-sixth4096-genuine-original-worker-{index//4}'/f'shard_{index:03d}'
+              terminal=work/'photos.csv'
+              receipt=work/'receipt.json'
+              assert terminal.is_file() and receipt.is_file(),('missing',index)
+              assert sha256(source)==manifest['photo_shard_sha256'][str(index)]
+              r=json.loads(receipt.read_text())
+              assert r['attempted']==256 and r['shard']==index and r['photo_colours_measured'] is True
+              assert r['source_sha256']==sha256(source) and r['photos_sha256']==sha256(terminal)
+              a=pd.read_csv(source,dtype=str,keep_default_na=False)
+              b=pd.read_csv(terminal,dtype=str,keep_default_na=False)
+              assert len(a)==len(b)==256 and set(a.photo_id)==set(b.photo_id)
+              for name in ('inat_taxon_id','observation_id'):
+                  assert a.set_index('photo_id').sort_index()[name].equals(
+                      b.set_index('photo_id').sort_index()[name])
+              allframes.append(b);proof[str(index)]=sha256(receipt)
+          d=pd.concat(allframes,ignore_index=True)
+          assert len(d)==4096 and d.photo_id.is_unique and d.observation_id.is_unique and d.inat_taxon_id.is_unique
+          cols=['flower_fraction_'+c for c in PALETTE]
+          numeric=d[cols].apply(pd.to_numeric,errors='coerce').to_numpy(float)
+          genuine=(d.morph.isin(HUES).to_numpy(bool) & np.isfinite(numeric).all(axis=1) &
+                   (numeric>=0).all(axis=1) & (numeric<=1.00001).all(axis=1) &
+                   (np.abs(np.nan_to_num(numeric).sum(axis=1)-1)<=0.001))
+          labels=np.full(4096,'',dtype=object)
+          labels[genuine]=class_labels(numeric[genuine])
+          d['strict9_original_photo_numeric']=genuine
+          d['dominant_hue9_label']=labels
+          for col in cols:d.loc[~genuine,col]=''
+          Path('audited').mkdir()
+          d.to_csv('audited/mois_sixth4096_actual_original_nine_roi.csv.gz',
+                   index=False,compression='gzip')
+          report={
+             'schema':'mois_species_first_sixth4096_real_original9_audit_v1',
+             'actual_independent_original_photo_attempts':4096,
+             'actual_genuine_strict9_numeric_success':int(genuine.sum()),
+             'actual_clear_nine_palette_hues':int((labels!='').sum()),
+             'actual_technical_unknowns':int((~genuine).sum()),
+             'sixteen_original_photo_worker_receipt_sha256':proof,
+             'photo_observation_source_taxon_ID_collisions':0,
+             'GBIF_occurrences_downloaded':0,
+             'species_wide_flower_hue_fixed_proven':False}
+          Path('audited/receipt.json').write_text(json.dumps(report,sort_keys=True,indent=2)+'\n')
+          print('MOIS_SIXTH4096_REAL_ORIGINAL_NINE_PALETTE_AUDITED',json.dumps(report,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-sixth4096-actual9-fully-verified-original-photo-numeric
+          path: audited/
+          retention-days: 90
+          if-no-files-found: warn
