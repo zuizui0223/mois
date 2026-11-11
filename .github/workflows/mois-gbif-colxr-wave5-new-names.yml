@@ -1,0 +1,92 @@
+name: MOIS fifth new real photo hue taxa incremental GBIF COL XR accepted species
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_gbif_colxr_wave5_incremental.py
+      - tests/test_mois_gbif_colxr_wave5_incremental.py
+      - .github/workflows/mois-gbif-colxr-wave5-new-names.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-gbif-colxr-fifth-authenticated-source-name-increment
+  cancel-in-progress: false
+jobs:
+  name-match-only-new-fifth-taxa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PHOTO_RUN: '42970701175'
+      PREVIOUS_COLXR_RUN: '42959945602'
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test COL XR fifth newly photographed species match and prior key integrity
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_wave5_incremental.py -v
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_wave4_incremental.py -v
+      - name: Get signed genuine wave5 42111 photo atlas and existing 27394 accepted COL XR names
+        run: |
+          set -euo pipefail
+          mkdir -p photos previous
+          gh run download "$PHOTO_RUN" --repo "$REPO" \
+            --name mois-fifth1024-9roi-integrated-and-sixth4096-source --dir photos
+          gh run download "$PREVIOUS_COLXR_RUN" --repo "$REPO" \
+            --name mois-gbif-colxr-wave4-newly-290-photo-coloured-species-accepted-and-nine-fractions --dir previous
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.analysis.mois_gbif_colxr_batch_match import source_sha
+          atlas=Path('photos/after_fifth/mois_species_first_42111_after4352.csv.gz')
+          fifth=json.loads(Path('photos/after_fifth/receipt.json').read_text())
+          assert fifth['schema']=='mois_species_first_fifth1024_real_roi9_append_sixth4096_v1'
+          assert fifth['source_taxa_with_numerical_nineROI']==31618
+          assert fifth['source_taxa_with_dominant_nine_palette']==29168
+          assert source_sha(atlas)==fifth['output_sha256']['atlas']
+          old=json.loads(Path('previous/receipt.json').read_text())
+          assert old['schema']=='mois_species_first_real_wave4_gbif_colxr_new_names_v1'
+          assert old['current_exact_colxr_accepted_species']==27394
+          name=Path('previous/all_current_photo9_gbif_colxr_names.csv.gz')
+          assert source_sha(name)==old['signed_file_SHA256'][name.name]
+          print('MOIS_FIFTH_REAL9_AND_FOURTH_GBIF_ACCEPTED_NAMES_SIGNED',flush=True)
+          PY
+      - name: Actual GBIF v2 COL XR name match only new fifth-wave photographed 287 hue taxa
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_wave5_incremental \
+            --atlas photos/after_fifth/mois_species_first_42111_after4352.csv.gz \
+            --prior-names previous/all_current_photo9_gbif_colxr_names.csv.gz \
+            --prior-receipt previous/receipt.json \
+            --output updated_colxr --batch-size 200 --pause 1.0
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('updated_colxr/receipt.json').read_text())
+          assert d['schema']=='mois_species_first_real_wave5_gbif_colxr_new_names_v1'
+          assert d['photo_source_taxa_dominant_hue']==29168
+          assert d['new_nine_hue_nominal_taxa_queried']<=287
+          assert d['current_exact_colxr_accepted_species']>=27394
+          assert d['current_GBIF_species_numeric9_fractional_traits']==d['current_exact_colxr_accepted_species']
+          assert not d['GBIF_authenticated_bulk_occurrence_download_submitted']
+          print('MOIS_FIFTH_REAL_NEW_NINE_HUE_GBIF_ACCEPTED_COLXR',
+                {k:d[k] for k in ('new_nine_hue_nominal_taxa_queried',
+                   'new_exact_colxr_accepted_species','current_exact_colxr_accepted_species',
+                   'GBIF_ISEA3H_SQL_request_count')},flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-colxr-fifth-wave-new-photo-hue-accepted-species-trait-bridge
+          path: updated_colxr/
+          retention-days: 90
+          if-no-files-found: warn
