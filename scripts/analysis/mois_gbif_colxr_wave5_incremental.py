@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """GBIF COL XR exact name match for ONLY newly nine-hue-labelled MOIS wave5 taxa.
 
-The 27,119 prior GBIF accepted species keys and their exact nine observed
+The 27,394 prior GBIF accepted species keys and their exact nine observed
 original-photo fractions are reused from an immutable receipt. This is a
 species-level trait/accepted-name relation, NOT a site-colour measurement.
 """
@@ -37,8 +37,8 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
         new[field]=new[field].fillna("").astype(str).str.strip()
     require(len(new)==SOURCE_TAXA and new.inat_taxon_id.is_unique,
             "Updated original-source 42,111 nominal taxa not unique")
-    require(int(new.dominant_hue9.isin(PALETTE).sum())==AFTER_WAVE4_HUE_LABELS,
-            "Genuine fifth wave 290 newly labelled nine-hue taxa absent")
+    require(int(new.dominant_hue9.isin(PALETTE).sum())==AFTER_WAVE5_HUE_LABELS,
+            "Genuine fifth wave 287 newly labelled nine-hue taxa absent")
     old=old_crosswalk.copy()
     for field in ("inat_taxon_id","species","source_hue9","hue_status",
                   "status","key","COL_XR_checklistKey"):
@@ -58,7 +58,7 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
     newnames=new.loc[new.dominant_hue9.isin(PALETTE) &
                      new.species.str.match(NAME_RULE) &
                      ~new.inat_taxon_id.isin(old.inat_taxon_id)].copy()
-    require(0<len(newnames)<=AFTER_WAVE4_HUE_LABELS-PRIOR_HUE_LABELS,
+    require(0<len(newnames)<=AFTER_WAVE5_HUE_LABELS-PRIOR_HUE_LABELS,
             "Unexpectedly many source names newly labelled from wave5")
     return newnames.sort_values("inat_taxon_id").reset_index(drop=True)
 
@@ -74,7 +74,7 @@ def run(atlas,prior_names,prior_receipt,output,*,batch_size=200,pause=1.0):
             and receipt.get("cumulative_exact_accepted_colxr_species")==PRIOR_ACCEPTED
             and receipt.get("signed_file_SHA256",{}).get(Path(prior_names).name)==
                 source_sha(prior_names),
-            "Prior GBIF wave3 complete accepted name SHA is not authenticated")
+            "Prior GBIF wave4 complete accepted name SHA is not authenticated")
     df=pd.read_csv(atlas,compression="infer",dtype={"inat_taxon_id":str})
     to_match=select_incremental_hue_names(df,old)
     response=classify_new_rows(to_match,batch_size=batch_size,pause=pause)
@@ -103,7 +103,7 @@ def run(atlas,prior_names,prior_receipt,output,*,batch_size=200,pause=1.0):
     info={
         "schema":SCHEMA,
         "photo_source_taxa":SOURCE_TAXA,
-        "photo_source_taxa_dominant_hue":AFTER_WAVE4_HUE_LABELS,
+        "photo_source_taxa_dominant_hue":AFTER_WAVE5_HUE_LABELS,
         "previous_gbif_accepted_species":PRIOR_ACCEPTED,
         "new_nine_hue_nominal_taxa_queried":len(to_match),
         "new_exact_colxr_accepted_species":int(
