@@ -35,6 +35,7 @@ jobs:
     timeout-minutes: 65
     outputs:
       ready: ${{ steps.gate.outputs.ready }}
+      groups: ${{ steps.plan.outputs.groups }}
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: zuizui0223/mois
@@ -73,7 +74,7 @@ jobs:
             --workflow mois-species-first-tenth-append-eleventh4096.yml \
             --branch analysis/mois-species-first-palette9-20261111 \
             --limit 50 --json databaseId,status,conclusion \
-            --jq ".[] | select(.databaseId != $GITHUB_RUN_ID) | select(.conclusion == \"success\" or .status == \"in_progress\" or .status == \"queued\") | .databaseId" | head -n 1 || true)
+            --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | select(.conclusion == \"success\" or .status == \"in_progress\" or .status == \"queued\") | .databaseId" | head -n 1 || true)
           if [ -n "$prior" ]; then
             echo "Another eleventh acquisition already succeeded or is in progress: $prior"
             exit 0
@@ -163,8 +164,9 @@ jobs:
           assert r['source_taxa_with_numerical_nineROI']==36628+r['tenth_new_source_taxa_with_first_numeric9']
           assert r['source_taxa_with_clear_sampled_nine_palette']==34251
           assert r['source_taxa_without_nineROI']+r['source_taxa_with_numerical_nineROI']==42111
-          assert r['eleventh_source_distinct_new_photo_observation_taxon']==4096
-          assert r['eleventh_source_first_unmeasured']+r['eleventh_source_retry_unclear']==4096
+          assert 256<=r['eleventh_source_distinct_new_photo_observation_taxon']<=4096
+          assert r['eleventh_source_distinct_new_photo_observation_taxon']%256==0
+          assert r['eleventh_source_first_unmeasured']+r['eleventh_source_retry_unclear']==r['eleventh_source_distinct_new_photo_observation_taxon']
           for key,name in [('atlas','mois_species_first_42111_after_tenth.csv.gz'),
                            ('delta','mois_tenth4096_real_original9_photo_delta.parquet'),
                            ('next','mois_eleventh4096_prioritized_original_photo_queue.csv')]:
@@ -182,10 +184,10 @@ jobs:
           from scripts.analysis.mois_species_first_palette9 import sha256
           queue=pd.read_csv('updated/mois_eleventh4096_prioritized_original_photo_queue.csv',
                             dtype=str,keep_default_na=False)
-          assert len(queue)==4096 and queue.photo_id.is_unique and queue.observation_id.is_unique and queue.inat_taxon_id.is_unique
-          assert set(queue.shard)==set(str(i) for i in range(16))
+          assert 256<=len(queue)<=4096 and len(queue)%256==0 and queue.photo_id.is_unique and queue.observation_id.is_unique and queue.inat_taxon_id.is_unique
+          assert set(queue.shard)==set(str(i) for i in range(len(queue)//256))
           hashes={}
-          for i in range(16):
+          for i in range(len(queue)//256):
               block=queue.loc[queue.shard==str(i)]
               assert len(block)==256
               file=Path('source/shards')/f'shard-{i:03d}.csv'
@@ -195,8 +197,8 @@ jobs:
           manifest={"schema":"mois_full_source_observation_sampling_cohort_v1",
                     "source_arm":"MOIS_SPECIES_FIRST_ELEVENTH_PRIORITIZED4096",
                     "colour_measured":False,
-                    "work_units":16,"worker_ids":list(range(16)),
-                    "new_photo_attempts_planned":4096,
+                    "work_units":len(queue)//256,"worker_ids":list(range(len(queue)//256)),
+                    "new_photo_attempts_planned":len(queue),
                     "source_previous_attempts":1205978,
                     "source_full_original_photo_IDs":93209351,
                     "photo_shard_sha256":hashes,
@@ -206,6 +208,18 @@ jobs:
           Path('source/manifest.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')
           print('MOIS_ELEVENTH4096_ORIGINAL_SOURCES_SHA_FROZEN',r['eleventh_source_first_unmeasured'],
                 r['eleventh_source_retry_unclear'],flush=True)
+          PY
+      - name: Declare only nonempty independent original-photo worker groups
+        if: steps.gate.outputs.ready == 'true'
+        id: plan
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          r=json.loads(Path("updated/receipt.json").read_text())
+          n=r["eleventh_source_distinct_new_photo_observation_taxon"]
+          assert n%256==0 and 256<=n<=4096
+          print("groups="+json.dumps(list(range((n+1023)//1024)),separators=(",",":")))
           PY
       - uses: actions/upload-artifact@v4
         if: steps.gate.outputs.ready == 'true'
@@ -225,7 +239,7 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        group: [0,1,2,3]
+        group: ${{ fromJSON(needs.real-tenth-append-and-eleventh-source.outputs.groups) }}
     env:
       GH_TOKEN: ${{ github.token }}
       PYTHONUNBUFFERED: '1'
