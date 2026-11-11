@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Append genuine eleventh original image ROI9 and freeze a twelfth 4096-photo source.
 
-The eleventh consists of 4096 previously unattempted photographs of still-unlabelled
+The eleventh consists of 2048 previously unattempted photographs of still-unlabelled
 source taxa; all are new image retries, none are new first-time targeted taxa.
 A retry can have existing strict9 but unresolved mixed hue: retain all previous
 independent observations and update the mean; never call a retry a new species.
@@ -20,7 +20,7 @@ from scripts.analysis.mois_species_first_incremental_first256 import require, pa
 from scripts.analysis.mois_species_first_real1280_cumulative import choose_third_wave
 
 SCHEMA = "mois_species_first_eleventh4096_append_twelfth4096_v1"
-AUDIT_SCHEMA = "mois_species_first_eleventh4096_authentic_originalROI9_audit_v1"
+AUDIT_SCHEMA = "mois_species_first_eleventh_authentic_originalROI9_audit_v1"
 SOURCE_ARM = "MOIS_SPECIES_FIRST_ELEVENTH_PRIORITIZED4096"
 PRIOR_ATLAS_SHA = "1ea01b3f72d9fd24b9e1b994faad8870e97e5f8ca148b0339f11fb20d92e8be0"
 PRIOR_PHOTOS = 1205978
@@ -44,7 +44,7 @@ def read_eleventh(source, workers, audited):
         and manifest.get("work_units") == 8
         and manifest.get("worker_ids") == list(range(8))
         and manifest.get("new_photo_attempts_planned") == 2048,
-        "Wrong eleventh 4096-photo frozen manifest",
+        "Wrong eleventh 2048-photo frozen manifest",
     )
     signed = json.loads((audited / "receipt.json").read_text())
     require(
@@ -229,7 +229,6 @@ def append_with_retries(atlas, eleventh, previous, options, *, quota=4096,
     pool = pool.loc[pool.dominant_hue9.eq("") &
                     pool.hue_status.isin(["no_strict9", "mixed_image_unresolved"])]
     available = int(pool.inat_taxon_id.nunique())
-    granularity = 256 if quota >= 256 else 1
     eligible_quota = min(quota, available)
     print("MOIS_TWELFTH_ELIGIBLE_FROZEN_ORIGINAL_PHOTO_TAXA",
           {"eligible_distinct_taxa": available, "requested": quota,
@@ -247,7 +246,7 @@ def append_with_retries(atlas, eleventh, previous, options, *, quota=4096,
     require(selected.dominant_hue9_signed.fillna("").eq("").all() and
             not set(choices.photo_id).intersection(set(used.photo_id)),
             "Twelfth attempted original photo or previously hued taxon reselected")
-    choices["measurement_id"] = "MOIS-SPECIES-FIRST-W11-" + choices.photo_id.astype(str)
+    choices["measurement_id"] = "MOIS-SPECIES-FIRST-W12-" + choices.photo_id.astype(str)
     choices["image_filename"] = choices.measurement_id + ".jpg"
     choices["shard"] = (np.arange(len(choices)) // 256).astype(str)
     return updated, choices, increased
@@ -256,7 +255,7 @@ def append_with_retries(atlas, eleventh, previous, options, *, quota=4096,
 def run(atlas, source, workers, audited, previous, global_options, output, *, quota=4096):
     output = Path(output)
     require(not output.exists(), "Refuse overwrite eleventh genuine source outputs")
-    require(sha256(atlas) == PRIOR_ATLAS_SHA, "Ninth genuine signed photo atlas SHA drifted")
+    require(sha256(atlas) == PRIOR_ATLAS_SHA, "Tenth genuine signed photo atlas SHA drifted")
     oldatlas = pd.read_csv(atlas, compression="infer", dtype={"inat_taxon_id": str})
     photos, proof = read_eleventh(source, workers, audited)
     oldids = pd.concat([pd.read_parquet(p, columns=[
