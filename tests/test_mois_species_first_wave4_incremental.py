@@ -50,7 +50,6 @@ class FourthWaveIncrementTests(unittest.TestCase):
         self.assertEqual(x.loc["1","dominant_hue9"],"white")
         self.assertEqual(x.loc["2","after_strict9"],0)
         self.assertEqual(x.loc["2","hue_status"],"no_strict9")
-        self.assertEqual(set(q.inat_taxon_id),{"3","4"} if False else set(q.inat_taxon_id))
         self.assertTrue(set(q.inat_taxon_id).issubset({"3","4","5"}))
         self.assertTrue(q.acquisition_priority.eq("first_unmeasured").all())
         self.assertTrue(q.photo_id.is_unique and q.observation_id.is_unique)
