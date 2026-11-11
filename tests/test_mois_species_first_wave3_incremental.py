@@ -44,6 +44,7 @@ class ThirdWaveIncrementalTests(unittest.TestCase):
         a=pd.DataFrame([{"inat_taxon_id":str(i),
                          "hue_status":"no_strict9" if i!=1 else "provisional_single",
                          "dominant_hue9":"" if i!=1 else "white",
+                         "observed_hue9_set":"" if i!=1 else "white",
                          "after_photo_attempts":1,"after_strict9":int(i==1)}
                          for i in range(1,42112)])
         b=pd.DataFrame({"inat_taxon_id":["1"],"photo_id":["100"],
