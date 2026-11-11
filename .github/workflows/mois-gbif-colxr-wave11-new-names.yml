@@ -34,21 +34,21 @@ jobs:
           python -m pip install -q numpy==2.1.3 pandas==2.2.3
           python -m unittest discover -s tests -p test_mois_gbif_colxr_wave10_incremental.py -v
           python -m py_compile scripts/analysis/mois_gbif_colxr_wave11_incremental.py
-      - name: Fetch SHA authenticated eleventh original atlas and ninth COL XR accepted name registry
+      - name: Fetch SHA authenticated eleventh original atlas and tenth COL XR accepted name registry
         run: |
           set -euo pipefail
           mkdir -p updated previous
           gh run download "$ELEVENTH_APPENDED_RUN" --repo "$REPO" \
-            --name mois-eleventh4096-real-append-eleventh4096-prioritized-photo-source --dir updated
+            --name mois-eleventh2048-verified-append-twelfth-prioritized-original-source --dir updated
           gh run download "$PRIOR_TENTH_COLXR_RUN" --repo "$REPO" \
-            --name mois-gbif-colxr-ninth-only-new-962-hue-realphoto-accepted-nine-fractions --dir previous
+            --name mois-gbif-colxr-tenth-only-new-906-hue-realphoto-accepted-nine-fractions --dir previous
           python - <<'PY'
           from pathlib import Path
           import json
           from scripts.analysis.mois_gbif_colxr_batch_match import source_sha
           atlas=Path('updated/updated/mois_species_first_42111_after_eleventh.csv.gz')
           r=json.loads(Path('updated/updated/receipt.json').read_text())
-          assert r['schema']=='mois_species_first_eleventh4096_append_eleventh4096_v1'
+          assert r['schema']=='mois_species_first_eleventh4096_append_twelfth4096_v1'
           assert r['eleventh_actual_strict9_photo_successes']==620
           assert r['eleventh_new_source_taxa_with_clear_dominant_hue9']==446
           assert r['source_taxa_with_clear_sampled_nine_palette']==34697
