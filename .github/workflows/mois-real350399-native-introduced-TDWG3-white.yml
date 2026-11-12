@@ -1,0 +1,126 @@
+name: MOIS real350399 photographic native-range versus introduced-range WHITE diagnostic
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_real350399_native_introduced_WCVP_TDWG3_colour_20261019.py
+      - tests/test_mois_real350399_native_introduced_WCVP_TDWG3_colour_20261019.py
+      - .github/workflows/mois-real350399-native-introduced-TDWG3-white.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/analysis/mois_real350399_native_introduced_WCVP_TDWG3_colour_20261019.py
+      - .github/workflows/mois-real350399-native-introduced-TDWG3-white.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois350399-original-pixel-native-introduced-TDWG3-colour-v1
+  cancel-in-progress: false
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify native-vs-introduced accepted species original observations and missing hues
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 pytest==8.4.2
+          python -m pytest -q tests/test_mois_real350399_native_introduced_WCVP_TDWG3_colour_20261019.py
+          python -m py_compile scripts/analysis/mois_real350399_native_introduced_WCVP_TDWG3_colour_20261019.py
+  ecological-photo-diagnostic:
+    needs: contracts
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Restore original signed 350399 photo ID native-range and Kew official TDWG3 accepted species records
+        run: |
+          set -euo pipefail
+          gh release download mois-real350399-wcvp-tdwg3-photo-regional-status-v1 \
+            --repo zuizui0223/mois --dir original_photos \
+            --pattern mois350399_original_photo_TDWG3_WCVP_region_source_status.parquet \
+            --pattern mois350399_TDWG3_WCVP_geography_source_receipt.json
+          gh release download mois-real350399-kew-wcvp-native-tdwg3-source-v1 \
+            --repo zuizui0223/mois --dir original_wcvp \
+            --pattern mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz \
+            --pattern mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json
+      - name: Verify source file byte digests and absence of individual island native claims
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          def sha(f):
+              h=hashlib.sha256()
+              with Path(f).open('rb') as x:
+                  for b in iter(lambda:x.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          p=Path('original_photos')
+          r=json.loads((p/'mois350399_TDWG3_WCVP_geography_source_receipt.json').read_text())
+          f='mois350399_original_photo_TDWG3_WCVP_region_source_status.parquet'
+          assert r['original_actual_photo_attempts']==350399 and r['four_hue_classifiable_original_ROIs']==164297
+          assert sha(p/f)==r['files_sha256'][f]
+          assert not r['native_on_specific_island_determined']
+          w=Path('original_wcvp')
+          z=json.loads((w/'mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json').read_text())
+          c='mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz'
+          assert sha(w/c)==z['data_files_sha256'][c]
+          assert sha(w/'mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json')==r['WCVP_source_receipt_sha256']
+          print('MOIS_NATIVE_VS_INTRODUCED_SOURCE_PHOTO_AND_KEW_BYTES_AUTHENTIC')
+          PY
+      - name: Original observation equal then accepted species equal then matched genus-country native-vs-introduced hue
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real350399_native_introduced_WCVP_TDWG3_colour_20261019 \
+            --photo-parquet original_photos/mois350399_original_photo_TDWG3_WCVP_region_source_status.parquet \
+            --photo-receipt original_photos/mois350399_TDWG3_WCVP_geography_source_receipt.json \
+            --wcvp-distribution original_wcvp/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz \
+            --wcvp-receipt original_wcvp/mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json \
+            --output original_hue_native_range
+          python - <<'PY'
+          import json
+          p='original_hue_native_range/mois350399_region_native_introduced_original_photo_white_diagnostic.json'
+          r=json.load(open(p))
+          assert r['original_photo_attempts']==350399
+          assert r['all_original_four_hue_classified_photo_ROIs']==164297
+          assert not r['island_specific_native_or_endemism_verified']
+          assert not r['causal_effect_of_introduction_or_pollination_tested']
+          assert len(r['matched_contrasts'])==6
+          print('MOIS_REAL350399_NATIVE_RANGE_VS_INTRODUCED_PHOTO_ROI_DIAGNOSTIC_VALIDATED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real350399-tdwg3-native-introduced-photo-white-exploratory
+          path: original_hue_native_range/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Preserve source-backed original photograph ecological diagnostic
+        run: |
+          set -euo pipefail
+          tag=mois-real350399-TDWG3-native-introduced-original-photo-white-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            gh release download "$tag" --repo zuizui0223/mois \
+              --pattern mois350399_region_native_introduced_original_photo_white_diagnostic.json --dir frozen
+            cmp frozen/mois350399_region_native_introduced_original_photo_white_diagnostic.json \
+                original_hue_native_range/mois350399_region_native_introduced_original_photo_white_diagnostic.json
+            echo 'Original frozen comparative source result unchanged.'
+          else
+            gh release create "$tag" original_hue_native_range/* \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS real350399 photo white: species native/introduced in broad TDWG3 ranges' \
+              --notes 'Exploratory source-photo hue composition: only 4-hue actually processed RGB ROIs, observation-equal, Kew WCVP accepted species-equal and within nominal genus and broad TDWG3 cell native vs introduced species. Complete missing photo outcomes and source-arm sensitivity retained. WCVP broad native range does NOT establish individual plant or island native status. No biological adaptation, observed-year weather, introduction causation or original open petal validity is inferred.'
+          fi
