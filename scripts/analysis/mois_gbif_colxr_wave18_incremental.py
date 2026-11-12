@@ -27,7 +27,7 @@ SCHEMA="mois_species_first_real_wave18_gbif_colxr_new_names_v1"
 PHOTO_ATLAS_SHA="b4b4af6b1597f8e15bb60b818f4c484a9d6988b0ce3ccd711f965e39ef877182"  # Signed eighteenth appended atlas
 PRIOR_ACCEPTED=35845
 PRIOR_HUE_LABELS=37837
-AFTER_WAVE17_HUE_LABELS=37837
+AFTER_WAVE18_HUE_LABELS=38102
 SOURCE_TAXA=42111
 
 
@@ -37,7 +37,7 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
         new[field]=new[field].fillna("").astype(str).str.strip()
     require(len(new)==SOURCE_TAXA and new.inat_taxon_id.is_unique,
             "Updated original-source 42,111 nominal taxa not unique")
-    require(int(new.dominant_hue9.isin(PALETTE).sum())==AFTER_WAVE17_HUE_LABELS,
+    require(int(new.dominant_hue9.isin(PALETTE).sum())==AFTER_WAVE18_HUE_LABELS,
             "Genuine eighteenth wave 265 newly labelled nine-hue taxa absent")
     old=old_crosswalk.copy()
     for field in ("inat_taxon_id","species","source_hue9","hue_status",
@@ -58,7 +58,7 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
     newnames=new.loc[new.dominant_hue9.isin(PALETTE) &
                      new.species.str.match(NAME_RULE) &
                      ~new.inat_taxon_id.isin(old.inat_taxon_id)].copy()
-    require(0<len(newnames)<=AFTER_WAVE17_HUE_LABELS-PRIOR_HUE_LABELS,
+    require(0<len(newnames)<=AFTER_WAVE18_HUE_LABELS-PRIOR_HUE_LABELS,
             "Unexpectedly many source names newly labelled from wave18")
     return newnames.sort_values("inat_taxon_id").reset_index(drop=True)
 
@@ -72,7 +72,7 @@ def run(atlas,prior_names,prior_receipt,append_receipt,output,*,batch_size=200,p
             and appended.get("eighteenth_actual_independent_original_photo_attempts")==1487
             and appended.get("eighteenth_actual_strict9_photo_successes")==436
             and appended.get("eighteenth_new_source_taxa_with_clear_dominant_hue9")==265
-            and appended.get("source_taxa_with_clear_sampled_nine_palette")==AFTER_WAVE17_HUE_LABELS
+            and appended.get("source_taxa_with_clear_sampled_nine_palette")==AFTER_WAVE18_HUE_LABELS
             and appended.get("prior_photo_or_observation_ID_reused") is False
             and appended.get("output_sha256",{}).get("atlas")==source_sha(atlas),
             "Wave18 original nine-fraction image atlas SHA not authenticated by signed append")
@@ -111,7 +111,7 @@ def run(atlas,prior_names,prior_receipt,append_receipt,output,*,batch_size=200,p
     info={
         "schema":SCHEMA,
         "photo_source_taxa":SOURCE_TAXA,
-        "photo_source_taxa_dominant_hue":AFTER_WAVE17_HUE_LABELS,
+        "photo_source_taxa_dominant_hue":AFTER_WAVE18_HUE_LABELS,
         "previous_gbif_accepted_species":PRIOR_ACCEPTED,
         "new_nine_hue_nominal_taxa_queried":len(to_match),
         "new_exact_colxr_accepted_species":int(
