@@ -48,8 +48,39 @@ jobs:
           set -euo pipefail
           echo "ready=false" >> "$GITHUB_OUTPUT"
           test "$(gh run view "$OLD_RUN" --repo "$REPO" --json conclusion --jq .conclusion)" = success || exit 0
-          prior=$(gh run list --repo "$REPO" --workflow mois-species-first-thirteenth-append-fourteenth.yml --branch analysis/mois-species-first-palette9-20261111 --limit 40 --json databaseId,status,conclusion --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | select(.conclusion == \"success\" or .status == \"in_progress\" or .status == \"queued\") | .databaseId" | head -1 || true)
-          if [ -n "$prior" ]; then echo "Thirteenth source already processed or active: $prior"; exit 0; fi
+          # Only an actual source artifact proves a prior SUCCESS processed wave13.
+          # Some old runs report SUCCESS after a safe skip and have NO source artifact.
+          # Also ignore exactly one backend-orphaned run when it remains QUEUED with
+          # zero jobs and zero artifacts. An active older job still blocks this wave.
+          prior=''
+          candidates="$(gh run list --repo "$REPO" --workflow mois-species-first-thirteenth-append-fourteenth.yml --branch analysis/mois-species-first-palette9-20261111 --limit 50 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId")"
+          for candidate in $candidates; do
+            status="$(gh api "repos/$REPO/actions/runs/$candidate" --jq '.status')"
+            conclusion="$(gh api "repos/$REPO/actions/runs/$candidate" --jq '.conclusion')"
+            if [ "$candidate" = 43095236635 ] && [ "$status" = queued ]; then
+              stale_jobs="$(gh api "repos/$REPO/actions/runs/$candidate/jobs?per_page=1" --jq '.total_count')"
+              stale_artifacts="$(gh api "repos/$REPO/actions/runs/$candidate/artifacts?per_page=1" --jq '.total_count')"
+              if [ "$stale_jobs" = 0 ] && [ "$stale_artifacts" = 0 ]; then
+                echo "MOIS_KNOWN_GITHUB_QUEUE_ORPHAN_43095236635_ZERO_JOB_ZERO_ARTIFACT_IGNORED"
+                continue
+              fi
+            fi
+            case "$status" in
+              queued|in_progress|waiting|pending)
+                prior="$candidate"; break;;
+            esac
+            if [ "$conclusion" = success ]; then
+              real_artifact_count="$(gh api "repos/$REPO/actions/runs/$candidate/artifacts?per_page=100" --jq '[.artifacts[] | select(.name == "mois-thirteenth2793-verified-append-fourteenth-prioritized-original-source")] | length')"
+              if [ "$real_artifact_count" != 0 ]; then
+                prior="$candidate";break
+              fi
+              echo "MOIS_PRIOR_WAVE14_SUCCESS_WITHOUT_SOURCE_ARTIFACT_NOT_A_COMPLETED_APPEND $candidate"
+            fi
+          done
+          if [ -n "$prior" ]; then
+            echo "Real prior wave14 source processed or in-flight; refuse duplicate: $prior"
+            exit 0
+          fi
           gh run download "$OLD_RUN" --repo "$REPO" --name mois-thirteenth13-real-original-photo-nineROI-audit --dir _precheck
           python - <<'PY'
           import json
