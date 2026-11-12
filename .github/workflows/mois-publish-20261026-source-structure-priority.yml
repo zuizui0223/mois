@@ -1,0 +1,90 @@
+name: MOIS archive SHA-signed 1043930 source structure and 42111-taxon ROI9 gap decisions
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - docs/MOIS_20261026_ORIGINAL1043930_SOURCE_STRUCTURE_AND_NEW_DATA_DECISION.md
+      - .github/workflows/mois-publish-20261026-source-structure-priority.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-20261026-original1043930-42111taxon-priority-frozen-data-archive
+  cancel-in-progress: false
+jobs:
+  release-genuine-photo-population-structure:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-original1043930-source-structure-42111-taxon-colour-gaps-20261026-v1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore verified genuine 1m-photo ROI9 source population and 93m-frame priority reports
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/source evidence/priorities
+          gh run download 40258731262 --repo "$REPO" \
+            --name mois-real1043930-full-93m-taxon-source-ROI9-composition-audit \
+            --dir evidence/source
+          gh run download 40260160004 --repo "$REPO" \
+            --name mois-original-42111-taxon-93m-photo-ROI9-gap-priority-source-register \
+            --dir evidence/priorities
+      - name: Independently reconcile all original photo IDs, upstream taxa, full-photo 93m counts and source colours
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('evidence')
+          a=json.loads((root/'source/mois_1043930_actual_data_structure_and_bias_audit.json').read_text())
+          b=json.loads((root/'priorities/mois_real1043930_taxon_gap_and_next_acquisition_decision.json').read_text())
+          assert a['schema']=='mois_real1043930_original_photo_population_structure_and_missingness_v1'
+          assert b['schema']=='mois_original1043930_taxon_photo_gap_and_source_priority_v1'
+          assert a['original_image_photo_attempts']==1043930
+          assert a['strict9_original_flower_ROI_photos']==390541
+          assert a['source_metadata_total_photoIDs']==b['original_source_photo_ID_candidates']==93209351
+          assert a['source_metadata_distinct_taxa']==b['source_frame_taxa']==42111
+          assert a['upstream_frame_taxa_with_strict9_colour']==b['taxa_with_at_least_one_valid9']==21227
+          assert a['upstream_frame_taxa_NO_valid_original_nine_colour']==b['source_taxa_without_any_valid9']==20884
+          assert a['upstream_total_photoIDs_in_taxa_with_no_strict9_colour']==b['source_photo_opportunities_in_taxa_with_photos_but_no_valid9']==2290570
+          assert a['source_photo_attempts_OUTSIDE_42111_upstream_taxon_frame']==b['source_attempted_photos_but_outside_42111_taxon_frame']==32710
+          assert a['source_strict9_OUTSIDE_upstream_taxon_frame']==b['source_outside_frame_strict9_photo_count']==0
+          assert sum(z['source_frame_taxa'] for z in b['collection_priority_distribution'])==42111
+          assert sum(z['previous_strict_roi9_photo_count'] for z in b['collection_priority_distribution'])==390541
+          assert b['individual_source_photo_ID_queues_created'] is False
+          assert b['new_photo_downloads']==b['new_image_ROI_inferences']==0
+          assert a['source_SHA256']['original_nine_source']==b['source_attestation_SHA256']['real_1043930_source_9palette']
+          assert a['source_SHA256']['complete_93m_upstream_taxon_counts']==b['source_attestation_SHA256']['full_93209351_taxon_photo_opportunity_counts']
+          print('MOIS_20261026_GENUINE_1M_42K_FRAME_ALL_SOURCE_COUNTS_RECONCILED',flush=True)
+          PY
+      - name: Make immutable public source provenance, categorical coverage and priorities available for manuscript
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p previous
+            gh release download "$TAG" --repo "$REPO" --dir previous \
+              --pattern mois_real1043930_taxon_gap_and_next_acquisition_decision.json
+            cmp previous/mois_real1043930_taxon_gap_and_next_acquisition_decision.json \
+                evidence/priorities/mois_real1043930_taxon_gap_and_next_acquisition_decision.json
+            echo 'Existing immutable source taxon priority evidence exactly preserved.'
+          else
+            gh release create "$TAG" \
+              evidence/source/mois_1043930_actual_data_structure_and_bias_audit.json \
+              evidence/source/mois_1043930_photo_source_composition.csv \
+              evidence/source/mois_1043930_source_by_hemisphere_stratified_ROI.csv \
+              evidence/source/mois_1043930_island_mainland_photo_ROI.csv \
+              evidence/source/mois_1043930_latitude_zone_photo_ROI_coverage.csv \
+              evidence/source/mois_1043930_upstream_taxon_opportunity_coverage.csv \
+              evidence/priorities/mois_real1043930_taxon_gap_and_next_acquisition_decision.json \
+              evidence/priorities/mois_42111_source_taxon_photo_ROI_priority_register.csv.gz \
+              evidence/priorities/mois_42111_source_taxon_priority_group_summary.csv \
+              evidence/priorities/mois_photo_attempts_outside_42111_source_taxa_by_arm.csv \
+              docs/MOIS_20261026_ORIGINAL1043930_SOURCE_STRUCTURE_AND_NEW_DATA_DECISION.md \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS 1,043,930 real source photo structure vs 42,111 taxa: where extra colour data is worth collecting' \
+              --notes 'Full SHA-verified original photo-ID × source-observation × original FCP447500 membership × latitude/landmass × ROI9 attempt and genuine 93,209,351-photo source taxon counts. Only 21,227 of 42,111 taxa have at least one strict 9-colour ROI. 20,868 taxa with source photos have no valid 9-palette and have 2,290,570 source photo opportunities (2.46% of full 93m frame). 5,278 already 10+-coloured taxa own 87.9% of all strict 390,541 measured nine-colour photos. Retain additional original out-of-source-frame 32,710 older photo attempts without silently declaring erroneous taxonomy. The taxon quota register is META-ONLY, no photograph-ID source work queue or new pixels are claimed, no licensed images redistributed or fetched, no botanical flower petal truth, fitted inclusion probability, or genuine green hue in frozen nine palette. Maintain all 93m frame photos eligible for eventual one-pass processing; schedule source-observation-disjoint targeted follow-up first.'
+          fi

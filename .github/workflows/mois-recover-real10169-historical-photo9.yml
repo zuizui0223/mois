@@ -1,0 +1,112 @@
+name: MOIS recover 10169 old original nine-colour ROI photo vectors from frozen workers
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_real1043930_recover_old_wave9.py
+      - tests/test_mois_real1043930_recover_old_wave9.py
+      - .github/workflows/mois-recover-real10169-historical-photo9.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-real1043930-original-pre350399-10169-existing-strict9-once
+  cancel-in-progress: false
+jobs:
+  source-authenticated-original-10169-nine-fractions-no-image-requests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: mois-original1043930-400710-strict9-with-oldwaves-restored-20261026-v1
+      REPO: zuizui0223/mois
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Verify no old-photo hue guessed and restored original ROI9 strict source tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_real1043930_recover_old_wave9.py -v
+          python -m py_compile scripts/analysis/mois_real1043930_recover_old_wave9.py
+      - name: Restore actual signed 390541-photo9 atlas and three FULL original wave photo ROI archives (not RGB)
+        run: |
+          set -euo pipefail
+          mkdir -p atlas old/wave2 old/cached8192 old/tail16384
+          gh release download mois-original1043930-recovered-continuous9-426765-and-ecology-20261025-v1 \
+            --repo "$REPO" --dir atlas \
+            --pattern mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --pattern mois1043930_FCP447500_nine_palette_restoration_receipt.json
+          gh release download mois-broad-wave2-4096-measured-data-only-v1 \
+            --repo "$REPO" --dir old/wave2 \
+            --pattern wave2_measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-next8192-measured-data-only-v1 \
+            --repo "$REPO" --dir old/cached8192 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-tail16384-measured-data-only-v1 \
+            --repo "$REPO" --dir old/tail16384 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          printf '%s\n' \
+            'b20bbefe15020c21c3b5b0f7edf3f8e08148a4ee7dda8bf772a89bf6b126f447  atlas/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet' \
+            '61dcc82a810b02c92d28f579ef393d5b4caaba858083023a46b34158cc45c6c2  old/wave2/wave2_measured_photos.parquet' \
+            '11be4908cbd92221bf5cc3df4c1fc6d9b9fa412ccd2702b90762b9b1abfc22fe  old/cached8192/measured_photos.parquet' \
+            '56dca89f67b43eca35ebebee1b59bf7a305a4a07f180bd7a6fb80557b898c307  old/tail16384/measured_photos.parquet' \
+            | sha256sum -c -
+      - name: Merge only newly found original numerical 9 vectors into exact previous 1043930 genuine photo-ID lake
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real1043930_recover_old_wave9 \
+            --trait atlas/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --trait-receipt atlas/mois1043930_FCP447500_nine_palette_restoration_receipt.json \
+            --wave2 old/wave2/wave2_measured_photos.parquet \
+            --wave2-receipt old/wave2/receipt.json \
+            --cached8192 old/cached8192/measured_photos.parquet \
+            --cached8192-receipt old/cached8192/receipt.json \
+            --tail16384 old/tail16384/measured_photos.parquet \
+            --tail16384-receipt old/tail16384/receipt.json \
+            --output original9_plus_oldwaves
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          root=Path('original9_plus_oldwaves')
+          doc=json.loads((root/'mois_real1043930_recovered_400710_original9_source_receipt.json').read_text())
+          parquet=root/'mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet'
+          assert doc['schema']=='mois_real1043930_oldwaves_10169_original_roi9_restoration_v1'
+          assert doc['full_original_photo_attempts']==1043930
+          assert doc['old_9component_strict_photo_count']==390541
+          assert doc['source_photo9_restored_original_wave2_cached8k_tail16k']==10169
+          assert doc['new_original_strict9_photo_count']==400710
+          assert doc['ambiguous9_photo_count_unchanged']==36224
+          assert doc['four_hue_classified_unchanged']==459235
+          assert doc['four_hue_known_but_still_no_9fraction']==58525
+          assert doc['new_original_image_downloads']==0
+          assert doc['new_neural_ROI_inferences']==0
+          assert hashlib.sha256(parquet.read_bytes()).hexdigest()==doc['new_source_photo9_lake_SHA256']
+          print('MOIS_REAL1043930_400710_VERIFIED_ORIGINAL_PHOTO9_VECTORS_NO_IMAGE_DOWNLOADS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-original1043930-restored-400710-strict-nine-fraction-real-photos
+          path: original9_plus_oldwaves/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish immutable actual 400710 numerically recovered original-photo9 lake for downstream morphology
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p previous
+            gh release download "$TAG" --repo "$REPO" --dir previous \
+              --pattern mois_real1043930_recovered_400710_original9_source_receipt.json
+            cmp previous/mois_real1043930_recovered_400710_original9_source_receipt.json \
+                original9_plus_oldwaves/mois_real1043930_recovered_400710_original9_source_receipt.json
+            echo 'Previous authenticated source restoration immutable and identical.'
+          else
+            gh release create "$TAG" original9_plus_oldwaves/* \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS 1,043,930 real original photos: 400,710 strict nine-palette ROI vectors after zero-image historical recovery' \
+              --notes 'New source-authenticated numerically observed original nine biological palette fractions recovered from pre-350399 frozen wave2 4096, cached next8192, cached tail16384 source Parquets for an additional exactly 10169 unique same original photo IDs and frozen matching four-hue labels. Previous 390541 old strict nine-vectors and 36224 ambiguous exploratory fractions unchanged, giving 400710 strict, 36224 ambiguous, 1043930 attempted original photos and 459235 unchanged original four-hue labels. Explicit separate source-SHA, paper trail and no image pixel acquisition, no neural inference, no fake CIELAB from categorical hues and no botanical petal species occurrence claims. Older ecological results still refer to the preceding immutable 390541 benchmark until a fresh versioned refit.'
+          fi

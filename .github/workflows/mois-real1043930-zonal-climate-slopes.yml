@@ -1,0 +1,80 @@
+name: MOIS genuine1043930 photo-colour genus controls by northern southern polar climatic regions
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_real1043930_zonal_climate_slopes.py
+      - tests/test_mois_real1043930_zonal_climate_slopes.py
+      - .github/workflows/mois-real1043930-zonal-climate-slopes.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  all-north-south-polar-internal-genus-climate-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Verify actual-region photo source slopes and no empty Antarctic phenotype
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_real1043930_zonal_climate_slopes.py
+          python -m unittest discover -s tests -p test_mois_real1043930_zonal_climate_slopes.py -v
+      - name: Authenticate genuine 390541 photocolours, 1043930 original photo sites and exact global GSHHG
+        run: |
+          set -euo pipefail
+          mkdir -p p c g
+          gh release download mois-original1043930-recovered-continuous9-426765-and-ecology-20261025-v1 \
+            --repo zuizui0223/mois --dir p \
+            --pattern mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --pattern mois1043930_FCP447500_nine_palette_restoration_receipt.json
+          gh run download 40188040027 --repo zuizui0223/mois \
+            --name mois-real-latest1043930-photoid-original-worldclim-humidity-elevation --dir c
+          gh run download 40188478245 --repo zuizui0223/mois \
+            --name mois-real-latest1043930-island-mainland-elevation-gshhg --dir g
+          printf '%s\n' \
+            'b20bbefe15020c21c3b5b0f7edf3f8e08148a4ee7dda8bf772a89bf6b126f447  p/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet' \
+            'ec39b49649acc2ca4a468c00c86d05800e33ea2db1f91a3b119076be38432735  c/mois_latest1043930_original_photo_climate_six_columns.parquet' \
+            | sha256sum -c -
+      - name: Actually fit white/dominance/entropy/bronze vs humidity rainfall altitude in 12 source-backed biogeographical sectors
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real1043930_zonal_climate_slopes \
+            --photo p/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --receipt p/mois1043930_FCP447500_nine_palette_restoration_receipt.json \
+            --climate c/mois_latest1043930_original_photo_climate_six_columns.parquet \
+            --geo g/latest1043930_all_original_photo_GSHHG_landmass.parquet \
+            --geo-receipt g/mois_latest1043930_island_altitude_result.json \
+            --output zonal_genus_climate
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('zonal_genus_climate/mois1043930_zonal_white_dominant_climate_effects.json').read_text())
+          assert r['schema']=='mois_real1043930_white_colour_hemisphere_latitude_regional_abiotic_slopes_v1'
+          assert r['original_pixel_source_attempts']==1043930
+          assert r['original_strict9_source_assays']==390541
+          assert r['strict_photo_ROI_eligible_for_all3climates_and_named_genus']>=380000
+          assert len(r['all_sectors_including_polar_even_when_insufficient'])==12
+          assert len(r['zonal_genus_geocell_cohort_source_slopes'])==144
+          assert r['RGB_photo_downloads']==0
+          a=[x for x in r['zonal_genus_geocell_cohort_source_slopes']
+             if x['zone']=='south_antarctic']
+          assert a and all(x['slope_pp_per_global_source_SD'] is None for x in a)
+          print('MOIS_REAL1M_SOURCE_PHOTO_GENUS_REGIONAL_NORTH_SOUTH_POLAR_CLIMATE_READY')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real1043930-north-south-polar-white-dominant-genus-climate-effects
+          path: zonal_genus_climate/
+          retention-days: 90
+          if-no-files-found: warn

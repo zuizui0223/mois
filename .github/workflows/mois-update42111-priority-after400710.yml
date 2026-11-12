@@ -1,0 +1,90 @@
+name: MOIS update source 42111 taxa priority after 400710 authentic original nine-photo ROIs
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_real1043930_updated_taxon_gap_after400710.py
+      - .github/workflows/mois-update42111-priority-after400710.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  update-uncoloured-taxa-after-real-old-RGB-source-recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      TAG: mois-original1043930-400710-source-taxon-coverage-priority-20261026-v2
+      OPENBLAS_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install source-only original photo metadata and nine-colour Parquet support
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_real1043930_updated_taxon_gap_after400710.py
+      - name: Recover exact frozen genuine old 390541 -> new 400710 source and original 42111 full-frame priority
+        run: |
+          set -euo pipefail
+          mkdir -p atlas previous
+          gh release download mois-original1043930-400710-strict9-with-oldwaves-restored-20261026-v1 \
+            --repo "$REPO" --dir atlas \
+            --pattern mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet \
+            --pattern mois_real1043930_recovered_400710_original9_source_receipt.json
+          gh release download mois-original1043930-source-structure-42111-taxon-colour-gaps-20261026-v1 \
+            --repo "$REPO" --dir previous \
+            --pattern mois_42111_source_taxon_photo_ROI_priority_register.csv.gz \
+            --pattern mois_real1043930_taxon_gap_and_next_acquisition_decision.json
+          echo 'df0f562b58bdc7ba06e901530eb809f513a763e2b0524d3b195e99ee56e930ef  atlas/mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet' | sha256sum -c -
+      - name: Compute actual updated colour-covered source taxa and additional photo priority rows
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real1043930_updated_taxon_gap_after400710 \
+            --photo atlas/mois_real1043930_continuous9_original_source_recovered_400710_strict.parquet \
+            --receipt atlas/mois_real1043930_recovered_400710_original9_source_receipt.json \
+            --old-register previous/mois_42111_source_taxon_photo_ROI_priority_register.csv.gz \
+            --old-report previous/mois_real1043930_taxon_gap_and_next_acquisition_decision.json \
+            --output actual_400710_42111_source_priorities
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('actual_400710_42111_source_priorities/mois_real1043930_updated_400710_taxon_gap_decision.json').read_text())
+          assert r['schema']=='mois_original1043930_recovered400710_source_taxon_priorities_v2'
+          assert r['full_source_93m_photo_IDs']==93209351
+          assert r['source_42111_taxa']==42111
+          assert r['real_original_photo_attempts']==1043930
+          assert r['strict9_after_no_image_downloads']==400710
+          assert r['strict9_added_from_old_worker_source']==10169
+          assert r['strict9_added_inside_42111_original_taxa']+r['strict9_added_OUTSIDE_42111_source_taxon_frame']==10169
+          assert r['source_taxa_with_any_strict9_NOW']+r['source_taxa_without_strict9_NOW']==42111
+          assert r['source_taxa_newly_covered_since_prior390541']>=0
+          assert r['no_new_photo_image_downloads'] and r['no_legacy_four_hue_mutations']
+          assert not r['individual_new_photo_IDs_already_selected']
+          print('MOIS_LATEST_400710_ORIGINAL_ROI9_42111_TAXON_GAPS_GENUINELY_RECOMPUTED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-original1043930-after400710-strict9-photo-42111taxon-gap-priorities
+          path: actual_400710_42111_source_priorities/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish versioned source-correct taxon ROI9 completeness after genuine original image fraction recovery
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p earlier
+            gh release download "$TAG" --repo "$REPO" --dir earlier \
+              --pattern mois_real1043930_updated_400710_taxon_gap_decision.json
+            cmp earlier/mois_real1043930_updated_400710_taxon_gap_decision.json \
+                actual_400710_42111_source_priorities/mois_real1043930_updated_400710_taxon_gap_decision.json
+          else
+            gh release create "$TAG" actual_400710_42111_source_priorities/* \
+              --repo "$REPO" --target "$GITHUB_SHA" \
+              --title 'MOIS genuine 400710 flower ROI9 original photos: updated 42111 taxon priority and gaps' \
+              --notes 'Reconciles exact original 1043930 photo IDs and 459235 frozen hue labels after +10169 numerically recorded original wave2/cached8k/tail16k photo9 vectors recovered at zero image acquisition cost. Original 93,209,351 indexed photo opportunities and source 42,111 taxa, existing old 390541 taxon-level reference, all newly covered taxa / uncolored taxa / new image priorities recomputed. SOURCE-ONLY, no new photo-ID queue or image downloads/segmentation, no extra petals anatomically confirmed, no global flora representativeness claim. Prior 390541 and 42k priorities are preserved as audit-history versions.'
+          fi

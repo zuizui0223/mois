@@ -1,0 +1,66 @@
+name: MOIS recover historical 9-component full original photo ROI measurements
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_real1043930_recover_historical_full9.py
+      - .github/workflows/mois-real1043930-recover-historical-original9.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  recover-original-911k-lost-palette-fields:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 27
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Restore real original nine-colour ROI archives with authenticated photo-ID SHA
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_real1043930_recover_historical_full9.py
+          mkdir -p original_palette historical_checkpoint
+          gh run download 40192977994 --repo zuizui0223/mois \
+            --name mois-real1043930-original-ROI-continuous9-palette-lake \
+            --dir original_palette
+          gh release download mois-real-pixel-checkpoint-39969920310-v1 \
+            --repo zuizui0223/mois --dir historical_checkpoint \
+            --pattern new_completed_original_photo_ROIs.parquet \
+            --pattern checkpoint_receipt.json
+      - name: Recover original 9 fractions from historical FULL ROI, not historic compact four-colour projection
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_real1043930_recover_historical_full9 \
+            --old-lake original_palette/mois_real1043930_original_photo_continuous9_trait_lake.parquet \
+            --old-receipt original_palette/mois_real1043930_continuous9_coverage_receipt.json \
+            --historical-full historical_checkpoint/new_completed_original_photo_ROIs.parquet \
+            --historical-receipt historical_checkpoint/checkpoint_receipt.json \
+            --output original_plus_historical9
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('original_plus_historical9/mois_1043930_historical_full9_restoration_receipt.json').read_text())
+          assert d['schema']=='mois_latest1043930_recovered_history_original_checkpoint_nine_palette_v1'
+          assert d['original_signed_image_photo_IDs']==1043930
+          assert d['original_signed_four_hue_labels']==459235
+          assert d['total_real_9component_vectors_including_exploratory']>=53460
+          assert d['original_photo_ROI_categories_unchanged'] is True
+          assert d['technical_unknowns_imputed']==0
+          assert d['no_original_photo_bytes_downloaded_or_neural_inference'] is True
+          print('MOIS_1043930_HISTORY_LOST_PALETTE_ORIGINAL_PIXELS_RECOVERED_NO_REDOWLOAD')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real1043930-restored-original-historical-checkpoint-continuous9
+          path: original_plus_historical9/
+          retention-days: 90
+          if-no-files-found: warn

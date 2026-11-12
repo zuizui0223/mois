@@ -1,0 +1,70 @@
+name: MOIS explain 32710 out-of-frame source photo taxa and 20884 zero-nine-colour taxa
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_real1043930_outside_frame_taxa_diagnostic.py
+      - .github/workflows/mois-real1043930-zero-colour-taxa-diagnostic.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  exact-source-taxon-gap-and-unverified-colour-status:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          python -m py_compile scripts/analysis/mois_real1043930_outside_frame_taxa_diagnostic.py
+      - name: Restore signed original photo ROI9, photo observation cohort and 42k taxon source opportunities
+        run: |
+          set -euo pipefail
+          mkdir -p x u counts
+          gh release download mois-original1043930-recovered-continuous9-426765-and-ecology-20261025-v1 \
+            --repo zuizui0223/mois --dir x \
+            --pattern mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet
+          gh run download 40187688390 --repo zuizui0223/mois \
+            --name mois-1043930-latest-original-photo-four-hue-fully-signed-union --dir u
+          gh run download 38749681793 --repo zuizui0223/fcp \
+            --name fcp-42111-real-source-photo-opportunity-counts-20260927-complete-not-colours --dir counts
+          printf '%s\n' \
+            'b20bbefe15020c21c3b5b0f7edf3f8e08148a4ee7dda8bf772a89bf6b126f447  x/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet' \
+            '9a4f3dae6fbcee967b71cb29576e71d52c48e1f1f790b7d3ea4750c4bcb0e6d4  u/mois_latest_1043930_true_original_photo_hue_observation.parquet' \
+            | sha256sum -c -
+      - name: Diagnose real 32710 outside-taxon source rows and 20884 zero-nine taxa, not fictitious colour
+        run: |
+          set -euo pipefail
+          src=$(find counts -name all_42111_species_photo_opportunity_counts.csv -print -quit)
+          python -m scripts.analysis.mois_real1043930_outside_frame_taxa_diagnostic \
+            --source x/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --union u/mois_latest_1043930_true_original_photo_hue_observation.parquet \
+            --upstream "$src" \
+            --output diagnosis
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('diagnosis/mois_1043930_source_outside_frame_missing_colour_taxa.json').read_text())
+          assert r['schema']=='mois_true_1043930_outside_93m_and_zero_colour_taxa_diagnostic_v1'
+          assert r['outside_42111_source_photo_ids']==32710
+          assert r['outside_42111_source_valid9_photo_ROIs']==0
+          assert r['missing_original9_with_eligible_source_taxa']==20884
+          assert r['missing_original9_taxa_with_at_least100_upstream_photos']==6205
+          assert r['original_photo_pixels_posthoc_downloads']==0
+          print('MOIS_1043930_TAXON_FRAME_GAP_AND_MISSINGNESS_REAL_SOURCE_VERIFIED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-32710-outside-taxa-20884-no-palette-original-photo-source-diagnostic
+          path: diagnosis/
+          retention-days: 90
+          if-no-files-found: warn

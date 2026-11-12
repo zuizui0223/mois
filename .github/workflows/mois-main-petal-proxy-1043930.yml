@@ -1,0 +1,66 @@
+name: MOIS real1m dominant floral ROI major colour from frozen 9 palette vectors
+on:
+  push:
+    branches: [feat/latest1043930-four-axes-20261025]
+    paths:
+      - scripts/analysis/mois_main_petal_colour_proxy_from_roi9.py
+      - tests/test_mois_main_petal_colour_proxy_from_roi9.py
+      - .github/workflows/mois-main-petal-proxy-1043930.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  measured-source-original-floral-dominance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Run source-pinned true 9-component photo dominant-colour tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_main_petal_colour_proxy_from_roi9.py -v
+          python -m py_compile scripts/analysis/mois_main_petal_colour_proxy_from_roi9.py
+      - name: Recover existing 390541 strict and 36224 ambiguous nine-ROI vectors, NO original images
+        run: |
+          set -euo pipefail
+          mkdir -p existing
+          gh release download mois-original1043930-recovered-continuous9-426765-and-ecology-20261025-v1 \
+            --repo zuizui0223/mois --dir existing \
+            --pattern mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --pattern mois1043930_FCP447500_nine_palette_restoration_receipt.json
+          echo 'b20bbefe15020c21c3b5b0f7edf3f8e08148a4ee7dda8bf772a89bf6b126f447  existing/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet' | sha256sum -c -
+      - name: Materialize source photo IDs, main flower-region colour proxy, fractions and provenance
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_main_petal_colour_proxy_from_roi9 \
+            --source existing/mois_real1043930_photo_continuous9_with_FCP_original_reuse.parquet \
+            --receipt existing/mois1043930_FCP447500_nine_palette_restoration_receipt.json \
+            --output main_flower_region_colour
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('main_flower_region_colour/mois_main_petal_colour_proxy_1043930_receipt.json').read_text())
+          assert r['source_original_photo_attempts']==1043930
+          assert r['strict_dominant_9colour_source_photo_ROIs']==390541
+          assert r['ambiguous_dominant_9colour_exploration_only']==36224
+          assert r['original_four_hue_labels_unchanged']
+          assert r['petal_calyx_stamen_bract_instance_separation_required'] is False
+          assert r['new_images_downloaded']==r['new_segmentation_or_colour_inference']==0
+          assert r['strict_first_palette_below_70_percent_STILL_RETAINED']>0
+          assert sum(r['main_colour_proxy_palette_counts_strict'].values())==390541
+          print('MOIS_ONE_MILLION_ACTUAL_PHOTO_FLORAL_REGION_DOMINANT_PROXY_AND_TWO_MODES',
+                json.dumps(r,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-real1043930-floral-ROI-major-colour-percent-secondary-mixed-proxy
+          path: main_flower_region_colour/
+          retention-days: 90
+          if-no-files-found: error
