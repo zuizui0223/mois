@@ -1,0 +1,168 @@
+name: MOIS actual 350399 photograph four-axis ecological refit 2026-10-25
+on:
+  push:
+    branches: [feat/four-gradients-real350399-20261025]
+    paths:
+      - scripts/analysis/mois_four_gradient_current_20261025.py
+      - .github/workflows/mois-four-gradient-current-350399-20261025.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-20261025-source-real350399-four-environment-island-season-refit
+  cancel-in-progress: false
+jobs:
+  four-source-backed-gradients:
+    if: github.repository == 'zuizui0223/mois'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 42
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install data-only climatic macroecology dependencies, NO image detector or S3 photo access
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 \
+             scipy==1.15.2 statsmodels==0.14.5
+          python -m py_compile scripts/analysis/mois_four_gradient_current_20261025.py
+      - name: Retrieve the five actual original four-hue photo sources and completed 350399 annual environment
+        run: |
+          set -euo pipefail
+          mkdir -p photo/core photo/broad photo/wave2 photo/cached8192 photo/tail16384 environment geography
+          gh release download mois-primary-real317631-next4096-incremental-all19-featurelake-v3 \
+            --repo zuizui0223/mois --dir photo/core \
+            --pattern primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --pattern mois_317631_new4096_incremental_climate_feature_lake_receipt.json
+          gh release download mois-broad-world-angiosperm-newtaxa4096-real-RGB-ROI-v1 \
+            --repo zuizui0223/mois --dir photo/broad \
+            --pattern primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --pattern mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json
+          gh release download mois-broad-wave2-4096-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir photo/wave2 \
+            --pattern wave2_measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-next8192-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir photo/cached8192 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-tail16384-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir photo/tail16384 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-real350399-original-photo-all19-incremental-climate-v1 \
+            --repo zuizui0223/mois --dir environment \
+            --pattern mois350399_all19_annual_vapr_solar_terrain_source_photoids.parquet \
+            --pattern mois350399_immutable_annual_climate_source_receipt.json
+          gh run download 39112342916 --repo zuizui0223/mois \
+            --name mois-real313535-island-mainland-macro-geography \
+            --dir geography
+      - name: Independently verify genuine photograph/source and annual climate SHAs before all four axes
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          def sha(path):
+              h=hashlib.sha256()
+              with Path(path).open('rb') as f:
+                  for data in iter(lambda:f.read(4<<20),b''): h.update(data)
+              return h.hexdigest()
+          def validate(folder,receipt_name,filename,expected_count,key):
+              root=Path(folder)
+              obj=json.loads((root/receipt_name).read_text())
+              assert obj[key]==expected_count,(folder,obj[key])
+              if folder=='photo/core':
+                  digest=obj['photo_ID_aligned_Zstd_files_sha256'][filename]
+              elif folder=='photo/broad':
+                  digest=obj['new_combined_photo_parquet_SHA256']
+              elif folder=='environment':
+                  digest=obj['sha256'][filename]
+              else:
+                  digest=obj['photo_data_sha256']
+              assert sha(root/filename)==digest,('SHA mismatch',folder)
+          validate('photo/core','mois_317631_new4096_incremental_climate_feature_lake_receipt.json',
+                   'primary317631_actual_photo_hue_RGB_attempts.parquet',317631,
+                   'all_original_photo_attempts')
+          validate('photo/broad','mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json',
+                   'primary313535_plus_broad4096_genuine_original_hue_photos.parquet',317631,
+                   'expanded_actual_original_photo_attempts')
+          for arm,n in [('wave2',4096),('cached8192',8192),('tail16384',16384)]:
+              validate('photo/'+arm,'receipt.json',
+                       'wave2_measured_photos.parquet' if arm=='wave2' else 'measured_photos.parquet',
+                       n,'attempted')
+          validate('environment','mois350399_immutable_annual_climate_source_receipt.json',
+                   'mois350399_all19_annual_vapr_solar_terrain_source_photoids.parquet',
+                   350399,'source_photo_attempts')
+          # Original source geography was signed from the same 313535 photo
+          # identities using the high-resolution GSHHG layer.
+          geo=Path('geography')
+          proven=json.loads((geo/'result.json').read_text())
+          assert proven['source_photo_ids']==313535
+          for file,original_sha in proven['output_sha256'].items():
+              assert sha(geo/file)==original_sha,('island geo SHA mismatch',file)
+          print('MOIS_AUTHENTIC_350399_ALL_FIVE_RGB_SOURCES_ANNUAL_ENV_AND_ISLAND_SHAS_VERIFIED',flush=True)
+          PY
+      - name: Actually refit water, high elevation, island and seasonal contrasts on original image ROI data
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_four_gradient_current_20261025 \
+            --core photo/core/primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --broad photo/broad/primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --wave2 photo/wave2/wave2_measured_photos.parquet \
+            --cached8192 photo/cached8192/measured_photos.parquet \
+            --tail16384 photo/tail16384/measured_photos.parquet \
+            --environment environment/mois350399_all19_annual_vapr_solar_terrain_source_photoids.parquet \
+            --env-receipt environment/mois350399_immutable_annual_climate_source_receipt.json \
+            --geography geography \
+            --output four_axis_original_photos_20261025
+      - name: Fail closed on missing island matched pairs, source photo IDs or seasonal labels
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('four_axis_original_photos_20261025')
+          r=json.loads((root/'mois_four_axis_20261025_source_reanalysis.json').read_text())
+          assert r['schema']=='mois_20261025_actual350399_four_macroecological_axes_refit_v1'
+          assert r['source_actual_photo_attempts']==350399
+          assert r['source_four_hue_classified']==164297
+          assert r['technical_unknowns_not_reassigned']==186102
+          assert r['axes']['islands']['source_photo_attempts']==313535
+          assert r['axes']['islands']['matched_pairs']==102
+          assert r['axes']['elevation']['landmass_5deg_313535_baseline'][
+              'paired_landmass_geographic_neighbourhoods']==44
+          for zone in ('north_extratropical','south_extratropical'):
+              assert zone in r['axes']['season']['hemispheres']
+          assert r['axes']['wet_dry']['measured_photos_with_all_annual_env']>10000
+          assert r['axes']['wet_dry']['causal_environmental_driver_isolated'] is False
+          assert r['axes']['islands']['no_actual_pollinator_availability_inferred']
+          print('MOIS_FOUR_ACTUAL_ECOLOGICAL_GRADIENTS_VALIDATED',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261025-real350399-four-axes-water-elevation-islands-season
+          path: four_axis_original_photos_20261025/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish independently SHA-verified analysis results for permanent reuse
+        run: |
+          set -euo pipefail
+          tag=mois-four-ecological-gradients-original350399-20261025-v1
+          if gh release view "$tag" --repo zuizui0223/mois >/dev/null 2>&1; then
+            mkdir -p published
+            gh release download "$tag" --repo zuizui0223/mois --dir published \
+              --pattern mois_four_axis_result_receipt.json
+            cmp published/mois_four_axis_result_receipt.json \
+                four_axis_original_photos_20261025/mois_four_axis_result_receipt.json
+            echo "Identical ecological result already published; do not rewrite."
+          else
+            gh release create "$tag" four_axis_original_photos_20261025/* \
+              --repo zuizui0223/mois --target "$GITHUB_SHA" \
+              --title 'MOIS actual350399 flower-photo water elevation island season macroecology' \
+              --notes 'Actual source photo IDs and frozen original four-class ROI-v4, annual climate, archived high-resolution coastlines. Same-photo SHA checks, genus×geography×source-arm 5/10deg moisture and elevation, paired local mountain elevation and 102 climate-matched island–mainland cells, exact original-taxon photographic seasonal decomposition. Technical unknowns preserved; no newly measured image pixels, verified flower-petal anthesis, phenotype selection, native-only composition, or causal pigment trade-off inferred.'
+          fi
