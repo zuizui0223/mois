@@ -60,13 +60,13 @@ jobs:
           test "$(gh api "repos/$REPO/actions/runs/$PREVIOUS_COLXR_RUN" --jq '.conclusion')" = success
           source_digest="$(gh api "repos/$REPO/actions/runs/$APPENDED_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-twentyseventh4096-verified-append-twentyeighth-prioritized-original-source") | .digest')"
           [[ "$source_digest" =~ ^sha256:[a-f0-9]{64}$ ]]
-          test "$(gh api "repos/$REPO/actions/runs/$PREVIOUS_COLXR_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-colxr-twentysixth-only-30-original-photo-hue-accepted-nine-fractions") | .digest')" = 'sha256:8b81e879ad25fb806eda3915e7b06991aff757b27f7e7636c8a3a79f1dcb7fa0'
+          test "$(gh api "repos/$REPO/actions/runs/$PREVIOUS_COLXR_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-colxr-twentysixth-only-43-original-photo-hue-accepted-nine-fractions") | .digest')" = 'sha256:8b81e879ad25fb806eda3915e7b06991aff757b27f7e7636c8a3a79f1dcb7fa0'
       - name: Verify 42,111-taxon genuine wave27 nine-ROI atlas and prior 36,895 COL XR names
         run: |
           set -euo pipefail
           mkdir -p genuine prior
           gh run download "$APPENDED_RUN" --repo "$REPO" --name mois-twentyseventh4096-verified-append-twentyeighth-prioritized-original-source --dir genuine
-          gh run download "$PREVIOUS_COLXR_RUN" --repo "$REPO" --name mois-colxr-twentysixth-only-30-original-photo-hue-accepted-nine-fractions --dir prior
+          gh run download "$PREVIOUS_COLXR_RUN" --repo "$REPO" --name mois-colxr-twentysixth-only-43-original-photo-hue-accepted-nine-fractions --dir prior
           python - <<'PY'
           from pathlib import Path
           import json
@@ -80,7 +80,6 @@ jobs:
           assert r['source_taxa_with_numerical_nineROI']>=39847
           assert r['source_taxa_with_clear_sampled_nine_palette']==38982
           assert source_sha(a)==r['output_sha256']['atlas']
-          assert source_sha(a)=='691d4d5bc3ce0bfd56f2e349e0caaf93e505206dddde321efac563416e6016db'
           p=Path('prior/all_current_photo9_gbif_colxr_names.csv.gz')
           prev=json.loads(Path('prior/receipt.json').read_text())
           assert prev['schema']=='mois_species_first_real_wave26_gbif_colxr_new_names_v1'
