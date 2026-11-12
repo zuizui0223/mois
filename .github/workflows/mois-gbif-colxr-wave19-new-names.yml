@@ -1,0 +1,100 @@
+name: MOIS nineteenth 197 new actual nine-hue photo taxa GBIF COL XR exact accepted names
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_gbif_colxr_wave19_incremental.py
+      - tests/test_mois_gbif_colxr_wave18_incremental.py
+      - .github/workflows/mois-gbif-colxr-wave19-new-names.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-gbif-colxr-wave19-new197-photo-hues-only
+  cancel-in-progress: false
+jobs:
+  only-new-colxr-name-match:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      APPENDED_RUN: '43219459003'
+      PREVIOUS_COLXR_RUN: '43203605668'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test botanical exact species, prior key preservation, no synonym promotion
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_wave18_incremental.py -v
+          python -m py_compile scripts/analysis/mois_gbif_colxr_wave19_incremental.py
+      - name: Verify real eighteenth 42111-taxon nine-ROI atlas and existing 35845 COL XR species names
+        run: |
+          set -euo pipefail
+          mkdir -p genuine prior
+          gh run download "$APPENDED_RUN" --repo "$REPO" \
+            --name mois-nineteenth4096-verified-append-twentieth-prioritized-original-source --dir genuine
+          gh run download "$PREVIOUS_COLXR_RUN" --repo "$REPO" \
+            --name mois-colxr-eighteenth-only-265-original-photo-hue-accepted-nine-fractions --dir prior
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.analysis.mois_gbif_colxr_batch_match import source_sha
+          a=Path('genuine/updated/mois_species_first_42111_after_nineteenth.csv.gz')
+          r=json.loads(Path('genuine/updated/receipt.json').read_text())
+          assert r['schema']=='mois_species_first_nineteenth4096_append_twentieth4096_v1'
+          assert r['nineteenth_actual_independent_original_photo_attempts']==1182
+          assert r['nineteenth_actual_strict9_photo_successes']==340
+          assert r['nineteenth_new_source_taxa_with_clear_dominant_hue9']==197
+          assert r['source_taxa_with_numerical_nineROI']==39698
+          assert r['source_taxa_with_clear_sampled_nine_palette']==38299
+          assert source_sha(a)==r['output_sha256']['atlas']
+          assert source_sha(a)=='31dc9a3267f27bfd1f9152c17dccfcfb9205e10aa57b68e0195c016e3bcb9107'
+          prev=json.loads(Path('prior/receipt.json').read_text())
+          assert prev['schema']=='mois_species_first_real_wave19_gbif_colxr_new_names_v1'
+          assert prev['current_exact_colxr_accepted_species']==36095
+          p=Path('prior/all_current_photo9_gbif_colxr_names.csv.gz')
+          assert source_sha(p)==prev['signed_file_SHA256'][p.name]
+          print('MOIS_WAVE18_42111_REALPHOTO_AND_PRIOR36095_COLXR_SIGNED_SOURCES',flush=True)
+          PY
+      - name: Official GBIF v2 COL XR batch GET only 197 new photographed-hue nominal taxa
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_wave19_incremental \
+            --atlas genuine/updated/mois_species_first_42111_after_nineteenth.csv.gz \
+            --append-receipt genuine/updated/receipt.json \
+            --prior-names prior/all_current_photo9_gbif_colxr_names.csv.gz \
+            --prior-receipt prior/receipt.json \
+            --output matching --batch-size 200 --pause 1.0
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('matching/receipt.json').read_text())
+          assert r['schema']=='mois_species_first_real_wave19_gbif_colxr_new_names_v1'
+          assert r['photo_source_taxa_dominant_hue']==38299
+          assert 1<=r['new_nine_hue_nominal_taxa_queried']<=197
+          assert r['previous_gbif_accepted_species']==36095
+          assert r['current_exact_colxr_accepted_species']>=36095
+          assert r['current_GBIF_species_numeric9_fractional_traits']==r['current_exact_colxr_accepted_species']
+          assert not r['GBIF_authenticated_bulk_occurrence_download_submitted']
+          print('MOIS_REAL_WAVE18_NEW_ONLY_COLXR_ACCEPTED',json.dumps({
+             k:r[k] for k in ('new_nine_hue_nominal_taxa_queried',
+                               'new_exact_colxr_accepted_species',
+                               'current_exact_colxr_accepted_species',
+                               'new_match_status_counts',
+                               'GBIF_ISEA3H_SQL_request_count')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-colxr-nineteenth-only-197-original-photo-hue-accepted-nine-fractions
+          path: matching/
+          retention-days: 90
+          if-no-files-found: warn
