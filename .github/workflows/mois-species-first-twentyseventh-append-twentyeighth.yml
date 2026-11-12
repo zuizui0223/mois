@@ -11,7 +11,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: mois-twentyseventh272-signed-to-twentyeighth-depth64-one-source
+  group: mois-twentyseventh217-signed-to-twentyeighth-depth64-one-source
   cancel-in-progress: false
 jobs:
   append-twentyseventh-and-source-twentyeighth:
@@ -53,17 +53,17 @@ jobs:
           for candidate in $candidates; do
             state="$(gh api "repos/$REPO/actions/runs/$candidate" --jq .status)"
             if [ "$state" != completed ]; then
-              echo "MOIS_WAVE26_PRIOR_RUN_IN_FLIGHT $candidate"
+              echo "MOIS_WAVE27_PRIOR_RUN_IN_FLIGHT $candidate"
               exit 0
             fi
             count="$(gh api "repos/$REPO/actions/runs/$candidate/artifacts?per_page=100" --jq '[.artifacts[] | select(.name == "mois-twentyseventh4096-verified-append-twentyeighth-prioritized-original-source")] | length')"
             if [ "$count" != 0 ]; then
-              echo "MOIS_WAVE26_ALREADY_FROZEN_PRIOR_SOURCE_NO_DUPLICATE $candidate"
+              echo "MOIS_WAVE27_ALREADY_FROZEN_PRIOR_SOURCE_NO_DUPLICATE $candidate"
               exit 0
             fi
           done
           audit_digest="$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-twentyseventh27-real-original-photo-nineROI-audit") | .digest')"
-          source_digest="$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-twentyfifth4096-verified-append-twentyseventh-prioritized-original-source") | .digest')"
+          source_digest="$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-twentysixth4096-verified-append-twentyseventh-prioritized-original-source") | .digest')"
           worker_digest="$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-twentyseventh27-real-original-worker-0") | .digest')"
           test "$audit_digest" = 'sha256:bf992a8567ca7e418cded013986801cd1131b4dce054189dd0d191e9a65adaa3'
           test "$source_digest" = 'sha256:d2fe63dd129862ae1f507c6b0b92213f9240679351dcea23e2aff1c054d138da'
@@ -85,7 +85,7 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
-          mkdir -p baseline first second third fourth fifth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth twentieth_source twentyfirst_source twentysecond_source twentythird_source twentyfourth_source twentyfifth_source twentyseventh_source global workers audit26
+          mkdir -p baseline first second third fourth fifth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth twentieth_source twentyfirst_source twentysecond_source twentythird_source twentyfourth_source twentyfifth_source twentysixth_source twentyseventh_source global workers audit27
           gh release download mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1 --repo "$REPO" --dir baseline --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet
           gh run download 42913236517 --repo "$REPO" --name mois-first256-91species-appended-and-next1024-palette-source --dir first
           gh run download 42925844766 --repo "$REPO" --name mois-real1280-wave2-cumulative-9palette-and-fresh-wave3-source --dir second
@@ -113,7 +113,7 @@ jobs:
           gh run download 43292415124 --repo "$REPO" --name mois-twentyfourth4096-verified-append-twentyfifth-prioritized-original-source --dir twentyfifth_source
           gh run download 43305672730 --repo "$REPO" --name mois-twentyfifth4096-verified-append-twentysixth-prioritized-original-source --dir twentysixth_source
           gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-twentysixth4096-verified-append-twentyseventh-prioritized-original-source --dir twentyseventh_source
-          gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-twentyseventh27-real-original-photo-nineROI-audit --dir audit26
+          gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-twentyseventh27-real-original-photo-nineROI-audit --dir audit27
           gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-twentyseventh27-real-original-worker-0 --dir workers/mois-twentyseventh27-real-original-worker-0
           gh run download 43204144063 --repo "$REPO" --name mois-all16-signed93m-current-unlabelled-depth64-new-photo-candidates --dir global
           python - <<'PY'
@@ -125,7 +125,7 @@ jobs:
           assert d['candidate_unique_original_photo_opportunities']==53749
           f=Path('global/mois_full93m_unlabelled_depth64_original_photo_options.csv.gz')
           assert hashlib.sha256(f.read_bytes()).hexdigest()==d['outputs_SHA256'][f.name]
-          print('MOIS_WAVE24_FROZEN_METADATA_ONLY_SOURCE_VERIFIED',flush=True)
+          print('MOIS_WAVE28_FROZEN_METADATA_ONLY_SOURCE_VERIFIED',flush=True)
           PY
       - name: Recompute both wave25 original-photo receipts and strictly append real ROI9; prioritize unused taxa/photos
         if: steps.gate.outputs.ready == 'true'
@@ -133,7 +133,7 @@ jobs:
           set -euo pipefail
           python -m scripts.analysis.mois_species_first_twentyseventh_to_twentyeighth \
             --atlas twentyseventh_source/updated/mois_species_first_42111_after_twentysixth.csv.gz \
-            --source twentyseventh_source/source --workers workers --audited audit26 \
+            --source twentyseventh_source/source --workers workers --audited audit27 \
             --baseline baseline/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
             --first first/updated/mois_genuine_first256_strict9_append_only.parquet \
             --second second/global_after1280/mois_real1024_wave2_original9_photo_delta.parquet \
@@ -180,7 +180,7 @@ jobs:
           assert 1 <= r['twentyeighth_source_distinct_new_photo_observation_taxon'] <=4096
           for k,n in [('atlas','mois_species_first_42111_after_twentyseventh.csv.gz'),('delta','mois_twentyseventh4096_real_original9_photo_delta.parquet'),('next','mois_twentyeighth4096_prioritized_original_photo_queue.csv')]:
             assert r['output_sha256'][k]==sha256(Path('updated')/n)
-          print('MOIS_WAVE26_APPENDED_REAL_STRICT9_NEW_NUMERIC_TAXA_AND_WAVE26_UNUSED_SOURCE',r['twentyseventh_new_source_taxa_with_first_numeric9'],r['twentyeighth_source_distinct_new_photo_observation_taxon'],flush=True)
+          print('MOIS_WAVE27_APPENDED_REAL_STRICT9_NEW_NUMERIC_TAXA_AND_WAVE28_UNUSED_SOURCE',r['twentyseventh_new_source_taxa_with_first_numeric9'],r['twentyeighth_source_distinct_new_photo_observation_taxon'],flush=True)
           PY
       - name: Freeze signed 256-photo source shards with final partial shard
         if: steps.gate.outputs.ready == 'true'
@@ -207,7 +207,7 @@ jobs:
             digests[str(i)]=sha256(p)
           m={'schema':'mois_full_source_observation_sampling_cohort_v1','source_arm':'MOIS_SPECIES_FIRST_TWENTYEIGHTH_PRIORITIZED4096','colour_measured':False,'work_units':units,'worker_ids':list(range(units)),'new_photo_attempts_planned':n,'source_previous_attempts':1229958,'source_full_original_photo_IDs':93209351,'photo_shard_sha256':digests,'source_prior_no_reused_original_photo_or_observation':True}
           Path('source/manifest.json').write_text(json.dumps(m,sort_keys=True,indent=2)+'\n')
-          print('MOIS_WAVE27_GENUINE_ORIGINAL_PHOTO_SOURCE_SHARDS_FROZEN',n,units,flush=True)
+          print('MOIS_WAVE28_GENUINE_ORIGINAL_PHOTO_SOURCE_SHARDS_FROZEN',n,units,flush=True)
           PY
       - name: Dispatch only nonempty 1024-photo worker groups
         if: steps.gate.outputs.ready == 'true'
