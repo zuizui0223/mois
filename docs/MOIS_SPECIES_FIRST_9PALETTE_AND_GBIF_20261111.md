@@ -412,3 +412,11 @@ The new [GBIF v2 COL XR thirteenth increment #43144831341](https://github.com/zu
 - **新規COL XR strict exact accepted species +856、累積34,492 accepted species、33件保留**。保留は曖昧/疑義あるsynonym 28、fuzzy/nonexact 4、species-rank不一致1。9色数値形質とのaccepted species結合は34,492件。各採用種には代表写真由来の9成分を付すが、種全域固定色や各GBIF occurrence地点の実測色を意味しない。
 - [成果物 #13917152545](https://github.com/zuizui0223/mois/actions/runs/43159269051/artifacts/13917152545) ZIP SHA256 `337c3accd70e450fa0187b54e9765ee04b21b97c500df062c1b4b9ceee4dd76f`。署名付き累積COL XR crosswalk SHA256 `887aa15e728a62a875c1bc525d1f661ff4c4e361db61e604eacf7798caa01004`。**GBIF全球occurrence ISEA3H SQL 138件は準備済み、認証送信0、occurrence取得0**。
 - 第15波は[Actions #43158784541](https://github.com/zuizui0223/mois/actions/runs/43158784541)で4原画像ワーカーのうちworker3がSUCCESSし、worker0/1/2は取得・ROI-v4計測継続中（確認時点）。worker3成果物 #13917526451、ZIP SHA256 `72f434c2f406e576875c5acb9ea7f7138635a7b534791cd7fe84a644461eacb4`。まだ第15波全13件receipt/SHA・9数値和・unknownの最終監査未了のため、第15波数値を正式累積に加算せず、次の第16波を起動しない。
+
+
+### 2026-11-12 15:13 JST — 第15波worker1・2の原画像計測完了（暫定、未署名）
+
+- [第15波 #43158784541](https://github.com/zuizui0223/mois/actions/runs/43158784541) は現在 **in_progress**。第14波監査と第15波凍結source作成ジョブはSUCCESS。第15波原画像ワーカー **1・2・3がSUCCESS、0のみ真正原画像取得・ROI-v4計測中**。最終の全13原本receipt/SHA・3種類のID重複・strict9九成分の有限/非負/和1±0.001・technical unknown非補完の署名監査は**未完**。第16波は開始しない。
+- 前回確認後に新しく完了したworker1/2の各4シャードについて、ログ上の実際の推論処理は **worker1: 1,023行（classified 324、mixed_uncertain 699）**、**worker2: 1,019行（classified 311、mixed_uncertain 708）**。合計 **2,042行処理・暫定classified 635・mixed_uncertain 1,407**。これは監査済みstrict9枚数・代表写真色・新規分類群数ではない。元ソースの各ワーカー割当1,024写真との差計6件は未確定の状態として最終receiptで検証する。
+- [worker1成果物 #13918999672](https://github.com/zuizui0223/mois/actions/runs/43158784541/artifacts/13918999672) ZIP SHA256 `acbb476030c1e84817fed691f1349c28fbff9d8e2f497f51e063568ddf422c0d`、[worker2成果物 #13919447974](https://github.com/zuizui0223/mois/actions/runs/43158784541/artifacts/13919447974) ZIP SHA256 `f5eee0887c26cd70c06c40c471950a9dde058fc2b243f9f739f0a8bb7a6af763`。GitHub成果物ZIPのdigestを取得したが、worker0未完のため全13 receiptの独立再展開監査は行っていない。
+- 正式累積は **39,117/42,111数値ROI分類群、36,410代表写真色分類群、GBIF COL XR strict accepted 34,492種** のまま。第15波は加算しない。全球occurrence SQL 138件は認証送信0。写真由来代表色と種全域固定色・GBIF occurrence地点の実測色は区別する。
