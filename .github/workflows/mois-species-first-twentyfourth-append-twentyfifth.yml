@@ -48,7 +48,7 @@ jobs:
           test "$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN" --jq .conclusion)" = success || exit 0
           test "$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN" --jq .status)" = completed || exit 0
           test "$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "twentyfourth-real-original-worker (0)" and .conclusion == "success")] | length')" = 1 || exit 0
-          test "$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "audit-existing-wave24-worker" and .conclusion == "success")] | length')" = 1 || exit 0
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "audit-existing-wave24-worker" and .conclusion == "success")] | length')" = 1 || exit 0
           candidates="$(gh run list --repo "$REPO" --workflow mois-species-first-twentyfourth-append-twentyfifth.yml --branch analysis/mois-species-first-palette9-20261111 --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId")"
           for candidate in $candidates; do
             state="$(gh api "repos/$REPO/actions/runs/$candidate" --jq .status)"
