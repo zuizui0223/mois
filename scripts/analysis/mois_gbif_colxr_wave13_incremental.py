@@ -27,7 +27,7 @@ SCHEMA="mois_species_first_real_wave13_gbif_colxr_new_names_v1"
 PHOTO_ATLAS_SHA="5769608e2b4ab8ec76815b2b9dee2a66f0d3d0c3e60e8dea2c241b5209e55b9a"  # Signed thirteenth appended atlas
 PRIOR_ACCEPTED=33068
 PRIOR_HUE_LABELS=34931
-AFTER_WAVE12_HUE_LABELS=34931
+AFTER_WAVE13_HUE_LABELS=35521
 SOURCE_TAXA=42111
 
 
@@ -37,8 +37,8 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
         new[field]=new[field].fillna("").astype(str).str.strip()
     require(len(new)==SOURCE_TAXA and new.inat_taxon_id.is_unique,
             "Updated original-source 42,111 nominal taxa not unique")
-    require(int(new.dominant_hue9.isin(PALETTE).sum())==AFTER_WAVE12_HUE_LABELS,
-            "Genuine thirteenth wave 234 newly labelled nine-hue taxa absent")
+    require(int(new.dominant_hue9.isin(PALETTE).sum())==AFTER_WAVE13_HUE_LABELS,
+            "Genuine thirteenth wave 590 newly labelled nine-hue taxa absent")
     old=old_crosswalk.copy()
     for field in ("inat_taxon_id","species","source_hue9","hue_status",
                   "status","key","COL_XR_checklistKey"):
@@ -58,7 +58,7 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
     newnames=new.loc[new.dominant_hue9.isin(PALETTE) &
                      new.species.str.match(NAME_RULE) &
                      ~new.inat_taxon_id.isin(old.inat_taxon_id)].copy()
-    require(0<len(newnames)<=AFTER_WAVE12_HUE_LABELS-PRIOR_HUE_LABELS,
+    require(0<len(newnames)<=AFTER_WAVE13_HUE_LABELS-PRIOR_HUE_LABELS,
             "Unexpectedly many source names newly labelled from wave13")
     return newnames.sort_values("inat_taxon_id").reset_index(drop=True)
 
@@ -66,12 +66,13 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
 def run(atlas,prior_names,prior_receipt,append_receipt,output,*,batch_size=200,pause=1.0):
     output=Path(output)
     require(not output.exists(),"Do not overwrite prior signed wave13 COL XR name bridge")
+    require(source_sha(atlas)==PHOTO_ATLAS_SHA,"Signed wave13 original-photo 9-fraction atlas SHA changed")
     appended=json.loads(Path(append_receipt).read_text())
     require(appended.get("schema")=="mois_species_first_thirteenth4096_append_fourteenth4096_v1"
             and appended.get("thirteenth_actual_independent_original_photo_attempts")==2793
             and appended.get("thirteenth_actual_strict9_photo_successes")==819
             and appended.get("thirteenth_new_source_taxa_with_clear_dominant_hue9")==590
-            and appended.get("source_taxa_with_clear_sampled_nine_palette")==AFTER_WAVE12_HUE_LABELS
+            and appended.get("source_taxa_with_clear_sampled_nine_palette")==AFTER_WAVE13_HUE_LABELS
             and appended.get("prior_photo_or_observation_ID_reused") is False
             and appended.get("output_sha256",{}).get("atlas")==source_sha(atlas),
             "Wave13 original nine-fraction image atlas SHA not authenticated by signed append")
@@ -110,7 +111,7 @@ def run(atlas,prior_names,prior_receipt,append_receipt,output,*,batch_size=200,p
     info={
         "schema":SCHEMA,
         "photo_source_taxa":SOURCE_TAXA,
-        "photo_source_taxa_dominant_hue":AFTER_WAVE12_HUE_LABELS,
+        "photo_source_taxa_dominant_hue":AFTER_WAVE13_HUE_LABELS,
         "previous_gbif_accepted_species":PRIOR_ACCEPTED,
         "new_nine_hue_nominal_taxa_queried":len(to_match),
         "new_exact_colxr_accepted_species":int(
