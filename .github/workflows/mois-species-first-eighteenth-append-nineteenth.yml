@@ -64,7 +64,7 @@ jobs:
             fi
           done
           if [ -n "$prior" ]; then
-            echo "Real prior wave17 source processed or in-flight; refuse duplicate: $prior"
+            echo "Real prior wave18 source processed or in-flight; refuse duplicate: $prior"
             exit 0
           fi
           gh run download "$OLD_RUN" --repo "$REPO" --name mois-eighteenth18-real-original-photo-nineROI-audit --dir _precheck
@@ -74,13 +74,13 @@ jobs:
           assert d['schema']=='mois_species_first_eighteenth_authentic_originalROI9_audit_v1'
           assert [d['actual_independent_original_photo_attempts'],d['actual_genuine_strict9_numeric_success'],d['actual_clear_nine_palette_hues'],d['actual_technical_unknowns']]==[1487,436,265,1051]
           assert d['photo_observation_source_taxon_ID_collisions']==0
-          assert len(d['original_photo_worker_receipt_sha256'])==6 and d['source_shard_count']==8
+          assert len(d['original_photo_worker_receipt_sha256'])==6 and d['source_shard_count']==6
           from scripts.analysis.mois_species_first_palette9 import sha256
           assert d['audited_derivative_sha256']==sha256('_precheck/mois_eighteenth_actual_original_nine_roi.csv.gz')
           assert d['frozen_original_manifest_sha256']=='b68125dbb148b037d27c8130e9555b1ad20eb4d7dee136304b5eccf6fdd55d47'
           PY
           echo "ready=true" >> "$GITHUB_OUTPUT"
-      - name: Restore prior signed original-photo ledgers, 10 genuine eighteenth terminals, no original image redownload
+      - name: Restore prior signed original-photo ledgers, 6 genuine eighteenth terminals, no original image redownload
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
@@ -124,7 +124,7 @@ jobs:
           assert hashlib.sha256(f.read_bytes()).hexdigest()==d['outputs_SHA256'][f.name]
           print('MOIS_WAVE14_FULL93M_DEEP32_SIGNED_SOURCE_107222_CANDIDATES_VERIFIED',flush=True)
           PY
-      - name: Recompute all 8 original eighteenth receipt SHAs, append only real ROI9, select unused independent new photos
+      - name: Recompute all 6 original eighteenth receipt SHAs, append only real ROI9, select unused independent new photos
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
