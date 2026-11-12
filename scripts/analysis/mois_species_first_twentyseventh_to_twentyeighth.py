@@ -245,7 +245,7 @@ def append_with_retries(atlas, twentyseventh, previous, options, *, quota=4096,
     require(selected.dominant_hue9_signed.fillna("").eq("").all() and
             not set(choices.photo_id).intersection(set(used.photo_id)),
             "Twentyeighth attempted original photo or previously hued taxon reselected")
-    choices["measurement_id"] = "MOIS-SPECIES-FIRST-W27-" + choices.photo_id.astype(str)
+    choices["measurement_id"] = "MOIS-SPECIES-FIRST-W28-" + choices.photo_id.astype(str)
     choices["image_filename"] = choices.measurement_id + ".jpg"
     choices["shard"] = (np.arange(len(choices)) // 256).astype(str)
     return updated, choices, increased
