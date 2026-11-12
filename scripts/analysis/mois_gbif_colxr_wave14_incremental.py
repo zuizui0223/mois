@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """GBIF COL XR exact name match for ONLY newly nine-hue-labelled MOIS wave14 taxa.
 
-The 33,068 prior GBIF accepted species keys and their exact nine observed
+The 33,636 prior GBIF accepted species keys and their exact nine observed
 original-photo fractions are reused from an immutable receipt. This is a
 species-level trait/accepted-name relation, NOT a site-colour measurement.
 """
@@ -78,11 +78,11 @@ def run(atlas,prior_names,prior_receipt,append_receipt,output,*,batch_size=200,p
             "Wave14 original nine-fraction image atlas SHA not authenticated by signed append")
     old=pd.read_csv(prior_names,compression="infer",dtype=str,keep_default_na=False)
     receipt=json.loads(Path(prior_receipt).read_text())
-    require(receipt.get("schema")=="mois_species_first_real_wave14_gbif_colxr_new_names_v1"
+    require(receipt.get("schema")=="mois_species_first_real_wave13_gbif_colxr_new_names_v1"
             and receipt.get("current_exact_colxr_accepted_species")==PRIOR_ACCEPTED
             and receipt.get("signed_file_SHA256",{}).get(Path(prior_names).name)==
                 source_sha(prior_names),
-            "Prior GBIF wave12 accepted-name SHA is not authenticated")
+            "Prior GBIF wave13 accepted-name SHA is not authenticated")
     df=pd.read_csv(atlas,compression="infer",dtype={"inat_taxon_id":str})
     to_match=select_incremental_hue_names(df,old)
     response=classify_new_rows(to_match,batch_size=batch_size,pause=pause)
