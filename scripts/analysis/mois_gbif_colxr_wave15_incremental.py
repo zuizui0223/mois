@@ -68,7 +68,7 @@ def run(atlas,prior_names,prior_receipt,append_receipt,output,*,batch_size=200,p
     require(not output.exists(),"Do not overwrite prior signed wave15 COL XR name bridge")
     require(source_sha(atlas)==PHOTO_ATLAS_SHA,"Signed wave15 original-photo 9-fraction atlas SHA changed")
     appended=json.loads(Path(append_receipt).read_text())
-    require(appended.get("schema")=="mois_species_first_fifteenth4096_append_fifteenth4096_v1"
+    require(appended.get("schema")=="mois_species_first_fifteenth4096_append_sixteenth4096_v1"
             and appended.get("fifteenth_actual_independent_original_photo_attempts")==3107
             and appended.get("fifteenth_actual_strict9_photo_successes")==966
             and appended.get("fifteenth_new_source_taxa_with_clear_dominant_hue9")==628
