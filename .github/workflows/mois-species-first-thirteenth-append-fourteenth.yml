@@ -12,8 +12,11 @@ permissions:
   contents: read
   actions: read
 concurrency:
+  # Retain the SAME group key as the stalled 43095236635 run (queued, zero jobs).
+  # The newest source-corrected run supersedes that unstarted attempt so the
+  # signed thirteenth atlas cannot be appended from competing runs.
   group: mois-thirteenth2793-signed-to-fourteenth-depth10-one-source
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   append-thirteenth-and-source-fourteenth:
     runs-on: ubuntu-24.04
