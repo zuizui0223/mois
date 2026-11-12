@@ -1,0 +1,75 @@
+name: MOIS no-human existing observation climate input join 20261030
+on:
+  push:
+    branches: [design/mois-observation-bias-audit-20261029]
+    paths: [.github/workflows/mois-nohuman-moisture-inputs-20261030.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-nohuman-moisture-inputs-20261030
+  cancel-in-progress: false
+jobs:
+  source-join:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install frozen table libraries
+        run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - name: Reuse signed existing ROI9 and existing climate only
+        run: |
+          set -euo pipefail
+          mkdir -p source climate joined
+          gh release download mois-1181146-originalROI9-128bulk-georestored-seasons-and-512QC-20261027-v2 --repo zuizui0223/mois --dir source --pattern mois_1181146_true_original_strict9_geography_restored_v2.parquet --pattern mois_1181146_true_original_source_georestoration_receipt.json
+          gh run download 40188040027 --repo zuizui0223/mois --name mois-real-latest1043930-photoid-original-worldclim-humidity-elevation --dir climate
+      - name: Exact canonical photo ID climate join; never infer unsupported colours
+        run: |
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          import numpy as np
+          import pandas as pd
+          from scripts.analysis.mois_roi9_observation_frame_20261029 import observation_frame,sha_file
+          from scripts.analysis.mois_1181146_original_roi9_missingness_gap_decision import recorded_local_season
+          p=Path('source/mois_1181146_true_original_strict9_geography_restored_v2.parquet')
+          c=Path('climate/mois_latest1043930_original_photo_climate_six_columns.parquet')
+          assert sha_file(p)=='faf6951505f1002a1327f64a2ced13431b562cf13893707125fafff918160f62'
+          assert sha_file(c)=='ec39b49649acc2ca4a468c00c86d05800e33ea2db1f91a3b119076be38432735'
+          dr=json.loads(Path('source/mois_1181146_true_original_source_georestoration_receipt.json').read_text())
+          cr=json.loads(Path('climate/mois_latest1043930_photo_climate_receipt.json').read_text())
+          assert dr['source_georestored_original_parquet_SHA256']==sha_file(p)
+          assert cr['new1043930_climate_parquet_sha256']==sha_file(c)
+          d=pd.read_parquet(p);env=pd.read_parquet(c)
+          assert len(d)==1181146 and d.photo_id.is_unique and int(d.strict9.sum())==451643
+          assert len(env)==1043930 and env.photo_id.is_unique
+          f,count=observation_frame(d)
+          assert len(f)==1032882 and int(f.strict9.sum())==401703
+          d.photo_id=d.photo_id.astype(str);env.photo_id=env.photo_id.astype(str)
+          f=f.drop(columns=['_canonical_rank']).merge(d[['photo_id','original_roi_four_hue','strict9_white','source_subarm']],on='photo_id',validate='one_to_one')
+          f=f.merge(env,on='photo_id',how='left',validate='one_to_one',indicator='climate_join')
+          climate_cols=['wc2_bio05_10m','wc2_bio12_10m','wc2_bio14_10m','wc2_annual_vapr_10m','annual_solar_Wm2','wc2_elev_2p5m']
+          f['climate_complete']=np.isfinite(f[climate_cols].to_numpy(float)).all(axis=1)
+          f['local_season']=recorded_local_season(f.observed_on,f.latitude)
+          assert len(f)==1032882 and f.photo_id.is_unique and f.observation_id.is_unique
+          assert f.loc[~f.strict9,'strict9_white'].isna().all()
+          out=Path('joined');target=out/'canonical_observations_climate.csv.gz'
+          f.to_csv(target,index=False,compression={'method':'gzip','mtime':0})
+          coverage=f.groupby(['source_design','source_subarm'],dropna=False).agg(observations=('photo_id','size'),roi9_success=('strict9','sum'),climate_complete=('climate_complete','sum')).reset_index()
+          coverage.to_csv(out/'source_coverage.csv',index=False)
+          rec={'schema':'mois_existing_canonical_photo_climate_join_20261030_v1','source_photo_sha256':sha_file(p),'climate_sha256':sha_file(c),'canonical_counts':count,'climate_rows':len(env),'canonical_climate_id_matched':int(f.climate_join.eq('both').sum()),'canonical_climate_complete':int(f.climate_complete.sum()),'canonical_strict9_and_climate_complete':int((f.strict9&f.climate_complete).sum()),'canonical_no_climate_id':int(f.climate_join.ne('both').sum()),'new_photo_downloads':0,'human_labels':0,'colour_imputation':False,'climate_source':cr['climate_source'],'output_sha256':{q.name:sha_file(q) for q in sorted(out.iterdir())}}
+          (out/'join_receipt.json').write_text(json.dumps(rec,sort_keys=True,indent=2)+'\n')
+          print('MOIS_NOHUMAN_REAL_CLIMATE_JOIN',json.dumps(rec,sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-nohuman-canonical-climate-joined-20261030
+          path: joined/
+          if-no-files-found: error
+          retention-days: 90
