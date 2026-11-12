@@ -35,7 +35,7 @@ jobs:
           python -m pip install -q pandas==2.2.3 numpy==2.1.3
           python -m unittest discover -s tests -p test_mois_gbif_colxr_wave18_incremental.py -v
           python -m py_compile scripts/analysis/mois_gbif_colxr_wave19_incremental.py
-      - name: Verify real eighteenth 42111-taxon nine-ROI atlas and existing 35845 COL XR species names
+      - name: Verify real nineteenth 42111-taxon nine-ROI atlas and existing 36095 COL XR species names
         run: |
           set -euo pipefail
           mkdir -p genuine prior
@@ -58,11 +58,11 @@ jobs:
           assert source_sha(a)==r['output_sha256']['atlas']
           assert source_sha(a)=='31dc9a3267f27bfd1f9152c17dccfcfb9205e10aa57b68e0195c016e3bcb9107'
           prev=json.loads(Path('prior/receipt.json').read_text())
-          assert prev['schema']=='mois_species_first_real_wave19_gbif_colxr_new_names_v1'
+          assert prev['schema']=='mois_species_first_real_wave18_gbif_colxr_new_names_v1'
           assert prev['current_exact_colxr_accepted_species']==36095
           p=Path('prior/all_current_photo9_gbif_colxr_names.csv.gz')
           assert source_sha(p)==prev['signed_file_SHA256'][p.name]
-          print('MOIS_WAVE18_42111_REALPHOTO_AND_PRIOR36095_COLXR_SIGNED_SOURCES',flush=True)
+          print('MOIS_WAVE19_42111_REALPHOTO_AND_PRIOR36095_COLXR_SIGNED_SOURCES',flush=True)
           PY
       - name: Official GBIF v2 COL XR batch GET only 197 new photographed-hue nominal taxa
         run: |
@@ -84,7 +84,7 @@ jobs:
           assert r['current_exact_colxr_accepted_species']>=36095
           assert r['current_GBIF_species_numeric9_fractional_traits']==r['current_exact_colxr_accepted_species']
           assert not r['GBIF_authenticated_bulk_occurrence_download_submitted']
-          print('MOIS_REAL_WAVE18_NEW_ONLY_COLXR_ACCEPTED',json.dumps({
+          print('MOIS_REAL_WAVE19_NEW_ONLY_COLXR_ACCEPTED',json.dumps({
              k:r[k] for k in ('new_nine_hue_nominal_taxa_queried',
                                'new_exact_colxr_accepted_species',
                                'current_exact_colxr_accepted_species',
