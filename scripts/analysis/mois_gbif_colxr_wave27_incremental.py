@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """GBIF COL XR exact name match for ONLY newly nine-hue-labelled MOIS wave27 taxa.
 
-The 36,854 prior GBIF accepted species keys and their exact nine observed
+The 36,895 prior GBIF accepted species keys and their exact nine observed
 original-photo fractions are reused from an immutable receipt. This is a
 species-level trait/accepted-name relation, NOT a site-colour measurement.
 """
@@ -37,7 +37,7 @@ def select_incremental_hue_names(photo_atlas,old_crosswalk):
     require(len(new)==SOURCE_TAXA and new.inat_taxon_id.is_unique,
             "Updated original-source 42,111 nominal taxa not unique")
     require(int(new.dominant_hue9.isin(PALETTE).sum())==AFTER_WAVE27_HUE_LABELS,
-            "Genuine twentyseventh wave 43 newly labelled nine-hue taxa absent")
+            "Genuine twentyseventh wave 30 newly labelled nine-hue taxa absent")
     old=old_crosswalk.copy()
     for field in ("inat_taxon_id","species","source_hue9","hue_status",
                   "status","key","COL_XR_checklistKey"):
