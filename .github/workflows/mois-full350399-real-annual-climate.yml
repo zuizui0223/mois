@@ -1,0 +1,166 @@
+name: MOIS full 350399 genuine original RGB photo annual WorldClim expansion
+on:
+  pull_request:
+    paths:
+      - scripts/analysis/mois_full350399_real_site_annual_climate.py
+      - tests/test_mois_full350399_real_site_annual_climate.py
+      - .github/workflows/mois-full350399-real-annual-climate.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/analysis/mois_full350399_real_site_annual_climate.py
+      - tests/test_mois_full350399_real_site_annual_climate.py
+      - .github/workflows/mois-full350399-real-annual-climate.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mois-real350399-new32768-site-worldclim-1970-2000-source-v1
+  cancel-in-progress: false
+jobs:
+  source-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 rasterio==1.4.3 scipy==1.15.2 statsmodels==0.14.4 pytest==8.4.2
+          python -m pytest -q tests/test_mois_full350399_real_site_annual_climate.py
+          python -m py_compile scripts/analysis/mois_full350399_real_site_annual_climate.py
+  full350399-site-climate:
+    needs: source-tests
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Never recompute a source-verified published feature lake
+        id: gate
+        run: |
+          set -euo pipefail
+          tag=mois-real350399-genuine-photo-bio19-vapr-srad-dem-featurelake-v1
+          if gh release view "$tag" --repo zuizui0223/mois --json isDraft --jq .isDraft 2>/dev/null | grep -qx false; then
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+            echo 'Existing source-signed complete 350399 climate feature lake retained.'
+          else
+            echo 'needed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install scientific raster/photo data readers
+        if: steps.gate.outputs.needed == 'true'
+        run: python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 rasterio==1.4.3 scipy==1.15.2 statsmodels==0.14.4
+      - name: Retrieve five genuine original RGB ROIs and source-SHA-verified old annual abiotic lake
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          gh release download mois-primary-real317631-next4096-incremental-all19-featurelake-v3 \
+            --repo zuizui0223/mois --dir actual/core \
+            --pattern primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --pattern primary317631_all19_BIO_vapr_solar_terrain.parquet \
+            --pattern mois_317631_new4096_incremental_climate_feature_lake_receipt.json
+          gh release download mois-broad-world-angiosperm-newtaxa4096-real-RGB-ROI-v1 \
+            --repo zuizui0223/mois --dir actual/broad \
+            --pattern primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --pattern mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json
+          gh release download mois-broad-wave2-4096-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/wave2 \
+            --pattern wave2_measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-next8192-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/cached8192 \
+            --pattern measured_photos.parquet --pattern receipt.json
+          gh release download mois-cached-tail16384-measured-data-only-v1 \
+            --repo zuizui0223/mois --dir actual/tail16384 \
+            --pattern measured_photos.parquet --pattern receipt.json
+      - name: Validate original five photographic outcome bytes before any provider climate download
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          def sha(p):
+              h=hashlib.sha256()
+              with Path(p).open('rb') as f:
+                  for b in iter(lambda:f.read(1<<20),b''):h.update(b)
+              return h.hexdigest()
+          c=Path('actual/core')
+          r=json.loads((c/'mois_317631_new4096_incremental_climate_feature_lake_receipt.json').read_text())
+          assert r['all_original_photo_attempts']==317631
+          for f in ('primary317631_actual_photo_hue_RGB_attempts.parquet','primary317631_all19_BIO_vapr_solar_terrain.parquet'):
+              assert sha(c/f)==r['photo_ID_aligned_Zstd_files_sha256'][f],f
+          b=Path('actual/broad')
+          r=json.loads((b/'mois_global_angiosperm_broad4096_actual_photo_colour_taxa_receipt.json').read_text())
+          f='primary313535_plus_broad4096_genuine_original_hue_photos.parquet'
+          assert r['expanded_actual_original_photo_attempts']==317631
+          assert sha(b/f)==r['new_combined_photo_parquet_SHA256']
+          for arm,f,n in (('wave2','wave2_measured_photos.parquet',4096),('cached8192','measured_photos.parquet',8192),('tail16384','measured_photos.parquet',16384)):
+              p=Path('actual')/arm;r=json.loads((p/'receipt.json').read_text())
+              assert r['attempted']==n and sha(p/f)==r['photo_data_sha256'],arm
+          print('MOIS_350399_FIVE_REAL_RGB_PHOTO_COLOUR_SOURCES_SHA_VERIFIED')
+          PY
+      - name: Download original pinned WorldClim BIO, solar, vapour and DEM for only 32768 additional original photo sites
+        if: steps.gate.outputs.needed == 'true'
+        timeout-minutes: 25
+        run: |
+          set -euo pipefail
+          mkdir -p wc/{bio,srad,vapr,elev}
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_bio.zip \
+            -o wc/bio/wc2.1_10m_bio.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://github.com/zuizui0223/fcp/releases/download/fcp-worldclim-2.1-10m-20260925/wc2.1_10m_srad.zip \
+            -o wc/srad/wc2.1_10m_srad.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_vapr.zip \
+            -o wc/vapr/wc2.1_10m_vapr.zip
+          curl --fail --location --silent --show-error --retry 3 --max-time 600 \
+            https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_2.5m_elev.zip \
+            -o wc/elev/wc2.1_2.5m_elev.zip
+          echo '00513224583665ec0f2f955a4ec252730c4deb2004cce9e793492a3f26df4dcf  wc/bio/wc2.1_10m_bio.zip' | sha256sum -c -
+          echo 'c72ee7f4f9a0eb4b5f6cd7a003eddc05bda22a2e5666d968ed4e817fd36b9026  wc/srad/wc2.1_10m_srad.zip' | sha256sum -c -
+          for k in bio srad vapr elev; do unzip -q "wc/$k/"*.zip -d "wc/$k"; done
+      - name: Real original image-source matched new32768-site annual climate extraction
+        if: steps.gate.outputs.needed == 'true'
+        timeout-minutes: 30
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_full350399_real_site_annual_climate \
+            --core actual/core/primary317631_actual_photo_hue_RGB_attempts.parquet \
+            --broad actual/broad/primary313535_plus_broad4096_genuine_original_hue_photos.parquet \
+            --wave2 actual/wave2/wave2_measured_photos.parquet \
+            --cached8192 actual/cached8192/measured_photos.parquet \
+            --tail16384 actual/tail16384/measured_photos.parquet \
+            --core-environment actual/core/primary317631_all19_BIO_vapr_solar_terrain.parquet \
+            --core-receipt actual/core/mois_317631_new4096_incremental_climate_feature_lake_receipt.json \
+            --raster wc --output expanded350399
+          test -s expanded350399/mois350399_original_rgb_photo_hues_sourcearms.parquet
+          test -s expanded350399/mois350399_original_site_worldclim_bio19_vapr_solar_terrain.parquet
+          test -s expanded350399/mois350399_original_rgb_photo_full_environment_receipt.json
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.needed == 'true'
+        with:
+          name: mois-original350399-real-colour-bio19-vapr-solar-terrain-feature-lake
+          path: expanded350399/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish complete immutable 350399 photo-ID aligned environmental feature lake
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          gh release create mois-real350399-genuine-photo-bio19-vapr-srad-dem-featurelake-v1 \
+            expanded350399/*.parquet expanded350399/*.json expanded350399/*.csv \
+            --repo zuizui0223/mois --target "$GITHUB_SHA" \
+            --title 'MOIS true 350399 photo pixels with 19 BIO, vapour, solar and DEM at original sites' \
+            --notes 'All 350399 original photos genuinely processed through frozen RGB ROI-v4. 164297 four-hue and 78026 white photograph labels. Previously source-signed 317631 sites/pixels retained byte-identical; ONLY 32768 different truly photographed new sites point sampled from SHA-verifiable official WorldClim 1970-2000 annual climate and coarse DEM. Source status/source arms, observation day and technical unknowns preserved. Soil not imputed. Not actual observed-year weather, causal pigment fitness or botanical proof of flowering.'
