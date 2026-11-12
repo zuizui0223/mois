@@ -39,7 +39,7 @@ jobs:
           python -m unittest discover -s tests -p test_mois_species_first_twelfth_to_thirteenth.py -v
           python -m unittest discover -s tests -p test_mois_species_first_wave14_artifact_paths.py -v
           python -m py_compile scripts/analysis/mois_species_first_twentyseventh_to_twentyeighth.py scripts/analysis/mois_species_first_twentyeighth_audit.py
-      - name: Gate fully signed wave26; prevent duplicate immutable source
+      - name: Gate fully signed wave27; prevent duplicate immutable source
         id: gate
         run: |
           set -euo pipefail
@@ -76,12 +76,12 @@ jobs:
           assert d['schema']=='mois_species_first_twentyseventh_authentic_originalROI9_audit_v1'
           assert [d['actual_independent_original_photo_attempts'],d['actual_genuine_strict9_numeric_success'],d['actual_clear_nine_palette_hues'],d['actual_technical_unknowns']]==[217,53,30,164]
           assert d['photo_observation_source_taxon_ID_collisions']==0
-          assert d['source_shard_count']==2 and len(d['original_photo_worker_receipt_sha256'])==2
+          assert d['source_shard_count']==1 and len(d['original_photo_worker_receipt_sha256'])==1
           assert d['frozen_original_manifest_sha256']=='0dd7059a39011a6d4cf8c004ac6f22d6eae1806a7f788b2751255110a1e62472'
           assert d['audited_derivative_sha256']==sha256('_precheck/mois_twentyseventh_actual_original_nine_roi.csv.gz')
           PY
           echo 'ready=true' >> "$GITHUB_OUTPUT"
-      - name: Restore immutable cumulative original IDs, wave26 source/worker/audit and depth64 metadata
+      - name: Restore immutable cumulative original IDs, wave27 source/worker/audit and depth64 metadata
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
@@ -127,7 +127,7 @@ jobs:
           assert hashlib.sha256(f.read_bytes()).hexdigest()==d['outputs_SHA256'][f.name]
           print('MOIS_WAVE28_FROZEN_METADATA_ONLY_SOURCE_VERIFIED',flush=True)
           PY
-      - name: Recompute both wave25 original-photo receipts and strictly append real ROI9; prioritize unused taxa/photos
+      - name: Recompute wave27 original-photo receipt and strictly append real ROI9; prioritize unused taxa/photos
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
