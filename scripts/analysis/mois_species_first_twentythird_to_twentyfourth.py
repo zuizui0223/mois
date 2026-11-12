@@ -59,7 +59,7 @@ def read_twentythird(source, workers, audited):
     rows = []
     for i in range(2):
         src = source / "shards" / f"shard-{i:03d}.csv"
-        folder = workers / f"mois-twentythird22-real-original-worker-{i//4}" / f"shard_{i:03d}"
+        folder = workers / f"mois-twentythird23-real-original-worker-{i//4}" / f"shard_{i:03d}"
         terminal, receipt = folder / "photos.csv", folder / "receipt.json"
         require(src.is_file() and terminal.is_file() and receipt.is_file(),
                 f"Missing actual twentythird worker source/photo receipt {i}")
