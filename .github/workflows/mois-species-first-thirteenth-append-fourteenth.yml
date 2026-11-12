@@ -1,4 +1,4 @@
-name: MOIS thirteenth signed 2793 append and fourteenth depth10 original image ROI
+name: MOIS thirteenth signed 2793 append and fourteenth depth32 original image ROI
 on:
   push:
     branches: [analysis/mois-species-first-palette9-20261111]
@@ -80,7 +80,25 @@ jobs:
           gh run download "$OLD_RUN" --repo "$REPO" --name mois-twelfth1032-verified-append-thirteenth-prioritized-original-source --dir thirteenth
           gh run download "$OLD_RUN" --repo "$REPO" --name mois-thirteenth13-real-original-photo-nineROI-audit --dir audit13
           for g in 0 1 2; do gh run download "$OLD_RUN" --repo "$REPO" --name "mois-thirteenth13-real-original-worker-$g" --dir "workers/mois-thirteenth13-real-original-worker-$g"; done
-          gh run download 43050923306 --repo "$REPO" --name mois-global-16groups-full93m-zero9-depth10-fresh-photo-fallbacks --dir global
+          gh run download 43142713882 --repo "$REPO" --name mois-all16-signed93m-current-unlabelled-depth32-new-photo-candidates --dir global
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path('global/receipt.json')
+          assert p.is_file()
+          d=json.loads(p.read_text())
+          assert d['schema']=='mois_species_first_all16_unlabelled_depth32_source_union_v1'
+          assert d['original_global_photo_metadata_population']==93209351
+          assert d['prior_unequivocally_unlabelled_taxa']==7180
+          assert d['groups_verified']==16
+          assert d['target_unlabelled_taxa_with_eligible_source_photo']==6743
+          assert d['candidate_unique_original_photo_opportunities']==107222
+          assert d['new_RGB_image_downloads']==0 and d['new_nine_fraction_ROI_measurements']==0
+          assert d['later_original_photo_IDs_must_be_excluded_before_acquisition'] is True
+          f=Path('global/mois_full93m_unlabelled_depth32_original_photo_options.csv.gz')
+          assert hashlib.sha256(f.read_bytes()).hexdigest()==d['outputs_SHA256'][f.name]
+          print('MOIS_WAVE14_FULL93M_DEEP32_SIGNED_SOURCE_107222_CANDIDATES_VERIFIED',flush=True)
+          PY
       - name: Recompute all 11 original thirteenth receipt SHAs, append only real ROI9, select unused independent new photos
         if: steps.gate.outputs.ready == 'true'
         run: |
@@ -101,7 +119,7 @@ jobs:
             --tenth eleventh/updated/mois_tenth4096_real_original9_photo_delta.parquet \
             --eleventh twelfth/updated/mois_eleventh4096_real_original9_photo_delta.parquet \
             --twelfth thirteenth/updated/mois_twelfth4096_real_original9_photo_delta.parquet \
-            --global-options global/mois_global_species_first_zero9_depth10_fallback_photo_options.csv.gz \
+            --global-options global/mois_full93m_unlabelled_depth32_original_photo_options.csv.gz \
             --quota 4096 --output updated
           python - <<'PY'
           import json
