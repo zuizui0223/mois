@@ -45,14 +45,13 @@ jobs:
           set -euo pipefail
           echo "ready=false" >> "$GITHUB_OUTPUT"
           test "$(gh run view "$OLD_RUN" --repo "$REPO" --json conclusion --jq .conclusion)" = success || exit 0
-          # Only an actual source artifact proves a prior SUCCESS processed wave13.
+          # Only an actual source artifact proves a prior SUCCESS processed wave14.
           # Only count a previously emitted verified source artifact as processed.
           prior=''
           candidates="$(gh run list --repo "$REPO" --workflow mois-species-first-fourteenth-append-fifteenth.yml --branch analysis/mois-species-first-palette9-20261111 --limit 50 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId")"
           for candidate in $candidates; do
             status="$(gh api "repos/$REPO/actions/runs/$candidate" --jq '.status')"
             conclusion="$(gh api "repos/$REPO/actions/runs/$candidate" --jq '.conclusion')"
-              fi
             case "$status" in
               queued|in_progress|waiting|pending)
                 prior="$candidate"; break;;
@@ -62,11 +61,11 @@ jobs:
               if [ "$real_artifact_count" != 0 ]; then
                 prior="$candidate";break
               fi
-              echo "MOIS_PRIOR_WAVE14_SUCCESS_WITHOUT_SOURCE_ARTIFACT_NOT_A_COMPLETED_APPEND $candidate"
+              echo "MOIS_PRIOR_WAVE15_SUCCESS_WITHOUT_SOURCE_ARTIFACT_NOT_A_COMPLETED_APPEND $candidate"
             fi
           done
           if [ -n "$prior" ]; then
-            echo "Real prior wave14 source processed or in-flight; refuse duplicate: $prior"
+            echo "Real prior wave15 source processed or in-flight; refuse duplicate: $prior"
             exit 0
           fi
           gh run download "$OLD_RUN" --repo "$REPO" --name mois-fourteenth14-real-original-photo-nineROI-audit --dir _precheck
@@ -82,7 +81,7 @@ jobs:
           assert d['frozen_original_manifest_sha256']=='ea1bd19337b1b56395cebcb8118208748284288f4953f89a2b88caad5d473dc7'
           PY
           echo "ready=true" >> "$GITHUB_OUTPUT"
-      - name: Restore prior signed original-photo ledgers, 11 genuine fourteenth terminals, no original image redownload
+      - name: Restore prior signed original-photo ledgers, 16 genuine fourteenth terminals, no original image redownload
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
@@ -122,7 +121,7 @@ jobs:
           assert hashlib.sha256(f.read_bytes()).hexdigest()==d['outputs_SHA256'][f.name]
           print('MOIS_WAVE14_FULL93M_DEEP32_SIGNED_SOURCE_107222_CANDIDATES_VERIFIED',flush=True)
           PY
-      - name: Recompute all 11 original fourteenth receipt SHAs, append only real ROI9, select unused independent new photos
+      - name: Recompute all 16 original fourteenth receipt SHAs, append only real ROI9, select unused independent new photos
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
