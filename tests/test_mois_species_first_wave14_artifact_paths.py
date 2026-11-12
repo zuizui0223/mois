@@ -25,5 +25,16 @@ class TestWave14ArtifactPaths(unittest.TestCase):
         self.assertNotIn("mois-fourteenth13-real-original-worker", consumer)
 
 
+    def test_wave14_never_treats_skipped_success_as_pixel_source_completion(self):
+        workflow = (ROOT / ".github/workflows/mois-species-first-thirteenth-append-fourteenth.yml").read_text()
+        # A GHA job can be SUCCESS while all image work is skipped by a gate.
+        # Only a signed first-stage source artifact is a real completed append.
+        self.assertIn("real_artifact_count", workflow)
+        self.assertIn("mois-thirteenth2793-verified-append-fourteenth-prioritized-original-source", workflow)
+        self.assertIn("MOIS_PRIOR_WAVE14_SUCCESS_WITHOUT_SOURCE_ARTIFACT_NOT_A_COMPLETED_APPEND", workflow)
+        self.assertIn("MOIS_KNOWN_GITHUB_QUEUE_ORPHAN_43095236635_ZERO_JOB_ZERO_ARTIFACT_IGNORED", workflow)
+        self.assertIn('stale_jobs" = 0 ] && [ "$stale_artifacts" = 0', workflow)
+
+
 if __name__ == "__main__":
     unittest.main()
