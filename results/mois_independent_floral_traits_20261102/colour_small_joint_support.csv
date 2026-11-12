@@ -1,0 +1,7 @@
+sector,all_source_species,n_colour_known,n_size_known,n_colour_mixed_excluded,n_joint_known,n_both_positive,n_inconspicuous_only_given_size,n_small_given_colour,fraction_both_among_joint_known
+arctic,358,136,66,40,26,1,1,17,0.0384615384615
+island_cached,1457,609,495,305,190,5,6,99,0.0263157894737
+mainland_cached,2833,1054,760,440,320,9,12,178,0.028125
+north_subpolar,1770,683,405,251,154,7,9,87,0.0454545454545
+north_temperate,13798,4009,1908,1078,830,37,45,502,0.044578313253
+south_temperate,9838,2496,1367,729,638,17,27,359,0.0266457680251

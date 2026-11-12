@@ -1,0 +1,55 @@
+name: MOIS taxon composition and elevation environment numeric-only 20261030
+on:
+  push:
+    branches: [analysis/mois-composition-environment-20261030]
+    paths:
+      - .github/workflows/mois-composition-environment-20261030.yml
+      - scripts/analysis/mois_composition_environment_20261030.py
+      - tests/test_mois_composition_environment_20261030.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-composition-environment-numeric-only-20261030
+  cancel-in-progress: false
+jobs:
+  source-verified-composition:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify new exact ID, unknown, composition and regression contracts
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 scipy==1.15.2 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_composition_environment_20261030.py -v
+      - name: Reuse three existing numeric source tables; never download photographs
+        run: |
+          set -euo pipefail
+          mkdir -p input/canonical input/palette input/geography
+          gh run download 41007444495 --repo zuizui0223/mois --name mois-nohuman-canonical-climate-joined-20261030 --dir input/canonical
+          gh release download mois-1181146-originalROI9-128bulk-georestored-seasons-and-512QC-20261027-v2 --repo zuizui0223/mois --pattern mois_1181146_true_original_strict9_geography_restored_v2.parquet --dir input/palette
+          gh run download 39112342916 --repo zuizui0223/mois --name mois-real313535-island-mainland-macro-geography --dir input/geography
+      - name: Run source-frozen regional composition and same-sample environment models
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_composition_environment_20261030 \
+            --canonical input/canonical/canonical_observations_climate.csv.gz \
+            --palette input/palette/mois_1181146_true_original_strict9_geography_restored_v2.parquet \
+            --geography input/geography/photo_landmass_cache.csv.gz \
+            --output composition_result
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-source-verified-taxon-palette-environment-20261030
+          path: composition_result/
+          retention-days: 90
+          if-no-files-found: error

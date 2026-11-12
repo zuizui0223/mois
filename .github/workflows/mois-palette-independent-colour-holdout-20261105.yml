@@ -1,0 +1,92 @@
+name: MOIS original ROI9 independent botanical source colour external validation
+on:
+  push:
+    branches: [analysis/mois-composition-environment-20261030]
+    paths:
+      - .github/workflows/mois-palette-independent-colour-holdout-20261105.yml
+      - scripts/analysis/mois_palette_independent_colour_holdout_20261105.py
+      - tests/test_mois_palette_independent_colour_holdout_20261105.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-independent-original9-greenbrown-source-colour-transfer-20261105
+  cancel-in-progress: false
+jobs:
+  verify-taxonomic-external-prediction:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run taxonomic and source-validation tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.3.5 pandas==2.2.3 scikit-learn==1.8.0
+          python -m unittest discover -s tests -p test_mois_palette_independent_colour_holdout_20261105.py -v
+          python -m py_compile scripts/analysis/mois_palette_independent_colour_holdout_20261105.py
+      - name: Retrieve only four previously completed NUMERIC artifacts, never photo pixels
+        run: |
+          set -euo pipefail
+          mkdir -p immutable
+          curl --fail --location --silent --show-error --retry 2 --max-time 150 \
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            https://api.github.com/repos/zuizui0223/mois/actions/artifacts/12960537053/zip -o immutable/regional.zip
+          curl --fail --location --silent --show-error --retry 2 --max-time 150 \
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            https://api.github.com/repos/zuizui0223/mois/actions/artifacts/12174290403/zip -o immutable/taxonomy.zip
+          curl --fail --location --silent --show-error --retry 2 --max-time 150 \
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            https://api.github.com/repos/zuizui0223/mois/actions/artifacts/12970763367/zip -o immutable/accepted.zip
+          curl --fail --location --silent --show-error --retry 2 --max-time 150 \
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            https://api.github.com/repos/zuizui0223/island/actions/artifacts/10042377593/zip -o immutable/direct.zip
+          echo '17b76825f9fa8958a850e2308bb3181d092335ae8a15a64ad72dcebaf5f64963  immutable/regional.zip' | sha256sum -c -
+          echo 'c10d8fc7bf39b0cb404d5eaa09e3e520596b8d1a9284e643dd007d5b485a93cf  immutable/taxonomy.zip' | sha256sum -c -
+          echo '3eb62f10607c13893e410dc1b7abdf9f90d4f1e730b08edecb245669823d1c63  immutable/accepted.zip' | sha256sum -c -
+          echo '5e9c887e093c42eb720f3abd2dc85701ce123fb7fe888c916dc4098ac898ccdd  immutable/direct.zip' | sha256sum -c -
+      - name: Execute exact accepted-species and taxonomy-heldout external prediction
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_palette_independent_colour_holdout_20261105 \
+            --regional immutable/regional.zip \
+            --taxonomy immutable/taxonomy.zip \
+            --accepted immutable/accepted.zip \
+            --direct immutable/direct.zip \
+            --output verified_result
+          python - <<'PY'
+          import json,hashlib
+          import pandas as pd
+          from pathlib import Path
+          folder=Path('verified_result')
+          d=json.loads((folder/'source_receipt.json').read_text())
+          assert d['schema']=='mois_20261105_original_roi9_species_direct_label_group_holdout_v1'
+          assert d['eligible_species_with_direct_single_colour']==6019
+          assert d['green_brown_documented_species']==538
+          assert d['matched_distinct_accepted_species']==22712
+          assert d['all_predictions_outside_training_group_or_species']
+          assert d['no_MNAR_scenarios_or_human_labels_or_image_downloads']
+          for n,h in d['output_sha256'].items():
+              assert hashlib.sha256((folder/n).read_bytes()).hexdigest()==h
+          ranks=pd.read_csv(folder/'rank_holdout.csv')
+          transfers=pd.read_csv(folder/'north_south_species_transfer.csv')
+          assert len(ranks)==4 and len(transfers)==4
+          assert 0.59<ranks[(ranks['rank']=='genus')&(ranks['features']=='full9')].auc.iloc[0]<0.70
+          assert 0.58<ranks[(ranks['rank']=='family')&(ranks['features']=='full9')].auc.iloc[0]<0.70
+          assert transfers.shared_species.eq(0).all()
+          print('MOIS_DIRECT_SPECIES_TAXON_AND_HEMISPHERE_HOLDOUT_SHA_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261105-original9-to-independent-floral-source-colour-holdout-aggregate-only
+          path: verified_result/
+          retention-days: 90
+          if-no-files-found: error

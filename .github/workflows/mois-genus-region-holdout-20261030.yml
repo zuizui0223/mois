@@ -1,0 +1,80 @@
+name: MOIS source-audited WCVP genus and heldout regional nine-palette
+on:
+  push:
+    branches: [analysis/mois-composition-environment-20261030]
+    paths:
+      - .github/workflows/mois-genus-region-holdout-20261030.yml
+      - scripts/analysis/mois_genus_region_holdout_20261030.py
+      - tests/test_mois_genus_region_holdout_20261030.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-wcvp-accepted-genus-exactregion-holdout-20261030
+  cancel-in-progress: false
+jobs:
+  genus-heldout-numeric-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run taxonomy ambiguity, accepted-ID collision, no-leakage and composition tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_genus_region_holdout_20261030.py -v
+          python -m py_compile scripts/analysis/mois_genus_region_holdout_20261030.py
+      - name: Recover only numeric previously measured taxon palette and Kew accepted taxonomy
+        run: |
+          set -euo pipefail
+          mkdir -p prior taxonomy
+          gh run download 41018155739 --repo zuizui0223/mois \
+            --name mois-source-verified-taxon-palette-environment-20261030 --dir prior
+          gh run download 39225659840 --repo zuizui0223/mois \
+            --name mois-real350399-Kew-WCVP-native-source-TDWG3-no-point-status --dir taxonomy
+          echo '5f9dee3b0ab41e42d0b1b1dd06650eda2b954b89cb118ddc8bcdd1a813da1479  prior/taxon_region_palette.csv.gz' | sha256sum -c -
+          echo 'dc5bb0e3686fde0cfd327e4336245d0ceae3c7657b3bd12841bb814cc94d1eb2  taxonomy/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' | sha256sum -c -
+          echo '9cd6aa7ca29f00c64283bcc08dcb778e212b644b837e64070051339b11d8b7b3  taxonomy/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz' | sha256sum -c -
+      - name: Compute six out-of-region accepted-genus validations and regional colour decomposition
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_genus_region_holdout_20261030 \
+            --regional prior/taxon_region_palette.csv.gz \
+            --names taxonomy/mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+            --distribution taxonomy/mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz \
+            --prior-receipt prior/composition_environment_receipt.json \
+            --output genus_holdout
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          folder=Path('genus_holdout')
+          d=json.loads((folder/'genus_holdout_receipt.json').read_text())
+          assert d['schema']=='mois_existing_9palette_wcvp_genus_composition_crossregion_holdout_20261030_v1'
+          assert d['matched_source_coverage']['resolved_taxon_sector_rows']==30158
+          assert d['matched_source_coverage']['accepted_species_sector_rows']==30054
+          assert len(d['heldout_summary'])==6
+          assert d['photo_pixels_downloaded']==0 and d['original_image_roi_inference']==0
+          assert d['MNAR_scenarios_run'] is False and d['technical_unknown_imputed'] is False
+          assert d['out_of_focal_sector_training'] and d['heldout_novel_accepted_species_only']
+          assert not d['family_taxonomy_in_WCVP_derived_source']
+          assert not d['background_contrast_or_dull_flower_measured']
+          for file,digest in d['output_sha256'].items():
+              h=hashlib.sha256((folder/file).read_bytes()).hexdigest()
+              assert digest==h,(file,digest,h)
+          print('MOIS_REAL_ACCEPTED_GENUS_SIX_REGION_HELDOUT_SHA_OK',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-accepted-WCVP-genus-six-direction-heldout-realROI9
+          path: genus_holdout/
+          retention-days: 90
+          if-no-files-found: error
