@@ -176,7 +176,7 @@ jobs:
           assert 1 <= r['twentysixth_source_distinct_new_photo_observation_taxon'] <=4096
           for k,n in [('atlas','mois_species_first_42111_after_twentyfifth.csv.gz'),('delta','mois_twentyfifth4096_real_original9_photo_delta.parquet'),('next','mois_twentysixth4096_prioritized_original_photo_queue.csv')]:
             assert r['output_sha256'][k]==sha256(Path('updated')/n)
-          print('MOIS_WAVE25_APPENDED_REAL_STRICT9_NEW_NUMERIC_TAXA_AND_WAVE26_UNUSED_SOURCE',r['twentyfourth_new_source_taxa_with_first_numeric9'],r['twentysixth_source_distinct_new_photo_observation_taxon'],flush=True)
+          print('MOIS_WAVE25_APPENDED_REAL_STRICT9_NEW_NUMERIC_TAXA_AND_WAVE26_UNUSED_SOURCE',r['twentyfifth_new_source_taxa_with_first_numeric9'],r['twentysixth_source_distinct_new_photo_observation_taxon'],flush=True)
           PY
       - name: Freeze signed 256-photo source shards with final partial shard
         if: steps.gate.outputs.ready == 'true'
