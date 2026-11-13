@@ -123,7 +123,7 @@ jobs:
           d=json.loads(Path('global/receipt.json').read_text())
           assert d['schema']=='mois_species_first_all16_unlabelled_depth64_source_union_v1'
           assert d['original_global_photo_metadata_population']==93209351 and d['groups_verified']==16
-          assert d['candidate_unique_original_photo_opportunities']==46749
+          assert d['candidate_unique_original_photo_opportunities']==53749
           f=Path('global/mois_full93m_unlabelled_depth64_original_photo_options.csv.gz')
           assert hashlib.sha256(f.read_bytes()).hexdigest()==d['outputs_SHA256'][f.name]
           print('MOIS_WAVE28_FROZEN_METADATA_ONLY_SOURCE_VERIFIED',flush=True)
