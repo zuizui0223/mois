@@ -129,7 +129,8 @@ jobs:
           gh run download 43418351166 --repo "$REPO" --name mois-thirtyninth4096-verified-append-fortieth-prioritized-original-source --dir fortieth_source
           gh run download 43421443477 --repo "$REPO" --name mois-fortieth4096-verified-append-fortyfirst-prioritized-original-source --dir fortyfirst_source
           gh run download 43422782831 --repo "$REPO" --name mois-fortyfirst4096-verified-append-fortysecond-prioritized-original-source --dir fortysecond_source
-          gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-fortysecond4096-verified-append-fortyfourth-prioritized-original-source --dir fortyfourth_source
+          gh run download 43424655649 --repo "$REPO" --name mois-fortysecond4096-verified-append-fortythird-prioritized-original-source --dir fortythird_source
+          gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-fortythird4096-verified-append-fortyfourth-prioritized-original-source --dir fortyfourth_source
           gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-fortyfourth28-real-original-photo-nineROI-audit --dir audit43
           gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-fortyfourth28-real-original-worker-0 --dir workers/mois-fortyfourth28-real-original-worker-0
           gh run download 43204144063 --repo "$REPO" --name mois-all16-signed93m-current-unlabelled-depth64-new-photo-candidates --dir global
