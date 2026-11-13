@@ -43,7 +43,7 @@ jobs:
           test "$(gh api "repos/$REPO/actions/runs/$SIGNED_APPEND_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name=="append-fiftysecond-and-source-fiftythird" and .conclusion=="success")] | length')" = 1
           test "$(gh api "repos/$REPO/actions/runs/$SIGNED_APPEND_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fiftysecond4096-verified-append-fiftythird-prioritized-original-source") | .digest')" = 'sha256:76ce1c9f4356a0a3d294ff8af70b12f7f6c613541965521404d804f44da77f9f'
           gh run download "$SIGNED_APPEND_RUN" --repo "$REPO" \
-            --name mois-fiftysecond4096-verified-append-fiftyfirst-prioritized-original-source \
+            --name mois-fiftysecond4096-verified-append-fiftythird-prioritized-original-source \
             --dir genuine
           gh run download "$PRIOR_GBIF_RUN" --repo "$REPO" \
             --name mois-colxr-fiftieth-one-new-real-photo-hue-accepted-nine-fractions \
@@ -55,9 +55,9 @@ jobs:
           a=Path('genuine/updated/mois_species_first_42111_after_fiftysecond.csv.gz')
           d=json.loads(Path('genuine/updated/receipt.json').read_text())
           assert d['schema']=='mois_species_first_fiftysecond4096_append_fiftythird4096_v1'
-          assert d['fiftysecond_actual_independent_original_photo_attempts']==6
-          assert d['fiftysecond_actual_strict9_photo_successes']==1
-          assert d['fiftysecond_new_source_taxa_with_clear_dominant_hue9']==1
+          assert d['fiftysecond_actual_independent_original_photo_attempts']==5
+          assert d['fiftysecond_actual_strict9_photo_successes']==3
+          assert d['fiftysecond_new_source_taxa_with_clear_dominant_hue9']==2
           assert d['source_taxa_with_numerical_nineROI']==39882
           assert d['source_taxa_with_clear_sampled_nine_palette']==39143
           assert source_sha(a)==d['output_sha256']['atlas']
