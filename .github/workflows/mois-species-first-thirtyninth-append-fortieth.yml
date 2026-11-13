@@ -63,7 +63,7 @@ jobs:
             fi
           done
           audit_digest="$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-thirtyninth28-real-original-photo-nineROI-audit") | .digest')"
-          source_digest="$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-thirtyseventh4096-verified-append-thirtyninth-prioritized-original-source") | .digest')"
+          source_digest="$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-thirtyeighth4096-verified-append-thirtyninth-prioritized-original-source") | .digest')"
           worker_digest="$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-thirtyninth28-real-original-worker-0") | .digest')"
           test "$audit_digest" = 'sha256:8013f98bb54086916f457f247bedcf47a9b0069b8f70db0dc8af34b9626c6791'
           test "$source_digest" = 'sha256:dab3efec393ec7f9b9cbadc8593496eccd77966bec148be2e6f38713157784b9'
@@ -123,7 +123,8 @@ jobs:
           gh run download 43386015824 --repo "$REPO" --name mois-thirtyfourth4096-verified-append-thirtyfifth-prioritized-original-source --dir thirtyfifth_source
           gh run download 43393099584 --repo "$REPO" --name mois-thirtyfifth4096-verified-append-thirtysixth-prioritized-original-source --dir thirtysixth_source
           gh run download 43403005639 --repo "$REPO" --name mois-thirtysixth4096-verified-append-thirtyseventh-prioritized-original-source --dir thirtyseventh_source
-          gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-thirtyseventh4096-verified-append-thirtyninth-prioritized-original-source --dir thirtyninth_source
+          gh run download 43409037833 --repo "$REPO" --name mois-thirtyseventh4096-verified-append-thirtyeighth-prioritized-original-source --dir thirtyeighth_source
+          gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-thirtyeighth4096-verified-append-thirtyninth-prioritized-original-source --dir thirtyninth_source
           gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-thirtyninth28-real-original-photo-nineROI-audit --dir audit39
           gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-thirtyninth28-real-original-worker-0 --dir workers/mois-thirtyninth28-real-original-worker-0
           gh run download 43204144063 --repo "$REPO" --name mois-all16-signed93m-current-unlabelled-depth64-new-photo-candidates --dir global
