@@ -1,0 +1,83 @@
+name: MOIS wave30 signed original-image audit-only repair (no image re-download)
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-species-first-thirtieth-audit-rescue.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-wave30-immutable-original-photo-audit-rescue
+  cancel-in-progress: false
+jobs:
+  audit-existing-wave30-originals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      ORIGINAL_RUN: '43347129009'
+      SOURCE_NAME: mois-twentyninth4096-verified-append-thirtieth-prioritized-original-source
+      WORKER_NAME: mois-thirtieth28-real-original-worker-0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Wait for old immutable original worker to finish, and require audit-only failure
+        run: |
+          set -euo pipefail
+          for pass in $(seq 1 90); do
+            state="$(gh api "repos/$REPO/actions/runs/$ORIGINAL_RUN" --jq .status)"
+            [ "$state" = completed ] && break
+            sleep 20
+          done
+          test "$(gh api "repos/$REPO/actions/runs/$ORIGINAL_RUN" --jq .status)" = completed
+          test "$(gh api "repos/$REPO/actions/runs/$ORIGINAL_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "append-twentyninth-and-source-thirtieth" and .conclusion == "success")] | length')" = 1
+          test "$(gh api "repos/$REPO/actions/runs/$ORIGINAL_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "thirtieth-real-original-worker (0)" and .conclusion == "success")] | length')" = 1
+          test "$(gh api "repos/$REPO/actions/runs/$ORIGINAL_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "thirtieth-real-original-audit" and .conclusion == "failure")] | length')" = 1
+          source_digest="$(gh api "repos/$REPO/actions/runs/$ORIGINAL_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name == env.SOURCE_NAME) | .digest')"
+          worker_digest="$(gh api "repos/$REPO/actions/runs/$ORIGINAL_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name == env.WORKER_NAME) | .digest')"
+          test "$source_digest" = 'sha256:fe72715511c485b61b75db9d984e3d134c70df900a3ae49ef949271d0c9821c7'
+          [[ "$worker_digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+          python -m py_compile scripts/analysis/mois_species_first_thirtieth_audit.py
+          grep -q 'source_previous_attempts")==1230302' scripts/analysis/mois_species_first_thirtieth_audit.py
+          echo "MOIS_WAVE30_IMMUTABLE_SOURCE_WORKER_VERIFIED $worker_digest"
+      - name: Download prior frozen source and already measured original worker only
+        run: |
+          set -euo pipefail
+          mkdir -p frozen workers/"$WORKER_NAME"
+          gh run download "$ORIGINAL_RUN" --repo "$REPO" --name "$SOURCE_NAME" --dir frozen
+          gh run download "$ORIGINAL_RUN" --repo "$REPO" --name "$WORKER_NAME" --dir workers/"$WORKER_NAME"
+      - name: Independently re-audit exact original receipts, distinct identities, nine fraction sums, unknowns
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m scripts.analysis.mois_species_first_thirtieth_audit --source frozen/source --workers workers --output audited
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          r=json.loads(Path('audited/receipt.json').read_text())
+          m=json.loads(Path('frozen/source/manifest.json').read_text())
+          assert r['schema']=='mois_species_first_thirtieth_authentic_originalROI9_audit_v1'
+          assert r['actual_independent_original_photo_attempts']==m['new_photo_attempts_planned']==139
+          assert r['actual_genuine_strict9_numeric_success']+r['actual_technical_unknowns']==139
+          assert r['source_shard_count']==m['work_units']==1
+          assert len(r['original_photo_worker_receipt_sha256'])==1
+          assert r['photo_observation_source_taxon_ID_collisions']==0
+          assert m['source_previous_attempts']==1230302
+          assert r['frozen_original_manifest_sha256']==sha256('frozen/source/manifest.json')
+          assert r['audited_derivative_sha256']==sha256('audited/mois_thirtieth_actual_original_nine_roi.csv.gz')
+          assert r['GBIF_occurrences_downloaded']==0 and not r['species_wide_flower_colour_fixed_proven']
+          print('MOIS_WAVE30_AUDIT_ONLY_RESCUE_SIGNED',json.dumps(r,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-thirtieth28-real-original-photo-nineROI-audit-recovery
+          path: audited/
+          retention-days: 90
+          if-no-files-found: error
