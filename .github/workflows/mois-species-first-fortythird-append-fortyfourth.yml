@@ -149,7 +149,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m scripts.analysis.mois_species_first_fortythird_to_fortyfourth \
-            --atlas fortythird_source/updated/mois_species_first_42111_after_fortythird.csv.gz \
+            --atlas fortythird_source/updated/mois_species_first_42111_after_fortysecond.csv.gz \
             --source fortythird_source/source --workers workers --audited audit43 \
             --baseline baseline/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
             --first first/updated/mois_genuine_first256_strict9_append_only.parquet \
@@ -193,7 +193,7 @@ jobs:
             --thirtyninth fortieth_source/updated/mois_thirtyninth4096_real_original9_photo_delta.parquet \
             --fortieth fortyfirst_source/updated/mois_fortieth4096_real_original9_photo_delta.parquet \
             --fortyfirst fortysecond_source/updated/mois_fortyfirst4096_real_original9_photo_delta.parquet \
-            --fortysecond fortythird_source/updated/mois_fortythird4096_real_original9_photo_delta.parquet \
+            --fortysecond fortythird_source/updated/mois_fortysecond4096_real_original9_photo_delta.parquet \
             --global-options global/mois_full93m_unlabelled_depth64_original_photo_options.csv.gz \
             --quota 4096 --output updated
           python - <<'PY'
@@ -211,7 +211,7 @@ jobs:
           assert r['source_taxa_with_numerical_nineROI']+r['source_taxa_without_nineROI']==42111
           assert r['prior_photo_or_observation_ID_reused'] is False
           assert 1 <= r['fortyfourth_source_distinct_new_photo_observation_taxon'] <=4096
-          for k,n in [('atlas','mois_species_first_42111_after_fortysecond.csv.gz'),('delta','mois_fortysecond4096_real_original9_photo_delta.parquet'),('next','mois_fortyfourth4096_prioritized_original_photo_queue.csv')]:
+          for k,n in [('atlas','mois_species_first_42111_after_fortythird.csv.gz'),('delta','mois_fortythird4096_real_original9_photo_delta.parquet'),('next','mois_fortyfourth4096_prioritized_original_photo_queue.csv')]:
             assert r['output_sha256'][k]==sha256(Path('updated')/n)
           print('MOIS_WAVE43_APPENDED_REAL_STRICT9_NEW_NUMERIC_TAXA_AND_WAVE44_UNUSED_SOURCE',r['fortythird_new_source_taxa_with_first_numeric9'],r['fortyfourth_source_distinct_new_photo_observation_taxon'],flush=True)
           PY
