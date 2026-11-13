@@ -56,7 +56,7 @@ jobs:
               echo "MOIS_WAVE32_PRIOR_RUN_IN_FLIGHT $candidate"
               exit 0
             fi
-            count="$(gh api "repos/$REPO/actions/runs/$candidate/artifacts?per_page=100" --jq '[.artifacts[] | select(.name == "mois-thirtyfirst4096-verified-append-thirtysecond-prioritized-original-source")] | length')"
+            count="$(gh api "repos/$REPO/actions/runs/$candidate/artifacts?per_page=100" --jq '[.artifacts[] | select(.name == "mois-thirtysecond4096-verified-append-thirtythird-prioritized-original-source")] | length')"
             if [ "$count" != 0 ]; then
               echo "MOIS_WAVE32_ALREADY_FROZEN_PRIOR_SOURCE_NO_DUPLICATE $candidate"
               exit 0
