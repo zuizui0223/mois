@@ -58,7 +58,7 @@ jobs:
           assert r['thirtyninth_actual_independent_original_photo_attempts']==33
           assert r['thirtyninth_actual_strict9_photo_successes']==12
           assert r['thirtyninth_new_source_taxa_with_clear_dominant_hue9']==4
-          assert r['source_taxa_with_numerical_nineROI']==33881
+          assert r['source_taxa_with_numerical_nineROI']==39881
           assert r['source_taxa_with_clear_sampled_nine_palette']==39124
           assert source_sha(a)==r['output_sha256']['atlas']
           p=Path('prior/all_current_photo9_gbif_colxr_names.csv.gz')
