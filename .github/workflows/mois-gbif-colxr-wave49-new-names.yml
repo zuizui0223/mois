@@ -86,7 +86,8 @@ jobs:
           assert d['photo_source_taxa_dominant_hue']==39140
           assert d['new_nine_hue_nominal_taxa_queried']==1
           assert d['previous_gbif_accepted_species']==37071
-          assert 37071<=d['current_exact_colxr_accepted_species']<=37071
+          assert d['new_exact_colxr_accepted_species']==1
+          assert d['current_exact_colxr_accepted_species']==37072
           assert d['GBIF_occurrence_records_downloaded']==0
           assert d['GBIF_authenticated_bulk_occurrence_download_submitted'] is False
           print('MOIS_OFFICIAL_COLXR_WAVE49_GENUINE_NEW_HUE_RESULT',
