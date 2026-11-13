@@ -281,7 +281,7 @@ def run(atlas, source, workers, audited, previous, global_options, output, *, qu
         "source_taxa_total": 42111,
         "prior_attempts": PRIOR_PHOTOS,
         "prior_cumulative_original_numeric_photo_roi9": PRIOR_NUMERIC_PHOTOS,
-        "fiftieth_actual_independent_original_photo_attempts": 7,
+        "fiftieth_actual_independent_original_photo_attempts": 6,
         "fiftieth_actual_strict9_photo_successes": int(photos.strict9.sum()),
         "fiftieth_new_source_taxa_with_first_numeric9": fresh,
         "fiftieth_strict9_on_previous_mixed_unresolved": int(photos.strict9.sum()) - fresh,
