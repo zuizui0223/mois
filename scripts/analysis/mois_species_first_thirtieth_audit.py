@@ -22,7 +22,7 @@ def run(source,workers,output):
             1 <= int(manifest.get("work_units",0)) <= 16 and
             manifest.get("worker_ids")==list(range(manifest["work_units"])) and
             1 <= int(manifest.get("new_photo_attempts_planned",0)) <= 4096 and
-            manifest.get("source_previous_attempts")==1230144,
+            manifest.get("source_previous_attempts")==1230302,
             "Thirtieth original-photo manifest does not describe one to sixteen genuine disjoint shards, with optional final partial shard")
     allframes=[];receipts={}
     for i in range(manifest["work_units"]):
