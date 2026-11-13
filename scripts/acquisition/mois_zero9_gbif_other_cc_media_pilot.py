@@ -34,8 +34,8 @@ def source_sha(path):
     return h.hexdigest()
 
 
-def source_taxa(atlas,sample=48):
-    require(1<=sample<=256,"Bound first real GBIF API pilot to at most 256 source taxa")
+def source_taxa(atlas,sample=48,offset=0):
+    require(1<=sample<=256 and 0<=offset<=2500,"Bound GBIF API pilot to at most 256 taxa and a valid fixed source offset")
     require(len(atlas)==42111 and atlas.inat_taxon_id.is_unique,"Unrecognized immutable MOIS original-source taxa census")
     for name in ("inat_taxon_id","species","dominant_hue9","hue_status"):
         require(name in atlas,"Frozen nominal taxon and flower status missing: "+name)
@@ -49,7 +49,7 @@ def source_taxa(atlas,sample=48):
             a.species.str.match(NAME_RULE)].copy()
     a["priority"]=a.inat_taxon_id.map(lambda x:hashlib.sha256(
         ("MOIS-ZERO-ROI-OTHER-CC-PROVIDER-20261114|"+x).encode()).hexdigest())
-    return a.sort_values("priority",kind="stable").head(sample).reset_index(drop=True)
+    return a.sort_values("priority",kind="stable").iloc[offset:offset+sample].reset_index(drop=True)
 
 
 def request_json(url,params):
@@ -131,14 +131,14 @@ def candidate_media(rows,key,source_name,inat_taxon_id):
     return out,review
 
 
-def run(atlas_path,output,*,sample=48,page_limit=30,pages=2,pace=0.25):
+def run(atlas_path,output,*,sample=48,offset=0,page_limit=30,pages=2,pace=0.25):
     atlas_path=Path(atlas_path);output=Path(output)
     require(not output.exists(),"Do not overwrite existing authenticated source-only pilot")
     require(source_sha(atlas_path)==BASELINE,"Actual after47 42,111-taxon original-photo atlas SHA drifted")
     require(5<=page_limit<=100 and 1<=pages<=4 and 0.2<=pace<=4,
             "Bound GBIF public API load and make short pilot reproducible")
     atlas=pd.read_csv(atlas_path,compression="infer",dtype={"inat_taxon_id":str})
-    taxa=source_taxa(atlas,sample=sample)
+    taxa=source_taxa(atlas,sample=sample,offset=offset)
     require(len(taxa)>=8,"Not enough exact binomial taxa lacking original numeric ROI")
     done=[];media=[]
     for i,row in enumerate(taxa.itertuples(index=False)):
@@ -193,6 +193,7 @@ def run(atlas_path,output,*,sample=48,page_limit=30,pages=2,pace=0.25):
         "schema":SCHEMA,"source_signed_original_atlas_sha256":source_sha(atlas_path),
         "original_source_zero_numeric_taxa_total":int(atlas.after_strict9.eq(0).sum()),
         "selected_zero9_binomial_taxa_sample":len(taxa),
+        "sample_source_fixed_hash_offset":offset,
         "official_colxr_exact_accepted_species_count":sum(d.get("name_status")=="accepted_exact" for d in done),
         "selected_taxa_with_noninat_CC_stillimages":sum(d.get("eligible_media_count",0)>0 for d in done),
         "noninat_CC_candidate_media_metadata":len(media),
@@ -216,8 +217,9 @@ if __name__=="__main__":
     p.add_argument("--atlas",required=True)
     p.add_argument("--output",required=True)
     p.add_argument("--sample",type=int,default=48)
+    p.add_argument("--offset",type=int,default=0)
     p.add_argument("--page-limit",type=int,default=30)
     p.add_argument("--pages",type=int,default=2)
     p.add_argument("--pace",type=float,default=0.25)
     a=p.parse_args()
-    run(a.atlas,a.output,sample=a.sample,page_limit=a.page_limit,pages=a.pages,pace=a.pace)
+    run(a.atlas,a.output,sample=a.sample,offset=a.offset,page_limit=a.page_limit,pages=a.pages,pace=a.pace)
