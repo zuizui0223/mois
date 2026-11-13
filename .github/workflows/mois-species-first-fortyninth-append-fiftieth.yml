@@ -40,10 +40,13 @@ jobs:
           python -m unittest discover -s tests -p test_mois_species_first_twelfth_to_thirteenth.py -v
           python -m unittest discover -s tests -p test_mois_species_first_wave14_artifact_paths.py -v
           python -m py_compile scripts/analysis/mois_species_first_fortyninth_to_fiftieth.py scripts/analysis/mois_species_first_fiftieth_audit.py
-      - name: Gate recovered signed wave46 terminal; prevent duplicate immutable source
+      - name: Gate signed wave49 terminal with command-level failure diagnostics; prevent duplicate source
         id: gate
         run: |
           set -euo pipefail
+          # Diagnostic-only recovery: trace the exact guard condition that halted run 43453390154.
+          # The immutable source and worker/audit SHA gates below remain unchanged.
+          set -x
           echo "ready=false" >> "$GITHUB_OUTPUT"
           echo "MOIS_WAVE49_PREV_RUN_STATUS $(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN" --jq .status)"
           echo "MOIS_WAVE49_PREV_RUN_CONCLUSION $(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN" --jq .conclusion)"
