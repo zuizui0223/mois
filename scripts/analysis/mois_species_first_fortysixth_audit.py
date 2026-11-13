@@ -16,8 +16,11 @@ def run(source,workers,output):
     source,workers,output=map(Path,(source,workers,output))
     require(not output.exists(),"Do not overwrite existing fortysixth real-image audit")
     manifest=json.loads((source/"manifest.json").read_text())
+    # Historical wave46 source artifact is immutable and SHA-pinned by the
+    # recovery workflow; its arm has three underscores due to a generator typo.
+    # Audit the exact signed payload without mutating/re-downloading any photo.
     require(manifest.get("schema")=="mois_full_source_observation_sampling_cohort_v1" and
-            manifest.get("source_arm")=="MOIS_SPECIES_FIRST_FORTYSIXTH_PRIORITIZED4096" and
+            manifest.get("source_arm")=="MOIS_SPECIES_FIRST_FORTYSIXTH___PRIORITIZED4096" and
             manifest.get("colour_measured") is False and
             1 <= int(manifest.get("work_units",0)) <= 16 and
             manifest.get("worker_ids")==list(range(manifest["work_units"])) and
