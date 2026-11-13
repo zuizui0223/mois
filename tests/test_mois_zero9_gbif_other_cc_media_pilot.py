@@ -25,6 +25,20 @@ class GBIFAlternativeSourceTests(unittest.TestCase):
         self.assertTrue(selected.priority.is_unique)
         self.assertTrue(selected.inat_taxon_id.is_unique)
 
+    def test_hash_sorted_taxon_batches_do_not_repeat_source_taxon_ids(self):
+        atlas=pd.DataFrame({
+            "inat_taxon_id":[str(i+1) for i in range(42111)],
+            "species":["Plantus alba"]*42111,
+            "dominant_hue9":[""]*42111,
+            "hue_status":["no_strict9"]*42111,
+            "after_strict9":[0]*42111,
+        })
+        first=m.source_taxa(atlas,sample=48,offset=0)
+        second=m.source_taxa(atlas,sample=48,offset=48)
+        self.assertEqual(len(first),len(second))
+        self.assertEqual(len(set(first.inat_taxon_id)|set(second.inat_taxon_id)),96)
+        self.assertEqual(len(set(first.inat_taxon_id)&set(second.inat_taxon_id)),0)
+
     def test_exact_name_only_accepts_same_accepted_binomial_species(self):
         src={"usage":{"key":"GBIF:123","canonicalName":"Plantus alba",
                       "rank":"SPECIES","status":"ACCEPTED"},
