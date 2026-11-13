@@ -128,7 +128,7 @@ jobs:
           gh run download 43416662413 --repo "$REPO" --name mois-thirtyeighth4096-verified-append-thirtyninth-prioritized-original-source --dir thirtyninth_source
           gh run download 43418351166 --repo "$REPO" --name mois-thirtyninth4096-verified-append-fortieth-prioritized-original-source --dir fortieth_source
           gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-fortieth4096-verified-append-fortyfirst-prioritized-original-source --dir fortyfirst_source
-          gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-fortyfirst28-real-original-photo-nineROI-audit --dir audit40
+          gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-fortyfirst28-real-original-photo-nineROI-audit --dir audit41
           gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-fortyfirst28-real-original-worker-0 --dir workers/mois-fortyfirst28-real-original-worker-0
           gh run download 43204144063 --repo "$REPO" --name mois-all16-signed93m-current-unlabelled-depth64-new-photo-candidates --dir global
           python - <<'PY'
@@ -147,7 +147,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m scripts.analysis.mois_species_first_fortyfirst_to_fortysecond \
-            --atlas fortyfirst_source/updated/mois_species_first_42111_after_fortyfirst.csv.gz \
+            --atlas fortyfirst_source/updated/mois_species_first_42111_after_fortieth.csv.gz \
             --source fortyfirst_source/source --workers workers --audited audit41 \
             --baseline baseline/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
             --first first/updated/mois_genuine_first256_strict9_append_only.parquet \
