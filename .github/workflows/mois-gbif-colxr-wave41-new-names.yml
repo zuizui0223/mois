@@ -63,10 +63,10 @@ jobs:
           assert source_sha(a)==r['output_sha256']['atlas']
           p=Path('prior/all_current_photo9_gbif_colxr_names.csv.gz')
           prev=json.loads(Path('prior/receipt.json').read_text())
-          assert prev['schema']=='mois_species_first_real_wave41_gbif_colxr_new_names_v1'
+          assert prev['schema']=='mois_species_first_real_wave40_gbif_colxr_new_names_v1'
           assert prev['current_exact_colxr_accepted_species']==37060
           assert source_sha(p)==prev['signed_file_SHA256'][p.name]
-          print('MOIS_WAVE40_42111_REALPHOTO_AND_PRIOR37057_COLXR_SIGNED_SOURCES',flush=True)
+          print('MOIS_WAVE41_42111_REALPHOTO_AND_PRIOR37060_COLXR_SIGNED_SOURCES',flush=True)
           PY
       - name: Official GBIF v2 COL XR GET only 2 newly photographed-hue taxa
         run: |
