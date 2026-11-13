@@ -43,12 +43,12 @@ def read_fiftyfirst(source, workers, audited):
         and manifest.get("work_units") == 1
         and manifest.get("worker_ids") == list(range(1))
         and manifest.get("new_photo_attempts_planned") == 5,
-        "Wrong fiftyfirst 7-photo frozen manifest",
+        "Wrong fiftyfirst 5-photo frozen manifest",
     )
     signed = json.loads((audited / "receipt.json").read_text())
     require(
         signed.get("schema") == AUDIT_SCHEMA
-        and signed.get("actual_independent_original_photo_attempts") == 6
+        and signed.get("actual_independent_original_photo_attempts") == 5
         and signed.get("photo_observation_source_taxon_ID_collisions") == 0
         and signed.get("frozen_original_manifest_sha256") == sha256(source / "manifest.json")
         and signed.get("audited_derivative_sha256") ==

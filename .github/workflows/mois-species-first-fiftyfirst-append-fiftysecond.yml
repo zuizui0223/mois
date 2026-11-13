@@ -1,4 +1,4 @@
-name: MOIS fiftyfirst signed 7 append and fiftysecond depth128 original image ROI
+name: MOIS fiftyfirst signed 5 append and fiftysecond depth128 original image ROI
 on:
   push:
     branches: [analysis/mois-species-first-palette9-20261111]
@@ -39,6 +39,7 @@ jobs:
           python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
           python -m unittest discover -s tests -p test_mois_species_first_twelfth_to_thirteenth.py -v
           python -m unittest discover -s tests -p test_mois_species_first_wave14_artifact_paths.py -v
+          python -m unittest discover -s tests -p test_mois_species_first_fiftyfirst_to_fiftysecond_receipt_count.py -v
           python -m py_compile scripts/analysis/mois_species_first_fiftyfirst_to_fiftysecond.py scripts/analysis/mois_species_first_fiftysecond_audit.py
       - name: Gate signed wave51 terminal with command-level failure diagnostics; prevent duplicate source
         id: gate
@@ -93,6 +94,23 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
+          # Artifact storage can temporarily return HTTP 503 (egress throttling).
+          # Retry downloads only; never retry image inference or reuse an old photo.
+          gh() {
+            if [ "${1:-}" = run ] && [ "${2:-}" = download ]; then
+              local attempt
+              for attempt in 1 2 3; do
+                if command gh "$@"; then return 0; fi
+                if [ "$attempt" -eq 3 ]; then
+                  echo "MOIS_WAVE52_ARTIFACT_EGRESS_DIAGNOSTIC: historical signed artifact inaccessible after 3 retries; fail closed before source freeze"
+                  return 1
+                fi
+                sleep $((attempt * 15))
+              done
+            else
+              command gh "$@"
+            fi
+          }
           mkdir -p fortyninth_source fiftieth_source fiftyfirst_source audit51 fortysixth_source fortyseventh_source fortyeighth_source baseline first second third fourth fifth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth twentieth_source twentyfirst_source twentysecond_source twentythird_source twentyfourth_source twentyfifth_source twentysixth_source twentyseventh_source twentyeighth_source twentyninth_source thirtieth_source thirtyfirst_source thirtysecond_source thirtythird_source thirtyfourth_source thirtyfifth_source thirtysixth_source thirtyseventh_source thirtyeighth_source thirtyninth_source fortieth_source fortyfirst_source fortysecond_source fortythird_source fortyfourth_source fortyfifth_source fiftyfirst_source global workers audit48
           gh release download mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1 --repo "$REPO" --dir baseline --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet
           gh run download 42913236517 --repo "$REPO" --name mois-first256-91species-appended-and-next1024-palette-source --dir first
