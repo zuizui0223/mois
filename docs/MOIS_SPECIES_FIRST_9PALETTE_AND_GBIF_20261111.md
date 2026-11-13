@@ -703,3 +703,14 @@ GBIF COL XR [第43波 #43426807893](https://github.com/zuizui0223/mois/actions/r
 - **SHA固定**：wave44 frozen-source [#14037052533](https://github.com/zuizui0223/mois/actions/runs/43426429868/artifacts/14037052533) ZIP SHA256 `99f409cd82430dbabf1aaeb238533638db9ab42c961f5458db6a9ff07835ef6c`、worker [#14037982126](https://github.com/zuizui0223/mois/actions/runs/43426429868/artifacts/14037982126) `f340e73da468e0b0e092e2b41794a55a8ad0f8ba136e2605e0003270a41eb4c9`、signed-audit [#14036683355](https://github.com/zuizui0223/mois/actions/runs/43426429868/artifacts/14036683355) `bf380a7bc30c318306fb569fe02e7512a9df58740322cc6c0dfc4838cb374afb`。manifest SHA256 `5d7a058d4a7136cfabda548cd333f5f77e93d72079deb8d6a0a33e8bbc236517`、worker receipt SHA256 `e5706408e0e7e339fd252b7f8e0c4b9190153783d5d37a9e247b524ec07b70b6`、audit derivative SHA256 `6265a2d7f71079a22780dd6bffda2c18a6c2aadcd2b4445fefc4e49c830a3b93`。
 - **差分統合・次波ゲート**：[第45波開始ワークフロー](https://github.com/zuizui0223/mois/actions/workflows/mois-species-first-fortyfourth-append-fortyfifth.yml)を作成し、旧波の全ジョブSUCCESS・原本ZIP/manifest/worker receipt署名をゲートに設定。第44波17枚の正式appendがSUCCESSになった場合にのみ、期待累積は**1,231,165原画像試行、467,513 strict9、39,881数値ROI分類群／42,111、39,132代表写真色分類群、数値ROI未取得2,230分類群**。この記録時点で第45波のsource・取得・最終署名は未確定のため、上記はappend完了前には正式累積へ加算しない。重複source起動なし、既存画像再DL・再計測なし。
 - **GBIF増分**：第44波は代表写真9色の新規分類群0なので、COL XR新規照合もGBIF厳格採用数増分も**0**。直前の厳格採用累積**37,065種**のまま。全球occurrence SQL **149件準備のみ**（認証送信0件・出現記録取得0件）。写真代表色を種全域固定色・GBIF地点実測と同一視しない。次波も42,111名目分類群内の未代表色・未計測を優先、93.2M写真全量取得には戻らない。PR #200は未マージ。
+
+
+### 2026-11-13 JST — 第44波の正式appendがSUCCESS：初数値ROI分類群+1、凍結第45波16独立原画像が実取得段階へ
+
+**先行記録の訂正**：第44波には `first_unmeasured` 優先枠が0でも、`retry_unclear` 分類群で**新たに初strict9数値ROIを得た1分類群**が含まれていた。前節の「初数値ROI分類群0」は誤り。代表写真9色の新規分類群0は正しい。新規数値種数は必ず追加後の `after_strict9` を使って判定する。
+
+[第45波 Actions #43437080777](https://github.com/zuizui0223/mois/actions/runs/43437080777) の `append-fortyfourth-and-source-fortyfifth` がSUCCESS。第44波17枚の署名済み原本のみを差分正式統合し、写真・観察ID再使用0、元カタログ42,111行維持。**正式累積：真正原画像試行1,231,165枚、strict9数値ROI467,513枚、数値ROI取得39,882／42,111分類群（今回+1）、代表写真9色39,132分類群（今回+0）、未数値ROI2,229分類群。** 更新atlas SHA256 `0436688671fcbb632a2567ffccddf5364bf5f4704270147e5dc3376bfe4c439d`、第44波delta SHA256 `6091814ca0e00b719a063cfba50abd380995ff9cd5c3385bd963bb045d24ca04`、次波候補CSV SHA256 `1021b1428c7ddd387ee89fd7a9c6ac94ce002acc47e479581951471489fbdd51`。
+
+既使用photo_id・observation_idと既代表写真色あり分類群を除外して、**第45波16分類群×未使用独立原画像1枚、1シャード、1実取得worker**を凍結。新規source [#14043539418](https://github.com/zuizui0223/mois/actions/runs/43437080777/artifacts/14043539418) ZIP SHA256 `cb3cf96885a32e412dff475f153ea5f77771732253d19a3b385dcdd0d08a5b64`。sourceフリーズ時点では `first_unmeasured=0`、`retry_unclear=16`。worker実際の原画像取得とstrict9監査は完了前なので、その成果を正式累積にはまだ加算しない。第46波は開始しない。同source二重起動や旧画像の再DL・再計測なし。
+
+GBIF v2 COL XRの新代表色増分は第44波**0分類群**、累積exact accepted **37,065種**で不変。曖昧名は保留、全球GBIF occurrence SQL149件は認証送信0件・実測地点0件。代表写真色を種全域の固定色やGBIF出現地点の実測色に置き換えない。
