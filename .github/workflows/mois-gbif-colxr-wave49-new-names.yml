@@ -38,7 +38,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p genuine prior
-          test "$(gh run view "$SIGNED_APPEND_RUN" --repo "$REPO" --json conclusion --jq .conclusion)" = success
+          # The signed append job is already complete even while wave50 workers run.
+          # Never treat the complete wave50 run as a prerequisite for wave49 name-matching.
+          test "$(gh api "repos/$REPO/actions/runs/$SIGNED_APPEND_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name=="append-fortyninth-and-source-fiftieth" and .conclusion=="success")] | length')" = 1
+          test "$(gh api "repos/$REPO/actions/runs/$SIGNED_APPEND_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortyninth4096-verified-append-fiftieth-prioritized-original-source") | .digest')" = 'sha256:e8193a61f5f314e35b1d0629f3b9dc1554dcb46c80077534a028cb6c8f5a4706'
           gh run download "$SIGNED_APPEND_RUN" --repo "$REPO" \
             --name mois-fortyninth4096-verified-append-fiftieth-prioritized-original-source \
             --dir genuine
