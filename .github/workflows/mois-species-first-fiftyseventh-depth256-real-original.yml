@@ -180,6 +180,8 @@ jobs:
           gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-fiftysixth28-real-original-photo-nineROI-audit --dir audit56
           gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-fiftysixth28-real-original-worker-0 --dir workers/mois-fiftysixth28-real-original-worker-0
           gh run download 43470558914 --repo "$REPO" --name mois-all16-signed93m-current-unlabelled-depth256-new-photo-candidates --dir global
+          # Compare the reconstructed atlas as data, not gzip bytes (gzip headers are noncanonical).
+          gh run download 43470118921 --repo "$REPO" --name mois-fiftysixth4096-verified-append-fiftyseventh-prioritized-original-source --dir signed56
           python - <<'PY'
           import json,hashlib
           from pathlib import Path
@@ -275,11 +277,18 @@ jobs:
           assert r['cumulative_original_photo_attempts']==1231244
           assert r['cumulative_original_numeric_photo_roi9']==467536
           assert r['source_taxa_with_clear_sampled_nine_palette']==39145
-          assert sha256(Path('updated')/'mois_species_first_42111_after_fiftysixth.csv.gz')=='c504e2549f0659b9e0849a0178f689ee4caa70c7cd1ccd9ca003836c447d706b'
+          from pathlib import Path
+          import pandas as pd
+          signed=Path('signed56/updated/mois_species_first_42111_after_fiftysixth.csv.gz')
+          assert sha256(signed)=='c504e2549f0659b9e0849a0178f689ee4caa70c7cd1ccd9ca003836c447d706b'
+          reconstructed=Path('updated/mois_species_first_42111_after_fiftysixth.csv.gz')
+          pd.testing.assert_frame_equal(pd.read_csv(signed,dtype=str,keep_default_na=False),pd.read_csv(reconstructed,dtype=str,keep_default_na=False))
           assert 0 <= r['fiftyseventh_source_distinct_new_photo_observation_taxon'] <=4096
           for k,n in [('atlas','mois_species_first_42111_after_fiftysixth.csv.gz'),('delta','mois_fiftysixth4096_real_original9_photo_delta.parquet'),('next','mois_fiftyseventh4096_prioritized_original_photo_queue.csv')]:
             assert r['output_sha256'][k]==sha256(Path('updated')/n)
-          print('MOIS_WAVE49_APPENDED_REAL_STRICT9_NEW_NUMERIC_TAXA_AND_WAVE46_UNUSED_SOURCE',r['fiftysixth_new_source_taxa_with_first_numeric9'],r['fiftyseventh_source_distinct_new_photo_observation_taxon'],flush=True)
+          print('MOIS_WAVE57_DEPTH256_SIGNED_PREV_ATLAS_SEMANTICALLY_IDENTICAL_AND_UNUSED_PHOTOS',r['fiftysixth_new_source_taxa_with_first_numeric9'],r['fiftyseventh_source_distinct_new_photo_observation_taxon'],flush=True)
+          if r['fiftyseventh_source_distinct_new_photo_observation_taxon']==0:
+              print('MOIS_DEPTH256_ZERO_GENUINELY_UNUSED_PHOTOS_AFTER_ALL_WAVES; DO_NOT_START_PIXEL_WORKERS; DIAGNOSE_ALTERNATE_PHOTO_SOURCE',flush=True)
           PY
       - name: Freeze signed 256-photo source shards with final partial shard
         if: steps.gate.outputs.ready == 'true'
