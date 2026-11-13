@@ -45,6 +45,10 @@ jobs:
         run: |
           set -euo pipefail
           echo "ready=false" >> "$GITHUB_OUTPUT"
+          echo "MOIS_WAVE49_PREV_RUN_STATUS $(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN" --jq .status)"
+          echo "MOIS_WAVE49_PREV_RUN_CONCLUSION $(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN" --jq .conclusion)"
+          echo "MOIS_WAVE49_PREV_JOBS $(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/jobs?per_page=100" --jq '[.jobs[] | [.name,.conclusion]]')"
+          echo "MOIS_WAVE49_PREV_ARTIFACTS $(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '[.artifacts[] | [.name,.digest]]')"
           test "$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN" --jq .status)" = completed || exit 0
           test "$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN" --jq .conclusion)" = success || exit 0
           test "$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN" --jq .status)" = completed || exit 0
@@ -67,6 +71,7 @@ jobs:
           audit_digest="$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortyninth28-real-original-photo-nineROI-audit") | .digest')"
           source_digest="$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortyeighth4096-verified-append-fortyninth-prioritized-original-source") | .digest')"
           worker_digest="$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortyninth28-real-original-worker-0") | .digest')"
+          echo "MOIS_WAVE49_DIGESTS audit=$audit_digest source=$source_digest worker=$worker_digest"
           test "$audit_digest" = 'sha256:4462126534400929587c48bfb0cafe640c5222220ff2cc0bdf5b76aecaadd946'
           test "$source_digest" = 'sha256:da8c63c5c844540269f14943d6c64b306d8772be1793ebd7f90210508755bab1'
           test "$worker_digest" = 'sha256:c79a0bd4741def238f205391b624829814859b2da1a004742293210da0ceef54'
