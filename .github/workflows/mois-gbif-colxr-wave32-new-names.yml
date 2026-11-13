@@ -63,7 +63,7 @@ jobs:
           assert source_sha(a)==r['output_sha256']['atlas']
           p=Path('prior/all_current_photo9_gbif_colxr_names.csv.gz')
           prev=json.loads(Path('prior/receipt.json').read_text())
-          assert prev['schema']=='mois_species_first_real_wave30_gbif_colxr_new_names_v1'
+          assert prev['schema']=='mois_species_first_real_wave31_gbif_colxr_new_names_v1'
           assert prev['current_exact_colxr_accepted_species']==36995
           assert source_sha(p)==prev['signed_file_SHA256'][p.name]
           print('MOIS_WAVE32_42111_REALPHOTO_AND_PRIOR36995_COLXR_SIGNED_SOURCES',flush=True)
