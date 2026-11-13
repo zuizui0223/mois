@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Append genuine fortyseventh original image ROI9 and freeze a fortyeighth 4096-photo source.
 
-The fortyseventh consists of 12 independent original photos for 13 still-unresolved prior-attempt taxa.
+The fortyseventh consists of 12 independent original photos for 12 still-unresolved prior-attempt taxa.
 A retry can have existing strict9 but unresolved mixed hue: retain all previous
 independent observations and update the mean; never call a retry a new species.
 """
@@ -251,7 +251,7 @@ def append_with_retries(atlas, fortyseventh, previous, options, *, quota=4096,
     require(selected.dominant_hue9_signed.fillna("").eq("").all() and
             not set(choices.photo_id).intersection(set(used.photo_id)),
             "Thirtyfourth attempted original photo or previously hued taxon reselected")
-    choices["measurement_id"] = "MOIS-SPECIES-FIRST-W47-" + choices.photo_id.astype(str)
+    choices["measurement_id"] = "MOIS-SPECIES-FIRST-W48-" + choices.photo_id.astype(str)
     choices["image_filename"] = choices.measurement_id + ".jpg"
     choices["shard"] = (np.arange(len(choices)) // 256).astype(str)
     return updated, choices, increased
@@ -281,7 +281,7 @@ def run(atlas, source, workers, audited, previous, global_options, output, *, qu
         "source_taxa_total": 42111,
         "prior_attempts": PRIOR_PHOTOS,
         "prior_cumulative_original_numeric_photo_roi9": PRIOR_NUMERIC_PHOTOS,
-        "fortyseventh_actual_independent_original_photo_attempts": 13,
+        "fortyseventh_actual_independent_original_photo_attempts": 12,
         "fortyseventh_actual_strict9_photo_successes": int(photos.strict9.sum()),
         "fortyseventh_new_source_taxa_with_first_numeric9": fresh,
         "fortyseventh_strict9_on_previous_mixed_unresolved": int(photos.strict9.sum()) - fresh,
@@ -312,11 +312,11 @@ if __name__ == "__main__":
     a = argparse.ArgumentParser(description=__doc__)
     for k in ("atlas", "source", "workers", "audited", "baseline",
               "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth", "twentieth", "twentyfirst", "twentysecond", "twentythird", "twentyfourth", "twentyfifth", "twentysixth", "twentyseventh", "twentyeighth", "twentyninth", "thirtieth", "thirtyfirst", "thirtysecond", "thirtythird", "thirtyfourth", "thirtyfifth", "thirtysixth", "thirtyseventh", "thirtyeighth", "thirtyninth", "fortieth", "fortyfirst", "fortysecond", "fortythird", "fortyfourth", "fortyfifth",
-              "global-options", "output"):
+              "fortysixth", "global-options", "output"):
         a.add_argument("--" + k, required=True)
     a.add_argument("--quota", type=int, default=4096)
     v = a.parse_args()
     run(v.atlas, v.source, v.workers, v.audited,
         {k: getattr(v, k) for k in ("baseline", "first", "second",
-                                   "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth", "twentieth", "twentyfirst", "twentysecond", "twentythird", "twentyfourth", "twentyfifth", "twentysixth", "twentyseventh", "twentyeighth", "twentyninth", "thirtieth", "thirtyfirst", "thirtysecond", "thirtythird", "thirtyfourth", "thirtyfifth", "thirtysixth", "thirtyseventh", "thirtyeighth", "thirtyninth", "fortieth", "fortyfirst", "fortysecond", "fortythird", "fortyfourth", "fortyfifth")},
+                                   "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth", "twentieth", "twentyfirst", "twentysecond", "twentythird", "twentyfourth", "twentyfifth", "twentysixth", "twentyseventh", "twentyeighth", "twentyninth", "thirtieth", "thirtyfirst", "thirtysecond", "thirtythird", "thirtyfourth", "thirtyfifth", "thirtysixth", "thirtyseventh", "thirtyeighth", "thirtyninth", "fortieth", "fortyfirst", "fortysecond", "fortythird", "fortyfourth", "fortyfifth", "fortysixth")},
         v.global_options, v.output, quota=v.quota)
