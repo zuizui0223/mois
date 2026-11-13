@@ -144,7 +144,7 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
-          python -m scripts.analysis.mois_species_first_thirtyninth_to_fortieth \
+          python -m scripts.analysis.mois_species_first_fortieth_to_fortyfirst \
             --atlas fortieth_source/updated/mois_species_first_42111_after_thirtyninth.csv.gz \
             --source fortieth_source/source --workers workers --audited audit40 \
             --baseline baseline/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
