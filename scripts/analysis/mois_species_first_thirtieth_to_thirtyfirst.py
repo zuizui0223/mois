@@ -305,7 +305,7 @@ def run(atlas, source, workers, audited, previous, global_options, output, *, qu
 if __name__ == "__main__":
     a = argparse.ArgumentParser(description=__doc__)
     for k in ("atlas", "source", "workers", "audited", "baseline",
-              "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth", "twentieth", "twentyfirst", "twentysecond", "twentythird", "twentyfourth", "twentyfifth", "twentysixth", "twentyseventh", "twentyeighth",
+              "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth", "twentieth", "twentyfirst", "twentysecond", "twentythird", "twentyfourth", "twentyfifth", "twentysixth", "twentyseventh", "twentyeighth", "twentyninth",
               "global-options", "output"):
         a.add_argument("--" + k, required=True)
     a.add_argument("--quota", type=int, default=4096)
