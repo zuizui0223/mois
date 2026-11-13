@@ -68,20 +68,20 @@ def run(atlas,prior_names,prior_receipt,append_receipt,output,*,batch_size=200,p
     require(source_sha(atlas)==json.loads(Path(append_receipt).read_text())["output_sha256"]["atlas"],"Signed wave29 original-photo 9-fraction atlas SHA changed")
     appended=json.loads(Path(append_receipt).read_text())
     require(appended.get("schema")=="mois_species_first_twentyninth4096_append_thirtieth4096_v1"
-            and appended.get("twentyninth_actual_independent_original_photo_attempts")==186
-            and appended.get("twentyninth_actual_strict9_photo_successes")==46
+            and appended.get("twentyninth_actual_independent_original_photo_attempts")==158
+            and appended.get("twentyninth_actual_strict9_photo_successes")==28
             and appended.get("twentyninth_new_source_taxa_with_clear_dominant_hue9")==17
             and appended.get("source_taxa_with_clear_sampled_nine_palette")==AFTER_WAVE29_HUE_LABELS
             and appended.get("prior_photo_or_observation_ID_reused") is False
             and appended.get("output_sha256",{}).get("atlas")==source_sha(atlas),
-            "Wave27 original nine-fraction image atlas SHA not authenticated by signed append")
+            "Wave29 original nine-fraction image atlas SHA not authenticated by signed append")
     old=pd.read_csv(prior_names,compression="infer",dtype=str,keep_default_na=False)
     receipt=json.loads(Path(prior_receipt).read_text())
     require(receipt.get("schema")=="mois_species_first_real_wave28_gbif_colxr_new_names_v1"
             and receipt.get("current_exact_colxr_accepted_species")==PRIOR_ACCEPTED
             and receipt.get("signed_file_SHA256",{}).get(Path(prior_names).name)==
                 source_sha(prior_names),
-            "Prior GBIF wave26 accepted-name SHA is not authenticated")
+            "Prior GBIF wave28 accepted-name SHA is not authenticated")
     df=pd.read_csv(atlas,compression="infer",dtype={"inat_taxon_id":str})
     to_match=select_incremental_hue_names(df,old)
     response=classify_new_rows(to_match,batch_size=batch_size,pause=pause)
