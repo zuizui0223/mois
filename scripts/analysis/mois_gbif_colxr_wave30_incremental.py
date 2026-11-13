@@ -77,7 +77,7 @@ def run(atlas,prior_names,prior_receipt,append_receipt,output,*,batch_size=200,p
             "Wave29 original nine-fraction image atlas SHA not authenticated by signed append")
     old=pd.read_csv(prior_names,compression="infer",dtype=str,keep_default_na=False)
     receipt=json.loads(Path(prior_receipt).read_text())
-    require(receipt.get("schema")=="mois_species_first_real_wave28_gbif_colxr_new_names_v1"
+    require(receipt.get("schema")=="mois_species_first_real_wave29_gbif_colxr_new_names_v1"
             and receipt.get("current_exact_colxr_accepted_species")==PRIOR_ACCEPTED
             and receipt.get("signed_file_SHA256",{}).get(Path(prior_names).name)==
                 source_sha(prior_names),
