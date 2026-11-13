@@ -21,7 +21,7 @@ from scripts.analysis.mois_species_first_real1280_cumulative import choose_third
 SCHEMA = "mois_species_first_fortieth4096_append_fortyfirst4096_v1"
 AUDIT_SCHEMA = "mois_species_first_fortieth_authentic_originalROI9_audit_v1"
 SOURCE_ARM = "MOIS_SPECIES_FIRST_FORTIETH_PRIORITIZED4096"
-PRIOR_ATLAS_SHA = "40671a187837108c73a06df3442f97ddc784294fd169e7558c25b384df310a4c"
+PRIOR_ATLAS_SHA = "8944f1c9777a6cbeca47a696aca26b916ebd7627a4a65aefb490cb806b61c938"
 PRIOR_PHOTOS = 1231057
 PRIOR_NUMERIC_PHOTOS = 467484
 PRIOR_SUPPORTED_TAXA = 39881
