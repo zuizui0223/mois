@@ -47,7 +47,7 @@ jobs:
           test "$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN" --jq .status)" = completed || exit 0
           test "$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN" --jq .conclusion)" = success || exit 0
           test "$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN" --jq .status)" = completed || exit 0
-          test "$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "append-fortysecond-and-source-fortyfourth" and .conclusion == "success")] | length')" = 1 || exit 0
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "append-fortythird-and-source-fortyfourth" and .conclusion == "success")] | length')" = 1 || exit 0
           test "$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "fortyfourth-real-original-worker (0)" and .conclusion == "success")] | length')" = 1 || exit 0
           test "$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "fortyfourth-real-original-audit" and .conclusion == "success")] | length')" = 1 || exit 0
           candidates="$(gh run list --repo "$REPO" --workflow mois-species-first-fortyfourth-append-fortyfifth.yml --branch analysis/mois-species-first-palette9-20261111 --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId")"
@@ -64,7 +64,7 @@ jobs:
             fi
           done
           audit_digest="$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortyfourth28-real-original-photo-nineROI-audit") | .digest')"
-          source_digest="$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortysecond4096-verified-append-fortyfourth-prioritized-original-source") | .digest')"
+          source_digest="$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortythird4096-verified-append-fortyfourth-prioritized-original-source") | .digest')"
           worker_digest="$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortyfourth28-real-original-worker-0") | .digest')"
           test "$audit_digest" = 'sha256:bf380a7bc30c318306fb569fe02e7512a9df58740322cc6c0dfc4838cb374afb'
           test "$source_digest" = 'sha256:99f409cd82430dbabf1aaeb238533638db9ab42c961f5458db6a9ff07835ef6c'
@@ -86,7 +86,7 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
-          mkdir -p baseline first second third fourth fifth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth twentieth_source twentyfirst_source twentysecond_source twentythird_source twentyfourth_source twentyfifth_source twentysixth_source twentyseventh_source twentyeighth_source twentyninth_source thirtieth_source thirtyfirst_source thirtysecond_source thirtythird_source thirtyfourth_source thirtyfifth_source thirtysixth_source thirtyseventh_source thirtyeighth_source thirtyninth_source fortieth_source fortyfirst_source fortysecond_source fortyfourth_source global workers audit43
+          mkdir -p baseline first second third fourth fifth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth twentieth_source twentyfirst_source twentysecond_source twentythird_source twentyfourth_source twentyfifth_source twentysixth_source twentyseventh_source twentyeighth_source twentyninth_source thirtieth_source thirtyfirst_source thirtysecond_source thirtythird_source thirtyfourth_source thirtyfifth_source thirtysixth_source thirtyseventh_source thirtyeighth_source thirtyninth_source fortieth_source fortyfirst_source fortysecond_source fortythird_source fortyfourth_source global workers audit44
           gh release download mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1 --repo "$REPO" --dir baseline --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet
           gh run download 42913236517 --repo "$REPO" --name mois-first256-91species-appended-and-next1024-palette-source --dir first
           gh run download 42925844766 --repo "$REPO" --name mois-real1280-wave2-cumulative-9palette-and-fresh-wave3-source --dir second
