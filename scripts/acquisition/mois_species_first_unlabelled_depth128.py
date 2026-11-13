@@ -51,7 +51,7 @@ def run(registry, group_receipt, archives, base_photos, current_atlas,
     if verify_sha:
         check(sha256(base_photos)==PHOTO_SHA,
               "Signed original 1181146 photo ID ledger was modified")
-        check(sha256(current_atlas)==ATLAS_EIGHTEENTH_SHA,
+        check(sha256(current_atlas)==ATLAS_FORTYSIXTH_SHA,
               "Signed post-fortysixth 42111 source photo-hue atlas changed")
     prior=pd.read_parquet(base_photos,columns=["photo_id","observation_id"])
     check(len(prior)==BASE_PHOTOS and prior.photo_id.is_unique,
