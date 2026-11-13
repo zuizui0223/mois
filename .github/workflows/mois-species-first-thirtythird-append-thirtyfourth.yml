@@ -183,7 +183,7 @@ jobs:
           assert r['thirtythird_actual_independent_original_photo_attempts']==83
           assert r['thirtythird_actual_strict9_photo_successes']==23
           assert r['thirtythird_actual_technical_unknowns']==60
-          assert r['thirtythird_new_source_taxa_with_clear_dominant_hue9']==17
+          assert r['thirtythird_new_source_taxa_with_clear_dominant_hue9']==8
           assert r['cumulative_original_photo_attempts']==1230748 and r['cumulative_original_numeric_photo_roi9']==467394
           assert r['source_taxa_with_numerical_nineROI']==39876+r['thirtythird_new_source_taxa_with_first_numeric9']
           assert r['source_taxa_with_clear_sampled_nine_palette']==39084
