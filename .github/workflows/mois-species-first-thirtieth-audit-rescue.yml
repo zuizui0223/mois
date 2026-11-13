@@ -81,3 +81,4 @@ jobs:
           path: audited/
           retention-days: 90
           if-no-files-found: error
+# audit rescue trigger v2: reuse only immutable source/worker receipts; no original image redownload
