@@ -85,7 +85,7 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         run: |
           set -euo pipefail
-          mkdir -p baseline first second third fourth fifth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth twentieth_source twentyfirst_source twentysecond_source twentythird_source twentyfourth_source twentyfifth_source twentysixth_source twentyseventh_source twentyeighth_source thirtieth_source global workers audit30
+          mkdir -p baseline first second third fourth fifth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth twentieth_source twentyfirst_source twentysecond_source twentythird_source twentyfourth_source twentyfifth_source twentysixth_source twentyseventh_source twentyeighth_source twentyninth_source thirtieth_source global workers audit30
           gh release download mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1 --repo "$REPO" --dir baseline --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet
           gh run download 42913236517 --repo "$REPO" --name mois-first256-91species-appended-and-next1024-palette-source --dir first
           gh run download 42925844766 --repo "$REPO" --name mois-real1280-wave2-cumulative-9palette-and-fresh-wave3-source --dir second
@@ -116,7 +116,7 @@ jobs:
           gh run download 43326755882 --repo "$REPO" --name mois-twentyseventh4096-verified-append-twentyeighth-prioritized-original-source --dir twentyeighth_source
           gh run download 43335062797 --repo "$REPO" --name mois-twentyeighth4096-verified-append-twentyninth-prioritized-original-source --dir twentyninth_source
           gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-twentyninth4096-verified-append-thirtieth-prioritized-original-source --dir thirtieth_source
-          gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-thirtieth28-real-original-photo-nineROI-audit-recovery --dir audit29
+          gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-thirtieth28-real-original-photo-nineROI-audit-recovery --dir audit30
           gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-thirtieth28-real-original-worker-0 --dir workers/mois-thirtieth28-real-original-worker-0
           gh run download 43204144063 --repo "$REPO" --name mois-all16-signed93m-current-unlabelled-depth64-new-photo-candidates --dir global
           python - <<'PY'
@@ -135,8 +135,8 @@ jobs:
         run: |
           set -euo pipefail
           python -m scripts.analysis.mois_species_first_thirtieth_to_thirtyfirst \
-            --atlas thirtieth_source/updated/mois_species_first_42111_after_twentyeighth.csv.gz \
-            --source thirtieth_source/source --workers workers --audited audit29 \
+            --atlas thirtieth_source/updated/mois_species_first_42111_after_twentyninth.csv.gz \
+            --source thirtieth_source/source --workers workers --audited audit30 \
             --baseline baseline/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
             --first first/updated/mois_genuine_first256_strict9_append_only.parquet \
             --second second/global_after1280/mois_real1024_wave2_original9_photo_delta.parquet \
@@ -166,7 +166,7 @@ jobs:
             --twentysixth twentyseventh_source/updated/mois_twentysixth4096_real_original9_photo_delta.parquet \
             --twentyseventh twentyeighth_source/updated/mois_twentyseventh4096_real_original9_photo_delta.parquet \
             --twentyeighth twentyninth_source/updated/mois_twentyeighth4096_real_original9_photo_delta.parquet \
-          --twentyninth thirtieth_source/updated/mois_twentyninth4096_real_original9_photo_delta.parquet \
+            --twentyninth thirtieth_source/updated/mois_twentyninth4096_real_original9_photo_delta.parquet \
             --global-options global/mois_full93m_unlabelled_depth64_original_photo_options.csv.gz \
             --quota 4096 --output updated
           python - <<'PY'
