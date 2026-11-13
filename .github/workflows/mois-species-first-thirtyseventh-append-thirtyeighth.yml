@@ -142,7 +142,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m scripts.analysis.mois_species_first_thirtyseventh_to_thirtyeighth \
-            --atlas thirtyseventh_source/updated/mois_species_first_42111_after_thirtyfifth.csv.gz \
+            --atlas thirtyseventh_source/updated/mois_species_first_42111_after_thirtysixth.csv.gz \
             --source thirtyseventh_source/source --workers workers --audited audit37 \
             --baseline baseline/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
             --first first/updated/mois_genuine_first256_strict9_append_only.parquet \
