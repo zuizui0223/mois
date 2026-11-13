@@ -1,0 +1,104 @@
+name: MOIS wave53 one newly labeled genuine nine-hue taxon GBIF COL XR accepted key only
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_gbif_colxr_wave53_incremental.py
+      - tests/test_mois_gbif_colxr_wave53_incremental.py
+      - .github/workflows/mois-gbif-colxr-wave53-new-names.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-GBIF-ColXR-accepted-wave53-one-new-photo-hue
+  cancel-in-progress: false
+jobs:
+  actual-new-colxr-name-match:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SIGNED_APPEND_RUN: '43465831559'
+      PRIOR_GBIF_RUN: '43465151054'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test exact species only, accepted unique keys, stable old 9-colour traits
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_wave53_incremental.py -v
+          python -m py_compile scripts/analysis/mois_gbif_colxr_wave53_incremental.py
+      - name: Download source-signed wave53 genuine original-photo atlas and 37075 official accepted names
+        run: |
+          set -euo pipefail
+          mkdir -p genuine prior
+          # The signed append job is already complete even while wave53 workers run.
+          # Never treat the complete wave53 run as a prerequisite for wave53 name-matching.
+          test "$(gh api "repos/$REPO/actions/runs/$SIGNED_APPEND_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name=="append-fiftythird-and-source-fiftyfourth" and .conclusion=="success")] | length')" = 1
+          test "$(gh api "repos/$REPO/actions/runs/$SIGNED_APPEND_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fiftythird4096-verified-append-fiftyfourth-prioritized-original-source") | .digest')" = 'sha256:cca2772fbf0852441eb8fb4f04a229a3eca84296ce9c6dfadf6941723014e341'
+          gh run download "$SIGNED_APPEND_RUN" --repo "$REPO" \
+            --name mois-fiftythird4096-verified-append-fiftyfourth-prioritized-original-source \
+            --dir genuine
+          gh run download "$PRIOR_GBIF_RUN" --repo "$REPO" \
+            --name mois-colxr-fiftysecond-two-new-real-photo-hue-accepted-nine-fractions \
+            --dir prior
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.analysis.mois_gbif_colxr_batch_match import source_sha
+          a=Path('genuine/updated/mois_species_first_42111_after_fiftythird.csv.gz')
+          d=json.loads(Path('genuine/updated/receipt.json').read_text())
+          assert d['schema']=='mois_species_first_fiftythird4096_append_fiftyfourth4096_v1'
+          assert d['fiftythird_actual_independent_original_photo_attempts']==3
+          assert d['fiftythird_actual_strict9_photo_successes']==2
+          assert d['fiftythird_new_source_taxa_with_clear_dominant_hue9']==1
+          assert d['source_taxa_with_numerical_nineROI']==39882
+          assert d['source_taxa_with_clear_sampled_nine_palette']==39144
+          assert source_sha(a)==d['output_sha256']['atlas']
+          assert source_sha(a)=='21111833f83924ed9306511a1b45cc3f196089db20016e11c47e27993028d8e2'
+          p=json.loads(Path('prior/receipt.json').read_text())
+          assert p['schema']=='mois_species_first_real_wave52_gbif_colxr_new_names_v1'
+          assert p['current_exact_colxr_accepted_species']==37075
+          names=Path('prior/all_current_photo9_gbif_colxr_names.csv.gz')
+          assert source_sha(names)==p['signed_file_SHA256'][names.name]
+          print('MOIS_WAVE53_REAL_SOURCE_AND_PRIOR_37075_COLXR_ACCEPTED_KEYS_SHA_OK',flush=True)
+          PY
+      - name: Query official v2 COL XR only one novel source name and preserve unresolved state
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_wave53_incremental \
+            --atlas genuine/updated/mois_species_first_42111_after_fiftythird.csv.gz \
+            --append-receipt genuine/updated/receipt.json \
+            --prior-names prior/all_current_photo9_gbif_colxr_names.csv.gz \
+            --prior-receipt prior/receipt.json \
+            --output matched --batch-size 50 --pause 1.0
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('matched/receipt.json').read_text())
+          assert d['schema']=='mois_species_first_real_wave53_gbif_colxr_new_names_v1'
+          assert d['photo_source_taxa_dominant_hue']==39144
+          assert d['new_nine_hue_nominal_taxa_queried']==1
+          assert d['previous_gbif_accepted_species']==37075
+          assert 0<=d['new_exact_colxr_accepted_species']<=1
+          assert 37075<=d['current_exact_colxr_accepted_species']<=37076
+          assert d['GBIF_occurrence_records_downloaded']==0
+          assert d['GBIF_authenticated_bulk_occurrence_download_submitted'] is False
+          print('MOIS_OFFICIAL_COLXR_WAVE53_GENUINE_NEW_HUE_RESULT',
+                json.dumps({k:d[k] for k in ('new_nine_hue_nominal_taxa_queried',
+                    'new_exact_colxr_accepted_species','current_exact_colxr_accepted_species',
+                    'GBIF_ISEA3H_SQL_request_count')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-colxr-fiftythird-one-new-real-photo-hue-accepted-nine-fractions
+          path: matched/
+          retention-days: 90
+          if-no-files-found: warn
