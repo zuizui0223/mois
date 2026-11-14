@@ -156,8 +156,8 @@ def load_photo(url,allowed_hosts):
         try:
             with opener.open(req,timeout=32) as response:
                 typ=str(response.headers.get("Content-Type","")).split(";")[0].strip().lower()
-                require(typ in ("image/jpeg","image/png","image/webp","image/jpg"),
-                        "Remote host returned non-image/unlicensed bytes")
+                if typ not in ("image/jpeg","image/png","image/webp","image/jpg"):
+                    raise PermanentOriginalPhotoError("Remote public CC provider returned non-image media")
                 buf=response.read(MAX_BYTES+1)
             if not buf or len(buf)>MAX_BYTES:
                 raise PermanentOriginalPhotoError("CC source photo absent/exceeds 12 MiB hard cap")
