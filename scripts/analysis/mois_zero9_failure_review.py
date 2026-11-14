@@ -154,12 +154,23 @@ def run(repaired_zip, initial_zip, original_parquet, output, per_taxon=3):
           "full_93m_original_photo_count","full_93m_original_observation_count"]
     zero[cols].to_csv(output/"mois_2200_zero9_qa_priority.csv",index=False)
     review.to_csv(output/"mois_96_review_original_photo_IDs.csv",index=False)
+    clear4=review.original_roi_four_hue.isin(("white","yellow_orange","red_pink","blue_purple"))
+    followup=review.loc[clear4].copy()
+    # Technical 4-hue proxy only; not ROI9 rescue or botanical flower truth.
+    require(len(followup)==31 and followup.inat_taxon_id.nunique()==29,
+            "signed four-hue but strict9-unknown cohort changed")
+    require(followup.source_subarm.eq("historical_main").all(),
+            "old four-hue diagnostic source arm changed")
+    followup.to_csv(output/"mois_29_four_hue_but_no_numeric9_followup.csv",index=False)
     (output/"mois_96_blind_bloom_review.html").write_text(
         html_review(review.loc[review.review_order.eq(1)]),encoding="utf-8")
     receipt={"schema":SCHEMA,"source_taxa":42111,"no_numerical_ROI9_taxa":2200,
         "ten_plus_failed_taxa":96,"ten_plus_total_original_attempts":1278,
         "ten_plus_frozen_initial_attempts":initial_attempts,
         "review_photo_rows":len(review),"review_primary_taxa":96,
+        "technical_four_hue_positive_photo_rows":len(followup),
+        "technical_four_hue_positive_taxa":int(followup.inat_taxon_id.nunique()),
+        "technical_four_hue_positive_source_arm":"historical_main",
         "uuid_known_review_rows":int(review.uuid_known.sum()),
         "four_hue_diagnostic_nonempty":int(review.original_roi_four_hue.ne("").sum()),
         "new_original_photo_downloads":0,"new_roi9_successes":0,
