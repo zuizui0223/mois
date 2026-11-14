@@ -1,0 +1,184 @@
+name: MOIS real CCGBIF original photo9 second cohort from reachable direct public HTTPS hosts
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/acquisition/mois_external_gbif_CC_original_photo_roi_v4.py
+      - tests/test_mois_external_gbif_CC_original_photo_roi_v4.py
+      - .github/workflows/mois-zero9-GBIF-CC-reachable-32-original-photo9.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-GbifCC-external-original-reachable-32-photo9-unique-source
+  cancel-in-progress: false
+jobs:
+  signed-external-photo-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      UNION_RUN: '43538257066'
+      SOURCE_DIGEST: 'sha256:a67b59520d871a3e2e0a80ac49c6f5851f29b514854e6bfddd35743e37c3f120'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test host/CC license identity and source receipt integrity, without any photo downloads
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m unittest discover -s tests -p test_mois_external_gbif_CC_original_photo_roi_v4.py -v
+          python -m py_compile scripts/acquisition/mois_external_gbif_CC_original_photo_roi_v4.py
+      - name: Authenticate 304 COL XR taxon-media URL metadata, no iNaturalist original pixel fetch
+        run: |
+          set -euo pipefail
+          test "$(gh run view "$UNION_RUN" --repo "$REPO" --json conclusion --jq .conclusion)" = success
+          digest="$(gh api "repos/$REPO/actions/runs/$UNION_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-zero9-304taxa-CC-other-GBIF-original-image-URL-and-host-screen") | .digest')"
+          test "$digest" = "$SOURCE_DIGEST"
+          mkdir -p old_media
+          gh run download "$UNION_RUN" --repo "$REPO" \
+            --name mois-zero9-304taxa-CC-other-GBIF-original-image-URL-and-host-screen \
+            --dir old_media
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.acquisition.mois_zero9_gbif_other_cc_media_pilot import source_sha
+          d=json.loads(Path('old_media/receipt.json').read_text())
+          assert d['schema']=='mois_zero9_304taxa_noninat_CC_GBIF_source_union_v1'
+          assert d['stratified_hash_draw_taxa']==304
+          assert d['official_COL_XR_exact_accepted_taxa_count']==289
+          assert d['distinct_taxa_with_unique_external_photo_url']==217
+          assert d['eligible_unique_external_URL_metadata_count']==3365
+          assert d['photo_pixels_downloaded']==0
+          p=Path('old_media/mois_CC_noninat_GBIF_unique_image_metadata_304taxa.csv.gz')
+          assert source_sha(p)==d['outputs_sha256'][p.name]
+          print('MOIS_EXTERNAL_GBIF_CC_304TAXA_SIGNED_SOURCE_VERIFIED',flush=True)
+          PY
+      - name: Select one original licensed image from each independently observed source taxon, only approved HTTPS hosts
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_external_gbif_CC_original_photo_roi_v4 source \
+            --union old_media --output frozen_CCGBIF \
+            --quota 32 \
+            --allow-host d2jcv3kl45hlgi.cloudfront.net \
+            --allow-host oxalis.br.fgov.be \
+            --allow-host iiif.rbge.org.uk \
+          python - <<'PY'
+          from pathlib import Path
+          import json,pandas as pd
+          from scripts.acquisition.mois_zero9_gbif_other_cc_media_pilot import source_sha
+          p=Path('frozen_CCGBIF/shards/shard-000.csv')
+          d=json.loads(Path('frozen_CCGBIF/manifest.json').read_text())
+          t=pd.read_csv(p,dtype=str,keep_default_na=False)
+          assert d['schema']=='mois_zero9_gbif_other_CC_photo_source_v1'
+          assert d['source_real_original_photo_urls_SHA256']==source_sha(p)
+          assert len(t)==t.inat_taxon_id.nunique()==t.observation_id.nunique()==t.photo_id.nunique()
+          assert 1<=len(t)<=32
+          assert all(t.photo_url_large.str.startswith('https://'))
+          assert d['photo_colour_measured'] is False
+          assert d['downstream_appending_to_iNaturalist_original_frame_allowed'] is False
+          print('MOIS_EXTERNAL_GBIF_CC_FIRST_REAL32_PHOTO_SOURCE_RECORDED',len(t),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-zero9-external-GBIF-CC-reachable32-sha-frozen-noninat-media-source
+          path: frozen_CCGBIF/
+          retention-days: 90
+          if-no-files-found: error
+  actual-licensed-external-original-pixels:
+    needs: signed-external-photo-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-zero9-external-GBIF-CC-first32-sha-frozen-noninat-media-source
+          path: source
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bootstrap the unchanged authenticated FCP YOLO11/EfficientSAM original RGB9 method
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: ACTUALLY download public CCGBIF still image pixels and infer 9 fractions per image
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          python -m scripts.acquisition.mois_external_gbif_CC_original_photo_roi_v4 work \
+            --source source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --output actual_pixels
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-zero9-otherGBIF-CC-reachable-original-FCP-nineROI-photo-worker
+          path: actual_pixels/
+          retention-days: 90
+          if-no-files-found: warn
+  independent-external-pixel-audit:
+    needs: [signed-external-photo-source,actual-licensed-external-original-pixels]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Load the signed metadata and real original external-image FCP ROI-v4 outcomes
+        uses: actions/download-artifact@v4
+        with:
+          name: mois-zero9-external-GBIF-CC-first32-sha-frozen-noninat-media-source
+          path: frozen
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-zero9-otherGBIF-CC-real-original-FCP-nineROI-photo-worker
+          path: measured
+      - name: Audit original image-byte SHA/9 numerical components/technical unknowns without labelling GBIF occurrence positions
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m scripts.acquisition.mois_external_gbif_CC_original_photo_roi_v4 audit \
+            --source frozen --measured measured --output audited
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('audited/receipt.json').read_text())
+          assert r['schema']=='mois_zero9_noninat_CCGBIF_external_RGB9_independent_audit_v1'
+          assert r['actual_external_original_photo_attempts']<=32
+          assert r['actual_external_original_photo_attempts']>=1
+          assert r['actual_valid_numeric_nine_palette_vectors']<=r['actual_external_original_photo_attempts']
+          assert r['external_photo_SHA_overlap_prior_iNaturalist_frame_certified'] is False
+          assert r['botanical_flower_only_pixel_true_verified'] is False
+          assert r['allowed_to_add_external_hues_to_MOIS_iNaturalist_frame'] is False
+          print('MOIS_ACTUAL_PUBLIC_CC_NONINAT_GBIF_FROZEN_ROI9_RESULTS',
+                json.dumps({k:r[k] for k in (
+                   'actual_external_original_photo_attempts',
+                   'actual_valid_numeric_nine_palette_vectors',
+                   'actual_clear_photo_nine_palette_labels',
+                   'actual_technical_unresolved_or_failed',
+                   'unique_external_source_taxa_with_numeric_photo9')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-zero9-otherGBIF-CC-reachable32-independent-original-RGB9-pixel-audit
+          path: audited/
+          retention-days: 90
+          if-no-files-found: warn
