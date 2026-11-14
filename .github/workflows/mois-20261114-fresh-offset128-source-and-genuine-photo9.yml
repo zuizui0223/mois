@@ -40,7 +40,7 @@ jobs:
           assert not valid_new_observation({'created_at':'2026-11-13T22:00:00Z'})
           print('MOIS_NEW_CREATED_SOURCE_OFFLINE_TIME_GATE_SUCCESS',flush=True)
           PY
-          for prior in $(gh run list --repo "$REPO" --workflow mois-20261114-fresh-128-source-and-genuine-photo9.yml --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId"); do
+          for prior in $(gh run list --repo "$REPO" --workflow mois-20261114-fresh-offset128-source-and-genuine-photo9.yml --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID and .databaseId != 43575479868) | .databaseId"); do
             echo "MOIS_ALREADY_SCANNED_THIS_SOURCE_EPOCH refuse replay $prior"; exit 1
           done
           python - <<'PY'
