@@ -1,0 +1,85 @@
+name: MOIS offset384 source-only recovery without re-querying original observations
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-20261114-offset384-zero-source-log-recovery.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-offset384-log-only-recovery-from-43582528542
+  cancel-in-progress: false
+jobs:
+  attest-original-128-taxonomy-query-without-repeat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify original source query finished, failure was post-query offset assertion, and no pixels ran
+        run: |
+          set -euo pipefail
+          mkdir -p recovered
+          gh api "repos/$REPO/actions/runs/43582528542" > recovered/original_run.json
+          gh api "repos/$REPO/actions/runs/43582528542/jobs?per_page=100" > recovered/original_jobs.json
+          gh run view 43582528542 --repo "$REPO" --job 132410105544 --log > recovered/original_source_job_log.txt
+          python - <<'PY'
+          import json, hashlib, re, pathlib
+          p=pathlib.Path('recovered')
+          ri=json.loads((p/'original_run.json').read_text())
+          jobs=json.loads((p/'original_jobs.json').read_text())['jobs']
+          log=(p/'original_source_job_log.txt').read_text()
+          assert ri['status']=='completed' and ri['conclusion']=='failure'
+          assert len([j for j in jobs if j['name']=='source-only-historical-independent-new-created-CC-pictures' and j['conclusion']=='failure'])==1
+          for name in ('pixel-worker-only-if-new-independent-originals','independent-byte-identity-and-strict9-audit','append-only-independent-audit-success'):
+              assert len([j for j in jobs if j['name']==name and j['conclusion']=='skipped'])==1,name
+          for line in ('MOIS_PREVIOUS_FULL_SIGNED_82_PHOTO_TERMINAL_AND_ZIP_SHA_VERIFIED',
+                       'MOIS_1231337_ALL_PHOTO_ID_AND_OBS_UUID_93_NEW_BYTE_SHA_GATE 93',
+                       'MOIS_INCREMENTAL_NEW_OBSERVATION_METADATA 128',
+                       "assert x['hash_disjoint_taxon_offset']==256",
+                       'AssertionError'):
+              assert line in log,line
+          hits=re.findall(r'MOIS_INCREMENTAL_SOURCE_ONLY\s+(\{[^\r\n]+\})',log)
+          assert len(hits)==1,len(hits)
+          source=json.loads(hits[0])
+          assert source['hash_disjoint_taxon_offset']==384
+          assert source['searched_zero_numeric_taxa']==128
+          assert source['new_independent_original_photo_candidates']==0
+          assert source['new_independent_taxa']==0
+          assert source['source_API_error_count']==0
+          assert source['old_original_photo_obs_ID_overlap']==0
+          assert source['old_original_photo_attempt_ID_count']==1231337
+          assert source['original_pixels_fetched']==0
+          assert source['strict9_numeric_photos']==0
+          assert source['old_all_image_raw_SHA_disjointness_proven'] is False
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          receipt={
+            'schema':'mois_offset384_source_log_recovery_no_requery_v1',
+            'original_run':43582528542,
+            'original_job':132410105544,
+            'root_cause':'post-query assertion expected 256 but actual offset is 384',
+            'remedy':'recover zero-candidate receipt from full terminal log without repeating API or pixel requests',
+            'original_log_SHA256':sha((p/'original_source_job_log.txt').read_bytes()),
+            'original_run_json_SHA256':sha((p/'original_run.json').read_bytes()),
+            'original_jobs_json_SHA256':sha((p/'original_jobs.json').read_bytes()),
+            'source_log':source,
+            'source_status_csv_saved':False,
+            'source_status_csv_byte_SHA_verified':False,
+            'new_original_pixels':0,
+            'previous_1231337_raw_image_SHA_all_checked':False,
+            'successfully_completed_worker':False,
+            'recovery_is_not_a_successful_source_workflow_run':True
+          }
+          (p/'recovery_receipt.json').write_text(json.dumps(receipt,sort_keys=True,indent=2)+'\n')
+          print('MOIS_OFFSET384_QUERY_128_TAXA_ZERO_CANDIDATES_LOG_RECOVERED_WITHOUT_REQUERY',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-offset384-128taxa-zero-candidate-log-only-recovery-no-requery
+          path: recovered/
+          retention-days: 90
+          if-no-files-found: error
