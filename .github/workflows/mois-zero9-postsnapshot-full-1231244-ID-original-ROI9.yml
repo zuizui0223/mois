@@ -37,8 +37,15 @@ jobs:
           test "$(gh api "repos/$REPO/actions/runs/43470118921/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fiftysixth4096-verified-append-fiftyseventh-prioritized-original-source") | .digest')" = 'sha256:83ad6be61d001e8abeaca5b5d233700c86da35fa33195a0e22fd93ca561e7782'
           test "$(gh api "repos/$REPO/actions/runs/43485963676/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fiftysixth4096-verified-append-fiftyseventh-prioritized-original-source") | .digest')" = 'sha256:aa656c4b46a55dd301d0e76737aff12e9766003baca4079a91b1fefc8c57b4c1'
           for old in $(gh run list --repo "$REPO" --workflow mois-zero9-postsnapshot-full-1231244-ID-original-ROI9.yml --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId"); do
-            echo "SOURCE_SHA_ALREADY_ATTEMPTED_OR_IN_FLIGHT $old; no second pixel attempt"
-            exit 0
+            state="$(gh api "repos/$REPO/actions/runs/$old" --jq .status)"
+            if [ "$state" != completed ]; then echo "PRIOR_SOURCE_RUN_STILL_ACTIVE $old"; exit 0; fi
+            frozen="$(gh api "repos/$REPO/actions/runs/$old/artifacts?per_page=100" --jq '[.artifacts[] | select(.name=="mois-postsnapshot-two-CC-photos-full-1231244-ID-source")] | length')"
+            workers="$(gh api "repos/$REPO/actions/runs/$old/jobs?per_page=100" --jq '[.jobs[] | select(.name=="new-original-pixel-worker" and .conclusion!="skipped")] | length')"
+            if [ "$frozen" != 0 ] || [ "$workers" != 0 ]; then
+              echo "SOURCE_SHA_ALREADY_FROZEN_OR_PIXELS_ATTEMPTED $old; no second original retrieval"
+              exit 0
+            fi
+            echo "PRIOR_RUN_FAILED_BEFORE_SOURCE_FREEZE_AND_PIXEL_DL $old; safe gate-code-only recovery"
           done
           echo "ready=true" >> "$GITHUB_OUTPUT"
       - name: Restore historical signed photo-ID ledgers only; never fetch old pixels
@@ -67,7 +74,7 @@ jobs:
           import re
           s=Path('.github/workflows/mois-species-first-fiftyseventh-depth256-real-original.yml').read_text().splitlines()
           first=next(i for i,x in enumerate(s) if 'gh release download mois-original-1181146-exact-photo' in x)
-          last=next(i for i,x in enumerate(s) if 'gh run download "$OLD_AUDIT_RUN"' in x)
+          last=next(i for i,x in enumerate(s[first+1:],start=first+1) if 'gh run download "$OLD_AUDIT_RUN"' in x)
           cmds=[x.strip().replace('"$OLD_SOURCE_RUN"','43469043483') for x in s[first:last]
                 if x.strip().startswith(('gh release download ','gh run download '))]
           assert len(cmds)==56 and cmds[0].startswith('gh release download mois-original-1181146-exact-photo')
