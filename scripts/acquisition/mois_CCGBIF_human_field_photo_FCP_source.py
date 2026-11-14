@@ -36,7 +36,7 @@ def select(field_union,host_allowlist,*,quota=32,exclude_URLs=()):
             and info.get("new_nine_fraction_ROI9_measurements")==0,
             "GBIF field-only media union must be a signed zero-photo source")
     p=root/FIELD_FILE
-    require(p.is_file() and source_sha(p)==info["outputs_sha256"][p.name],
+    require(p.is_file() and source_sha(p)==info["outputs_sha256"]["field"],
             "Field-only exact COL XR media-source URL hash missing or changed")
     require(1<=quota<=96 and host_allowlist,"Choose an explicitly approved non-iNat HTTPS host")
     permitted={s.lower() for s in host_allowlist}
