@@ -103,7 +103,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: mois-zero9-external-GBIF-CC-first32-sha-frozen-noninat-media-source
+          name: mois-zero9-external-GBIF-CC-reachable32-sha-frozen-noninat-media-source
           path: source
       - uses: actions/setup-python@v5
         with:
@@ -144,11 +144,11 @@ jobs:
       - name: Load the signed metadata and real original external-image FCP ROI-v4 outcomes
         uses: actions/download-artifact@v4
         with:
-          name: mois-zero9-external-GBIF-CC-first32-sha-frozen-noninat-media-source
+          name: mois-zero9-external-GBIF-CC-reachable32-sha-frozen-noninat-media-source
           path: frozen
       - uses: actions/download-artifact@v4
         with:
-          name: mois-zero9-otherGBIF-CC-real-original-FCP-nineROI-photo-worker
+          name: mois-zero9-otherGBIF-CC-reachable-original-FCP-nineROI-photo-worker
           path: measured
       - name: Audit original image-byte SHA/9 numerical components/technical unknowns without labelling GBIF occurrence positions
         run: |
