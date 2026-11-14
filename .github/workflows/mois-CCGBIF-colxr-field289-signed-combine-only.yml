@@ -34,17 +34,27 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p verified
-          expected=(
-            '7bd2b502ae59c20ae96e2443fd2f4210bf0832c04b60b202257f73ff18725086'
-            '46f7481b69558790e8d54e817ab70a9ec6932e3154cb286d7503d4e3e92c153c'
-            '09d441ce8b4cf5396128cc9bcb304cef47d9dd521f612ac280ce7117d3913fc8'
-            '67da61bd8d96c64226a9157da51e9c0bb6052fc33c69483fcaa6f717f4420134'
-          )
+          gh api "repos/$REPO/actions/runs/$SOURCE_RUN/artifacts?per_page=100" > frozen_artifact_receipts.json
+          python - <<'PY'
+          import json
+          payload=json.load(open('frozen_artifact_receipts.json'))
+          received={row.get('name'):row for row in payload.get('artifacts',[])}
+          expected={
+           0:('14091282024','7bd2b502ae59c20ae96e2443fd2f4210bf0832c04b60b202257f73ff18725086'),
+           1:('14091885616','46f7481b69558790e8d54e817ab70a9ec6932e3154cb286d7503d4e3e92c153c'),
+           2:('14091476129','09d441ce8b4cf5396128cc9bcb304cef47d9dd521f612ac280ce7117d3913fc8'),
+           3:('14091696242','67da61bd8d96c64226a9157da51e9c0bb6052fc33c69483fcaa6f717f4420134')}
+          for group,(artifact_id,digest) in expected.items():
+              name=f'mois-zero9-GBIF-289-exact-field-CC-media-group{group}'
+              row=received.get(name)
+              assert row is not None,(group,'missing',list(received))
+              assert str(row.get('id'))==artifact_id,(group,'id',row.get('id'),artifact_id)
+              assert row.get('digest')=='sha256:'+digest,(group,'sha',row.get('digest'),digest)
+              assert not row.get('expired'),(group,'artifact expired')
+          print('MOIS_VERIFIED_289_FOUR_PRIOR_GBIF_FIELD_ARTIFACT_NAMES_IDS_AND_SHA',flush=True)
+          PY
           for group in 0 1 2 3; do
             name="mois-zero9-GBIF-289-exact-field-CC-media-group$group"
-            count="$(gh api "repos/$REPO/actions/runs/$SOURCE_RUN/artifacts?per_page=100" \
-              --jq "[.artifacts[] | select(.name==\"$name\" and .digest==\"sha256:${expected[$group]}\")] | length")"
-            test "$count" = 1
             mkdir -p "verified/group$group"
             gh run download "$SOURCE_RUN" --repo "$REPO" --name "$name" --dir "verified/group$group"
             test -f "verified/group$group/receipt.json"
