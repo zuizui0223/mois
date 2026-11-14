@@ -168,7 +168,7 @@ def gate(meta, receipt, atlas, first_source, first_audit, second_source,
     print("MOIS_OFFSET256_FULL_HIST_PLUS_SIX_NEW_SHA_GATE",
           json.dumps(gate_receipt, sort_keys=True), flush=True)
 
-def audit_fourth(source, worker, output):
+def audit_fifth(source, worker, output):
     source, worker, output = map(Path, (source, worker, output))
     m = json.loads((source / "manifest.json").read_text())
     g = json.loads((source / "gate_receipt.json").read_text())
@@ -224,4 +224,4 @@ if __name__ == "__main__":
              v.second_source, v.second_audit, v.third_source, v.third_audit,
              v.fourth_source, v.fourth_audit, v.output)
     else:
-        audit_fourth(v.source, v.worker, v.output)
+        audit_fifth(v.source, v.worker, v.output)
