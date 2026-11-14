@@ -90,13 +90,13 @@ jobs:
           from pathlib import Path
           from scripts.acquisition.mois_zero9_recent_inat_new_created_photo_source import source_sha,ATLAS_SHA
           r=json.loads(Path('recent/receipt.json').read_text())
-          assert r['source_deterministic_hash_offset']==192
+          assert r['source_deterministic_hash_offset']==256
           assert r['new_independent_original_iNaturalist_photo_IDs_seen']==4
           assert r['source_taxa_API_errors']==0
           assert source_sha('atlas56/updated/mois_species_first_42111_after_fiftysixth.csv.gz')==ATLAS_SHA
           print('MOIS_OFFSET256_SIGNED_FOUR_NEW_METADATA_ONLY_PHOTO_CANDIDATES',flush=True)
           PY
-      - name: Exclude all old 1,231,244 and first+second+third new photo/UUID/raw SHA; freeze new source
+      - name: Exclude all old 1,231,244 and first+second+third+fourth new photo/UUID/raw SHA; freeze new source
         if: steps.prescreen.outputs.ready == 'true'
         id: plan
         run: |
@@ -113,7 +113,7 @@ jobs:
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json
           m=json.load(open('source/manifest.json'))
-          assert m['source_fixed_hash_offset']==192
+          assert m['source_fixed_hash_offset']==256
           assert m['source_prior_no_reused_original_photo_or_observation'] is True
           assert len(m['source_prior_post_snapshot_original_image_SHA256'])==7
           assert m['new_photo_attempts_planned']==4
