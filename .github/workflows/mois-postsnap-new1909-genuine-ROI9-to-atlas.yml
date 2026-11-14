@@ -22,7 +22,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: zuizui0223/mois
-      SOURCE_RUN: '43561169876'
+      SOURCE_RUN: '43562344586'
       ATLAS_RUN: '43561529394'
       FULL_HIST_RUN: '43546479575'
       OPENBLAS_NUM_THREADS: '1'
@@ -53,11 +53,13 @@ jobs:
             sleep 20
           done
           test "$finished" = true
-          test "$(gh api "repos/$REPO/actions/runs/$SOURCE_RUN/jobs?per_page=100" \
+          test "$(gh api "repos/$REPO/actions/runs/43561169876/jobs?per_page=100" \
             --jq '[.jobs[] | select((.name | startswith("fifteen-disjoint-real-api-strata")) and .conclusion=="success")] | length')" = 15
           test "$(gh api "repos/$REPO/actions/runs/$SOURCE_RUN/jobs?per_page=100" \
-            --jq '[.jobs[] | select(.name=="global-15-strata-source-only-union" and .conclusion=="success")] | length')" = 1
-          echo "MOIS_AUTHENTIC_1909_ORIGINAL_PUBLIC_API_SOURCE_15_GROUPS_SUCCESS"
+            --jq '[.jobs[] | select(.name=="combine-15-source-only-original-photo-API-strata" and .conclusion=="success")] | length')" = 1
+          test "$(gh api "repos/$REPO/actions/runs/$SOURCE_RUN/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.name=="mois-postsnapshot-new1909-unmeasured-original-photo-opportunities-signed") | .digest')" = 'sha256:e4183374035b53d2e7708e88e5b4f275997b7cc8293700433d72d258acaed294'
+          echo "MOIS_AUTHENTIC_1909_ORIGINAL_PUBLIC_API_SOURCE_15_GROUPS_SUCCESS_AND_UNION_SHA"
       - name: Restore immutable 1231255-photo original history and after11 42111-taxon colour atlas
         run: |
           set -euo pipefail
