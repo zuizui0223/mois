@@ -339,7 +339,7 @@ if __name__=="__main__":
         ("append",["atlas","source","worker","audit","output"])]:
         q=sub.add_parser(stage)
         for f in flags:q.add_argument("--"+f,required=True)
-            if stage=="source":q.add_argument("--offset",type=int,default=0)
+        if stage=="source":q.add_argument("--offset",type=int,default=0)
     args=parser.parse_args()
     if args.stage=="source": source(args.atlas,args.output,offset=args.offset)
     elif args.stage=="audit":audit(args.source,args.worker,args.output)
