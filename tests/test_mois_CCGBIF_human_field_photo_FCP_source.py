@@ -42,7 +42,7 @@ class FieldGBIFOriginalPhotoSourceTests(unittest.TestCase):
            "source_accepted_species_without_iNat_numeric_ROI":289,
            "new_image_pixels_downloaded":0,
            "new_nine_fraction_ROI9_measurements":0,
-           "outputs_sha256":{p.name:source_sha(p)}
+           "outputs_sha256":{"field":source_sha(p)}
         })+"\n")
         return d
 
