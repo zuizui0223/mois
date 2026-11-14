@@ -55,9 +55,16 @@ def load_prior(atlas_path,history_path,new11_delta_path):
             prior.photo_id.is_unique and delta.photo_id.is_unique,
             "Original 1231244 + 11 photo ID old source census absent")
     both=pd.concat([prior,delta],ignore_index=True)
-    require(len(both)==PRIOR_ATTEMPTS and both.photo_id.is_unique and
-            both.observation_id.loc[both.observation_id.ne("")].is_unique,
-            "Historical original photo or independent observation UUID duplicated")
+    # Multiple photos of ONE historical observation are allowed in the old
+    # photo-ID census. Require the NEW wave's observations to be distinct
+    # and disjoint from ALL old observations, not historical obs-ID uniqueness.
+    prior_obs=set(prior.observation_id.astype(str))-{""}
+    delta_obs=set(delta.observation_id.astype(str))-{""}
+    require(len(both)==PRIOR_ATTEMPTS and both.photo_id.is_unique
+            and delta.photo_id.is_unique
+            and delta.observation_id.loc[delta.observation_id.ne("")].is_unique
+            and not delta_obs.intersection(prior_obs),
+            "New 11 photo/UUIDs overlap old 1,231,244 originals or photo ID duplicated")
     return atlas,both
 
 
