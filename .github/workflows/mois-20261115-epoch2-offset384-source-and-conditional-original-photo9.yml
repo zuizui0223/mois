@@ -222,7 +222,13 @@ jobs:
           assert not valid_new_observation({'created_at':'2026-11-13T22:00:00Z'})
           print('MOIS_NEW_CREATED_SOURCE_OFFLINE_TIME_GATE_SUCCESS',flush=True)
           PY
-          for prior in $(gh run list --repo "$REPO" --workflow mois-20261115-epoch2-offset256-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId"); do
+          for prior in $(gh run list --repo "$REPO" --workflow mois-20261115-epoch2-offset384-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId"); do
+            if [ "$prior" = "43634509749" ]; then
+              test "$(gh api "repos/$REPO/actions/jobs/132568238364" --jq .conclusion)" = failure
+              test "$(gh api "repos/$REPO/actions/jobs/132568238364" --jq '.steps[] | select(.name=="Query bounded next 128 zero-numeric taxa for only genuinely new created CC original source") | .conclusion')" = skipped
+              echo "MOIS_OFFSET384_PREVIOUS_FAIL_BEFORE_API_QUERY_NOT_SOURCE_REPLAY $prior"
+              continue
+            fi
             echo "MOIS_ALREADY_SCANNED_THIS_SOURCE_EPOCH refuse replay $prior"; exit 1
           done
           python - <<'PY'
