@@ -112,21 +112,23 @@ def valid_new_observation(x):
     except (TypeError,ValueError,AttributeError):
         return False
 
-def select_taxa(a,n=MAX_SOURCE_TAXA):
+def select_taxa(a,n=MAX_SOURCE_TAXA,offset=0):
     z=a.loc[a.after_strict9.eq(0)].copy()
     require(len(z)==2200 and z.inat_taxon_id.str.fullmatch(r"\d+").all(),
             "after82 exactly 2,200 taxon IDs must remain without numeric ROI")
     z["priority"]=z.inat_taxon_id.map(lambda s:hashlib.sha256(
         ("MOIS-20261114-INDEPENDENT-CREATED-POST-LAST-SOURCE|"+s).encode()).hexdigest())
-    return z.sort_values("priority",kind="stable").head(n).inat_taxon_id.tolist()
+    return z.sort_values("priority",kind="stable").iloc[offset:offset+n].inat_taxon_id.tolist()
 
-def source(atlas,out,pace=0.8,quota=MAX_SOURCE_TAXA):
+def source(atlas,out,pace=0.8,quota=MAX_SOURCE_TAXA,offset=0):
     out=Path(out)
     require(not out.exists() and 0.6<=pace<=4 and quota==MAX_SOURCE_TAXA,
             "source rerun or unbounded API request forbidden")
+    require(isinstance(offset,int) and offset>=0 and offset%MAX_SOURCE_TAXA==0
+            and offset+quota<=2200,"invalid hash-disjoint source offset")
     atlas=read_atlas(atlas)
     oldids,oldobs,rawhash=history()
-    taxa=select_taxa(atlas,quota)
+    taxa=select_taxa(atlas,quota,offset)
     selected=[];stat=[]
     for index,tid in enumerate(taxa):
         st={"inat_taxon_id":tid,"status":"source_queried","accepted_unused_photo":0}
@@ -174,6 +176,7 @@ def source(atlas,out,pace=0.8,quota=MAX_SOURCE_TAXA):
             "old_all_image_raw_SHA_disjointness_proven":False,
             "recent_93_nonempty_raw_image_SHA_count":len(rawhash),
             "searched_zero_numeric_taxa":len(taxa),
+            "hash_disjoint_taxon_offset":offset,
             "new_independent_taxa":len(p),
             "new_independent_original_photo_candidates":len(p),
             "source_API_error_count":0,
@@ -336,7 +339,8 @@ if __name__=="__main__":
         ("append",["atlas","source","worker","audit","output"])]:
         q=sub.add_parser(stage)
         for f in flags:q.add_argument("--"+f,required=True)
+            if stage=="source":q.add_argument("--offset",type=int,default=0)
     args=parser.parse_args()
-    if args.stage=="source": source(args.atlas,args.output)
+    if args.stage=="source": source(args.atlas,args.output,offset=args.offset)
     elif args.stage=="audit":audit(args.source,args.worker,args.output)
     else:append(args.atlas,args.source,args.worker,args.audit,args.output)
