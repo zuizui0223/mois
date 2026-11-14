@@ -67,7 +67,7 @@ jobs:
             --quota 32 \
             --allow-host d2jcv3kl45hlgi.cloudfront.net \
             --allow-host oxalis.br.fgov.be \
-            --allow-host iiif.rbge.org.uk \
+            --allow-host iiif.rbge.org.uk
           python - <<'PY'
           from pathlib import Path
           import json,pandas as pd
