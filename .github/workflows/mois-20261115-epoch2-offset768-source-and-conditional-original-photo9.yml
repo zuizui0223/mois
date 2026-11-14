@@ -319,6 +319,12 @@ jobs:
           print('MOIS_NEW_CREATED_SOURCE_OFFLINE_TIME_GATE_SUCCESS',flush=True)
           PY
           for prior in $(gh run list --repo "$REPO" --workflow mois-20261115-epoch2-offset768-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId"); do
+            if [ "$prior" = "43643308204" ]; then
+              test "$(gh api "repos/$REPO/actions/jobs/132595406345" --jq .conclusion)" = failure
+              test "$(gh api "repos/$REPO/actions/jobs/132595406345" --jq '.steps[] | select(.name=="Query bounded next 128 zero-numeric taxa for only genuinely new created CC original source") | .conclusion')" = skipped
+              echo "MOIS_EPOCH2_OFFSET768_PRIOR_PYARROW_CLEANUP_ABORT_BEFORE_API_QUERY $prior"
+              continue
+            fi
             echo "MOIS_ALREADY_SCANNED_THIS_SOURCE_EPOCH refuse replay $prior"; exit 1
           done
           python - <<'PY'
@@ -539,6 +545,7 @@ jobs:
           assert rr['cumulative_photo_attempts']==1231338 and rr['cumulative_numeric_taxa']==39911
           assert not ar['raw_byte_SHA_collisions_with_old1231244_certified']
           print('MOIS_1152_INTERNAL_BYTE_SHA_AND_UNMEASURED_ORIGINAL_GUARD_SUCCESS',flush=True)
+          import os;os._exit(0)  # all byte/data assertions passed; avoid intermittent pyarrow C++ atexit abort
           PY
       - name: Verify previous disjoint offset1280 source complete and immutable zero-candidate receipt
         run: |
