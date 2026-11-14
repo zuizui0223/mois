@@ -43,7 +43,7 @@ jobs:
            0:('14091282024','7bd2b502ae59c20ae96e2443fd2f4210bf0832c04b60b202257f73ff18725086'),
            1:('14091885616','46f7481b69558790e8d54e817ab70a9ec6932e3154cb286d7503d4e3e92c153c'),
            2:('14091476129','09d441ce8b4cf5396128cc9bcb304cef47d9dd521f612ac280ce7117d3913fc8'),
-           3:('14091696242','67da61bd8d96c64226a9157da51e9c0bb6052fc33c69483fcaa6f717f4420134')}
+           3:('14091696242','67da61bd8d96c64226a9154da51e9c0bb6052fc33c69483fcaa6f717f4420134')}
           for group,(artifact_id,digest) in expected.items():
               name=f'mois-zero9-GBIF-289-exact-field-CC-media-group{group}'
               row=received.get(name)
