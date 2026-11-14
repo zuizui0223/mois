@@ -82,8 +82,13 @@ jobs:
           assert d['source_external_image_sha_duplicate_vs_old_iNaturalist_unverified']
           assert d['source_taxa_with_actual_human_observation_CC_still_image']<=289
           assert d['noninat_public_CC_human_observation_media_URLs_unique']>=0
-          for filename,sha in d['outputs_sha256'].items():
-              assert source_sha(Path('field_CCGBIF_289')/filename)==sha
+          paths={'field':'mois_CCGBIF_COLXR_289taxa_human_observation_original_CC_photo_URLs.csv.gz',
+                 'taxa':'mois_CCGBIF_COLXR_289taxa_human_observation_source_status.csv',
+                 'hosts':'mois_CCGBIF_field_CC_media_host_counts.csv',
+                 'quarantined':'mois_CCGBIF_field_duplicate_URL_review.csv'}
+          assert set(d['outputs_sha256'])==set(paths)
+          for key,filename in paths.items():
+              assert source_sha(Path('field_CCGBIF_289')/filename)==d['outputs_sha256'][key]
           print('MOIS_VERIFIED_289_COLXR_HUMAN_OBSERVATION_CC_SOURCE_COUNTS',
                 json.dumps({k:d[k] for k in (
                     'source_taxa_with_actual_human_observation_CC_still_image',
