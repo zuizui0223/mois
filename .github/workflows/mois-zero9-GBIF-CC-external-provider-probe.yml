@@ -1,0 +1,118 @@
+name: MOIS external GBIF CC media host reachability before original photo ROI9
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-zero9-GBIF-CC-external-provider-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-gbif-CC-public-provider-5hosts-8sec-probe
+  cancel-in-progress: false
+jobs:
+  signed-host-image-reachability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      UNION_RUN: '43538257066'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify signed original 304 taxa/3365 licensed media URL union before any source probing
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3
+          mkdir -p union
+          gh run download "$UNION_RUN" --repo "$REPO" \
+            --name mois-zero9-304taxa-CC-other-GBIF-original-image-URL-and-host-screen --dir union
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.acquisition.mois_zero9_gbif_other_cc_media_pilot import source_sha
+          r=json.loads(Path('union/receipt.json').read_text())
+          assert r['schema']=='mois_zero9_304taxa_noninat_CC_GBIF_source_union_v1'
+          assert r['eligible_unique_external_URL_metadata_count']==3365
+          assert r['distinct_taxa_with_unique_external_photo_url']==217
+          p=Path('union/mois_CC_noninat_GBIF_unique_image_metadata_304taxa.csv.gz')
+          assert source_sha(p)==r['outputs_sha256'][p.name]
+          print('MOIS_SIGNED_GBIF_5_HOST_PROBE_SOURCE_OK',flush=True)
+          PY
+      - name: Probe only first 2 signed direct HTTPS image endpoints per approved public host, no image persistence
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,time
+          from pathlib import Path
+          from urllib.request import Request,build_opener,HTTPRedirectHandler
+          import pandas as pd
+          from scripts.acquisition.mois_zero9_gbif_other_cc_media_pilot import safe_image
+          hosts=[
+           'd2jcv3kl45hlgi.cloudfront.net','oxalis.br.fgov.be',
+           'ibss-images.calacademy.org','iiif.rbge.org.uk','plant.depo.msu.ru'
+          ]
+          class NoRedirect(HTTPRedirectHandler):
+              def redirect_request(self,req,fp,code,msg,headers,newurl):
+                  return None
+          opener=build_opener(NoRedirect())
+          x=pd.read_csv('union/mois_CC_noninat_GBIF_unique_image_metadata_304taxa.csv.gz',dtype=str,keep_default_na=False)
+          results=[]
+          for host in hosts:
+              rows=(x.loc[x.media_host.eq(host)].sort_values('image_url',kind='stable')
+                    .drop_duplicates('inat_taxon_id').head(2))
+              assert len(rows)==2 and all(rows.apply(
+                lambda r:safe_image(r.image_url,r.image_license),axis=1))
+              for z in rows.itertuples(index=False):
+                  print('MOIS_GBIF_EXTERNAL_HOST_PROBE_START',host,flush=True)
+                  started=time.monotonic()
+                  status='unknown';http_status=None;typ='';error=''
+                  try:
+                      req=Request(z.image_url,headers={
+                         'User-Agent':'MOIS-source-quality-original-CC-media-connectivity/1.0',
+                         'Accept':'image/jpeg,image/png,image/webp',
+                         'Range':'bytes=0-1023'})
+                      with opener.open(req,timeout=8) as f:
+                          http_status=f.status
+                          typ=str(f.headers.get('Content-Type','')).split(';')[0].lower()
+                          data=f.read(1024)
+                          status='image_endpoint_usable' if len(data)>0 and typ in (
+                              'image/jpeg','image/jpg','image/png','image/webp') else 'non_image_response'
+                  except Exception as e:
+                      status='http_unreachable_or_redirect';error=str(e)[:160]
+                  results.append({'media_host':host,'sample_photo_URL':z.image_url,
+                         'gbif_occurrence_key':z.gbif_occurrence_key,'result_status':status,
+                         'http_status':http_status,'content_type':typ,
+                         'elapsed_seconds':round(time.monotonic()-started,2),
+                         'error_reason':error,'raw_image_saved':False,
+                         'numeric_ROI9_measured':False})
+                  print('MOIS_GBIF_EXTERNAL_HOST_PROBE_END',host,status,http_status,typ,flush=True)
+          Path('host_probe').mkdir()
+          y=pd.DataFrame(results)
+          y.to_csv('host_probe/external_gbif_cc_direct_image_reachability.csv',index=False)
+          summary={
+            'schema':'mois_gbif_CC_5host_actual_original_media_reachability_v1',
+            'tested_original_image_hosts':len(hosts),
+            'direct_external_CC_HTTPS_image_url_probes':len(y),
+            'host_has_one_or_more_USABLE_images':{host:int(y.loc[
+              y.media_host.eq(host),'result_status'].eq('image_endpoint_usable').sum())
+              for host in hosts},
+            'image_source_urls_not_verified_for_flower_visibility':True,
+            'numeric_ROI9_measurements':0,
+            'raw_image_pixels_saved':False,
+            'original_MOIS_42k_species_atlas_changed':False}
+          (Path('host_probe')/'receipt.json').write_text(
+              json.dumps(summary,indent=2,sort_keys=True)+'\n')
+          print('MOIS_GBIF_FIVE_SOURCE_HOSTS_PUBLIC_HTTPS_PROBE',
+                json.dumps(summary,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-CCGBIF-five-public-host-image-reachability-first-two
+          path: host_probe/
+          retention-days: 90
+          if-no-files-found: error

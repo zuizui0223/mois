@@ -1,0 +1,790 @@
+name: MOIS 20261115 epoch2 offset384 new-created independent CC originals conditional ROI9
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-20261115-epoch2-offset384-source-and-conditional-original-photo9.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-20261115-epoch2T0207-created-128taxa-offset384-original-once
+  cancel-in-progress: false
+
+jobs:
+  source-only-historical-independent-new-created-CC-pictures:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    outputs:
+      has_new: ${{ steps.freeze.outputs.has_new }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PYTHONUNBUFFERED: '1'
+      MOIS_TAXON_OFFSET: '384'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Require terminal epoch2 offset256 signed ZIP and exact 128-taxon source bytes before new offset384
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43629163607" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43629163607/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14128085212 and .expired==false) | .digest')" = 'sha256:51c5b727d01d393deb69ec814eece389acb3123bbcf08aba89939385f790b857'
+          mkdir -p prior_epoch2_offset256
+          gh run download 43629163607 --repo "$REPO" --name mois-20261115-epoch2-offset256-new-created-128taxa-signed-1231340-ID-disjoint-source --dir prior_epoch2_offset256
+          python - <<'PY'
+          import json,hashlib,csv,pathlib
+          p=pathlib.Path('prior_epoch2_offset256')
+          r=json.loads((p/'receipt.json').read_bytes())
+          assert r['schema']=='mois_incremental_20261115_epoch2_new_created_cc_original_photo9_v1'
+          assert r['created_utc_lower_bound']=='2026-11-14T17:07:00+00:00'
+          assert r['hash_disjoint_taxon_offset']==256 and r['searched_zero_numeric_taxa']==128
+          assert r['old_original_photo_attempt_ID_count']==1231340
+          assert r['source_API_error_count']==0 and r['new_independent_original_photo_candidates']==0
+          assert r['new_independent_taxa']==0 and r['original_pixels_fetched']==0
+          assert r['strict9_numeric_photos']==0 and r['old_original_photo_obs_ID_overlap']==0
+          assert r['old_all_image_raw_SHA_disjointness_proven'] is False
+          h=lambda f:hashlib.sha256((p/f).read_bytes()).hexdigest()
+          assert h('source_taxon_status.csv')==r['source_status_SHA256']=='ae5b418da4e3e3be4033c785dedb2ec4112404fad9effff605930e0778ab903e'
+          assert h('source_candidates.csv')==r['source_candidates_SHA256']=='01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b'
+          rows=list(csv.DictReader((p/'source_taxon_status.csv').open()))
+          assert len(rows)==len({x['inat_taxon_id'] for x in rows})==128
+          assert all(x['status']=='source_queried' and int(x['accepted_unused_photo'])==0 for x in rows)
+          print('MOIS_EPOCH2_OFFSET256_SIGNED_NO_NEW_SOURCE_COHORT_COMPLETE',flush=True)
+          PY
+      - name: Require completed epoch2 offset128 signed 128-taxon zero-source before disjoint offset384
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43628729422" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43628729422/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14127630153 and .expired==false) | .digest')" = 'sha256:c632ba2db27a916bb9470e6f99c7d611ae0cdd03a96c7c60858531fb736707d1'
+          mkdir -p prior_epoch2_offset128
+          gh run download 43628729422 --repo "$REPO" --name mois-20261115-epoch2-offset128-new-created-128taxa-signed-1231340-ID-disjoint-source --dir prior_epoch2_offset128
+          python - <<'PY'
+          import json,hashlib,csv,pathlib
+          p=pathlib.Path('prior_epoch2_offset128')
+          r=json.loads((p/'receipt.json').read_bytes())
+          assert r['schema']=='mois_incremental_20261115_epoch2_new_created_cc_original_photo9_v1'
+          assert r['created_utc_lower_bound']=='2026-11-14T17:07:00+00:00'
+          assert r['hash_disjoint_taxon_offset']==128 and r['searched_zero_numeric_taxa']==128
+          assert r['old_original_photo_attempt_ID_count']==1231340
+          assert r['source_API_error_count']==0 and r['new_independent_original_photo_candidates']==0
+          assert r['new_independent_taxa']==0 and r['original_pixels_fetched']==0
+          assert r['strict9_numeric_photos']==0 and r['old_original_photo_obs_ID_overlap']==0
+          assert r['old_all_image_raw_SHA_disjointness_proven'] is False
+          h=lambda f:hashlib.sha256((p/f).read_bytes()).hexdigest()
+          assert h('source_taxon_status.csv')==r['source_status_SHA256']=='1f6caad754cc6b5c8de593641a15fc0a0b75763942f1d51efc5a451561a00163'
+          assert h('source_candidates.csv')==r['source_candidates_SHA256']=='01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b'
+          rows=list(csv.DictReader((p/'source_taxon_status.csv').open()))
+          assert len(rows)==len({x['inat_taxon_id'] for x in rows})==128
+          assert all(x['status']=='source_queried' and int(x['accepted_unused_photo'])==0 for x in rows)
+          print('MOIS_EPOCH2_OFFSET128_SIGNED_NO_NEW_SOURCE_COHORT_COMPLETE',flush=True)
+          PY
+      - name: Require completed epoch2 offset0 signed 128-taxon zero-source before disjoint offset384
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43628185595" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43628185595/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14127325221 and .expired==false) | .digest')" = 'sha256:e73aaf86aac76b5492d6ff8bfc7ba509e3f31481d6850ac5f4e87d79c60e9915'
+          mkdir -p prior_epoch2_offset0
+          gh run download 43628185595 --repo "$REPO" --name mois-20261115-epoch2-offset0-new-created-128taxa-signed-1231340-ID-disjoint-source --dir prior_epoch2_offset0
+          python - <<'PY'
+          import json,hashlib,csv,pathlib
+          p=pathlib.Path('prior_epoch2_offset0')
+          r=json.loads((p/'receipt.json').read_bytes())
+          assert r['schema']=='mois_incremental_20261115_epoch2_new_created_cc_original_photo9_v1'
+          assert r['created_utc_lower_bound']=='2026-11-14T17:07:00+00:00'
+          assert r['hash_disjoint_taxon_offset']==0 and r['searched_zero_numeric_taxa']==128
+          assert r['old_original_photo_attempt_ID_count']==1231340
+          assert r['source_API_error_count']==0 and r['new_independent_original_photo_candidates']==0
+          assert r['new_independent_taxa']==0 and r['original_pixels_fetched']==0
+          assert r['strict9_numeric_photos']==0 and r['old_original_photo_obs_ID_overlap']==0
+          assert r['old_all_image_raw_SHA_disjointness_proven'] is False
+          h=lambda f:hashlib.sha256((p/f).read_bytes()).hexdigest()
+          assert h('source_taxon_status.csv')==r['source_status_SHA256']=='06961ee940b7ea484b56a20f06bb3e7bd0ca090b83de0bc4b6ccace2f4caf1fd'
+          assert h('source_candidates.csv')==r['source_candidates_SHA256']=='01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b'
+          rows=list(csv.DictReader((p/'source_taxon_status.csv').open()))
+          assert len(rows)==len({x['inat_taxon_id'] for x in rows})==128
+          assert all(x['status']=='source_queried' and int(x['accepted_unused_photo'])==0 for x in rows)
+          print('MOIS_EPOCH2_OFFSET0_SIGNED_NO_NEW_SOURCE_COHORT_COMPLETE',flush=True)
+          PY
+      - name: Gate epoch2 on final offset2176 immutable source-only terminal and 24-taxon byte receipt
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43619157128" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43619157128/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14123825861 and .expired==false) | .digest')" = 'sha256:a208fcfc8f7c4b288613ffbf0f19ba7ef5975601ce3d234241358fbb04483c9a'
+          mkdir -p preceding2176
+          gh run download 43619157128 --repo "$REPO" --name mois-20261114-offset2176-new-created-24taxa-signed-1231340-ID-disjoint-source --dir preceding2176
+          python - <<'PY'
+          import pathlib,hashlib,json,csv
+          p=pathlib.Path('preceding2176')
+          x=json.loads((p/'receipt.json').read_bytes())
+          assert x['hash_disjoint_taxon_offset']==2176 and x['searched_zero_numeric_taxa']==24
+          assert x['old_original_photo_attempt_ID_count']==1231340
+          assert x['new_independent_original_photo_candidates']==0 and x['new_independent_taxa']==0
+          assert x['source_API_error_count']==0 and x['original_pixels_fetched']==0
+          assert x['strict9_numeric_photos']==0 and x['old_original_photo_obs_ID_overlap']==0
+          assert x['old_all_image_raw_SHA_disjointness_proven'] is False
+          assert hashlib.sha256((p/'source_taxon_status.csv').read_bytes()).hexdigest()==x['source_status_SHA256']=='7346c57d4a6ee29d1254e8d829b00b09207d36cb4bbc533bddd32aff97c02d34'
+          assert hashlib.sha256((p/'source_candidates.csv').read_bytes()).hexdigest()==x['source_candidates_SHA256']=='01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b'
+          rows=list(csv.DictReader((p/'source_taxon_status.csv').open()))
+          assert len(rows)==len({r['inat_taxon_id'] for r in rows})==24
+          assert all(int(r['accepted_unused_photo'])==0 and r['status']!='API_ERROR_REVIEW' for r in rows)
+          print('MOIS_EPOCH2_PREVIOUS_2200_TAXA_COMPLETE_NO_OLD_SOURCE_REPLAY',flush=True)
+          PY
+      - name: Gate on completed offset2048 unique 128-taxon source zero candidates and unchanged formal atlas
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43618704273" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43618704273/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14123600844 and .expired==false) | .digest')" = 'sha256:ef254ff085158e54d3ff75e8fbdb2da8a35406280059a17bafaf8f38752679a8'
+          mkdir -p previous2048
+          gh run download 43618704273 --repo "$REPO" --name mois-20261114-offset2048-new-created-128taxa-signed-1231340-ID-disjoint-source --dir previous2048
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,csv,json
+          p=Path('previous2048')
+          r=json.loads((p/'receipt.json').read_bytes())
+          h=lambda f:hashlib.sha256((p/f).read_bytes()).hexdigest()
+          assert r['hash_disjoint_taxon_offset']==2048 and r['searched_zero_numeric_taxa']==128
+          assert r['old_original_photo_attempt_ID_count']==1231340 and r['source_API_error_count']==0
+          assert r['new_independent_original_photo_candidates']==0 and r['new_independent_taxa']==0
+          assert r['old_original_photo_obs_ID_overlap']==0 and r['original_pixels_fetched']==0
+          assert r['strict9_numeric_photos']==0 and r['old_all_image_raw_SHA_disjointness_proven'] is False
+          assert h('source_taxon_status.csv')==r['source_status_SHA256']=='75f02928cba312ea8342c88525398374228e98e6bc4f9cbdd4420d5937e3d1b3'
+          assert h('source_candidates.csv')==r['source_candidates_SHA256']=='01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b'
+          status=list(csv.DictReader((p/'source_taxon_status.csv').open()))
+          assert len(status)==len({x['inat_taxon_id'] for x in status})==128
+          assert sum(int(x['accepted_unused_photo']) for x in status)==0
+          assert not any(x['status']=='API_ERROR_REVIEW' for x in status)
+          print('MOIS_OFFSET2048_SIGNED_128_TAXA_NO_NEW_ORIGINALS_NO_REQUERY',flush=True)
+          PY
+      - name: Gate on completed offset1920 unique 128-taxon source receipt and zero candidates
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43618315683" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43618315683/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14122524073 and .expired==false) | .digest')" = 'sha256:6b0cb0b65b9b2ed547083e27df75df7e98ebdae18118553e9fe07655a6300887'
+          mkdir -p previous1920
+          gh run download 43618315683 --repo "$REPO" --name mois-20261114-offset1920-new-created-128taxa-signed-1231340-ID-disjoint-source --dir previous1920
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib,csv
+          p=Path('previous1920')
+          r=json.loads((p/'receipt.json').read_bytes())
+          h=lambda f:hashlib.sha256((p/f).read_bytes()).hexdigest()
+          assert r['hash_disjoint_taxon_offset']==1920 and r['searched_zero_numeric_taxa']==128
+          assert r['old_original_photo_attempt_ID_count']==1231340 and r['source_API_error_count']==0
+          assert r['new_independent_original_photo_candidates']==0 and r['new_independent_taxa']==0
+          assert r['old_original_photo_obs_ID_overlap']==0 and r['original_pixels_fetched']==0
+          assert r['strict9_numeric_photos']==0 and r['old_all_image_raw_SHA_disjointness_proven'] is False
+          assert h('source_taxon_status.csv')==r['source_status_SHA256']=='e98d08274906b1c60b6bcbaacf898e357764830bab20bc7a0ef1eae01ec25d35'
+          assert h('source_candidates.csv')==r['source_candidates_SHA256']=='01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b'
+          status=list(csv.DictReader((p/'source_taxon_status.csv').open()))
+          assert len(status)==len({x['inat_taxon_id'] for x in status})==128
+          assert sum(int(x['accepted_unused_photo']) for x in status)==0
+          assert not any(x['status']=='API_ERROR_REVIEW' for x in status)
+          print('MOIS_OFFSET1920_SIGNED_128_TAXA_NO_NEW_ORIGINALS_NO_REQUERY',flush=True)
+          PY
+      - name: Verify offset1664 signed source-only success, no unused photo before exploring new taxon partition
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43609924170" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43609924170/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14119861505 and .expired==false) | .digest')" = 'sha256:37783c3edd2794775545a35acf3972e9bbccf7d329036587ef593df116d7636a'
+          mkdir -p previous1664
+          gh run download 43609924170 --repo "$REPO" --name mois-20261114-offset1664-new-created-128taxa-signed-1231339-ID-disjoint-source --dir previous1664
+          python - <<'PY'
+          import hashlib,json,pathlib,csv
+          p=pathlib.Path('previous1664')
+          x=json.loads((p/'receipt.json').read_bytes())
+          assert x['schema']=='mois_incremental_20261114_new_created_cc_original_photo9_v1'
+          assert x['hash_disjoint_taxon_offset']==1664 and x['searched_zero_numeric_taxa']==128
+          assert x['old_original_photo_attempt_ID_count']==1231339
+          assert x['new_independent_original_photo_candidates']==0 and x['new_independent_taxa']==0
+          assert x['source_API_error_count']==0 and x['original_pixels_fetched']==0
+          assert x['strict9_numeric_photos']==0 and x['old_original_photo_obs_ID_overlap']==0
+          assert x['old_all_image_raw_SHA_disjointness_proven'] is False
+          assert hashlib.sha256((p/'source_taxon_status.csv').read_bytes()).hexdigest()==x['source_status_SHA256']=='25fd5f39744069cd742c5a8edce09fa47307a16e2a58daada9cf8dfe654d95cd'
+          assert hashlib.sha256((p/'source_candidates.csv').read_bytes()).hexdigest()==x['source_candidates_SHA256']=='01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b'
+          with (p/'source_taxon_status.csv').open() as f: assert len(list(csv.DictReader(f)))==128
+          print('MOIS_OFFSET1664_TERMINAL_SOURCE_ONLY_ZERO_ORIGINALS_VERIFIED_NO_REQUERY',flush=True)
+          PY
+      - name: Pin source and compare all completed immutable original ZIP digests once
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/acquisition/mois_20261115_created_epoch2_disjoint_original_photo9_after1792.py
+          python - <<'PY'
+          from datetime import datetime
+          from scripts.acquisition.mois_20261115_created_epoch2_disjoint_original_photo9_after1792 import valid_new_observation
+          assert valid_new_observation({'created_at':'2026-11-14T17:07:00Z'})
+          assert not valid_new_observation({'created_at':'2026-11-14T17:06:59Z'})
+          assert not valid_new_observation({'created_at':'2026-11-13T22:00:00Z'})
+          print('MOIS_NEW_CREATED_SOURCE_OFFLINE_TIME_GATE_SUCCESS',flush=True)
+          PY
+          for prior in $(gh run list --repo "$REPO" --workflow mois-20261115-epoch2-offset384-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId"); do
+            if [ "$prior" = "43634509749" ]; then
+              test "$(gh api "repos/$REPO/actions/jobs/132568238364" --jq .conclusion)" = failure
+              test "$(gh api "repos/$REPO/actions/jobs/132568238364" --jq '.steps[] | select(.name=="Query bounded next 128 zero-numeric taxa for only genuinely new created CC original source") | .conclusion')" = skipped
+              echo "MOIS_OFFSET384_PREVIOUS_FAIL_BEFORE_API_QUERY_NOT_SOURCE_REPLAY $prior"
+              continue
+            fi
+            echo "MOIS_ALREADY_SCANNED_THIS_SOURCE_EPOCH refuse replay $prior"; exit 1
+          done
+          python - <<'PY'
+          import json,subprocess
+          r='zuizui0223/mois'
+          # Previous offset0 scan completed with zero independent photos; do not re-query it.
+          prev=json.loads(subprocess.check_output(['gh','api',
+               f'repos/{r}/actions/runs/43568271789']))
+          assert prev['status']=='completed' and prev['conclusion']=='success'
+          prior_arts=json.loads(subprocess.check_output(['gh','api',
+               f'repos/{r}/actions/runs/43568271789/artifacts?per_page=100']))['artifacts']
+          assert any(a['id']==14102783405 and
+                 a['digest']=='sha256:2892220ab8c694ca7a24898968d884d7210ef625bb787c16363f00de9f0ba56e'
+                 and not a['expired'] for a in prior_arts)
+          expected={
+             43546479575:('mois-postsnapshot-two-CC-photos-full-1231244-ID-source',
+                 'ac558f06e5a0f75cf0fab2d0a37e3f17b2fe3428f788cccb801b5a01dd2b81ac'),
+             43561529394:('mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append',
+                 'd9a3ae579b0203eb32a16c8c215da5da6c1f01559a9f14c455928a93ab9a58dd'),
+             43562522326:('mois-new1909-fresh-original-real-ROI9-42111-taxonomy-appended',
+                 '3fb099e2f005f36ffa766c23ea64d81ee0ffd2f9a8e29de157bc3ddcd626bcf1'),
+             43566369683:('mois-postsnap-remaining18-genuine-ROI9-cumulative-atlas',
+                 '17da6386cc2970f8f55f6ee5373e0565027cac7d6c9f2f4d2fc84c532f91df6d')}
+          for run,(name,digest) in expected.items():
+              info=json.loads(subprocess.check_output(['gh','api',f'repos/{r}/actions/runs/{run}']))
+              assert info['status']=='completed' and info['conclusion']=='success',run
+              arts=json.loads(subprocess.check_output(['gh','api',f'repos/{r}/actions/runs/{run}/artifacts?per_page=100']))['artifacts']
+              found=[x for x in arts if x['name']==name and not x['expired']]
+              assert len(found)==1 and found[0]['digest']=='sha256:'+digest,(run,name)
+          for job in ('freeze-only-remaining-unattempted-originals',
+                      'actually-fetch-and-measure-only-next-unused-original-pixels',
+                      'independent-remainder18-original-numeric-nine-audit',
+                      'append-only-after-all-signed-complete'):
+              jobs=json.loads(subprocess.check_output(['gh','api',
+                  f'repos/{r}/actions/runs/43566369683/jobs?per_page=100']))['jobs']
+              assert len([x for x in jobs if x['name']==job and x['conclusion']=='success'])==1,job
+          info=json.loads(subprocess.check_output(['gh','api',
+               f'repos/{r}/actions/runs/43566923701']))
+          assert info['conclusion']=='success',"last incremental COL XR must be settled"
+          print('MOIS_PREVIOUS_FULL_SIGNED_82_PHOTO_TERMINAL_AND_ZIP_SHA_VERIFIED',flush=True)
+          PY
+          # The offset384 API scan completed with zero results, but its post-query
+          # assertion mistakenly expected 256. Recover from its signed log-only receipt;
+          # never query that prior cohort again.
+          test "$(gh api "repos/$REPO/actions/runs/43582878316" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43582878316/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-offset384-128taxa-zero-candidate-log-only-recovery-no-requery") | .digest')" = 'sha256:bb56bee6be3a0607cf48be805385a9f1cfa57fb61e9c948f567e3f195cf64be6'
+          gh run download 43582878316 --repo "$REPO" --name mois-offset384-128taxa-zero-candidate-log-only-recovery-no-requery --dir preceding
+          python - <<'PY'
+          import json,hashlib,pathlib
+          p=pathlib.Path('preceding')
+          r=json.loads((p/'recovery_receipt.json').read_text())
+          assert r['schema']=='mois_offset384_source_log_recovery_no_requery_v1'
+          assert r['original_run']==43582528542 and r['original_job']==132410105544
+          assert r['root_cause']=='post-query assertion expected 256 but actual offset is 384'
+          assert r['recovery_is_not_a_successful_source_workflow_run'] is True
+          assert r['source_status_csv_byte_SHA_verified'] is False
+          assert hashlib.sha256((p/'original_source_job_log.txt').read_bytes()).hexdigest()==r['original_log_SHA256']
+          assert hashlib.sha256((p/'original_run.json').read_bytes()).hexdigest()==r['original_run_json_SHA256']
+          assert hashlib.sha256((p/'original_jobs.json').read_bytes()).hexdigest()==r['original_jobs_json_SHA256']
+          x=r['source_log']
+          assert x['hash_disjoint_taxon_offset']==384
+          assert x['searched_zero_numeric_taxa']==128
+          assert x['new_independent_original_photo_candidates']==0
+          assert x['source_API_error_count']==0
+          assert x['original_pixels_fetched']==0
+          print('MOIS_OFFSET384_ZERO_NEW_CC_ORIGINALS_LOG_RECOVERED_NO_REQUERY',flush=True)
+          PY
+      - name: Verify offset640 complete zero-source log-only recovery, refuse old cohort requery
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43589776081" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43589776081/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14111078340) | .digest')" = 'sha256:e945d645a2c5147d7c85ea443461be5d252c9f18054d324901be47331e1462b5'
+          mkdir -p recovered640
+          gh run download 43589776081 --repo "$REPO" --name mois-offset640-128taxa-zero-candidate-log-only-recovery-no-requery --dir recovered640
+          python - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('recovered640')
+          r=json.loads((p/'recovery_receipt.json').read_text())
+          assert r['schema']=='mois_offset640_source_log_recovery_no_requery_v1'
+          assert r['original_run']==43589392322 and r['original_job']==132430704426
+          assert r['root_cause']=='post-query assertion expected 512 but actual offset is 640'
+          assert r['recovery_is_not_a_successful_source_workflow_run'] is True
+          assert r['source_status_csv_byte_SHA_verified'] is False
+          assert hashlib.sha256((p/'original_source_job_log.txt').read_bytes()).hexdigest()==r['original_log_SHA256']
+          assert hashlib.sha256((p/'original_run.json').read_bytes()).hexdigest()==r['original_run_json_SHA256']
+          assert hashlib.sha256((p/'original_jobs.json').read_bytes()).hexdigest()==r['original_jobs_json_SHA256']
+          x=r['source_log']
+          assert x['hash_disjoint_taxon_offset']==640
+          assert x['searched_zero_numeric_taxa']==128
+          assert x['new_independent_original_photo_candidates']==0
+          assert x['source_API_error_count']==0
+          assert x['original_pixels_fetched']==0
+          print('MOIS_OFFSET640_ZERO_NEW_CC_ORIGINALS_LOG_RECOVERED_NO_REQUERY',flush=True)
+          PY
+      - name: Verify preceding offset768 completed source-only zero and signed original byte receipts
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43589892776" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43589892776/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14112098195) | .digest')" = 'sha256:f7dd6a58dc9de89e521b6989bd111164fbe6226653fb72ad179c7d03bedc76f8'
+          mkdir -p previous768
+          gh run download 43589892776 --repo "$REPO" --name mois-20261114-offset768-new-created-128taxa-signed-1231337-ID-disjoint-source --dir previous768
+          python - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('previous768')
+          r=json.loads((p/'receipt.json').read_text())
+          assert r['schema']=='mois_incremental_20261114_new_created_cc_original_photo9_v1'
+          assert r['hash_disjoint_taxon_offset']==768 and r['searched_zero_numeric_taxa']==128
+          assert r['old_original_photo_attempt_ID_count']==1231337
+          assert r['new_independent_original_photo_candidates']==0 and r['new_independent_taxa']==0
+          assert r['source_API_error_count']==0 and r['original_pixels_fetched']==0 and r['strict9_numeric_photos']==0
+          assert r['old_original_photo_obs_ID_overlap']==0 and r['old_all_image_raw_SHA_disjointness_proven'] is False
+          for f,key in [('source_taxon_status.csv','source_status_SHA256'),('source_candidates.csv','source_candidates_SHA256')]:
+              assert hashlib.sha256((p/f).read_bytes()).hexdigest()==r[key],f
+          assert r['source_status_SHA256']=='1def990116215e4b32d64dc219b1b7f124ca95c30f818ea4275a2ff44cbbe395'
+          assert r['source_candidates_SHA256']=='01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b'
+          print('MOIS_OFFSET768_IMMUTABLE_ZERO_CANDIDATES_SHA_VERIFIED_NO_REQUERY',flush=True)
+          PY
+      - name: Verify offset896 source success and immutable 128 taxon no-candidate SHA before next new cohort
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43591774057" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43591774057/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14113056558) | .digest')" = 'sha256:e86bf505f5da3bfbb04eb613f362bf07a8ab108c800051251b4b11cbfa68bb4d'
+          mkdir -p previous896
+          gh run download 43591774057 --repo "$REPO" --name mois-20261114-offset896-new-created-128taxa-signed-1231337-ID-disjoint-source --dir previous896
+          python - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('previous896')
+          r=json.loads((p/'receipt.json').read_text())
+          assert r['schema']=='mois_incremental_20261114_new_created_cc_original_photo9_v1'
+          assert r['hash_disjoint_taxon_offset']==896 and r['searched_zero_numeric_taxa']==128
+          assert r['old_original_photo_attempt_ID_count']==1231337
+          assert r['new_independent_original_photo_candidates']==0 and r['new_independent_taxa']==0
+          assert r['source_API_error_count']==0 and r['original_pixels_fetched']==0 and r['strict9_numeric_photos']==0
+          assert r['old_original_photo_obs_ID_overlap']==0 and r['old_all_image_raw_SHA_disjointness_proven'] is False
+          for f,key in [('source_taxon_status.csv','source_status_SHA256'),('source_candidates.csv','source_candidates_SHA256')]:
+              assert hashlib.sha256((p/f).read_bytes()).hexdigest()==r[key]
+          assert r['source_status_SHA256']=='e9df1eb528998c2fcc83f34020eeff1b9a23d2f696e06d78ea6fc0cd945ffa9d'
+          assert r['source_candidates_SHA256']=='01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b'
+          print('MOIS_OFFSET896_ZERO_SOURCE_SHA_VERIFIED_NO_REQUERY',flush=True)
+          PY
+      - name: Verify offset1024 successful independent zero-source receipt and SHA before exploring offset1408
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43592146186" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43592146186/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14112349301 and .expired==false) | .digest')" = 'sha256:8cab3f8127d894f53d807289c8fe733fd18647625e778735b091c8c4178d3ce6'
+          mkdir -p previous1024
+          gh run download 43592146186 --repo "$REPO" --name mois-20261114-offset1024-new-created-128taxa-signed-1231337-ID-disjoint-source --dir previous1024
+          python - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('previous1024')
+          r=json.loads((p/'receipt.json').read_text())
+          assert r['schema']=='mois_incremental_20261114_new_created_cc_original_photo9_v1'
+          assert r['hash_disjoint_taxon_offset']==1024 and r['searched_zero_numeric_taxa']==128
+          assert r['old_original_photo_attempt_ID_count']==1231337
+          assert r['new_independent_original_photo_candidates']==0 and r['new_independent_taxa']==0
+          assert r['source_API_error_count']==0 and r['original_pixels_fetched']==0 and r['strict9_numeric_photos']==0
+          assert r['old_original_photo_obs_ID_overlap']==0
+          assert r['old_all_image_raw_SHA_disjointness_proven'] is False
+          for f,key in [('source_taxon_status.csv','source_status_SHA256'),('source_candidates.csv','source_candidates_SHA256')]:
+              assert hashlib.sha256((p/f).read_bytes()).hexdigest()==r[key],f
+          assert r['source_status_SHA256']=='0c3f3b2c46fb28f7ff803c5633b8e01adb1e8962774ae1b4219010512f20ec4e'
+          assert r['source_candidates_SHA256']=='01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b'
+          print('MOIS_OFFSET1024_VERIFIED_ZERO_SOURCE_NO_REQUERY',flush=True)
+          PY
+      - name: Verify offset1152 signed source/pixel/audit/append and genuine unknown before any new search
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          r='zuizui0223/mois';run=43599310470
+          info=json.loads(subprocess.check_output(['gh','api',f'repos/{r}/actions/runs/{run}']))
+          assert info['status']=='completed' and info['conclusion']=='success', '1152 is not terminal SUCCESS'
+          jobs=json.loads(subprocess.check_output(['gh','api',f'repos/{r}/actions/runs/{run}/jobs?per_page=100']))['jobs']
+          assert len(jobs)==4 and all(j['conclusion']=='success' for j in jobs), '1152 not fully audited and appended'
+          wanted={
+           'mois-20261114-offset1152-new-created-128taxa-signed-1231337-ID-disjoint-source':'5754a70e82ed6d0b650d288b4b42885a3b14be02833556507e996477d5e18adb',
+           'mois-20261114-offset1152-genuine-FCP-ROI9-pixel-terminal':'d626da5b883907c01529efcf9e5fb05b4d22021eca66f0b7e28fec0ed4177601',
+           'mois-20261114-offset1152-independent-strict9-audit':'6c3f60b20e7667fbcdec195a5a69e357d96ff6228e0cbfbfadfe144592da7c8e',
+           'mois-20261114-offset1152-genuine-original-42111-taxonomy-append':'2199d5d467090eb23e971e875f69c66b96b42bb1a793e305cb281888d6ee201d'}
+          arts=json.loads(subprocess.check_output(['gh','api',f'repos/{r}/actions/runs/{run}/artifacts?per_page=100']))['artifacts']
+          for name,digest in wanted.items():
+              f=[a for a in arts if a['name']==name and not a['expired']]
+              assert len(f)==1 and f[0]['digest']=='sha256:'+digest,(name,'artifact digest mismatch')
+          print('MOIS_PREVIOUS1152_FOUR_TERMINAL_JOBS_AND_IMMUTABLE_ZIPS_SUCCESS',flush=True)
+          PY
+          mkdir -p verified1152/source verified1152/pixel verified1152/audit verified1152/atlas
+          gh run download 43599310470 --repo "$REPO" --name mois-20261114-offset1152-new-created-128taxa-signed-1231337-ID-disjoint-source --dir verified1152/source
+          gh run download 43599310470 --repo "$REPO" --name mois-20261114-offset1152-genuine-FCP-ROI9-pixel-terminal --dir verified1152/pixel
+          gh run download 43599310470 --repo "$REPO" --name mois-20261114-offset1152-independent-strict9-audit --dir verified1152/audit
+          gh run download 43599310470 --repo "$REPO" --name mois-20261114-offset1152-genuine-original-42111-taxonomy-append --dir verified1152/atlas
+          python - <<'PY'
+          import hashlib,json,pathlib,pandas as pd,numpy as np
+          root=pathlib.Path('verified1152')
+          def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+          s=root/'source';p=root/'pixel/shard_000';a=root/'audit';t=root/'atlas'
+          src=json.loads((s/'receipt.json').read_text())
+          manifest=json.loads((s/'manifest.json').read_text())
+          wr=json.loads((p/'receipt.json').read_text())
+          ar=json.loads((a/'receipt.json').read_text())
+          rr=json.loads((t/'receipt.json').read_text())
+          assert src['old_original_photo_attempt_ID_count']==1231337 and src['hash_disjoint_taxon_offset']==1152
+          assert src['new_independent_original_photo_candidates']==1 and src['old_original_photo_obs_ID_overlap']==0
+          assert sha(s/'manifest.json')=='1260156b1adfa715b896b9d800f4bbe3b37df53f87de2bd8870e8b062161c08a'
+          assert sha(s/'shards/shard-000.csv')=='34043d93af8b52e6abbd107c053ccb81b9d86e951c865824ea05856f6d7dbbf7'
+          assert sha(p/'photos.csv')=='cc0d3a4424d82c74a0efaedf3f75da5b6cf7440dad1a373587d93006955eff2a'
+          assert sha(p/'receipt.json')=='c099312b30a66200e6e4cb5df5a93ab53c23913ad46f24c894ff58c4c191c5ac'
+          assert sha(a/'receipt.json')=='1660a0c60ce129ad67d97db89310cd5f2b6adbce5e95e193ee544bf10f7cc0ef'
+          assert sha(a/'new_real_original_nine_photo9_delta.parquet')=='9d11bbfd5bd46f82b41b887f16e0ca07abaeccbd246bb9b804673abdf27483b5'
+          assert sha(t/'mois_42111_post20261114_new_independent_original_photo9.csv.gz')=='0f4485e7a88666e146169fe509ffa8bd1e5d39c769cd0aee8d3c336e9410a1d5'
+          assert sha(t/'receipt.json')=='e5cb07844d58673fadcd0d3a86fd56db85d640b1c93efa5d701ff5cb15bb6f8a'
+          photo=pd.read_csv(p/'photos.csv')
+          d=pd.read_parquet(a/'new_real_original_nine_photo9_delta.parquet')
+          assert len(photo)==len(d)==1 and str(photo.photo_id.iloc[0])=='763384317'
+          assert str(photo.observation_id.iloc[0])=='f1b4c926-ddb1-445c-a36b-8871b929d90a'
+          assert photo.image_sha256.iloc[0]=='65c98a48fc615b831e5c67c551b5cd275721f9fedaa0daa5929dad7df099b849'
+          assert not bool(d.strict9.iloc[0]) and d.filter(regex='^strict9_').isna().all().all()
+          assert ar['new_technical_unknowns']==1 and ar['new_strict9_numeric_photos']==0
+          assert rr['cumulative_photo_attempts']==1231338 and rr['cumulative_numeric_taxa']==39911
+          assert not ar['raw_byte_SHA_collisions_with_old1231244_certified']
+          print('MOIS_1152_INTERNAL_BYTE_SHA_AND_UNMEASURED_ORIGINAL_GUARD_SUCCESS',flush=True)
+          PY
+      - name: Verify previous disjoint offset1280 source complete and immutable zero-candidate receipt
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43605892598" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43605892598/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14118098836 and .expired==false) | .digest')" = 'sha256:0630704f4e631ff409be498d317b53ac0acca10c9acb07020b547ad0aa893a9d'
+          mkdir -p previous1280
+          gh run download 43605892598 --repo "$REPO" --name mois-20261114-offset1280-new-created-128taxa-signed-1231338-ID-disjoint-source --dir previous1280
+          python - <<'PY'
+          import json,hashlib,pathlib,csv
+          p=pathlib.Path('previous1280')
+          r=json.loads((p/'receipt.json').read_text())
+          assert r['schema']=='mois_incremental_20261114_new_created_cc_original_photo9_v1'
+          assert r['hash_disjoint_taxon_offset']==1280 and r['searched_zero_numeric_taxa']==128
+          assert r['old_original_photo_attempt_ID_count']==1231338
+          assert r['new_independent_original_photo_candidates']==0 and r['new_independent_taxa']==0
+          assert r['source_API_error_count']==0 and r['original_pixels_fetched']==0
+          assert r['strict9_numeric_photos']==0 and r['old_original_photo_obs_ID_overlap']==0
+          assert r['old_all_image_raw_SHA_disjointness_proven'] is False
+          expected={'source_taxon_status.csv':'22816aa006b40375527cdb5dbe7a79db398e0b59d679e0a3916a03d133573f6b',
+                    'source_candidates.csv':'01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b'}
+          for f,sha in expected.items():
+              got=hashlib.sha256((p/f).read_bytes()).hexdigest()
+              assert got==sha and got==r['source_status_SHA256' if f.startswith('source_taxon_status') else 'source_candidates_SHA256']
+          with (p/'source_taxon_status.csv').open() as f:
+              rows=list(csv.DictReader(f))
+          assert len(rows)==128 and len({row['inat_taxon_id'] for row in rows})==128
+          assert all(row['accepted_unused_photo']=='0' and row['status']=='source_queried' for row in rows)
+          print('MOIS_OFFSET1280_SIGNED_ZERO_CANDIDATES_128_DISJOINT_TAXA_VERIFIED_NO_REQUERY',flush=True)
+          PY
+
+      - name: Verify offset1408 signed source-only terminal, immutable receipts and 128 taxa before offset1536
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43606311372" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43606311372/artifacts?per_page=100" --jq '.artifacts[] | select(.id==14118700562 and .expired==false) | .digest')" = 'sha256:26dd5c1b0f1491ca8adf68d4e1ca2fd7774f20be5f725bdce2c0a7643952b4a6'
+          mkdir -p previous1408
+          gh run download 43606311372 --repo "$REPO" --name mois-20261114-offset1408-new-created-128taxa-signed-1231338-ID-disjoint-source --dir previous1408
+          python - <<'PY'
+          import json,hashlib,pathlib,csv
+          p=pathlib.Path('previous1408')
+          r=json.loads((p/'receipt.json').read_text())
+          assert r['schema']=='mois_incremental_20261114_new_created_cc_original_photo9_v1'
+          assert r['hash_disjoint_taxon_offset']==1408 and r['searched_zero_numeric_taxa']==128
+          assert r['old_original_photo_attempt_ID_count']==1231338
+          assert r['new_independent_original_photo_candidates']==0 and r['new_independent_taxa']==0
+          assert r['source_API_error_count']==0 and r['original_pixels_fetched']==0 and r['strict9_numeric_photos']==0
+          assert r['old_original_photo_obs_ID_overlap']==0
+          assert r['old_all_image_raw_SHA_disjointness_proven'] is False
+          for f,key in [('source_taxon_status.csv','source_status_SHA256'),('source_candidates.csv','source_candidates_SHA256')]:
+              assert hashlib.sha256((p/f).read_bytes()).hexdigest()==r[key],f
+          with (p/'source_taxon_status.csv').open(newline='') as f:
+              rows=list(csv.DictReader(f))
+          assert len(rows)==128 and len({x['inat_taxon_id'] for x in rows})==128
+          assert all(x['status']=='source_queried' and x['accepted_unused_photo']=='0' for x in rows)
+          with (p/'source_candidates.csv').open(newline='') as f:
+              assert len(list(csv.DictReader(f)))==0
+          print('MOIS_OFFSET1408_SIGNED_SOURCE_SHA_AND_128_TAXA_VERIFIED_ZERO_NO_REQUERY',flush=True)
+          PY
+
+      - name: Verify offset1536 4/4 signed source pixel independent audit formal append before new distinct photos
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          r='zuizui0223/mois';run=43608952945
+          info=json.loads(subprocess.check_output(['gh','api',f'repos/{r}/actions/runs/{run}']))
+          assert info['status']=='completed' and info['conclusion']=='success'
+          jobs=json.loads(subprocess.check_output(['gh','api',f'repos/{r}/actions/runs/{run}/jobs?per_page=100']))['jobs']
+          assert len(jobs)==4 and all(j['conclusion']=='success' for j in jobs)
+          expected={
+            'mois-20261114-offset1536-new-created-128taxa-signed-1231338-ID-disjoint-source':'ab649e9dc5d7ca29b1d4ac06659ed6717c99dcf7005b012eed733f970d5f0ad1',
+            'mois-20261114-offset1536-genuine-FCP-ROI9-pixel-terminal':'250d7399067140dd5733bfbce4918df10e9be7810c1986eedc176451e4b8dec0',
+            'mois-20261114-offset1536-independent-strict9-audit':'7017d67c0f7be3596cf9c5883fe3e8e4cdb2b278f47c004870a96ac6f040f4cc',
+            'mois-20261114-offset1536-genuine-original-42111-taxonomy-append':'4090f9bd5910cee690ad233e4bfc61e6d2d206acbb269b863c28aa525539dead'}
+          arts=json.loads(subprocess.check_output(['gh','api',f'repos/{r}/actions/runs/{run}/artifacts?per_page=100']))['artifacts']
+          for name,digest in expected.items():
+              matches=[x for x in arts if x['name']==name and not x['expired']]
+              assert len(matches)==1 and matches[0]['digest']=='sha256:'+digest,name
+          print('MOIS_OFFSET1536_ALL_FOUR_ZIPS_SUCCESS_AND_SIGNED',flush=True)
+          PY
+          mkdir -p verified1536/source verified1536/pixel verified1536/audit verified1536/atlas
+          gh run download 43608952945 --repo "$REPO" --name mois-20261114-offset1536-new-created-128taxa-signed-1231338-ID-disjoint-source --dir verified1536/source
+          gh run download 43608952945 --repo "$REPO" --name mois-20261114-offset1536-genuine-FCP-ROI9-pixel-terminal --dir verified1536/pixel
+          gh run download 43608952945 --repo "$REPO" --name mois-20261114-offset1536-independent-strict9-audit --dir verified1536/audit
+          gh run download 43608952945 --repo "$REPO" --name mois-20261114-offset1536-genuine-original-42111-taxonomy-append --dir verified1536/atlas
+          python - <<'PY'
+          import hashlib,json,pathlib,csv
+          p=pathlib.Path('verified1536')
+          def sha(f):return hashlib.sha256(f.read_bytes()).hexdigest()
+          s=p/'source';w=p/'pixel/shard_000';a=p/'audit';t=p/'atlas'
+          sr=json.loads((s/'receipt.json').read_text())
+          wr=json.loads((w/'receipt.json').read_text())
+          ar=json.loads((a/'receipt.json').read_text())
+          tr=json.loads((t/'receipt.json').read_text())
+          assert sr['hash_disjoint_taxon_offset']==1536 and sr['searched_zero_numeric_taxa']==128
+          assert sr['old_original_photo_attempt_ID_count']==1231338
+          assert sr['new_independent_original_photo_candidates']==sr['new_independent_taxa']==1
+          assert sr['source_API_error_count']==0 and sr['old_original_photo_obs_ID_overlap']==0
+          assert not sr['old_all_image_raw_SHA_disjointness_proven']
+          for file,key in [('manifest.json','source_manifest_SHA256'),('shards/shard-000.csv','source_shard_SHA256'),('source_candidates.csv','source_candidates_SHA256'),('source_taxon_status.csv','source_status_SHA256')]:
+              assert sha(s/file)==sr[key],file
+          with (s/'source_taxon_status.csv').open(newline='') as f:
+              rows=list(csv.DictReader(f))
+          assert len(rows)==128 and len({r['inat_taxon_id'] for r in rows})==128
+          with (w/'photos.csv').open(newline='') as f:
+              photos=list(csv.DictReader(f))
+          assert len(photos)==1 and photos[0]['photo_id']=='763368224'
+          assert photos[0]['observation_id']=='75be5f5e-3576-4d61-8359-fd7e2d4c9520'
+          assert photos[0]['inat_taxon_id']=='1033595'
+          assert photos[0]['image_sha256']=='e51f204629d0154ac8f50509174048f338fd34871a62437f9d0211be72c49a7b'
+          assert photos[0]['strict9_original_RGB9_measured']=='False'
+          assert sha(w/'photos.csv')==wr['photos_sha256']
+          assert sha(w/'receipt.json')==ar['source_and_worker_sha256']['worker_receipt_sha256']
+          assert sha(a/'new_real_original_nine_photo9_delta.parquet')==ar['verified_delta_sha256']
+          assert ar['new_technical_unknowns']==1 and ar['new_strict9_numeric_photos']==0
+          assert ar['technical_unknown_nine_fractions_all_missing'] is True
+          assert ar['raw_byte_SHA_collisions_with_last94']==0
+          assert tr['cumulative_photo_attempts']==1231339 and tr['new_original_photo_attempts']==1
+          assert tr['cumulative_genuine_numeric_photos']==467565 and tr['cumulative_numeric_taxa']==39911
+          assert tr['cumulative_clear_sampled_photo_taxa']==39172 and tr['zero_numeric_remaining']==2200
+          assert sha(t/'mois_42111_post20261114_new_independent_original_photo9.csv.gz')=='2929b68758f000906ac303b9edd26ddf60bcdc317ddf7f4185e6a36c6bb65380'
+          assert sha(a/'receipt.json')==tr['audit_receipt_sha256']
+          assert tr['old1231244_raw_SHA_fully_compared'] is False
+          print('MOIS_OFFSET1536_GENUINE_1_NEW_ORIGINAL_UNKNOWN_RAW_SHA_NEW_ATLAS_SIGNED',flush=True)
+          PY
+      - name: Confirm previous offset1792 whole terminal, immutable signed original and one new technical unknown
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: zuizui0223/mois
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/43612554673" --jq .conclusion)" = success
+          python - <<'PY'
+          import json,subprocess
+          R='zuizui0223/mois'
+          jobs=json.loads(subprocess.check_output(['gh','api',f'repos/{R}/actions/runs/43612554673/jobs?per_page=100']))['jobs']
+          assert len(jobs)==4 and all(x['conclusion']=='success' for x in jobs),"previous source+pixel+audit+append not all SUCCESS"
+          arts=json.loads(subprocess.check_output(['gh','api',f'repos/{R}/actions/runs/43612554673/artifacts?per_page=100']))['artifacts']
+          expected={
+            'mois-20261114-offset1792-new-created-128taxa-signed-1231339-ID-disjoint-source':'80ef5a18b97b38d909ea71f962ad1fca7fe4ac3efdeea31afdda1ec4be6be593',
+            'mois-20261114-offset1792-genuine-FCP-ROI9-pixel-terminal':'432eb890698429ad43a1f3f383be0d9009b6b0dc78be264f518ecbf01b1f6fdc',
+            'mois-20261114-offset1792-independent-strict9-audit':'a368dabf3c6ab56f2286376d9e4ac0d39429d302a7abf3e4331929320b60e894',
+            'mois-20261114-offset1792-genuine-original-42111-taxonomy-append':'68d66321a7d7ed9df83fc1a4d2ac32962bd9d37ecef5ae6da766f3ce6f1568e1'}
+          for name,sha in expected.items():
+              m=[a for a in arts if a['name']==name and not a['expired'] and a['digest']=='sha256:'+sha]
+              assert len(m)==1,(name,"previous immutable ZIP SHA missing")
+          print('MOIS_OFFSET1792_FOUR_TERMINAL_JOBS_AND_FOUR_IMMUTABLE_ZIP_SHA_SUCCESS',flush=True)
+          PY
+          mkdir -p prev1792/source prev1792/pixel prev1792/audit prev1792/atlas
+          gh run download 43612554673 --repo "$REPO" --name mois-20261114-offset1792-new-created-128taxa-signed-1231339-ID-disjoint-source --dir prev1792/source
+          gh run download 43612554673 --repo "$REPO" --name mois-20261114-offset1792-genuine-FCP-ROI9-pixel-terminal --dir prev1792/pixel
+          gh run download 43612554673 --repo "$REPO" --name mois-20261114-offset1792-independent-strict9-audit --dir prev1792/audit
+          gh run download 43612554673 --repo "$REPO" --name mois-20261114-offset1792-genuine-original-42111-taxonomy-append --dir prev1792/atlas
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,csv
+          root=Path('prev1792')
+          h=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+          src=root/'source';pix=root/'pixel/shard_000';aud=root/'audit';atl=root/'atlas'
+          s=json.loads((src/'receipt.json').read_bytes())
+          w=json.loads((pix/'receipt.json').read_bytes())
+          a=json.loads((aud/'receipt.json').read_bytes())
+          t=json.loads((atl/'receipt.json').read_bytes())
+          assert s['hash_disjoint_taxon_offset']==1792 and s['searched_zero_numeric_taxa']==128
+          assert s['new_independent_original_photo_candidates']==1 and s['old_original_photo_attempt_ID_count']==1231339
+          assert s['source_API_error_count']==0 and s['old_original_photo_obs_ID_overlap']==0
+          assert h(src/'manifest.json')==s['source_manifest_SHA256']=='405098a854cde805e1a9ccd05e9fe589c595ad651f7709fae6ff6461f0a12081'
+          assert h(src/'source_taxon_status.csv')==s['source_status_SHA256']=='a69903e8e9478618bbb7d31a547f6bf08260cda9eaee6c78cb2eb49f06433aae'
+          assert h(src/'shards/shard-000.csv')==s['source_shard_SHA256']=='ce1576ce35ea344bc0a53f912156c6197f7ec8616819c388b6b448ae1741e77a'
+          assert len(list(csv.DictReader((src/'source_taxon_status.csv').open())))==128
+          assert w['downloaded']==1 and w['classifiable']==0 and w['unclassifiable_acquired']==1
+          assert h(pix/'receipt.json')==a['source_and_worker_sha256']['worker_receipt_sha256']=='cc4e28de14609d69cf7e35eaabfcc17879eb921222d58281aa2b44e3a7afbde1'
+          assert h(pix/'photos.csv')==a['source_and_worker_sha256']['worker_terminal_sha256']=='8cdbe0da99b3cad8da10dd086cfcc2e5094bcd4a33dcc49365f93e4232a6c23c'
+          assert h(aud/'new_real_original_nine_photo9_delta.parquet')==a['verified_delta_sha256']=='954efa7cf1a841272dded1b2ca509cdaf22277ba7dd6e695df83e12fbdf4e6b1'
+          assert a['new_authentic_original_attempts']==1 and a['new_strict9_numeric_photos']==0
+          assert a['new_technical_unknowns']==1 and a['technical_unknown_nine_fractions_all_missing']
+          assert t['cumulative_photo_attempts']==1231340 and t['cumulative_numeric_taxa']==39911
+          assert t['cumulative_genuine_numeric_photos']==467565 and t['cumulative_clear_sampled_photo_taxa']==39172
+          assert h(atl/'mois_42111_post20261114_new_independent_original_photo9.csv.gz')==t['derived_atlas_sha256']=='fe506f869a5965650286f41ce21544e586721b8dbb776de330bbe3c676d6ac1a'
+          print('MOIS_OFFSET1792_IDENTITY_AUDIT_UNKNOWN_AND_ATLAS_BYTE_VERIFIED',flush=True)
+          PY
+      - name: Restore only old signed taxonomy and ID inventory, no old pixel acquisition
+        run: |
+          set -euo pipefail
+          mkdir -p old/history old/new11 old/new64 old/new18 old/offset1152 old/offset1536 old/offset1792 latest
+          gh run download 43546479575 --repo "$REPO" --name mois-postsnapshot-two-CC-photos-full-1231244-ID-source --dir old/history
+          gh run download 43561529394 --repo "$REPO" --name mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append --dir old/new11
+          gh run download 43562522326 --repo "$REPO" --name mois-new1909-fresh-original-real-ROI9-42111-taxonomy-appended --dir old/new64
+          gh run download 43566369683 --repo "$REPO" --name mois-postsnap-remaining18-genuine-ROI9-cumulative-atlas --dir old/new18
+          gh run download 43599310470 --repo "$REPO" --name mois-20261114-offset1152-independent-strict9-audit --dir old/offset1152
+          gh run download 43608952945 --repo "$REPO" --name mois-20261114-offset1536-independent-strict9-audit --dir old/offset1536
+          gh run download 43612554673 --repo "$REPO" --name mois-20261114-offset1792-independent-strict9-audit --dir old/offset1792
+          gh run download 43612554673 --repo "$REPO" --name mois-20261114-offset1792-genuine-original-42111-taxonomy-append --dir latest
+          cp latest/mois_42111_post20261114_new_independent_original_photo9.csv.gz latest/atlas.csv.gz
+          python - <<'PY'
+          from scripts.acquisition.mois_20261115_created_epoch2_disjoint_original_photo9_after1792 import history,read_atlas
+          oldids,obs,raw=history()
+          a=read_atlas('latest/atlas.csv.gz')
+          assert len(oldids)==1231340 and len(a)==42111
+          print('MOIS_1231340_ALL_PHOTO_ID_AND_OBS_UUID_96_NEW_BYTE_SHA_GATE',len(raw),flush=True)
+          PY
+      - name: Query bounded next 128 zero-numeric taxa for only genuinely new created CC original source
+        id: freeze
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_20261115_created_epoch2_disjoint_original_photo9_after1792 source \
+            --atlas latest/atlas.csv.gz --output newest --offset "$MOIS_TAXON_OFFSET"
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json,os
+          x=json.load(open('newest/receipt.json'))
+          assert x['old_original_photo_attempt_ID_count']==1231340
+          assert x['hash_disjoint_taxon_offset']==int(os.environ['MOIS_TAXON_OFFSET'])
+          assert x['searched_zero_numeric_taxa']==128
+          assert x['old_original_photo_obs_ID_overlap']==0
+          assert x['source_API_error_count']==0
+          assert x['original_pixels_fetched']==0 and x['strict9_numeric_photos']==0
+          print('has_new='+str(x['new_independent_original_photo_candidates']>0).lower())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261115-epoch2-offset384-new-created-128taxa-signed-1231340-ID-disjoint-source
+          path: newest/
+          retention-days: 90
+          if-no-files-found: error
+
+  pixel-worker-only-if-new-independent-originals:
+    needs: source-only-historical-independent-new-created-CC-pictures
+    if: needs.source-only-historical-independent-new-created-CC-pictures.outputs.has_new == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-20261115-epoch2-offset384-new-created-128taxa-signed-1231340-ID-disjoint-source
+          path: signed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bootstrap frozen YOLO11 EfficientSAM FCP original ROI-v4
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Acquire only signed new CC originals and actually compute all nine real image ROI fractions
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-20261115-epoch2-newly-created-only"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work \
+            --source signed --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --group 0 --output pixel
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-20261115-epoch2-offset384-genuine-FCP-ROI9-pixel-terminal
+          path: pixel/
+          retention-days: 90
+          if-no-files-found: warn
+
+  independent-byte-identity-and-strict9-audit:
+    needs: [source-only-historical-independent-new-created-CC-pictures,pixel-worker-only-if-new-independent-originals]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Get new source, actual pixels, and all preceding 93 raw image SHA receipts
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          mkdir -p signed pixel old/history old/new11 old/new64 old/new18 old/offset1152 old/offset1536 old/offset1792
+          gh run download "$GITHUB_RUN_ID" --repo "$REPO" \
+            --name mois-20261115-epoch2-offset384-new-created-128taxa-signed-1231340-ID-disjoint-source --dir signed
+          gh run download "$GITHUB_RUN_ID" --repo "$REPO" \
+            --name mois-20261115-epoch2-offset384-genuine-FCP-ROI9-pixel-terminal --dir pixel
+          gh run download 43546479575 --repo "$REPO" --name mois-postsnapshot-two-CC-photos-full-1231244-ID-source --dir old/history
+          gh run download 43561529394 --repo "$REPO" --name mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append --dir old/new11
+          gh run download 43562522326 --repo "$REPO" --name mois-new1909-fresh-original-real-ROI9-42111-taxonomy-appended --dir old/new64
+          gh run download 43566369683 --repo "$REPO" --name mois-postsnap-remaining18-genuine-ROI9-cumulative-atlas --dir old/new18
+          gh run download 43599310470 --repo "$REPO" --name mois-20261114-offset1152-independent-strict9-audit --dir old/offset1152
+          gh run download 43608952945 --repo "$REPO" --name mois-20261114-offset1536-independent-strict9-audit --dir old/offset1536
+          gh run download 43612554673 --repo "$REPO" --name mois-20261114-offset1792-independent-strict9-audit --dir old/offset1792
+      - name: Independently recompute 9 numeric fractions, unknown missingness, source worker sha and image raw sha
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_20261115_created_epoch2_disjoint_original_photo9_after1792 audit \
+            --source signed --worker pixel --output audited
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261115-epoch2-offset384-independent-strict9-audit
+          path: audited/
+          retention-days: 90
+          if-no-files-found: error
+
+  append-only-independent-audit-success:
+    needs: [source-only-historical-independent-new-created-CC-pictures,independent-byte-identity-and-strict9-audit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recover exact immutable source, worker, audit and prewave cumulative atlas
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          mkdir -p signed pixel audited latest
+          gh run download "$GITHUB_RUN_ID" --repo "$REPO" --name mois-20261115-epoch2-offset384-new-created-128taxa-signed-1231340-ID-disjoint-source --dir signed
+          gh run download "$GITHUB_RUN_ID" --repo "$REPO" --name mois-20261115-epoch2-offset384-genuine-FCP-ROI9-pixel-terminal --dir pixel
+          gh run download "$GITHUB_RUN_ID" --repo "$REPO" --name mois-20261115-epoch2-offset384-independent-strict9-audit --dir audited
+          gh run download 43612554673 --repo "$REPO" --name mois-20261114-offset1792-genuine-original-42111-taxonomy-append --dir latest
+      - name: Append only audited genuine strict9 without imputing technical unknowns
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_20261115_created_epoch2_disjoint_original_photo9_after1792 append \
+            --atlas latest/mois_42111_post20261114_new_independent_original_photo9.csv.gz \
+            --source signed --worker pixel --audit audited --output appended
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261115-epoch2-offset384-genuine-original-42111-taxonomy-append
+          path: appended/
+          retention-days: 90
+          if-no-files-found: error

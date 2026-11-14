@@ -1,0 +1,105 @@
+name: MOIS combine completed 289 accepted species HUMAN_OBSERVATION CC photo media without requery
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-CCGBIF-colxr-field289-signed-combine-only.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-GBIF-field289-authenticated-previous-groups-combine-only
+  cancel-in-progress: false
+jobs:
+  join-four-pinned-real-gbif-field-sources:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_RUN: '43540114362'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit test exact COL XR 289 name strata, field-only original photo CC license
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_CCGBIF_colxr_field_photo_direct_search.py -v
+      - name: Reuse completed 4 x source-only original GBIF API results, verify all four signed ZIP SHA
+        run: |
+          set -euo pipefail
+          mkdir -p verified
+          gh api "repos/$REPO/actions/runs/$SOURCE_RUN/artifacts?per_page=100" > frozen_artifact_receipts.json
+          python - <<'PY'
+          import json
+          payload=json.load(open('frozen_artifact_receipts.json'))
+          received={row.get('name'):row for row in payload.get('artifacts',[])}
+          expected={
+           0:('14091282024','7bd2b502ae59c20ae96e2443fd2f4210bf0832c04b60b202257f73ff18725086'),
+           1:('14091885616','46f7481b69558790e8d54e817ab70a9ec6932e3154cb286d7503d4e3e92c153c'),
+           2:('14091476129','09d441ce8b4cf5396128cc9bcb304cef47d9dd521f612ac280ce7117d3913fc8'),
+           3:('14091696242','67da61bd8d96c64226a9154da51e9c0bb6052fc33c69483fcaa6f717f4420134')}
+          for group,(artifact_id,digest) in expected.items():
+              name=f'mois-zero9-GBIF-289-exact-field-CC-media-group{group}'
+              row=received.get(name)
+              assert row is not None,(group,'missing',list(received))
+              assert str(row.get('id'))==artifact_id,(group,'id',row.get('id'),artifact_id)
+              assert row.get('digest')=='sha256:'+digest,(group,'sha',row.get('digest'),digest)
+              assert not row.get('expired'),(group,'artifact expired')
+          print('MOIS_VERIFIED_289_FOUR_PRIOR_GBIF_FIELD_ARTIFACT_NAMES_IDS_AND_SHA',flush=True)
+          PY
+          for group in 0 1 2 3; do
+            name="mois-zero9-GBIF-289-exact-field-CC-media-group$group"
+            mkdir -p "verified/group$group"
+            gh run download "$SOURCE_RUN" --repo "$REPO" --name "$name" --dir "verified/group$group"
+            test -f "verified/group$group/receipt.json"
+            test -f "verified/group$group/MOIS_CCGBIF_HUMAN_OBSERVATION_search_status_group$group.csv"
+          done
+          echo 'MOIS_PRIOR_4_GBIF_HUMAN_OBSERVATION_FIELD_SOURCE_ARTIFACTS_SHA_VERIFIED'
+      - name: Merge only the signed source rows, quarantine duplicate URLs and keep herbarium excluded
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_CCGBIF_colxr_field_photo_direct_search combine \
+            --root verified/group0 \
+            --root verified/group1 \
+            --root verified/group2 \
+            --root verified/group3 \
+            --output field_CCGBIF_289
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.acquisition.mois_zero9_gbif_other_cc_media_pilot import source_sha
+          p=Path('field_CCGBIF_289/receipt.json')
+          d=json.loads(p.read_text())
+          assert d['schema']=='mois_GBIF_COLXR_289taxa_field_original_CC_media_union_v1'
+          assert d['source_accepted_species_without_iNat_numeric_ROI']==289
+          assert d['new_image_pixels_downloaded']==0 and d['new_nine_fraction_ROI9_measurements']==0
+          assert d['source_external_image_sha_duplicate_vs_old_iNaturalist_unverified']
+          assert d['source_taxa_with_actual_human_observation_CC_still_image']<=289
+          assert d['noninat_public_CC_human_observation_media_URLs_unique']>=0
+          paths={'field':'mois_CCGBIF_COLXR_289taxa_human_observation_original_CC_photo_URLs.csv.gz',
+                 'taxa':'mois_CCGBIF_COLXR_289taxa_human_observation_source_status.csv',
+                 'hosts':'mois_CCGBIF_field_CC_media_host_counts.csv',
+                 'quarantined':'mois_CCGBIF_field_duplicate_URL_review.csv'}
+          assert set(d['outputs_sha256'])==set(paths)
+          for key,filename in paths.items():
+              assert source_sha(Path('field_CCGBIF_289')/filename)==d['outputs_sha256'][key]
+          print('MOIS_VERIFIED_289_COLXR_HUMAN_OBSERVATION_CC_SOURCE_COUNTS',
+                json.dumps({k:d[k] for k in (
+                    'source_taxa_with_actual_human_observation_CC_still_image',
+                    'noninat_public_CC_human_observation_media_URLs_unique',
+                    'duplicate_URL_rows_held_for_review',
+                    'noninat_human_observation_photo_hosts',
+                    'taxa_with_metadata_API_errors')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-zero9-GbifCOLXR-289-human-field-only-CC-original-photo-URL-source
+          path: field_CCGBIF_289/
+          retention-days: 90
+          if-no-files-found: error

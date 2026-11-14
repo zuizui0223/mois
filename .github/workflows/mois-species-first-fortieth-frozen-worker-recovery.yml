@@ -1,0 +1,133 @@
+name: MOIS fortieth frozen-source original-photo worker recovery
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-species-first-fortieth-frozen-worker-recovery.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-fortieth-frozen-source-930003c23fcb9-one-recovery
+  cancel-in-progress: false
+jobs:
+  guard-signed-immutable-source:
+    runs-on: ubuntu-24.04
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_RUN: '43418351166'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gate signed wave39 append and unique frozen source; prevent duplicate recovery
+        id: gate
+        run: |
+          set -euo pipefail
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          test "$(gh api "repos/$REPO/actions/runs/$SOURCE_RUN" --jq .status)" = completed || exit 0
+          test "$(gh api "repos/$REPO/actions/runs/$SOURCE_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name=="append-thirtyninth-and-source-fortieth" and .conclusion=="success")] | length')" = 1 || exit 0
+          digest="$(gh api "repos/$REPO/actions/runs/$SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-thirtyninth4096-verified-append-fortieth-prioritized-original-source") | .digest')"
+          test "$digest" = 'sha256:930003c23fcb9f9d7462cf7787965132bfa6dc38c900f8441e98e9c6c0a3ae3d'
+          preworkers="$(gh api "repos/$REPO/actions/runs/$SOURCE_RUN/artifacts?per_page=100" --jq '[.artifacts[] | select(.name=="mois-fortieth28-real-original-worker-0")] | length')"
+          test "$preworkers" = 0 || exit 0
+          candidates="$(gh run list --repo "$REPO" --workflow mois-species-first-fortieth-frozen-worker-recovery.yml --branch analysis/mois-species-first-palette9-20261111 --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId")"
+          for candidate in $candidates; do
+            state="$(gh api "repos/$REPO/actions/runs/$candidate" --jq .status)"
+            if [ "$state" != completed ]; then
+              echo "MOIS_WAVE40_PRIOR_RECOVERY_IN_FLIGHT $candidate"
+              exit 0
+            fi
+            prior="$(gh api "repos/$REPO/actions/runs/$candidate/artifacts?per_page=100" --jq '[.artifacts[] | select(.name=="mois-fortieth28-real-original-worker-0" or .name=="mois-fortieth28-real-original-photo-nineROI-audit")] | length')"
+            if [ "$prior" != 0 ]; then
+              echo "MOIS_WAVE40_PRIOR_RECOVERY_HAS_SOURCE_NO_DUPLICATE $candidate"
+              exit 0
+            fi
+          done
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+  fortieth-real-original-worker-recovery:
+    needs: guard-signed-immutable-source
+    if: needs.guard-signed-immutable-source.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 85
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recover frozen source only; do not rebuild or repeat original photo source
+        run: |
+          set -euo pipefail
+          gh run download 43418351166 --repo "$REPO" --name mois-thirtyninth4096-verified-append-fortieth-prioritized-original-source --dir frozen
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          m=json.loads(Path('frozen/source/manifest.json').read_text())
+          assert m['schema']=='mois_full_source_observation_sampling_cohort_v1'
+          assert m['source_arm']=='MOIS_SPECIES_FIRST_FORTIETH_PRIORITIZED4096'
+          assert m['work_units']==1 and m['new_photo_attempts_planned']==27
+          assert m['source_previous_attempts']==1231057
+          p=Path('frozen/source/shards/shard-000.csv')
+          assert hashlib.sha256(p.read_bytes()).hexdigest()==m['photo_shard_sha256']['0']
+          PY
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bootstrap frozen YOLO11 EfficientSAM original ROI-v4 with valid ultralytics pin
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Fetch only 27 fresh original photos and numerically measure authentic 9 RGB ROI components
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-fortieth-photo-provider"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work --source frozen/source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" --group 0 --output measured
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-fortieth28-real-original-worker-0
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+  fortieth-real-original-audit-recovery:
+    needs: [guard-signed-immutable-source,fortieth-real-original-worker-recovery]
+    if: needs.guard-signed-immutable-source.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore exactly the frozen immutable source, not old images
+        run: |
+          set -euo pipefail
+          gh run download 43418351166 --repo "$REPO" --name mois-thirtyninth4096-verified-append-fortieth-prioritized-original-source --dir frozen
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-fortieth28-real-original-worker-0
+          path: workers/mois-fortieth28-real-original-worker-0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify source worker receipts SHA, photo and observation IDs, strict9 sums, unknown missing values
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m scripts.analysis.mois_species_first_fortieth_audit --source frozen/source --workers workers --output audited
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-fortieth28-real-original-photo-nineROI-audit
+          path: audited/
+          retention-days: 90
+          if-no-files-found: warn

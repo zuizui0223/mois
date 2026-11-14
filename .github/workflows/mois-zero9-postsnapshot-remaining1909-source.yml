@@ -1,0 +1,185 @@
+name: MOIS remaining 1909 zero-ROI taxa post-snapshot exact iNaturalist CC original-photo candidate scan
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-zero9-postsnapshot-remaining1909-source.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-after20261027-1909-unqueried-zeroROI-hash-disjoint-original-photo-API-source
+  cancel-in-progress: false
+jobs:
+  fifteen-disjoint-real-api-strata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OLD_ATLAS_RUN: '43470118921'
+      OLD_ATLAS_ARTIFACT: mois-fiftysixth4096-verified-append-fiftyseventh-prioritized-original-source
+      OLD_ATLAS_ZIP_SHA: 'sha256:83ad6be61d001e8abeaca5b5d233700c86da35fa33195a0e22fd93ca561e7782'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit-test exact source iNaturalist taxon rank/license/date and no photo ID reclassification
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_zero9_recent_inat_new_created_photo_source.py -v
+          python -m py_compile scripts/acquisition/mois_zero9_recent_inat_new_created_photo_source.py
+      - name: Restore immutable 42111 source taxonomy after genuine wave56 signed photo ROI, not re-download old images
+        run: |
+          set -euo pipefail
+          test "$(gh run view "$OLD_ATLAS_RUN" --repo "$REPO" --json conclusion --jq .conclusion)" = success
+          old="$(gh api "repos/$REPO/actions/runs/$OLD_ATLAS_RUN/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.name=="mois-fiftysixth4096-verified-append-fiftyseventh-prioritized-original-source") | .digest')"
+          test "$old" = "$OLD_ATLAS_ZIP_SHA"
+          mkdir -p old
+          gh run download "$OLD_ATLAS_RUN" --repo "$REPO" --name "$OLD_ATLAS_ARTIFACT" --dir old
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd,json
+          from scripts.acquisition.mois_zero9_recent_inat_new_created_photo_source import ATLAS_SHA,source_sha
+          p=Path('old/updated/mois_species_first_42111_after_fiftysixth.csv.gz')
+          r=json.load(open('old/updated/receipt.json'))
+          assert source_sha(p)==ATLAS_SHA==r['output_sha256']['atlas']
+          atlas=pd.read_csv(p,dtype={'inat_taxon_id':str})
+          assert len(atlas)==42111 and atlas.inat_taxon_id.is_unique
+          assert int(atlas.after_strict9.eq(0).sum())==2229
+          print('MOIS_SIGNED_2229_ZERO_NUMERIC_ORIGINAL_SOURCE_TAXA_RESTORED',flush=True)
+          PY
+      - name: Actually query NEW iNaturalist created-after-freeze observations for each of 15 disjoint source-taxonomy groups
+        run: |
+          set -euo pipefail
+          group="${{ matrix.group }}"
+          offset="$((320 + 128 * group))"
+          python -m scripts.acquisition.mois_zero9_recent_inat_new_created_photo_source \
+            --atlas old/updated/mois_species_first_42111_after_fiftysixth.csv.gz \
+            --sample 128 --offset "$offset" --pace 0.7 --limit 20 \
+            --output "recent_$group"
+          python - <<'PY'
+          import json,pandas as pd
+          from pathlib import Path
+          from scripts.acquisition.mois_zero9_recent_inat_new_created_photo_source import source_sha
+          group=${{ matrix.group }}
+          offset=320+128*group
+          p=Path(f'recent_{group}')
+          r=json.loads((p/'receipt.json').read_text())
+          assert r['schema']=='mois_new_inaturalist_created_after_20261027_zero9_photo_source_pilot_v1'
+          assert r['source_deterministic_hash_offset']==offset
+          assert r['sampled_zero_ROI9_source_taxa']==(128 if group<14 else 117)
+          assert r['original_source_zero_ROI9_taxa']==2229
+          assert r['original_photo_pixels_downloaded']==0 and r['genuine_nine_fraction_ROI_measured']==0
+          assert not r['old_photo_ID_1_231_244_ledger_disjointness_verified']
+          photo=p/'new_post20261027_inat_zeroROI_photo_candidates.csv'
+          status=p/'new_post20261027_inat_zeroROI_taxa_source_status.csv'
+          assert source_sha(photo)==r['output_sha256'][photo.name]
+          assert source_sha(status)==r['output_sha256'][status.name]
+          rows=pd.read_csv(photo,dtype=str,keep_default_na=False)
+          taxa=pd.read_csv(status,dtype=str,keep_default_na=False)
+          assert len(taxa)==r['sampled_zero_ROI9_source_taxa'] and taxa.inat_taxon_id.is_unique
+          assert rows.photo_id.is_unique and rows.observation_id.is_unique and rows.inat_taxon_id.is_unique
+          assert rows.inat_taxon_id.isin(taxa.inat_taxon_id).all()
+          print('MOIS_POSTSNAPSHOT_NEW_REAL_SOURCE_METADATA',json.dumps({
+            'group':group,'sampled_taxa':len(taxa),
+            'new_photo_candidate_taxa':len(rows),
+            'api_errors':r['source_taxa_API_errors']},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-postsnap-new1909-nonnumeric-128taxa-group${{ matrix.group }}
+          path: recent_${{ matrix.group }}/
+          retention-days: 90
+          if-no-files-found: warn
+  global-15-strata-source-only-union:
+    needs: fifteen-disjoint-real-api-strata
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-postsnap-new1909-nonnumeric-128taxa-group*
+          path: source_groups
+          merge-multiple: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify all 15 public original photo/observation ID source receipts and freeze a source-only 1909 taxon census
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python - <<'PY'
+          import pandas as pd,json
+          from pathlib import Path
+          from scripts.acquisition.mois_zero9_recent_inat_new_created_photo_source import (
+            SCHEMA,source_sha)
+          photos=[];statuses=[];old={}
+          for group in range(15):
+              root=Path('source_groups')/f'mois-postsnap-new1909-nonnumeric-128taxa-group{group}'/f'recent_{group}'
+              r=json.loads((root/'receipt.json').read_text())
+              assert r['schema']==SCHEMA
+              assert r['source_deterministic_hash_offset']==320+128*group
+              assert r['sampled_zero_ROI9_source_taxa']==(128 if group<14 else 117)
+              assert r['original_photo_pixels_downloaded']==0 and r['genuine_nine_fraction_ROI_measured']==0
+              for basename in ('new_post20261027_inat_zeroROI_photo_candidates.csv',
+                               'new_post20261027_inat_zeroROI_taxa_source_status.csv'):
+                  path=root/basename
+                  assert source_sha(path)==r['output_sha256'][path.name]
+              frame=pd.read_csv(root/'new_post20261027_inat_zeroROI_photo_candidates.csv',dtype=str,keep_default_na=False)
+              stats=pd.read_csv(root/'new_post20261027_inat_zeroROI_taxa_source_status.csv',dtype=str,keep_default_na=False)
+              assert len(frame)==r['new_independent_original_iNaturalist_photo_IDs_seen']
+              assert len(stats)==r['sampled_zero_ROI9_source_taxa'] and stats.inat_taxon_id.is_unique
+              assert frame.inat_taxon_id.isin(stats.inat_taxon_id).all()
+              photos.append(frame);statuses.append(stats);old[str(group)]=source_sha(root/'receipt.json')
+          p=pd.concat(photos,ignore_index=True)
+          t=pd.concat(statuses,ignore_index=True)
+          assert len(t)==1909 and t.inat_taxon_id.is_unique
+          assert p.inat_taxon_id.is_unique and p.photo_id.is_unique and p.observation_id.is_unique
+          out=Path('post_snapshot_new_source');out.mkdir()
+          photosfile=out/'MOIS_post_snapshot_new1909_unmeasured_taxa_CC_photo_ID_opportunities.csv'
+          statusfile=out/'MOIS_post_snapshot_new1909_taxon_API_status.csv'
+          p.to_csv(photosfile,index=False)
+          t.to_csv(statusfile,index=False)
+          report={
+              'schema':'mois_post20261028_new_inat_other1909_zero_numeric_taxa_source_union_v1',
+              'original_source_42111_taxa':42111,
+              'original_source_zero_numeric_at_pre20261028':2229,
+              'previously_queried_hash_offset0_to319_excluded':320,
+              'new_source_taxa_API_queried':len(t),
+              'new_original_photo_metadata_candidate_taxa':int(p.inat_taxon_id.nunique()),
+              'new_photo_IDs_before_historical_source_overlap':len(p),
+              'new_taxa_public_API_errors':int(t.status.eq('source_API_error_review').sum()),
+              'new_photo_and_observation_URL_repeats_between_strata':0,
+              'all_1_231_244_plus_11_previous_photo_UUIDs_disjointness':False,
+              'source_snapshot_original93m_photo_index_untouched':True,
+              'actual_new_photo_pixels_downloaded':0,
+              'new_strict9_numerical_ROI':0,
+              'results_SHA256':{a.name:source_sha(a) for a in (photosfile,statusfile)},
+              'all_fifteen_source_receipt_SHA256':old}
+          (out/'receipt.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
+          print('MOIS_POSTSNAPSHOT_NEW1909_REAL_API_CC_ORIGINAL_SOURCE_OPPORTUNITIES',
+                json.dumps({k:report[k] for k in (
+                   'new_source_taxa_API_queried','new_original_photo_metadata_candidate_taxa',
+                   'new_photo_IDs_before_historical_source_overlap','new_taxa_public_API_errors')},
+                   sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-postsnapshot-new1909-unmeasured-original-photo-opportunities-signed
+          path: post_snapshot_new_source/
+          retention-days: 90
+          if-no-files-found: error

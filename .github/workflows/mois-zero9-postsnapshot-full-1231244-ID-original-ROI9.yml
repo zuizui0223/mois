@@ -1,0 +1,207 @@
+name: MOIS new after-frozen iNaturalist CC originals, full-history-ID-gated real ROI9
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-zero9-postsnapshot-full-1231244-ID-original-ROI9.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-new-inat-64-zero9-frozen-source-9350d5bd-once
+  cancel-in-progress: false
+jobs:
+  freeze-full-ID-disjoint-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    outputs:
+      ready: ${{ steps.pre.outputs.ready }}
+      has_new: ${{ steps.gate.outputs.has_new }}
+    env:
+      REPO: zuizui0223/mois
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check exact signed source, old atlas, and same-source duplicate runs
+        id: pre
+        run: |
+          set -euo pipefail
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          test "$(gh api "repos/$REPO/actions/runs/43541530651" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43541530651/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-new-inat-post20261027-zero9-64taxa-source-only-original-photo-IDs") | .digest')" = 'sha256:9350d5bd9d44f423fabb589ff4db98d2fdb2d5576d36a09cb2ad50595a22fbb8'
+          test "$(gh api "repos/$REPO/actions/runs/43470118921/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fiftysixth4096-verified-append-fiftyseventh-prioritized-original-source") | .digest')" = 'sha256:83ad6be61d001e8abeaca5b5d233700c86da35fa33195a0e22fd93ca561e7782'
+          test "$(gh api "repos/$REPO/actions/runs/43485963676/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fiftysixth4096-verified-append-fiftyseventh-prioritized-original-source") | .digest')" = 'sha256:aa656c4b46a55dd301d0e76737aff12e9766003baca4079a91b1fefc8c57b4c1'
+          for old in $(gh run list --repo "$REPO" --workflow mois-zero9-postsnapshot-full-1231244-ID-original-ROI9.yml --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId"); do
+            state="$(gh api "repos/$REPO/actions/runs/$old" --jq .status)"
+            if [ "$state" != completed ]; then echo "PRIOR_SOURCE_RUN_STILL_ACTIVE $old"; exit 0; fi
+            frozen="$(gh api "repos/$REPO/actions/runs/$old/artifacts?per_page=100" --jq '[.artifacts[] | select(.name=="mois-postsnapshot-two-CC-photos-full-1231244-ID-source")] | length')"
+            workers="$(gh api "repos/$REPO/actions/runs/$old/jobs?per_page=100" --jq '[.jobs[] | select(.name=="new-original-pixel-worker" and .conclusion!="skipped")] | length')"
+            if [ "$frozen" != 0 ] || [ "$workers" != 0 ]; then
+              echo "SOURCE_SHA_ALREADY_FROZEN_OR_PIXELS_ATTEMPTED $old; no second original retrieval"
+              exit 0
+            fi
+            echo "PRIOR_RUN_FAILED_BEFORE_SOURCE_FREEZE_AND_PIXEL_DL $old; safe gate-code-only recovery"
+          done
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - name: Restore historical signed photo-ID ledgers only; never fetch old pixels
+        if: steps.pre.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_zero9_recent_inat_new_created_photo_source.py -v
+          python -m py_compile scripts/acquisition/mois_new_inat_postsnapshot_verified_original_roi9.py
+          gh() {
+            if [ "${1:-}" = run ] && [ "${2:-}" = download ]; then
+              for attempt in 1 2 3; do
+                if command gh "$@"; then return 0; fi
+                if [ "$attempt" -eq 3 ]; then echo "SIGNED_ARTIFACT_RESTORE_FAILED; no new pixels"; return 1; fi
+                sleep $((attempt*15))
+              done
+            else
+              command gh "$@"
+            fi
+          }
+          mkdir -p recent atlas56 baseline
+          gh run download 43541530651 --repo "$REPO" --name mois-new-inat-post20261027-zero9-64taxa-source-only-original-photo-IDs --dir recent
+          gh run download 43470118921 --repo "$REPO" --name mois-fiftysixth4096-verified-append-fiftyseventh-prioritized-original-source --dir atlas56
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('.github/workflows/mois-species-first-fiftyseventh-depth256-real-original.yml').read_text().splitlines()
+          first=next(i for i,x in enumerate(s) if 'gh release download mois-original-1181146-exact-photo' in x)
+          last=next(i for i,x in enumerate(s[first+1:],start=first+1) if 'gh run download "$OLD_AUDIT_RUN"' in x)
+          cmds=[x.strip().replace('"$OLD_SOURCE_RUN"','43469043483') for x in s[first:last]
+                if x.strip().startswith(('gh release download ','gh run download '))]
+          assert len(cmds)==56 and cmds[0].startswith('gh release download mois-original-1181146-exact-photo')
+          assert cmds[-1].startswith('gh run download 43469043483 ')
+          assert all('--repo "$REPO"' in c and '--dir ' in c and ' workers/' not in c for c in cmds)
+          for c in cmds: Path(c.split('--dir ',1)[1].split()[0]).mkdir(parents=True,exist_ok=True)
+          Path('restore.sh').write_text('\n'.join(cmds)+'\n')
+          a=next(i for i,x in enumerate(s) if x.strip().startswith('--baseline baseline/'))
+          b=next(i for i,x in enumerate(s[a:],start=a) if x.strip().startswith('--global-options '))
+          paths=[]
+          for x in s[a:b]:
+              m=re.match(r'\s+--[a-z]+\s+([A-Za-z0-9_./-]+\.parquet)\b',x)
+              if m: paths.append(m.group(1))
+          assert len(paths)==56 and len(set(paths))==56
+          paths.append('atlas56/updated/mois_fiftysixth4096_real_original9_photo_delta.parquet')
+          Path('history-paths.txt').write_text('\n'.join(paths)+'\n')
+          print('MOIS_PINNED_HISTORY_RESTORE',len(cmds),len(paths),flush=True)
+          PY
+          source restore.sh
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('history-paths.txt').read_text().splitlines()
+          assert len(p)==57 and all(Path(x).is_file() for x in p)
+          print('ALL_57_HISTORICAL_ID_FILES_PRESENT_NO_OLD_PHOTO_PIXELS',flush=True)
+          PY
+      - name: Verify all past photo IDs and observation UUIDs, freeze exactly new CC S3 ID-disjoint source
+        if: steps.pre.outputs.ready == 'true'
+        id: gate
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_new_inat_postsnapshot_verified_original_roi9 gate \
+            --meta recent/new_post20261027_inat_zeroROI_photo_candidates.csv \
+            --receipt recent/receipt.json \
+            --atlas atlas56/updated/mois_species_first_42111_after_fiftysixth.csv.gz \
+            --history-paths history-paths.txt --output source
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          m=json.loads(Path('source/manifest.json').read_text())
+          assert m['source_previous_attempts']==1231244
+          assert m['source_prior_no_reused_original_photo_or_observation'] is True
+          assert m['new_photo_attempts_planned'] in (0,1,2)
+          print('has_new='+str(m['work_units']>0).lower())
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.pre.outputs.ready == 'true'
+        with:
+          name: mois-postsnapshot-two-CC-photos-full-1231244-ID-source
+          path: source/
+          retention-days: 90
+          if-no-files-found: error
+  new-original-pixel-worker:
+    needs: freeze-full-ID-disjoint-source
+    if: needs.freeze-full-ID-disjoint-source.outputs.ready == 'true' && needs.freeze-full-ID-disjoint-source.outputs.has_new == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 190
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-postsnapshot-two-CC-photos-full-1231244-ID-source
+          path: source
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bootstrap frozen FCP YOLO11 EfficientSAM ROI-v4
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Acquire only new real licensed original pixels; measure authentic RGB9
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-postsnapshot-photo-provider"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work \
+            --source source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" --group 0 --output measured
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-postsnapshot-actual-original-pixel-worker
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+  signed-9-component-audit:
+    needs: [freeze-full-ID-disjoint-source,new-original-pixel-worker]
+    if: needs.freeze-full-ID-disjoint-source.outputs.ready == 'true' && needs.freeze-full-ID-disjoint-source.outputs.has_new == 'true' && needs.new-original-pixel-worker.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-postsnapshot-two-CC-photos-full-1231244-ID-source
+          path: source
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-postsnapshot-actual-original-pixel-worker
+          path: worker
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Independent worker/manifest/image SHA, ROI9 sum 1, finite, nonnegative, unknown missing
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m scripts.acquisition.mois_new_inat_postsnapshot_verified_original_roi9 audit \
+            --source source --worker worker --output audited
+          python - <<'PY'
+          import json
+          r=json.load(open('audited/receipt.json'))
+          assert r['original_licensed_photo_attempts'] in (1,2)
+          assert r['photo_observation_taxon_collision_count']==0
+          assert r['actual_genuine_strict9_numeric_success']+r['actual_technical_unknowns']==r['original_licensed_photo_attempts']
+          assert r['official_iNat_42111_original_frame_auto_appended'] is False
+          assert r['GBIF_occurrence_SQL_authenticated_downloaded'] is False
+          print('MOIS_INDEPENDENT_SIGNED_TRUE_NEW_PIXELS',r['actual_genuine_strict9_numeric_success'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-postsnapshot-independent-real-ROI9-audit
+          path: audited/
+          retention-days: 90
+          if-no-files-found: warn

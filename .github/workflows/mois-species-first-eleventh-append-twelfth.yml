@@ -1,0 +1,234 @@
+name: MOIS eleventh signed 2048 append and twelfth remaining-original image ROI
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-species-first-eleventh-append-twelfth.yml
+      - scripts/analysis/mois_species_first_eleventh_to_twelfth.py
+      - scripts/analysis/mois_species_first_twelfth_audit.py
+      - tests/test_mois_species_first_eleventh_to_twelfth.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-eleventh-signed-to-twelfth-image-one-source
+  cancel-in-progress: false
+jobs:
+  append-eleventh-and-source-twelfth:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+      groups: ${{ steps.plan.outputs.groups }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OLD_RUN: '43039164891'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Synthetic regressions of 8 signed eleventh shards, 9 ROI sums and independent observations
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_species_first_eleventh_to_twelfth.py -v
+      - name: Gate on eleventh immutable real original pixel terminal, no simultaneous duplicate source
+        id: gate
+        run: |
+          set -euo pipefail
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          test "$(gh run view "$OLD_RUN" --repo "$REPO" --json conclusion --jq .conclusion)" = success || exit 0
+          prior=$(gh run list --repo "$REPO" --workflow mois-species-first-eleventh-append-twelfth.yml --branch analysis/mois-species-first-palette9-20261111 --limit 30 --json databaseId,status,conclusion --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | select(.conclusion == \"success\" or .status == \"in_progress\" or .status == \"queued\") | .databaseId" | head -1 || true)
+          if [ -n "$prior" ]; then echo "Already processing this exact eleventh source: $prior"; exit 0; fi
+          gh run download "$OLD_RUN" --repo "$REPO" --name mois-eleventh4096-complete-signed-original-nineROI-audit --dir _precheck
+          python - <<'PY'
+          import json
+          d=json.load(open('_precheck/receipt.json'))
+          assert d['schema']=='mois_species_first_eleventh_authentic_originalROI9_audit_v1'
+          assert [d['actual_independent_original_photo_attempts'],d['actual_genuine_strict9_numeric_success'],d['actual_clear_nine_palette_hues'],d['actual_technical_unknowns']]==[2048,620,446,1428]
+          assert d['photo_observation_source_taxon_ID_collisions']==0
+          assert len(d['original_photo_worker_receipt_sha256'])==8
+          PY
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - name: Restore historical signed photo ledgers and 11th actual original-photo receipts, never image data
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p baseline first second third fourth fifth seventh eighth ninth tenth eleventh global workers audit11
+          gh release download mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1 --repo "$REPO" --dir baseline --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet
+          gh run download 42913236517 --repo "$REPO" --name mois-first256-91species-appended-and-next1024-palette-source --dir first
+          gh run download 42925844766 --repo "$REPO" --name mois-real1280-wave2-cumulative-9palette-and-fresh-wave3-source --dir second
+          gh run download 42950141749 --repo "$REPO" --name mois-real2304-wave3-361spec-9palette-and-fresh-wave4-source --dir third
+          gh run download 42959597251 --repo "$REPO" --name mois-fourth-genuine-ROI9-append-and-fifth1024-new-species-photo-source --dir fourth
+          gh run download 42970701175 --repo "$REPO" --name mois-fifth1024-9roi-integrated-and-sixth4096-source --dir fifth
+          gh run download 42980109440 --repo "$REPO" --name mois-sixth4096-real-append-seventh4096-prioritized-photo-source --dir seventh
+          gh run download 42990631949 --repo "$REPO" --name mois-seventh4096-real-append-eighth4096-prioritized-photo-source --dir eighth
+          gh run download 43002995827 --repo "$REPO" --name mois-eighth4096-real-append-ninth4096-prioritized-photo-source --dir ninth
+          gh run download 43013636142 --repo "$REPO" --name mois-ninth4096-real-append-tenth4096-prioritized-photo-source --dir tenth
+          gh run download "$OLD_RUN" --repo "$REPO" --name mois-tenth4096-real-append-eleventh4096-prioritized-photo-source --dir eleventh
+          gh run download "$OLD_RUN" --repo "$REPO" --name mois-eleventh4096-complete-signed-original-nineROI-audit --dir audit11
+          for g in 0 1; do gh run download "$OLD_RUN" --repo "$REPO" --name "mois-eleventh4096-real-original-worker-$g" --dir "workers/mois-eleventh4096-real-original-worker-$g"; done
+          gh run download 42846819580 --repo "$REPO" --name mois-global-16groups-full93m-zero9-next-first-photo-and-fallbacks --dir global
+      - name: Recompute all 8 original eleventh SHA receipts, append observed 9 ROI with unknown retention, select genuine unmeasured photos
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_species_first_eleventh_to_twelfth \
+            --atlas eleventh/updated/mois_species_first_42111_after_tenth.csv.gz \
+            --source eleventh/source --workers workers --audited audit11 \
+            --baseline baseline/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --first first/updated/mois_genuine_first256_strict9_append_only.parquet \
+            --second second/global_after1280/mois_real1024_wave2_original9_photo_delta.parquet \
+            --third third/cumulative/mois_wave3_actual1024_strict9_photo_delta.parquet \
+            --fourth fourth/after_wave4/mois_wave4_genuine_original1024_strict9_delta.parquet \
+            --fifth fifth/after_fifth/mois_fifth1024_real_original9_photo_delta.parquet \
+            --sixth seventh/updated/mois_sixth4096_real_original9_photo_delta.parquet \
+            --seventh eighth/updated/mois_seventh4096_real_original9_photo_delta.parquet \
+            --eighth ninth/updated/mois_eighth4096_real_original9_photo_delta.parquet \
+            --ninth tenth/updated/mois_ninth4096_real_original9_photo_delta.parquet \
+            --tenth eleventh/updated/mois_tenth4096_real_original9_photo_delta.parquet \
+            --global-options global/mois_global_species_first_zero9_fallback_photo_options.csv.gz \
+            --quota 4096 --output updated
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          r=json.load(open('updated/receipt.json'))
+          assert r['eleventh_actual_independent_original_photo_attempts']==2048
+          assert r['eleventh_actual_strict9_photo_successes']==620
+          assert r['eleventh_actual_technical_unknowns']==1428
+          assert r['eleventh_new_source_taxa_with_clear_dominant_hue9']==446
+          assert r['cumulative_original_photo_attempts']==1208026 and r['cumulative_original_numeric_photo_roi9']==460607
+          assert r['source_taxa_with_numerical_nineROI']==37575+r['eleventh_new_source_taxa_with_first_numeric9']
+          assert r['source_taxa_with_clear_sampled_nine_palette']==34697
+          assert r['source_taxa_with_numerical_nineROI']+r['source_taxa_without_nineROI']==42111
+          assert r['prior_photo_or_observation_ID_reused'] is False
+          assert 1<=r['twelfth_source_distinct_new_photo_observation_taxon']<=4096
+          for k,n in [('atlas','mois_species_first_42111_after_eleventh.csv.gz'),('delta','mois_eleventh4096_real_original9_photo_delta.parquet'),('next','mois_twelfth4096_prioritized_original_photo_queue.csv')]:
+            assert r['output_sha256'][k]==sha256(Path('updated')/n)
+          print('MOIS_ELEVENTH_APPENDED_FIRST_NUMERIC_TAXA_AND_TWELFTH_NEW_PHOTO_SOURCE',r['eleventh_new_source_taxa_with_first_numeric9'],r['twelfth_source_distinct_new_photo_observation_taxon'],flush=True)
+          PY
+      - name: Freeze signed variable-size 256-photo source shards including final partial shard; no duplicated image or observation
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p source/shards
+          python - <<'PY'
+          import json
+          import numpy as np
+          import pandas as pd
+          from pathlib import Path
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          q=pd.read_csv('updated/mois_twelfth4096_prioritized_original_photo_queue.csv',dtype=str,keep_default_na=False)
+          n=len(q)
+          assert 1<=n<=4096 and q.photo_id.is_unique and q.observation_id.is_unique and q.inat_taxon_id.is_unique
+          units=(n+255)//256
+          assert q.shard.eq(pd.Series((np.arange(n)//256).astype(str))).all()
+          digests={}
+          for i in range(units):
+              part=q.iloc[i*256:min(n,(i+1)*256)]
+              assert 1<=len(part)<=256
+              p=Path('source/shards')/f'shard-{i:03d}.csv'
+              part.to_csv(p,index=False,lineterminator='\n')
+              digests[str(i)]=sha256(p)
+          m={'schema':'mois_full_source_observation_sampling_cohort_v1','source_arm':'MOIS_SPECIES_FIRST_TWELFTH_PRIORITIZED4096','colour_measured':False,'work_units':units,'worker_ids':list(range(units)),'new_photo_attempts_planned':n,'source_previous_attempts':1208026,'source_full_original_photo_IDs':93209351,'photo_shard_sha256':digests,'source_prior_no_reused_original_photo_or_observation':True}
+          Path('source/manifest.json').write_text(json.dumps(m,sort_keys=True,indent=2)+'\n')
+          print('MOIS_TWELFTH_ALL_GENUINE_DISTINCT_PHOTO_SHARDS_FROZEN',n,units,flush=True)
+          PY
+      - name: Dispatch only nonempty 1024-photo groups
+        if: steps.gate.outputs.ready == 'true'
+        id: plan
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          d=json.loads(Path('source/manifest.json').read_text())
+          assert 1<=d['work_units']<=16
+          print("groups="+json.dumps(list(range((d['work_units']+3)//4)),separators=(',',':')))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-eleventh2048-verified-append-twelfth-prioritized-original-source
+          path: |
+            updated/
+            source/
+          retention-days: 90
+          if-no-files-found: error
+  twelfth-real-original-worker:
+    needs: append-eleventh-and-source-twelfth
+    if: needs.append-eleventh-and-source-twelfth.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 190
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: ${{ fromJSON(needs.append-eleventh-and-source-twelfth.outputs.groups) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-eleventh2048-verified-append-twelfth-prioritized-original-source
+          path: frozen
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bootstrap frozen YOLO11 EfficientSAM original ROI-v4
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Acquire only new original photos; measure real 9-component RGB ROI
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-twelfth-photo-provider"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work --source frozen/source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" --group "${{ matrix.group }}" --output measured
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-twelfth11-real-original-worker-${{ matrix.group }}
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+  twelfth-real-original-audit:
+    needs: [append-eleventh-and-source-twelfth,twelfth-real-original-worker]
+    if: needs.append-eleventh-and-source-twelfth.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-eleventh2048-verified-append-twelfth-prioritized-original-source
+          path: frozen
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-twelfth11-real-original-worker-*
+          path: workers
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recompute original source and worker SHA, nine fraction sums and unknown retention
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m scripts.analysis.mois_species_first_twelfth_audit --source frozen/source --workers workers --output audited
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-twelfth11-real-original-photo-nineROI-audit
+          path: audited/
+          retention-days: 90
+          if-no-files-found: warn

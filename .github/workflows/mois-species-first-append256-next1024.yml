@@ -1,0 +1,237 @@
+name: MOIS species-first real256 append and next1024 independent original ROI9
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_species_first_incremental_first256.py
+      - tests/test_mois_species_first_incremental_first256.py
+      - .github/workflows/mois-species-first-append256-next1024.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-species-first-append256-wave2-1024
+  cancel-in-progress: false
+jobs:
+  integrate-91-and-fix-wave2-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PHOTO_TAG: mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1
+      TAXA_TAG: mois-full-93209351-FCP-U100-complete-42111-original-photo-source-v1
+      FIRST_RUN: '42848145801'
+      CANDIDATES_RUN: '42846819580'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify first real256 and retry/new species source code on synthetic observations
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_species_first_incremental_first256.py -v
+          python -m unittest discover -s tests -p test_mois_species_first_palette9.py -v
+      - name: Fetch true immutable 1181146-photo ROI9 and real256 original photo terminals
+        run: |
+          set -euo pipefail
+          mkdir -p original first fallback
+          gh release download "$PHOTO_TAG" --repo "$REPO" --dir original \
+            --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --pattern mois_42111_original_taxon_9palette_before_after.csv.gz
+          gh release download "$TAXA_TAG" --repo "$REPO" --dir original \
+            --pattern full42111_nominal_taxa_original_U100_source_eligibility.csv
+          gh run download "$FIRST_RUN" --repo "$REPO" \
+            --name mois-zero9-first256-genuine-original-photo-nineROI-measured \
+            --dir first
+          gh run download "$CANDIDATES_RUN" --repo "$REPO" \
+            --name mois-global-16groups-full93m-zero9-next-first-photo-and-fallbacks \
+            --dir fallback
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.analysis.mois_species_first_incremental_first256 import (
+              SOURCE_PHOTO_SHA, SOURCE_COVERAGE_SHA, SOURCE_CENSUS_SHA,
+              FIRST_SHARD_SHA, FIRST_TERMINAL_SHA
+          )
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          roots={
+              'original/mois_1181146_unique_original_photo_continuous9_by_arm.parquet':SOURCE_PHOTO_SHA,
+              'original/mois_42111_original_taxon_9palette_before_after.csv.gz':SOURCE_COVERAGE_SHA,
+              'original/full42111_nominal_taxa_original_U100_source_eligibility.csv':SOURCE_CENSUS_SHA,
+              'first/source/shards/shard-000.csv':FIRST_SHARD_SHA,
+              'first/measured/shard_000/receipt.json':FIRST_TERMINAL_SHA,
+          }
+          for filename,digest in roots.items():
+              actual=sha256(filename)
+              assert actual==digest,(filename,actual,digest)
+          d=json.loads(Path('fallback/receipt.json').read_text())
+          assert d['schema']=='mois_all16_zero9_source_first_photo_disjoint_v1'
+          assert d['source_zero9_taxa_with_first_new_photo']==11634
+          print('MOIS_PRIOR_SIGNED_PIXEL_FIRST256_AND_FULL93M_SOURCE_VERIFIED',flush=True)
+          PY
+      - name: Append 91 true numeric nine-colour ROI taxa; build next1024 source queue
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_species_first_incremental_first256 \
+            --base-photos original/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --source-taxa original/full42111_nominal_taxa_original_U100_source_eligibility.csv \
+            --coverage original/mois_42111_original_taxon_9palette_before_after.csv.gz \
+            --first-source first/source/shards/shard-000.csv \
+            --first-pixels first/measured/zero9_first256_true_original_photo9_and_unknowns.csv \
+            --first-receipt first/measured/shard_000/receipt.json \
+            --global-options fallback/mois_global_species_first_zero9_fallback_photo_options.csv.gz \
+            --output updated --quota 1024
+          python - <<'PY'
+          import json,pandas as pd
+          from pathlib import Path
+          d=json.loads(Path('updated/receipt.json').read_text())
+          assert d['original_photo_attempts_after']==1181402
+          assert d['original_strict9_after']==451734
+          assert d['taxa_with_any_measured_strict9_after']==30139
+          assert d['taxa_with_no_strict9_after']==11972
+          assert d['new_strict9_technical_unknown']==165
+          assert d['next_wave_selected']==1024
+          q=pd.read_csv('updated/mois_wave2_unresolved_and_new_species_photo_queue.csv',dtype=str)
+          assert len(q)==1024 and q.photo_id.is_unique
+          assert q.inat_taxon_id.is_unique and q.observation_id.is_unique
+          print('MOIS_INCREMENTAL_FIRST256_NEXT1024_SOURCE_PASS',d['next_wave_retry'],d['next_wave_new_taxa'])
+          PY
+      - name: Freeze four distinct 256-photo shards for unchanged FCP original YOLO11 plus EfficientSAM
+        run: |
+          set -euo pipefail
+          mkdir -p source/shards
+          python - <<'PY'
+          import json,pandas as pd
+          from pathlib import Path
+          from scripts.acquisition.mois_full_index_real_original_photo_measure import sha
+          q=pd.read_csv('updated/mois_wave2_unresolved_and_new_species_photo_queue.csv',
+                        dtype=str,keep_default_na=False)
+          assert len(q)==1024 and set(q.shard)=={'0','1','2','3'}
+          digests={}
+          for n in range(4):
+              rows=q.loc[q.shard==str(n)].copy()
+              assert len(rows)==256 and rows.photo_id.is_unique
+              filename=Path('source/shards')/f'shard-{n:03d}.csv'
+              rows.to_csv(filename,index=False,lineterminator='\n')
+              digests[str(n)]=sha(filename)
+          manifest={
+              'schema':'mois_full_source_observation_sampling_cohort_v1',
+              'source_arm':'MOIS_ZERO9_FIRST_256_APPENDED_NEXT_1024',
+              'colour_measured':False,'work_units':4,'worker_ids':[0,1,2,3],
+              'source_photo_frame':93209351,
+              'new_photo_attempts_planned':1024,
+              'source_from_existing_11634_zero9_first_photo_candidates':True,
+              'prior_real256_source_sha256':'339b6ed9b69e076b2cdb752b027411b1147fbf7bddf2db3a8619734dc9e02717',
+              'source_photo_and_observation_overlap_with_any_prior':False,
+              'one_independent_observation_per_taxon':True,
+              'photo_shard_sha256':digests
+          }
+          Path('source/manifest.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+          print('MOIS_NEW_1024_REAL_ORIGINAL_PHOTO_SOURCE_FROZEN',digests,flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-first256-91species-appended-and-next1024-palette-source
+          path: |
+            updated/
+            source/
+          retention-days: 90
+          if-no-files-found: error
+  measure-original-next1024:
+    needs: integrate-91-and-fix-wave2-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-first256-91species-appended-and-next1024-palette-source
+          path: current
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bootstrap unchanged FCP original ROI-v4
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Actually fetch 1024 NEW original photos and measure all nine numerical flower-region colour components
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-species-first-w2-rate"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work \
+            --source current/source --runtime "$RUNNER_TEMP/fcp" \
+            --sam "$RUNNER_TEMP/sam" --group 0 --output measured
+      - name: Verify all genuine original 1024 terminals and preserve technical unknowns
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import numpy as np,pandas as pd
+          from scripts.acquisition.mois_full_index_real_original_photo_measure import sha,HUES
+          from scripts.analysis.mois_species_first_palette9 import class_labels,PALETTE
+          allframes=[];receipts=[]
+          for n in range(4):
+              original=pd.read_csv(f'current/source/shards/shard-{n:03d}.csv',dtype=str,keep_default_na=False)
+              actual=Path(f'measured/shard_{n:03d}/photos.csv')
+              receipt=Path(f'measured/shard_{n:03d}/receipt.json')
+              df=pd.read_csv(actual,dtype=str,keep_default_na=False)
+              r=json.loads(receipt.read_text())
+              assert len(df)==len(original)==256
+              assert df.photo_id.is_unique and set(df.photo_id)==set(original.photo_id)
+              assert r['source_sha256']==sha(Path(f'current/source/shards/shard-{n:03d}.csv'))
+              assert r['photos_sha256']==sha(actual) and r['photo_colours_measured']
+              allframes.append(df);receipts.append(r)
+          allrows=pd.concat(allframes,ignore_index=True)
+          assert len(allrows)==1024 and allrows.photo_id.is_unique
+          assert allrows.inat_taxon_id.is_unique and allrows.observation_id.is_unique
+          names=['flower_fraction_'+x for x in PALETTE]
+          nums=allrows[names].apply(pd.to_numeric,errors='coerce').to_numpy(float)
+          ok=allrows.morph.isin(HUES).to_numpy(bool) & np.isfinite(nums).all(axis=1) & (nums>=0).all(axis=1) & (nums<=1.00001).all(axis=1) & (abs(np.nan_to_num(nums).sum(axis=1)-1)<=0.001)
+          allrows['strict9_original_photo_numeric']=ok
+          labels=np.full(len(ok),'',dtype=object)
+          labels[ok]=class_labels(nums[ok])
+          allrows['nine_palette_dominant_label']=labels
+          for col in names:
+              allrows.loc[~ok,col]=''
+          path=Path('measured/mois_next1024_genuine_original9_and_unknowns.csv.gz')
+          allrows.to_csv(path,index=False,compression='gzip')
+          summary={
+              'schema':'mois_species_first_real1024_wave2_actual_photo_roi9_v1',
+              'new_distinct_original_photo_attempts':1024,
+              'genuine_strict9_numeric_success':int(ok.sum()),
+              'nine_colour_dominant_label_success':int((labels!='').sum()),
+              'new_technical_unknowns':int((~ok).sum()),
+              'all_1024_real_terminal_receipts':{str(i):sha(Path(f'measured/shard_{i:03d}/receipt.json')) for i in range(4)},
+              'duplicate_original_photo_or_observation_or_taxon':False,
+              'species_fixed_biological_hue_proven':False,
+              'GBIF_occurrence_downloaded':False}
+          Path('measured/mois_next1024_actual_roi9_receipt.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
+          print('MOIS_SPECIES_FIRST_WAVE2_ACTUAL1024_NEW_ROI9',json.dumps(summary,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-zero9-species-first-wave2-1024-actual-original9
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn

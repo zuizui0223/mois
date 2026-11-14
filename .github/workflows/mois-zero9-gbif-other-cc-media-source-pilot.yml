@@ -1,0 +1,92 @@
+name: MOIS actual other-GBIF-provider CC still-image metadata rescue pilot for zero numerical ROI taxa
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/acquisition/mois_zero9_gbif_other_cc_media_pilot.py
+      - tests/test_mois_zero9_gbif_other_cc_media_pilot.py
+      - .github/workflows/mois-zero9-gbif-other-cc-media-source-pilot.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-zero9-noninat-other-provider-CC-photo-metadata-pilot
+  cancel-in-progress: false
+jobs:
+  source-only-official-gbif-taxonomy-and-licensed-media:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PRIOR_HUE_ATLAS_RUN: '43448044044'
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline regressions on name, media, licence and original-source overlap safeguards
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_zero9_gbif_other_cc_media_pilot.py -v
+          python -m py_compile scripts/acquisition/mois_zero9_gbif_other_cc_media_pilot.py
+      - name: Recover signed post-wave47 atlas with 2229 still zero-numeric ROI taxa; no old image pixels
+        run: |
+          set -euo pipefail
+          mkdir -p signed
+          gh run download "$PRIOR_HUE_ATLAS_RUN" --repo "$REPO" \
+            --name mois-fortyseventh4096-verified-append-fortyeighth-prioritized-original-source \
+            --dir signed
+          python - <<'PY'
+          from pathlib import Path
+          import json,pandas as pd
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          src=Path('signed/updated/mois_species_first_42111_after_fortyseventh.csv.gz')
+          prior=json.loads(Path('signed/updated/receipt.json').read_text())
+          assert prior['schema']=='mois_species_first_fortyseventh4096_append_fortyeighth4096_v1'
+          assert prior['source_taxa_total']==42111
+          assert prior['source_taxa_with_numerical_nineROI']==39882
+          assert prior['source_taxa_without_nineROI']==2229
+          assert prior['source_taxa_with_clear_sampled_nine_palette']==39138
+          assert sha256(src)==prior['output_sha256']['atlas']
+          assert sha256(src)=='0b2f4ac9b7598c89f4dc84235ed010f3e3fe91a3ab318b8fd39b66fbc0c466e4'
+          print('MOIS_ZERO9_EXISTING42111_AUTHENTIC_SIGNED_ATLAS_VERIFIED',flush=True)
+          PY
+      - name: Ask public GBIF v2 exact COL XR species match and occurrence StillImage media metadata from OTHER providers
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_zero9_gbif_other_cc_media_pilot \
+            --atlas signed/updated/mois_species_first_42111_after_fortyseventh.csv.gz \
+            --sample 48 --pages 2 --page-limit 30 --pace 0.25 \
+            --output other_source_pilot
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('other_source_pilot/receipt.json')
+          d=json.loads(p.read_text())
+          assert d['schema']=='mois_zero9_exact_colxr_gbif_other_provider_cc_image_metadata_pilot_v1'
+          assert d['original_source_zero_numeric_taxa_total']==2229
+          assert d['selected_zero9_binomial_taxa_sample']==48
+          assert d['original_photo_pixels_downloaded']==0
+          assert d['nine_fraction_flower_colour_measurements']==0
+          assert d['new_species_photo_hue_labels']==0
+          assert d['frozen_93m_ID_overlap_not_audited_for_other_source']
+          assert d['photo_candidate_urls_not_verified_to_show_flowers']
+          print('MOIS_GBIF_OTHER_PROVIDER_SOURCE_ONLY_REAL_API_RECEIPT',
+                json.dumps({k:d[k] for k in (
+                   'selected_zero9_binomial_taxa_sample',
+                   'official_colxr_exact_accepted_species_count',
+                   'selected_taxa_with_noninat_CC_stillimages',
+                   'noninat_CC_candidate_media_metadata')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-zero9-other-provider-gbif-colxr-CC-still-photo-metadata-pilot
+          path: other_source_pilot/
+          retention-days: 90
+          if-no-files-found: warn

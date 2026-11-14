@@ -1,0 +1,104 @@
+name: MOIS new post-snapshot two genuine nine-hue taxa official GBIF COL XR name match
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_postsnapshot_11_original_new2_COLXR.py
+      - tests/test_mois_postsnapshot_11_original_new2_COLXR.py
+      - .github/workflows/mois-postsnapshot-real11-GBIF-COLXR-new2-names.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-GBIF-COLXR-postsnapshot-new-2-original-photo-hue-species
+  cancel-in-progress: false
+jobs:
+  exact-COLXR-for-only-new-photo9-taxa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      VERIFIED_APPEND_RUN: '43561529394'
+      PRIOR_ACCEPTED_RUN: '43470702406'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: No-network taxonomy and photographic hue status tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m unittest discover -s tests -p test_mois_postsnapshot_11_original_new2_COLXR.py -v
+      - name: Verify complete 11-original 3-numeric ROI9 append and reuse previous 37077 accepted names
+        run: |
+          set -euo pipefail
+          src_digest="$(gh api "repos/$REPO/actions/runs/$VERIFIED_APPEND_RUN/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.name=="mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append") | .digest')"
+          test "$src_digest" = 'sha256:d9a3ae579b0203eb32a16c8c215da5da6c1f01559a9f14c455928a93ab9a58dd'
+          test "$(gh api "repos/$REPO/actions/runs/$VERIFIED_APPEND_RUN/jobs?per_page=100" \
+            --jq '[.jobs[] | select(.name=="authenticate-and-append-source-signed-real-originals" and .conclusion=="success")] | length')" = 1
+          test "$(gh api "repos/$REPO/actions/runs/$PRIOR_ACCEPTED_RUN" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/$PRIOR_ACCEPTED_RUN/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.name=="mois-colxr-fiftysixth-one-new-real-photo-hue-accepted-nine-fractions") | .digest')" = 'sha256:2db2ab3ad1b2e055b4704943a22e188306fa03ff10beeb3c08e9be68868d015f'
+          mkdir -p photo prior
+          gh run download "$VERIFIED_APPEND_RUN" --repo "$REPO" \
+            --name mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append --dir photo
+          gh run download "$PRIOR_ACCEPTED_RUN" --repo "$REPO" \
+            --name mois-colxr-fiftysixth-one-new-real-photo-hue-accepted-nine-fractions --dir prior
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.analysis.mois_gbif_colxr_batch_match import source_sha
+          p=Path('photo/mois_42111_taxa_after_post_snapshot_5_signed_waves.csv.gz')
+          d=json.loads(Path('photo/receipt.json').read_text())
+          assert d['schema']=='mois_post20261028_five_true_new_original_photo_ROI9_42111_append_v1'
+          assert d['new_clear_nine_palette_photo_labels']==2
+          assert d['cumulative_nominal_taxa_with_numeric_nineROI']==39885
+          assert source_sha(p)==d['outputs_SHA256']['updated_atlas']
+          previous=json.loads(Path('prior/receipt.json').read_text())
+          assert previous['schema']=='mois_species_first_real_wave56_gbif_colxr_new_names_v1'
+          assert previous['current_exact_colxr_accepted_species']==37077
+          old=Path('prior/all_current_photo9_gbif_colxr_names.csv.gz')
+          assert source_sha(old)==previous['signed_file_SHA256'][old.name]
+          print('MOIS_SIGNED_NEW2_PHOTO9_AND_PRIOR37077_COLXR_NAMES_SOURCE_VERIFIED',flush=True)
+          PY
+      - name: Official GBIF COL XR exact accepted name matching for ONLY new two photographed hue taxa
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_postsnapshot_11_original_new2_COLXR \
+            --atlas photo/mois_42111_taxa_after_post_snapshot_5_signed_waves.csv.gz \
+            --append-receipt photo/receipt.json \
+            --prior-names prior/all_current_photo9_gbif_colxr_names.csv.gz \
+            --prior-receipt prior/receipt.json \
+            --output current_gbif --pause 1
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('current_gbif/receipt.json').read_text())
+          assert d['schema']=='mois_postsnapshot_11_real_original_photos_COLXR_new_two_colour_names_v1'
+          assert d['source_genuine_numeric9_taxa']==39885
+          assert d['source_clear_sampled_photo_hue_taxa']==39147
+          assert d['previous_exact_accepted_COLXR_species']==37077
+          assert 0<=d['new_clear_photo_hue_taxa_name_eligible']<=2
+          assert 0<=d['new_exact_accepted_COLXR_species']<=2
+          assert d['cumulative_exact_accepted_COLXR_species']==37077+d['new_exact_accepted_COLXR_species']
+          assert not d['GBIF_occurrence_authenticated_download_submitted']
+          print('MOIS_REAL_POSTSNAPSHOT_2_NEW9HUE_GBIF_COLXR_ACCEPTED_RESULT',
+            json.dumps({k:d[k] for k in (
+               'new_clear_photo_hue_taxa_name_eligible',
+               'new_exact_accepted_COLXR_species',
+               'cumulative_exact_accepted_COLXR_species',
+               'GBIF_ISEA3H8_SQL_unsubmitted_files')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-postsnapshot-new2-genuine-photo-hue-GBIF-COLXR-accepted-numeric9-traits
+          path: current_gbif/
+          retention-days: 90
+          if-no-files-found: warn

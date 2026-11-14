@@ -1,0 +1,124 @@
+name: MOIS GBIF COL XR v2 batch-calibrated full nine-hue species name reconciliation
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_gbif_colxr_batch_match.py
+      - tests/test_mois_gbif_colxr_batch_match.py
+      - .github/workflows/mois-gbif-colxr-batch-calibrated-full.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-gbif-colxr-full-nine-colour-batch-calibrated
+  cancel-in-progress: false
+jobs:
+  independent-source-calibration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      GET_RUN: '42931715566'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test current GBIF v2 POST batch name usage output and biological kingdom gate
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_batch_match.py -v
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_nine_palette_name_pilot.py -v
+      - name: Get previously GET-verified 138 exact COL XR species keys
+        run: |
+          set -euo pipefail
+          mkdir -p previous
+          gh run download "$GET_RUN" --repo "$REPO" \
+            --name mois-gbif-real144-corrected138-colxr-100km-actual-occurrence-pilot \
+            --dir previous
+          test -f previous/corrected/mois_real144_138_exact_accepted_species_keys.csv
+      - name: Probe one 138-species real POST and block all downstream queries if COL keys disagree
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_batch_match \
+            --mode calibrate \
+            --source previous/corrected/mois_real144_138_exact_accepted_species_keys.csv \
+            --output calibrated.json
+          python - <<'PY'
+          import json
+          d=json.load(open('calibrated.json'))
+          assert d['post_identical_exact_species_keys']==138 and d['mismatch_count']==0,d
+          print('MOIS_GBIF_V2_POST_KEYS_EXACTLY_SAME_AS_138_SIGNED_GET_NAMES',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-gbif-v2-batch-POST-calibration-138-exact-COLXR-keys
+          path: calibrated.json
+          retention-days: 90
+          if-no-files-found: warn
+  full-colxr-name-reconciliation:
+    needs: independent-source-calibration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_RUN: '42925844766'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned data reader
+        run: python -m pip install -q pandas==2.2.3 numpy==2.1.3
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-gbif-v2-batch-POST-calibration-138-exact-COLXR-keys
+          path: calibrated
+      - name: Read only authentic 42,111-species nine-hue roster, SHA pinned
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh run download "$SOURCE_RUN" --repo "$REPO" \
+            --name mois-real1280-wave2-cumulative-9palette-and-fresh-wave3-source \
+            --dir source
+          python - <<'PY'
+          from scripts.analysis.mois_gbif_colxr_batch_match import source_sha
+          p='source/global_after1280/mois_42111_species_palette9_GBIF_name_roster.csv.gz'
+          assert source_sha(p)=='38e456db80a120eea8a500dca389923123b3a26d6fcd65c5281bf2699e0866c0'
+          print('MOIS_GBIF_ALL_NINE_COLOUR_SOURCE_ROSTER_PINNED',flush=True)
+          PY
+      - name: Match all source-named photographed colour taxa via GBIF official 250-query COL XR batch POST
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_batch_match \
+            --mode full \
+            --source source/global_after1280/mois_42111_species_palette9_GBIF_name_roster.csv.gz \
+            --calibration calibrated/calibrated.json \
+            --chunk-size 250 --pause 1.0 --output matched
+          python - <<'PY'
+          import json
+          d=json.load(open('matched/receipt.json'))
+          assert d['actual_requested_nominal_taxa']>=20000
+          assert d['palette_count_in_source']==9
+          assert d['successful_exact_accepted_colxr_species']>0
+          assert d['GBIF_occurrence_records_downloaded']==0
+          print('MOIS_GBIF_ALL_HUE_NAMES_SOURCE_INTEGRITY_PASS',
+                d['actual_requested_nominal_taxa'],
+                d['successful_exact_accepted_colxr_species'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-global-full-nine-hue-species-GBIF-COLXR-batch-name-reconciliation
+          path: matched/
+          retention-days: 90
+          if-no-files-found: warn

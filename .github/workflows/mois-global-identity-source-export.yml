@@ -1,0 +1,73 @@
+name: MOIS existing global ROI9 observation-identity audit source export
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-global-identity-source-export.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  existing-numerical-source-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 9f6267b80adfe769f8f7edd82d5133b8811abb02
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned source readers and test original classifier
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_species_first_palette9.py -v
+      - name: Download only archived numerical outcomes, never photo image bytes
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/zuizui0223/mois/actions/artifacts/12705066198/zip' \
+            --output source.zip
+      - name: Verify and export original photo identity and existing numeric nine fractions
+        run: |
+          python - <<'PY'
+          import hashlib,io,json,re,shutil,zipfile
+          from pathlib import Path
+          import pandas as pd
+          zbytes=Path('source.zip').read_bytes()
+          assert hashlib.sha256(zbytes).hexdigest()=='fd7a9462f1832c2d6405611bbc71d45e49fac1f8e098069f37945eb19fee4247'
+          with zipfile.ZipFile(io.BytesIO(zbytes)) as z:
+              raw=z.read('mois_1181146_unique_original_photo_continuous9_by_arm.parquet')
+          assert hashlib.sha256(raw).hexdigest()=='3fbd0f0ec7eb347b3bbc7ab509ec9312ec6d797ed932dcf7bb425959898c3835'
+          d=pd.read_parquet(io.BytesIO(raw))
+          assert len(d)==1181146 and d.photo_id.is_unique and int(d.strict9.sum())==451643
+          out=Path('output');out.mkdir()
+          ids=['photo_id','observation_id','inat_taxon_id','source_subarm','strict9']
+          fractions=['strict9_'+c for c in ('white','yellow','orange','red','pink','magenta','purple','blue','bronze')]
+          d[ids].to_csv(out/'all_1181146_photo_identity_records.csv.gz',index=False,compression={'method':'gzip','mtime':0})
+          d.loc[d.strict9,ids+fractions].to_csv(out/'strict9_451643_existing_photo_vectors.csv.gz',index=False,compression={'method':'gzip','mtime':0})
+          s=d.observation_id.fillna('').astype(str)
+          d['id_kind']='other'
+          d.loc[s.str.fullmatch(r'[1-9][0-9]*'),'id_kind']='numeric'
+          d.loc[s.str.fullmatch(r'[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}'),'id_kind']='uuid'
+          d.loc[s.eq(''),'id_kind']='missing'
+          profile=d.groupby(['source_subarm','id_kind'],dropna=False).agg(photo_rows=('photo_id','size'),strict9=('strict9','sum')).reset_index()
+          profile.to_csv(out/'source_namespace_profile.csv',index=False)
+          shutil.copy('scripts/analysis/mois_species_first_palette9.py',out/'mois_species_first_palette9.py')
+          shutil.copy('tests/test_mois_species_first_palette9.py',out/'test_mois_species_first_palette9.py')
+          hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in out.iterdir()}
+          r={'schema':'mois_global_alias_audit_source_export_v1','source_artifact_id':12705066198,'source_zip_sha256':hashlib.sha256(zbytes).hexdigest(),'source_parquet_sha256':hashlib.sha256(raw).hexdigest(),'photo_rows':len(d),'strict9_rows':int(d.strict9.sum()),'new_original_images':0,'new_ROI_inferences':0,'source_profile':profile.to_dict(orient='records'),'output_sha256':hashes}
+          (out/'receipt.json').write_text(json.dumps(r,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(r,indent=2,sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-global-photo-identity-existing-numeric9-audit-inputs-20261114
+          path: output/
+          retention-days: 90
+          if-no-files-found: error

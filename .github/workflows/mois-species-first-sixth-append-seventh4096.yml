@@ -1,0 +1,255 @@
+name: MOIS sixth 4096 signed ROI append and seventh 4096 fresh-original photo inference
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_species_first_sixth_to_seventh.py
+      - tests/test_mois_species_first_sixth_to_seventh.py
+      - scripts/analysis/mois_species_first_seventh_audit.py
+      - .github/workflows/mois-species-first-sixth-append-seventh4096.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-species-first-sixth-frozen-to-seventh4096
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify signed 16 sixth workers, unknowns and unseen seventh source unit tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_species_first_sixth_to_seventh.py -v
+          python -m compileall -q scripts/analysis/mois_species_first_sixth_to_seventh.py scripts/analysis/mois_species_first_seventh_audit.py
+  real-sixth-append-and-seventh-source:
+    needs: tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      COMPLETED_SIXTH: '42970701175'
+      FIFTH_SOURCE_RUN: '42970701175'
+      FIRST_RUN: '42913236517'
+      SECOND_RUN: '42925844766'
+      THIRD_RUN: '42950141749'
+      FOURTH_RUN: '42959597251'
+      GLOBAL_SOURCE_RUN: '42846819580'
+      BASE_TAG: mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Gate on all sixth real photo worker SUCCESS plus full audit SUCCESS
+        id: gate
+        run: |
+          set -euo pipefail
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          state=$(gh run view "$COMPLETED_SIXTH" --repo "$REPO" --json conclusion --jq .conclusion)
+          if [ "$state" != success ]; then
+            echo "Cannot append unsigned sixth original ROI9: $state"
+            exit 0
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - name: Download only historical signed metadata, original worker receipts and newly completed photo ROIs
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          mkdir -p frozen audited workers baseline first second third fourth global
+          gh release download "$BASE_TAG" --repo "$REPO" --dir baseline \
+            --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet
+          gh run download "$FIRST_RUN" --repo "$REPO" \
+            --name mois-first256-91species-appended-and-next1024-palette-source --dir first
+          gh run download "$SECOND_RUN" --repo "$REPO" \
+            --name mois-real1280-wave2-cumulative-9palette-and-fresh-wave3-source --dir second
+          gh run download "$THIRD_RUN" --repo "$REPO" \
+            --name mois-real2304-wave3-361spec-9palette-and-fresh-wave4-source --dir third
+          gh run download "$FOURTH_RUN" --repo "$REPO" \
+            --name mois-fourth-genuine-ROI9-append-and-fifth1024-new-species-photo-source --dir fourth
+          gh run download "$FIFTH_SOURCE_RUN" --repo "$REPO" \
+            --name mois-fifth1024-9roi-integrated-and-sixth4096-source --dir frozen
+          gh run download "$COMPLETED_SIXTH" --repo "$REPO" \
+            --name mois-sixth4096-actual9-fully-verified-original-photo-numeric --dir audited
+          for group in 0 1 2 3; do
+            gh run download "$COMPLETED_SIXTH" --repo "$REPO" \
+              --name "mois-sixth4096-genuine-original-worker-$group" \
+              --dir "workers/mois-sixth4096-genuine-original-worker-$group"
+          done
+          gh run download "$GLOBAL_SOURCE_RUN" --repo "$REPO" \
+            --name mois-global-16groups-full93m-zero9-next-first-photo-and-fallbacks --dir global
+      - name: Audit genuine sixth 16 original terminals and append 1406 independently observed numerical9 taxa
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_species_first_sixth_to_seventh \
+            --atlas frozen/after_fifth/mois_species_first_42111_after4352.csv.gz \
+            --source frozen/source --workers workers --audited audited \
+            --baseline baseline/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --first first/updated/mois_genuine_first256_strict9_append_only.parquet \
+            --second second/global_after1280/mois_real1024_wave2_original9_photo_delta.parquet \
+            --third third/cumulative/mois_wave3_actual1024_strict9_photo_delta.parquet \
+            --fourth fourth/after_wave4/mois_wave4_genuine_original1024_strict9_delta.parquet \
+            --fifth frozen/after_fifth/mois_fifth1024_real_original9_photo_delta.parquet \
+            --global-options global/mois_global_species_first_zero9_fallback_photo_options.csv.gz \
+            --quota 4096 --output updated
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          r=json.loads(Path('updated/receipt.json').read_text())
+          assert r['schema']=='mois_species_first_sixth4096_authentic_append_seventh4096_v1'
+          assert r['sixth_new_original_photo_attempts']==4096
+          assert r['sixth_new_strict_numeric_nineROI']==1406
+          assert r['sixth_new_clear_dominant_palette']==1087
+          assert r['sixth_new_technical_unknown']==2690
+          assert r['source_taxa_with_numerical_nineROI']==33024
+          assert r['source_taxa_with_clear_dominant_nine_palette']==30255
+          assert r['cumulative_original_photo_attempts']==1189594
+          assert r['cumulative_original_numerical_nineROI']==454625
+          assert r['seventh_source_distinct_original_photos']==4096
+          for k,name in [('atlas','mois_species_first_42111_after_sixth.csv.gz'),
+                         ('delta','mois_sixth4096_real_original9_photo_delta.parquet'),
+                         ('next','mois_seventh4096_prioritized_original_photo_queue.csv')]:
+              assert r['output_sha256'][k]==sha256(Path('updated')/name)
+          print('MOIS_SIXTH_SIGNED_APPEND_AND_SEVENTH_SOURCE_VERIFIED',flush=True)
+          PY
+      - name: Freeze sixteen independent 256-photo seventh original image sources by SHA
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p source/shards
+          python - <<'PY'
+          import json,pandas as pd
+          from pathlib import Path
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          queue=pd.read_csv('updated/mois_seventh4096_prioritized_original_photo_queue.csv',
+                            dtype=str,keep_default_na=False)
+          assert len(queue)==4096 and queue.photo_id.is_unique and queue.observation_id.is_unique and queue.inat_taxon_id.is_unique
+          assert set(queue.shard)==set(str(i) for i in range(16))
+          hashes={}
+          for i in range(16):
+              block=queue.loc[queue.shard==str(i)]
+              assert len(block)==256
+              file=Path('source/shards')/f'shard-{i:03d}.csv'
+              block.to_csv(file,index=False,lineterminator='\n')
+              hashes[str(i)]=sha256(file)
+          r=json.loads(Path('updated/receipt.json').read_text())
+          manifest={"schema":"mois_full_source_observation_sampling_cohort_v1",
+                    "source_arm":"MOIS_SPECIES_FIRST_SEVENTH_PRIORITIZED4096",
+                    "colour_measured":False,
+                    "work_units":16,"worker_ids":list(range(16)),
+                    "new_photo_attempts_planned":4096,
+                    "source_previous_attempts":1189594,
+                    "source_full_original_photo_IDs":93209351,
+                    "photo_shard_sha256":hashes,
+                    "first_unmeasured_taxa":r['seventh_source_first_unmeasured'],
+                    "new_image_on_unresolved_taxon":r['seventh_source_retry_unclear_taxa'],
+                    "source_prior_no_reused_original_photo_or_observation":True}
+          Path('source/manifest.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')
+          print('MOIS_SEVENTH4096_ORIGINAL_SOURCES_SHA_FROZEN',r['seventh_source_first_unmeasured'],
+                r['seventh_source_retry_unclear_taxa'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-sixth4096-real-append-seventh4096-prioritized-photo-source
+          path: |
+            updated/
+            source/
+          retention-days: 90
+          if-no-files-found: error
+  seventh-original-photo-workers:
+    needs: real-sixth-append-and-seventh-source
+    if: needs.real-sixth-append-and-seventh-source.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: [0,1,2,3]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-sixth4096-real-append-seventh4096-prioritized-photo-source
+          path: frozen
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reuse unmodified frozen FCP ROI-v4 YOLO11/EfficientSAM source model
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Original photo acquisition and real nine-component inference, 4 x 256 photos per worker
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-seventh4096-photo-provider"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work \
+            --source frozen/source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --group "${{ matrix.group }}" --output measured
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-seventh4096-real-original-worker-${{ matrix.group }}
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+  seventh-original-terminal-audit:
+    needs: [real-sixth-append-and-seventh-source, seventh-original-photo-workers]
+    if: needs.real-sixth-append-and-seventh-source.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-sixth4096-real-append-seventh4096-prioritized-photo-source
+          path: frozen
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-seventh4096-real-original-worker-*
+          path: workers
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Strict 16 original worker SHA audit, complete original photo IDs and technical unknowns
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m scripts.analysis.mois_species_first_seventh_audit \
+            --source frozen/source --workers workers --output audit
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-seventh4096-complete-signed-original-nineROI-audit
+          path: audit/
+          retention-days: 90
+          if-no-files-found: warn

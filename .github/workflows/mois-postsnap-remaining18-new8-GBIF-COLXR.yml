@@ -1,0 +1,98 @@
+name: MOIS official COL XR increment for remaining18 eight newly clear original-photo hues
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-postsnap-remaining18-new8-GBIF-COLXR.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-GBIF-COLXR-remaining18-new8-after-43566369683-once
+  cancel-in-progress: false
+jobs:
+  incremental-COLXR-for-verified-new-clear-original-photo-hues:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PHOTO_RUN: '43566369683'
+      PRIOR_GBIF_RUN: '43566543619'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline exact-name classifier contract and new incremental source compile
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m py_compile scripts/analysis/mois_postsnap1909_remaining18_new8_COLXR.py
+          python -m unittest discover -s tests -p test_mois_postsnapshot_11_original_new2_COLXR.py -v
+      - name: Check signed remaining18 source, worker, independent audit, append and prior 37095 COL XR accepted ledger
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/$PHOTO_RUN" --jq .conclusion)" = success
+          for job in freeze-only-remaining-unattempted-originals actually-fetch-and-measure-only-next-unused-original-pixels independent-remainder18-original-numeric-nine-audit append-only-after-all-signed-complete; do
+            test "$(gh api "repos/$REPO/actions/runs/$PHOTO_RUN/jobs?per_page=100" --jq "[.jobs[] | select(.name==\"$job\" and .conclusion==\"success\")] | length")" = 1
+          done
+          test "$(gh api "repos/$REPO/actions/runs/$PHOTO_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-postsnap-remaining18-genuine-ROI9-cumulative-atlas") | .digest')" = 'sha256:17da6386cc2970f8f55f6ee5373e0565027cac7d6c9f2f4d2fc84c532f91df6d'
+          test "$(gh api "repos/$REPO/actions/runs/$PHOTO_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-postsnap-remaining18-genuine-original-independent-nine-audit") | .digest')" = 'sha256:b551a593e7fa34c33cebc339e8dbd9eee5725938b58db8142d8db38e0dd4449e'
+          test "$(gh api "repos/$REPO/actions/runs/$PRIOR_GBIF_RUN" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/$PRIOR_GBIF_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-first64-new17-only-official-COLXR-name-and-numeric9-accepted-traits") | .digest')" = 'sha256:81f785527f147c537f659fd2a4a56d857808f4027c156e1b54f821f3524509de'
+          for previous in $(gh run list --repo "$REPO" --workflow mois-postsnap-remaining18-new8-GBIF-COLXR.yml --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId"); do
+            echo "MOIS_REMAINING18_NEW8_COLXR_ALREADY_ATTEMPTED $previous; refuse requery"; exit 1
+          done
+          mkdir -p photo prior
+          gh run download "$PHOTO_RUN" --repo "$REPO" --name mois-postsnap-remaining18-genuine-ROI9-cumulative-atlas --dir photo
+          gh run download "$PRIOR_GBIF_RUN" --repo "$REPO" --name mois-first64-new17-only-official-COLXR-name-and-numeric9-accepted-traits --dir prior
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.analysis.mois_gbif_colxr_batch_match import source_sha
+          a=json.loads(Path('photo/receipt.json').read_text())
+          old=json.loads(Path('prior/receipt.json').read_text())
+          assert a['stage']=='full_42111_taxon_atlas_new1909_true_photo9_appended'
+          assert a['nominal_taxa_with_genuine_nineROI']==39911
+          assert a['nominal_taxa_with_clear_sampled_photo_hue']==39172
+          assert a['new_strict9_numeric_original_photos']==8 and a['new_clear_photo_hue_taxa']==8
+          assert a['output_SHA256']['mois_42111_taxa_postsnap_new1909_remaining18_original_photo9.csv.gz']=='588f74124ff2982af5ada2fe8c0258b0e28f9d91010e0451b0b3023e7c67fbab'
+          assert source_sha('photo/mois_42111_taxa_postsnap_new1909_remaining18_original_photo9.csv.gz')=='588f74124ff2982af5ada2fe8c0258b0e28f9d91010e0451b0b3023e7c67fbab'
+          assert old['cumulative_exact_accepted_COLXR_species']==37095
+          assert source_sha('prior/current_all_photo9_COLXR_names.csv.gz')==old['signed_outputs_SHA256']['current_all_photo9_COLXR_names.csv.gz']
+          print('MOIS_VERIFIED_NEW8_OFFICIAL_GBIF_COLXR_NAME_PROVENANCE',flush=True)
+          PY
+      - name: Official COL XR match ONLY new clear photo9 species, retain ambiguous names
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_postsnap1909_remaining18_new8_COLXR \
+            --atlas photo/mois_42111_taxa_postsnap_new1909_remaining18_original_photo9.csv.gz \
+            --append-receipt photo/receipt.json \
+            --prior-names prior/current_all_photo9_COLXR_names.csv.gz \
+            --prior-receipt prior/receipt.json \
+            --output gbif_names --pause 1
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          a=json.loads(Path('gbif_names/receipt.json').read_text())
+          assert a['schema']=='mois_postsnapshot_new1909_remaining18_real_original_COLXR_new8_v1'
+          assert a['source_genuine_numeric9_taxa']==39911
+          assert a['source_clear_sampled_photo_hue_taxa']==39172
+          assert a['previous_exact_accepted_COLXR_species']==37095
+          assert 0<=a['new_clear_photo_hue_taxa_name_eligible']<=8
+          assert 0<=a['new_exact_accepted_COLXR_species']<=8
+          assert a['cumulative_exact_accepted_COLXR_species']==37095+a['new_exact_accepted_COLXR_species']
+          assert a['GBIF_occurrence_authenticated_download_submitted'] is False
+          assert a['GBIF_occurrence_records_downloaded']==0
+          print('MOIS_OFFICIAL_GBIF_REMAINING18_NEW8_INCREMENTAL_RESULT',a,flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-remaining18-new8-only-official-COLXR-name-and-numeric9-accepted-traits
+          path: gbif_names/
+          retention-days: 90
+          if-no-files-found: warn
