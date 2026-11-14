@@ -34,11 +34,20 @@ jobs:
              --jq '[.jobs[] | select((.name | startswith("fifteen-disjoint-real-api-strata")) and .conclusion=="success")] | length')"
           test "$jobs" = 15
           mkdir -p prior
+          gh api "repos/$REPO/actions/runs/$ALREADY_QUERIED_RUN/artifacts?per_page=100" > original_15_artifacts.json
+          python - <<'PY'
+          import json
+          x=json.load(open('original_15_artifacts.json'))
+          for group in range(15):
+              name=f'mois-postsnap-new1909-nonnumeric-128taxa-group{group}'
+              artifact=[r for r in x['artifacts'] if r.get('name')==name]
+              assert len(artifact)==1,(group,'source artifact missing or duplicate')
+              assert not artifact[0].get('expired')
+              assert str(artifact[0].get('digest','')).startswith('sha256:')
+          print('MOIS_ALL15_PREVIOUS_ORIGINAL_SOURCE_ARTIFACT_ID_AND_DIGEST_CERTIFIED',flush=True)
+          PY
           for i in $(seq 0 14); do
             name="mois-postsnap-new1909-nonnumeric-128taxa-group$i"
-            count="$(gh api "repos/$REPO/actions/runs/$ALREADY_QUERIED_RUN/artifacts?per_page=100" \
-              --jq "[.artifacts[] | select(.name==\\"$name\\" and .expired==false) | select(.digest | startswith(\\"sha256:\\"))] | length")"
-            test "$count" = 1
             mkdir -p "prior/group$i"
             gh run download "$ALREADY_QUERIED_RUN" --repo "$REPO" \
               --name "$name" --dir "prior/group$i"
