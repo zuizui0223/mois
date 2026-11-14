@@ -56,21 +56,6 @@ jobs:
           assert all(x['status']=='source_queried' and int(x['accepted_unused_photo'])==0 for x in rows)
           print('MOIS_EPOCH2_OFFSET512_SIGNED_NO_NEW_SOURCE_COHORT_COMPLETE',flush=True)
           PY
-      - name: Confirm all prior 640 hashed-taxon cohorts are disjoint before next source query
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import csv,pathlib
-          seen=set()
-          for offset in (0,128,256,384,512):
-              p=pathlib.Path(f'prior_epoch2_offset{offset}/source_taxon_status.csv')
-              rows=list(csv.DictReader(p.open()))
-              ids={x['inat_taxon_id'] for x in rows}
-              assert len(rows)==len(ids)==128 and not (seen & ids),('prior cohort overlap',offset)
-              seen.update(ids)
-          assert len(seen)==640
-          print('MOIS_EPOCH2_PRIOR_640_TAXA_DISJOINT_AND_SIGNED',flush=True)
-          PY
       - name: Require completed epoch2 offset384 signed source and independent exact byte statuses before new hash partition
         run: |
           set -euo pipefail
@@ -178,6 +163,21 @@ jobs:
           assert len(rows)==len({x['inat_taxon_id'] for x in rows})==128
           assert all(x['status']=='source_queried' and int(x['accepted_unused_photo'])==0 for x in rows)
           print('MOIS_EPOCH2_OFFSET0_SIGNED_NO_NEW_SOURCE_COHORT_COMPLETE',flush=True)
+          PY
+      - name: Confirm all prior 640 hashed-taxon cohorts are disjoint before next source query
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv,pathlib
+          seen=set()
+          for offset in (0,128,256,384,512):
+              p=pathlib.Path(f'prior_epoch2_offset{offset}/source_taxon_status.csv')
+              rows=list(csv.DictReader(p.open()))
+              ids={x['inat_taxon_id'] for x in rows}
+              assert len(rows)==len(ids)==128 and not (seen & ids),('prior cohort overlap',offset)
+              seen.update(ids)
+          assert len(seen)==640
+          print('MOIS_EPOCH2_PRIOR_640_TAXA_DISJOINT_AND_SIGNED',flush=True)
           PY
       - name: Gate epoch2 on final offset2176 immutable source-only terminal and 24-taxon byte receipt
         run: |
@@ -292,6 +292,12 @@ jobs:
           print('MOIS_NEW_CREATED_SOURCE_OFFLINE_TIME_GATE_SUCCESS',flush=True)
           PY
           for prior in $(gh run list --repo "$REPO" --workflow mois-20261115-epoch2-offset640-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId"); do
+            if [ "$prior" = "43642768298" ]; then
+              test "$(gh api "repos/$REPO/actions/jobs/132593760925" --jq .conclusion)" = failure
+              test "$(gh api "repos/$REPO/actions/jobs/132593760925" --jq '.steps[] | select(.name=="Query bounded next 128 zero-numeric taxa for only genuinely new created CC original source") | .conclusion')" = skipped
+              echo "MOIS_OFFSET640_PREVIOUS_FAIL_BEFORE_SOURCE_API_NO_REPLAY $prior"
+              continue
+            fi
             echo "MOIS_ALREADY_SCANNED_THIS_SOURCE_EPOCH refuse replay $prior"; exit 1
           done
           python - <<'PY'
