@@ -22,6 +22,16 @@ def select_epoch3_taxa(a, n=128, offset=0):
     z = a.loc[a.after_strict9.eq(0)].copy()
     m.require(len(z)==2200 and z.inat_taxon_id.str.fullmatch(r"\d+").all(),
               "epoch3 target 2,200 prior zero-numeric taxa changed")
+    from pathlib import Path
+    import csv
+    signed=Path("final24/source_taxon_status.csv")
+    m.require(signed.is_file() and m.sha256(signed)=="0890375839630bf345dd4d0dad7f44f28c4e2e5c53f3aa7e4ce777d483bd4630",
+              "prior final24 signed status file missing or byte-corrupt")
+    with signed.open(newline="") as f:
+        excluded={row["inat_taxon_id"] for row in csv.DictReader(f)}
+    m.require(len(excluded)==24,"previous 24 taxon status incomplete")
+    z=z.loc[~z.inat_taxon_id.isin(excluded)].copy()
+    m.require(len(z)==2176,"epoch3 cannot repeat previous final 24 taxa")
     z["priority"] = z.inat_taxon_id.map(
         lambda s: hashlib.sha256(("MOIS-20261115-EPOCH3-DISJOINT-CREATED|"+s).encode()).hexdigest())
     taxa=z.sort_values("priority", kind="stable").iloc[offset:offset+n].inat_taxon_id.tolist()
