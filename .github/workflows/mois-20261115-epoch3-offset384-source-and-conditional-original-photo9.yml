@@ -79,7 +79,7 @@ jobs:
              'f98b8d3a9d3d20f929e11050a152544f69b14aad30f38c85107d1cd8bd727135',
              '619179f6b0f8f80accc9b55d1caa014e6637d62f33ec2ed3005f698503f9ae30')]:
             import subprocess
-            artifacts=get(run,'artifacts')['artifacts']
+            artifacts=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/runs/{run}/artifacts?per_page=100']))['artifacts']
             assert sum(z['name']==name and z['digest']=='sha256:'+digest and not z['expired'] for z in artifacts)==1
             folder=Path('prior_epoch3_'+str(offset));folder.mkdir(exist_ok=True)
             subprocess.run(['gh','run','download',str(run),'--repo',repo,'--name',name,'--dir',str(folder)],check=True)
@@ -175,7 +175,9 @@ jobs:
           # Offset128 already completed source-only SUCCESS and contains zero candidates.
           # Any earlier run of this offset384 workflow is a hard stop, even on retry.
           test "$(gh api "repos/$REPO/actions/runs/43677032522" --jq .conclusion)" = success
-          test "$(gh run list --repo "$REPO" --workflow mois-20261115-epoch3-offset384-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID)] | length")" = 0
+          test "$(gh api "repos/$REPO/actions/runs/43678581907" --jq .conclusion)" = failure
+          test "$(gh api "repos/$REPO/actions/runs/43678581907/artifacts?per_page=100" --jq .total_count)" = 0
+          test "$(gh run list --repo "$REPO" --workflow mois-20261115-epoch3-offset384-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID and .databaseId != 43678581907)] | length")" = 0
           python -m scripts.acquisition.mois_epoch3_new_created_disjoint_photo9 source --atlas latest/atlas.csv.gz --output newest --offset 384
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import csv,json
