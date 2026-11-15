@@ -139,15 +139,33 @@ def scan(source,manifest,partition,out,limit=None):
     pa_keys=pa.array(list(names_by_key),type=pa.string())
     grid=collections.Counter();country=collections.Counter();stats=collections.Counter()
     objects_read=[]
+    import time
     for j,row in enumerate(objects.itertuples(index=False),1):
         require(str(row.key).startswith(BASE),"source file not in pinned snapshot")
-        with client.open_input_file(f"{BUCKET}/{row.key}") as f:
-            pqfile=pq.ParquetFile(f)
-            require(set(wanted).issubset(pqfile.schema_arrow.names),
-                    "required GBIF Parquet field missing")
-            stats["parquet_rows_scanned"]+=pqfile.metadata.num_rows
-            for batch in pqfile.iter_batches(batch_size=131072,columns=wanted):
-                accumulate_arrow_batch(batch,names_by_key,pa_keys,proj,stats,grid,country)
+        # Never count a partial remote Parquet read as a completed object.
+        for attempt in range(3):
+            file_stats=collections.Counter()
+            file_grid=collections.Counter()
+            file_country=collections.Counter()
+            try:
+                with client.open_input_file(f"{BUCKET}/{row.key}") as opened:
+                    pqfile=pq.ParquetFile(opened)
+                    require(set(wanted).issubset(pqfile.schema_arrow.names),
+                            "required GBIF Parquet field missing")
+                    file_stats["parquet_rows_scanned"]+=pqfile.metadata.num_rows
+                    for batch in pqfile.iter_batches(batch_size=131072,columns=wanted):
+                        accumulate_arrow_batch(batch,names_by_key,pa_keys,proj,
+                                               file_stats,file_grid,file_country)
+            except (OSError,RuntimeError,ValueError) as err:
+                if attempt==2:raise
+                print("MOIS_ANON_S3_RETRY_SAME_OBJECT_NO_DOUBLE_COUNT",
+                      row.key,type(err).__name__,flush=True)
+                time.sleep(2**attempt)
+            else:
+                stats.update(file_stats)
+                grid.update(file_grid)
+                country.update(file_country)
+                break
         objects_read.append({"key":row.key,"size":int(row.bytes),"etag":str(row.etag)})
         stats["file_count_scanned"]+=1
         if j%10==0 or j==len(objects):
