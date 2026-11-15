@@ -1,0 +1,85 @@
+name: MOIS epoch4 offset1664 source only terminal SHA audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/mois-20261116-epoch4-offset1664-readonly-terminal-audit.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify-existing-push-source-no-second-run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read existing offset1664 push run and exact ZIP byte-signatures, never run source again
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,io,json,subprocess,time,zipfile,csv,sys
+          from pathlib import Path
+          repo="zuizui0223/mois"
+          fn="mois-20261116-epoch4-offset1664-source-and-conditional-original-photo9.yml"
+          name="mois-20261116-epoch4-offset1664-signed-1231343-ID-disjoint-source"
+          def gh(args):
+              return subprocess.check_output(["gh",*args],stderr=subprocess.STDOUT)
+          runs=[]
+          for i in range(24):
+              runs=json.loads(gh(["run","list","--repo",repo,"--workflow",fn,"--limit","10","--json","databaseId,status,conclusion,headSha,createdAt,workflowName"]))
+              runs=[r for r in runs if r.get("headSha")=="1d5bdffdbe9b57006d3604a1f9e34e3996b94fd5"]
+              if len(runs)==1 and runs[0]["status"]=="completed":break
+              time.sleep(15)
+          assert len(runs)==1,("expected exactly one push source run",runs)
+          r=runs[0];assert r["status"]=="completed" and r["conclusion"]=="success",r
+          rid=r["databaseId"]
+          jobs=json.loads(gh(["api",f"repos/{repo}/actions/runs/{rid}/jobs?per_page=100"]))["jobs"]
+          stage={j["name"]:j["conclusion"] for j in jobs}
+          assert stage.get("source-only-frozen-taxonomy-next-distinct-128")=="success",stage
+          arts=json.loads(gh(["api",f"repos/{repo}/actions/runs/{rid}/artifacts?per_page=100"]))["artifacts"]
+          a=[x for x in arts if x["name"]==name and not x["expired"]]
+          assert len(a)==1,a
+          print("RUN",rid,"DIGEST",a[0]["digest"],"STAGES",stage,flush=True)
+          Path("artifacts").mkdir(exist_ok=True)
+          b=gh(["api",f"repos/{repo}/actions/artifacts/{a[0]['id']}/zip"])
+          assert hashlib.sha256(b).hexdigest()==a[0]["digest"].removeprefix("sha256:")
+          with zipfile.ZipFile(io.BytesIO(b)) as z:
+              ns=set(z.namelist())
+              assert {"receipt.json","source_taxon_status.csv","source_candidates.csv"}<=ns,ns
+              receipt=json.loads(z.read("receipt.json"))
+              files={"source_taxon_status.csv":receipt["source_status_SHA256"],
+                     "source_candidates.csv":receipt["source_candidates_SHA256"]}
+              for fn,sha in files.items():assert hashlib.sha256(z.read(fn)).hexdigest()==sha
+              assert receipt["hash_disjoint_taxon_offset"]==1664,receipt
+              assert receipt["searched_zero_numeric_taxa"]==128
+              assert receipt["source_API_error_count"]==0 and receipt["old_original_photo_obs_ID_overlap"]==0
+              assert receipt["old_original_photo_attempt_ID_count"]==1231343
+              assert receipt["old_all_image_raw_SHA_disjointness_proven"] is False
+              assert receipt["strict9_numeric_photos"]==0 and receipt["original_pixels_fetched"]==0
+              statuses=list(csv.DictReader(io.StringIO(z.read("source_taxon_status.csv").decode())))
+              assert len(statuses)==len({q["inat_taxon_id"] for q in statuses})==128
+              assert all(q["status"]=="source_queried" for q in statuses)
+              n=int(receipt["new_independent_original_photo_candidates"])
+              if n:
+                  assert stage.get("pixel-worker-only-if-novel-original")=="success",stage
+                  assert stage.get("independent-byte-identity-and-strict9-audit")=="success",stage
+                  assert stage.get("formal-append-only-after-independent-audit")=="success",stage
+              else:
+                  assert all(stage.get(s)=="skipped" for s in ("pixel-worker-only-if-novel-original","independent-byte-identity-and-strict9-audit","formal-append-only-after-independent-audit")),stage
+              report={"source_run":rid,"source_zip_byte_sha256":hashlib.sha256(b).hexdigest(),
+                      "receipt_sha256":hashlib.sha256(z.read("receipt.json")).hexdigest(),
+                      "source_status_sha256":files["source_taxon_status.csv"],
+                      "source_candidates_sha256":files["source_candidates.csv"],
+                      "new_candidates":n,"jobs":stage,"source_receipt":receipt}
+              Path("artifacts/verified_source.json").write_text(json.dumps(report,indent=2,sort_keys=True))
+              print(json.dumps(report,indent=2),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261116-epoch4-offset1664-independent-source-verification
+          path: artifacts/
+          retention-days: 90
+          if-no-files-found: error
