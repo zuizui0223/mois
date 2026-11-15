@@ -54,3 +54,14 @@
 - .github/workflows/mois-gbif-180-colour-country-holdout-20261115.yml：発見標本と重複しない180種の検証。
 - .github/workflows/mois-gbif-colxr-37104-global-cube-auth-gate-20261115.yml：149件全GBIF ISEA3H8 SQLリストと認証ゲート。
 - 全42111分類群技術QA＋37,104種の撮影9色traits ZIP SHA256 eff371f8da3a70d23371a1b78236e089da1206b82ec9fb68ef860926e2965cf4。GBIF実取得180種ZIP SHA256 2181898c7428172cd039b208a5e3fc5169c12d3a8d324bef05a84f3a6a89a446。
+
+
+## 追補（2026-11-15）：独立180種で南米の色別差は再現せず
+
+上記の「独立holdoutジョブ待ち」は終了した。[run #43708230511](https://github.com/zuizui0223/mois/actions/runs/43708230511) が正式SUCCESS、source ZIP/artifact #14159523021 digest ec1df9eb35e856b1020e92a755aff8be8c121b640602e8e3191d528cc531df1aを確認。先の180種とCOL XR accepted keyの重複0、9色×20種ずつ。
+
+南米のorange対purple presenceは探索14/20対2/20 → holdout **8/20対8/20**。独立9色×南米10,000 permutation p=0.8569、GBIF記録数とphoto statusを調整した9色GLM-LRT p=0.8255、orange>purple Fisher p=0.6262。**元の南米色別パターンは支持されない。**
+
+全360受容種のphoto evidence statusは provisional_single 205、multicolour_candidate 93、sampled_multicolour 59、sampling_consensus_single僅か3種。写真modalとmean9最大色が不一致59種。GBIF country breadthの白写真係数はdiscovery p=0.735、holdout p=0.0095、統合 p=0.0439 と標本間で異なり、一般則や種全域の白花固定色の証拠に採用しない。
+
+統合した完全なソース・判定・GBIF空間格子認証ゲートは [docs/MOIS_REAL_GBIF_360_HOLDOUT_PHOTOHUE_QA_20261115.md](MOIS_REAL_GBIF_360_HOLDOUT_PHOTOHUE_QA_20261115.md)。全球37,104種のGBIF SQL149件は公式validator HTTP201を通過したが、GitHub GBIF Secrets未設定のため正式なspecies×gridとDOIは未取得である。
