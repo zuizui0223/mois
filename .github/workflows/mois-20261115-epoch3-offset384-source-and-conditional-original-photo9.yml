@@ -68,6 +68,7 @@ jobs:
           rows=list(csv.DictReader((p/"source_taxon_status.csv").open()))
           assert len(rows)==len({x["inat_taxon_id"] for x in rows})==128
           assert all(x["status"]=="source_queried" for x in rows)
+          repo='zuizui0223/mois'
           # Independently require earlier epoch3 offsets to be byte-consistent and taxon-disjoint.
           for offset,run,name,digest,receipt_sha,status_sha in [
             (0,43671381513,'mois-20261115-epoch3-offset0-signed-1231341-ID-disjoint-source',
@@ -176,8 +177,10 @@ jobs:
           # Any earlier run of this offset384 workflow is a hard stop, even on retry.
           test "$(gh api "repos/$REPO/actions/runs/43677032522" --jq .conclusion)" = success
           test "$(gh api "repos/$REPO/actions/runs/43678581907" --jq .conclusion)" = failure
+          test "$(gh api "repos/$REPO/actions/runs/43678636180" --jq .conclusion)" = failure
+          test "$(gh api "repos/$REPO/actions/runs/43678636180/artifacts?per_page=100" --jq .total_count)" = 0
           test "$(gh api "repos/$REPO/actions/runs/43678581907/artifacts?per_page=100" --jq .total_count)" = 0
-          test "$(gh run list --repo "$REPO" --workflow mois-20261115-epoch3-offset384-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID and .databaseId != 43678581907)] | length")" = 0
+          test "$(gh run list --repo "$REPO" --workflow mois-20261115-epoch3-offset384-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID and .databaseId != 43678581907 and .databaseId != 43678636180)] | length")" = 0
           python -m scripts.acquisition.mois_epoch3_new_created_disjoint_photo9 source --atlas latest/atlas.csv.gz --output newest --offset 384
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import csv,json
