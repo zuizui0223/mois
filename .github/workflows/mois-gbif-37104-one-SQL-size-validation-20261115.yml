@@ -1,0 +1,71 @@
+name: MOIS one GBIF SQL for all 37104 plant species public size validation (no auth)
+
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-gbif-37104-one-SQL-size-validation-20261115.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-single-COLXR-37104-GBIF-SQL-validator-20261115
+  cancel-in-progress: false
+
+jobs:
+  validate-one-global-species-cell-SQL:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run SQL safety and all-keys-format tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_gbif_37104_one_sql_validate.py -v
+      - name: Freeze one-shot source and verify original 37104 accepted COLXR names and SHA
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          old=$(gh run list --repo "$REPO" --workflow mois-gbif-37104-one-SQL-size-validation-20261115.yml \
+            --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId")
+          test -z "$old" || { echo "Earlier one-SQL public test exists: $old. Refuse duplicate"; exit 1; }
+          mkdir -p source
+          curl --fail --location --silent --show-error --retry 2 \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14157705123/zip' \
+            --output source/colxr37104.zip
+          echo 'abcd3aee766c85a92b86a8f93f8ed696bbe49d0f6cf2f64e5f75b457abf78e6a  source/colxr37104.zip' | sha256sum -c -
+      - name: Test one actual 37104-taxonomy SQL request against GBIF official PUBLIC SQL validator
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_37104_one_sql_validate \
+            --source source/colxr37104.zip --output single_SQL
+          python - <<'PY'
+          import json,pathlib
+          r=json.loads(pathlib.Path('single_SQL/receipt.json').read_text())
+          assert r['COL_XR_accepted_species']==37104
+          assert r['single_SQL_species']==37104
+          assert 300000<r['single_SQL_bytes']<400000
+          assert len(r['public_SQL_validator_trials'])>=1
+          assert r['authenticated_SQL_download_submitted'] is False
+          assert r['GBIF_download_DOI'] is None
+          print('MOIS_GBIF_37104_ONE_REQUEST_SYNTAX_AND_LIMIT_STATUS',
+                json.dumps(r['public_SQL_validator_trials'],sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-single-37104-COLXR-GBIF-SQL-validate-328KB-plus-response
+          path: single_SQL/
+          retention-days: 90
+          if-no-files-found: error
