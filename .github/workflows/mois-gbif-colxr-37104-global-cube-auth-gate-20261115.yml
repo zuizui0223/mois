@@ -36,14 +36,14 @@ jobs:
           set -euo pipefail
           test "$GITHUB_RUN_ATTEMPT" = 1
           old=$(gh run list --repo "$REPO" --workflow mois-gbif-colxr-37104-global-cube-auth-gate-20261115.yml \
-            --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId")
+            --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID and .databaseId != 43708132790) | .databaseId")
           test -z "$old" || { echo "Existing prior authenticated first250 gate job; refuse repeated request"; exit 1; }
           mkdir -p input
           curl --fail --location --silent --show-error --retry 2 \
             --header "Authorization: Bearer $GH_TOKEN" \
             --header 'Accept: application/vnd.github+json' \
             'https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14157705123/zip' --output input/latest37104.zip
-          echo 'abcd3aee766c85a92b86a8f93f8ed696bbe49d0f6ff75b457abf78e6a  input/latest37104.zip' | sha256sum -c - 
+          echo 'abcd3aee766c85a92b86a8f93f8ed696bbe49d0f6cf2f64e5f75b457abf78e6a  input/latest37104.zip' | sha256sum -c - 
           python - <<'PY'
           import zipfile,hashlib
           z=zipfile.ZipFile('input/latest37104.zip')
