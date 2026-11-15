@@ -1,0 +1,126 @@
+name: MOIS GBIF 37104 accepted species ISEA3H8 SQL validate and authenticated first 250 gate
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-gbif-colxr-37104-global-cube-auth-gate-20261115.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-gbif-colxr-37104-first250-sql-auth-gate-single
+  cancel-in-progress: false
+jobs:
+  public-validate-full-149-and-optional-first250-authenticated:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GBIF_USERNAME: ${{ secrets.GBIF_USERNAME }}
+      GBIF_USER: ${{ secrets.GBIF_USER }}
+      GBIF_PASSWORD: ${{ secrets.GBIF_PASSWORD }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run original COL XR SQL quality invariant tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_sql_isea3h_requests.py -v
+      - name: Verify no prior first250 submission job and exact 37104-name source SHA
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          old=$(gh run list --repo "$REPO" --workflow mois-gbif-colxr-37104-global-cube-auth-gate-20261115.yml \
+            --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId")
+          test -z "$old" || { echo "Existing prior authenticated first250 gate job; refuse repeated request"; exit 1; }
+          mkdir -p input
+          curl --fail --location --silent --show-error --retry 2 \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14157705123/zip' --output input/latest37104.zip
+          echo 'abcd3aee766c85a92b86a8f93f8ed696bbe49d0f6ff75b457abf78e6a  input/latest37104.zip' | sha256sum -c - 
+          python - <<'PY'
+          import zipfile,hashlib
+          z=zipfile.ZipFile('input/latest37104.zip')
+          d=z.read('current_exact_accepted_COLXR_species.csv.gz')
+          assert hashlib.sha256(d).hexdigest()=='5a77f3c968cf221287cd98a855559b3c3e8a8cf1322c08add28878adeb293df8'
+          open('input/current_exact_accepted_COLXR_species.csv.gz','wb').write(d)
+          PY
+      - name: Generate 149 complete disjoint current SQL requests and publicly validate grammar (no authentication)
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_sql_isea3h_requests \
+            --source input/current_exact_accepted_COLXR_species.csv.gz \
+            --chunk-size 250 --validate --output gbif_sql37104
+          python - <<'PY'
+          import json,pathlib
+          r=json.load(open('gbif_sql37104/receipt.json'))
+          assert r['source_colxr_species_key_count']==37104
+          assert r['sql_request_count']==149
+          assert r['user_authenticated_GBIF_download_submitted'] is False
+          assert r['GBIF_download_DOI'] is None
+          print('MOIS_GBIF_37104_OFFICIAL_SQL149_PUBLIC_VALIDATOR',r['public_validator_response'])
+          PY
+      - name: If already configured, authenticate and request exactly one first250 SQL download; never claim completed DOI prematurely
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os,base64,json,urllib.request,urllib.error,hashlib,pathlib
+          root=pathlib.Path('gbif_sql37104')
+          r=json.load(open(root/'receipt.json'))
+          username=os.environ.get('GBIF_USERNAME') or os.environ.get('GBIF_USER')
+          password=os.environ.get('GBIF_PASSWORD')
+          trace={
+            'schema':'mois_GBIF_37104_global_SQL_download_first250_gate_v1',
+            'GBIF_colxr_accepted_species':37104,
+            'prepared_SQL_requests':149,
+            'public_validator_status':r['public_validator_response']['status_code'] if r['public_validator_response'] else None,
+            'credentials_present':bool(username and password),
+            'authenticated_download_submission_attempted':False,
+            'authenticated_download_submission_succeeded':False,
+            'requested_first_chunk_species':250,
+            'remaining_148_chunks_submitted':False,
+            'GBIF_download_key':None,
+            'GBIF_download_DOI':None,
+            'actual_global_grid_cubes_downloaded':0
+          }
+          if not username or not password:
+              trace['status']='GBIF_CREDENTIALS_NOT_CONFIGURED'
+          elif trace['public_validator_status'] not in (200,201):
+              trace['status']='PUBLIC_SQL_VALIDATION_NOT_ACCEPTED'
+          else:
+              path=root/'colxr_isea3h_r8_sql_request_000.json'
+              payload=path.read_bytes()
+              req=urllib.request.Request(
+                'https://api.gbif.org/v1/occurrence/download/request',
+                data=payload,method='POST',
+                headers={'Accept':'application/json','Content-Type':'application/json',
+                  'Authorization':'Basic '+base64.b64encode((username+':'+password).encode()).decode(),
+                  'User-Agent':'MOIS-COLXR-first250-signed-global-spatial-cube/20261115'})
+              trace['authenticated_download_submission_attempted']=True
+              try:
+                  with urllib.request.urlopen(req,timeout=80) as response:
+                      body=response.read(10000).decode().strip()
+                      code=response.status
+                  trace['submission_HTTP_status']=code
+                  trace['GBIF_download_key']=body if 4<=len(body)<=100 else None
+                  trace['authenticated_download_submission_succeeded']=code==201 and trace['GBIF_download_key'] is not None
+                  trace['status']='SUBMITTED_PENDING_GBIF_ASYNC' if trace['authenticated_download_submission_succeeded'] else 'HTTP_NON201_NO_DOWNLOAD'
+              except urllib.error.HTTPError as e:
+                  trace['submission_HTTP_status']=e.code
+                  trace['status']='GBIF_AUTH_OR_SQL_REQUEST_FAILED_NO_DOWNLOAD'
+          (root/'first250_auth_gate_receipt.json').write_text(json.dumps(trace,sort_keys=True,indent=2)+'\n')
+          print('MOIS_FIRST250_GBIF_SQL_AUTH_GATE',json.dumps(trace,sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-37104-colxr-149-SQL-ISEA3H8-requests-and-first250-auth-gate
+          path: gbif_sql37104/
+          retention-days: 90
+          if-no-files-found: warn
