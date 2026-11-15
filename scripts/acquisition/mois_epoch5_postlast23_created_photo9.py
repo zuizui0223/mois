@@ -12,8 +12,9 @@ import hashlib
 import json
 from pathlib import Path
 
-from scripts.acquisition import mois_epoch4_post2048_last23_original_photo9 as predecessor
+# Capture the unmodified core function BEFORE predecessor import monkey-patches its module.
 from scripts.acquisition.mois_20261115_created_epoch2_disjoint_original_photo9_after2048 import source as core_source
+from scripts.acquisition import mois_epoch4_post2048_last23_original_photo9 as predecessor
 
 m = predecessor.m
 LAST_DELTA_SHA = predecessor.LAST_DELTA_SHA
