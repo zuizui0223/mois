@@ -50,7 +50,7 @@ jobs:
           from scipy.stats import chi2,kruskal
           import statsmodels.formula.api as smf
           from scripts.analysis.mois_gbif_continent_two_cohort_qa_20261115 import chi_stat,bh,HUES,REGIONS
-          base=Path('input');out=Path('results');out.mkdir()
+          base=Path('input');out=Path('GBIF540_output');out.mkdir()
           frames=[];conts=[]
           for cohort in ('discovery','holdout1','holdout2'):
               with zipfile.ZipFile(base/(cohort+'.zip')) as z:
@@ -142,6 +142,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: mois-GBIF-540-three-independent-hue-cohorts-full-quality-and-continent
-          path: results/
+          path: GBIF540_output/
           retention-days: 90
           if-no-files-found: error
