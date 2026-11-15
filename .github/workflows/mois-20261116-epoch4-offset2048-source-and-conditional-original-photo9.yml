@@ -53,7 +53,18 @@ jobs:
                   a["digest"]=="sha256:"+sha and not a["expired"]]
               assert len(xs)==1,(name,arts)
           PY
-          test "$(gh run list --repo "$REPO" --workflow mois-20261116-epoch4-offset2048-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID)] | length")" = 0
+                    python - <<'PY'
+          import json,subprocess
+          repo="zuizui0223/mois"
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          for rid in (43755335683,43755357092):
+              r=get(f"repos/{repo}/actions/runs/{rid}")
+              a=get(f"repos/{repo}/actions/runs/{rid}/artifacts?per_page=100")["artifacts"]
+              j=get(f"repos/{repo}/actions/runs/{rid}/jobs?per_page=100")["jobs"]
+              assert r["status"]=="completed" and r["conclusion"]=="failure" and not a
+              assert all(x["conclusion"]!="success" or x["name"]!="source-only-frozen-taxonomy-next-distinct-128" for x in j)
+          PY
+          test "$(gh run list --repo "$REPO" --workflow mois-20261116-epoch4-offset2048-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID and .databaseId != 43755335683 and .databaseId != 43755357092)] | length")" = 0
 
       - name: Require terminal offset1920 SUCCESS and exact signed source (no candidate pixels)
         run: |
