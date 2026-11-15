@@ -1,0 +1,123 @@
+name: MOIS actual GBIF COL XR nine-hue 180 species country/continent distribution
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-gbif-180-colour-country-20261115.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-actual-GBIF-COLXR-180-colour-country-single-frozen-run
+  cancel-in-progress: false
+jobs:
+  actual-GBIF-georeferenced-species-country-facets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned analysis dependencies and run outcome-blind country facet tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 scipy==1.15.2 statsmodels==0.14.4
+          python -m unittest discover -s tests -p test_mois_gbif_colour_country_facets_20261115.py -v
+      - name: Verify official latest signed accepted 37104-colour source and refuse duplicate run
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          old=$(gh run list --repo "$REPO" --workflow mois-gbif-180-colour-country-20261115.yml \
+            --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId")
+          test -z "$old" || { echo "Prior GBIF colour-country sampled run already exists"; exit 1; }
+          test "$(gh api "repos/$REPO/actions/runs/43703313170" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43703313170/artifacts" \
+            --jq '.artifacts[] | select(.id==14157705123) | .digest')" \
+            = 'sha256:abcd3aee766c85a92b86a8f93f8ed696bbe49d0f6cf2f64e5f75b457abf78e6a'
+          mkdir -p source
+          curl --fail --location --silent --show-error --retry 2 \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14157705123/zip' \
+            --output source/colxr37104.zip
+          echo 'abcd3aee766c85a92b86a8f93f8ed696bbe49d0f6cf2f64e5f75b457abf78e6a  source/colxr37104.zip' | sha256sum -c -
+      - name: Fetch true GBIF public georeferenced occurrence country & continent facets for balanced nine hues
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colour_country_facets_20261115 \
+            --source source/colxr37104.zip --per-hue 20 --output gbif_real
+          python - <<'PY'
+          import json
+          r=json.load(open('gbif_real/receipt.json'))
+          assert r['source_accepted_COLXR_species']==37104
+          assert r['sampled_accepted_species']==180 and r['sample_n_per_photo_hue']==20
+          assert r['GBIF_country_coded_occurrences'] if 'GBIF_country_coded_occurrences' in r else True
+          assert r['all_country_facets_complete_under_cap']
+          assert r['photo_hue_is_occurrence_level_truth'] is False
+          assert r['GBIF_authenticated_bulk_download_submitted'] is False
+          print('MOIS_180_ACTUAL_GBIF_COUNTRY_FACET_RESPONSES_ALL_AUDITED')
+          PY
+      - name: Fit descriptive photo-hue vs observed country-coverage association with occurrence-effort guard
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import pandas as pd,numpy as np,json,hashlib
+          from pathlib import Path
+          from scipy.stats import kruskal,spearmanr
+          import statsmodels.formula.api as smf
+          s=pd.read_csv('gbif_real/species_GBIF_country_continent_facets.csv')
+          assert len(s)==180 and s.gbif_colxr_species_key.is_unique
+          assert s.groupby('photo_hue9').size().eq(20).all()
+          s['has_record']=s.GBIF_georeferenced_occurrence_total.gt(0)
+          s['log_georef_occ']=np.log1p(s.GBIF_georeferenced_occurrence_total)
+          s['log_countries']=np.log1p(s.countries_GBIF_1plus)
+          positive=s[s.has_record].copy()
+          assert len(positive)>10 and positive.photo_hue9.nunique()==9,'Insufficient distribution data to compare 9 hue statuses'
+          s['white_proxy']=(s.photo_hue9=='white').astype(int)
+          positive['white_proxy']=(positive.photo_hue9=='white').astype(int)
+          main=smf.ols('log_countries ~ white_proxy + log_georef_occ',data=positive).fit(cov_type='HC3')
+          kw=kruskal(*[positive.loc[positive.photo_hue9.eq(k),'countries_GBIF_1plus'].values for k in ('white','yellow','orange','red','pink','magenta','purple','blue','bronze')])
+          rho=spearmanr(positive.GBIF_georeferenced_occurrence_total,positive.countries_GBIF_1plus)
+          med=positive.groupby('photo_hue9',as_index=False).agg(
+             species=('gbif_colxr_species_key','size'),
+             median_countries=('countries_GBIF_1plus','median'),
+             mean_countries=('countries_GBIF_1plus','mean'),
+             median_georeferenced_occurrences=('GBIF_georeferenced_occurrence_total','median'))
+          med.to_csv('gbif_real/per_photo_hue_country_count_descriptive.csv',index=False)
+          report={
+            'schema':'mois_photo9_GBIF_country_diversity_descriptive_v1',
+            'analysed_sample_n':len(s),'sample_per_hue':20,
+            'positive_GBIF_occurrence_sample_n':len(positive),
+            'primary_outcome':'log1p(number of countries with georeferenced GBIF occurrence)',
+            'covariates':'white photo hue proxy and log1p(GBIF georeferenced record count)',
+            'white_coef_effort_adjusted':float(main.params['white_proxy']),
+            'white_coef_HC3_95CI':[float(x) for x in main.conf_int().loc['white_proxy']],
+            'white_coef_HC3_p':float(main.pvalues['white_proxy']),
+            'effort_coef_HC3':float(main.params['log_georef_occ']),
+            'adjusted_R2':float(main.rsquared_adj),
+            'nine_hue_kruskal_H':float(kw.statistic),
+            'nine_hue_kruskal_p':float(kw.pvalue),
+            'gbif_record_count_vs_countries_spearman_rho':float(rho.statistic),
+            'GBIF_count_country_coverage_is_not_true_native_geographic_range':True,
+            'sample_colour_balanced_not_world_species_colour_ratio':True,
+            'photo_hue_is_not_measured_at_GBIF_occurrences':True,
+            'GBIF_SQL_global_ISEA3H_149_packages_still_not_submitted':True,
+            'input_csv_sha256':hashlib.sha256(Path('gbif_real/species_GBIF_country_continent_facets.csv').read_bytes()).hexdigest()
+          }
+          Path('gbif_real/descriptive_photo_hue_country_analysis_receipt.json').write_text(json.dumps(report,sort_keys=True,indent=2)+'\n')
+          print('MOIS_180_GBIF_COUNTRY_REAL_DISTRIBUTION_DESCRIPTIVE',json.dumps(report,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-COLXR-180-actual-GBIF-country-continent-nine-photo-hues-20261115
+          path: gbif_real/
+          retention-days: 90
+          if-no-files-found: warn
