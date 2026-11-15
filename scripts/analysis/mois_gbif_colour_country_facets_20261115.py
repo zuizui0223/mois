@@ -21,6 +21,16 @@ API="https://api.gbif.org/v1/occurrence/search"
 def require(x,msg):
     if not bool(x):raise ValueError("MOIS_GBIF_REAL_COUNTRY_FACETS: "+msg)
 def sha(b):return hashlib.sha256(b).hexdigest()
+def choose(df,n=20):
+    require(n>=1 and n<=100,"GBIF sampling quota out of bounds")
+    d=df.copy()
+    d["blind_rank"]=[sha((SEED+"|"+key).encode()) for key in d.key]
+    pick=(d.sort_values(["blind_rank","key"],kind="stable")
+          .groupby("source_hue9",sort=True).head(n).drop(columns="blind_rank"))
+    require(len(pick)==9*n and pick.groupby("source_hue9").size().eq(n).all(),
+            "nine-hue source quota incomplete")
+    return pick.sort_values(["source_hue9","key"],kind="stable")
+
 def roster(path,n=20):
     raw=Path(path).read_bytes();require(sha(raw)==SHA_ZIP,"source artifact ZIP digest drift")
     with ZipFile(io.BytesIO(raw)) as z:b=z.read("current_exact_accepted_COLXR_species.csv.gz")
@@ -33,12 +43,7 @@ def roster(path,n=20):
             and d.candidate_rank.eq("SPECIES").all()
             and d.COL_XR_checklistKey.eq(COLXR).all()
             and set(d.source_hue9)==set(HUES),"COLXR accepted/species labels drift")
-    d["blind_rank"]=[sha((SEED+"|"+key).encode()) for key in d.key]
-    pick=(d.sort_values(["blind_rank","key"],kind="stable")
-          .groupby("source_hue9",sort=True).head(n).drop(columns="blind_rank"))
-    require(len(pick)==n*9 and pick.groupby("source_hue9").size().eq(n).all(),
-            "colour-balanced source missing")
-    return pick.sort_values(["source_hue9","key"],kind="stable")
+    return choose(d,n)
 def extract(response,fields=("country","continent")):
     require(isinstance(response,dict) and isinstance(response.get("count"),int)
             and response["count"]>=0 and not response.get("results"),
