@@ -1,0 +1,168 @@
+name: MOIS 38 existing-photo frozen ROI-v4 remeasurement and independent numerical audit
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-visual38-existing-v4-20261115.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-existing38-source-sha6c035941-once
+  cancel-in-progress: false
+
+jobs:
+  signed-38-old-photo-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run frozen identity and missingness tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_visual38_existing_v4_20261115.py -v
+      - name: Refuse an old 38-photo workflow replay
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          older=$(gh run list --repo "$REPO" --workflow mois-visual38-existing-v4-20261115.yml \
+            --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId")
+          test -z "$older" || { echo "Prior 38 photo run exists: $older; refuse duplicate"; exit 1; }
+      - name: Download only exact prior signed metadata and current taxon atlas (no pixels)
+        run: |
+          set -euo pipefail
+          mkdir -p inputs
+          for spec in '14116926049 qa' '14113619429 identities' '14143886329 latest'; do
+            set -- $spec
+            curl --fail --location --silent --show-error --retry 2 \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/$REPO/actions/artifacts/$1/zip" --output "inputs/$2.zip"
+          done
+      - name: Freeze 38 real photo IDs and independently verify fixed shard SHA
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_visual38_existing_v4_20261115 prepare \
+            --inputs inputs --triage results/mois_90_direct_visual_triage_20261114.csv --output frozen
+          python - <<'PY'
+          import json,hashlib,pandas as pd
+          from pathlib import Path
+          p=Path('frozen/shards/shard-000.csv')
+          a=pd.read_csv(p,dtype=str);r=json.load(open('frozen/manifest.json'))
+          assert len(a)==38 and a.photo_id.is_unique and a.inat_taxon_id.is_unique and a.observation_id.is_unique
+          assert hashlib.sha256(p.read_bytes()).hexdigest()==r['photo_shard_sha256']['0']=='6c035941f6b7b77e0369ec8bbb62f6f1abf8046ad0187634a284d9aabfb9ce4b'
+          assert not r['numerical_results_admitted_to_main_catalogue'] and r['new_unique_photo_ids']==0
+          print('MOIS_38_SOURCE_FIXED_AND_SIGNED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-existing38-photo-source-sha6c035941
+          path: frozen/
+          retention-days: 90
+          if-no-files-found: error
+
+  genuine-unchanged-FCP-ROI-v4-pixel-run:
+    needs: signed-38-old-photo-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-existing38-photo-source-sha6c035941
+          path: frozen
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bootstrap exact FCP commit and SHA-verified YOLO11 EfficientSAM runtime
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Measure 38 OLD photos only on provider LARGE derivatives (not original resolution)
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-existing38-photo-rate-gate"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work \
+            --source frozen --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --group 0 --output worker
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-existing38-real-FCP-v4-worker-terminal
+          path: worker/
+          retention-days: 90
+          if-no-files-found: warn
+
+  audit-worker-real-numeric-results-NOT-PROMOTED:
+    needs: [signed-38-old-photo-source,genuine-unchanged-FCP-ROI-v4-pixel-run]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numerical audit dependencies
+        run: python -m pip install -q pandas==2.2.3 numpy==2.1.3
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-existing38-photo-source-sha6c035941
+          path: frozen
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-existing38-real-FCP-v4-worker-terminal
+          path: worker
+      - name: Restore same SHA-pinned original source evidence
+        run: |
+          set -euo pipefail
+          mkdir -p inputs
+          for spec in '14116926049 qa' '14113619429 identities' '14143886329 latest'; do
+            set -- $spec
+            curl --fail --location --silent --show-error --retry 2 \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/$REPO/actions/artifacts/$1/zip" --output "inputs/$2.zip"
+          done
+      - name: Audit original terminal SHA, measured nine vectors, technical unknowns and candidate non-promotion
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_visual38_existing_v4_20261115 audit \
+            --inputs inputs --source frozen --worker worker --output audited
+          python - <<'PY'
+          import json
+          r=json.load(open('audited/receipt.json'))
+          assert r['existing_photo_ids_rechecked']==38
+          assert r['genuine_new_measurements_of_previously_failed_photo_ids']+r['technical_unknown_or_failed']==38
+          assert r['new_unique_photo_ids']==0 and r['main_atlas_promoted'] is False
+          print('MOIS_EXISTING38_REAL_NUMERICAL_TERMINAL_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-existing38-actual-strict9-candidate-audit-NOT-PROMOTED
+          path: audited/
+          retention-days: 90
+          if-no-files-found: error
