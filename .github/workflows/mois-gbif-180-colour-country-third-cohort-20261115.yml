@@ -1,0 +1,138 @@
+name: MOIS GBIF 9-colour third independent 180 species region and country breadth
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-gbif-180-colour-country-third-cohort-20261115.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-GBIF-9hue-third-blind-180-facet-20261115
+  cancel-in-progress: false
+jobs:
+  true-GBIF-country-continent-facet-180-wave3:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run fixed source-blind GBIF facet regression tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 scipy==1.15.2 statsmodels==0.14.4
+          python -m unittest discover -s tests -p test_mois_gbif_colour_country_facets_20261115.py -v
+      - name: Confirm fixed COL XR 37104 roster and one-shot public query
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          prior=$(gh run list --repo "$REPO" --workflow mois-gbif-180-colour-country-third-cohort-20261115.yml \
+            --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId")
+          test -z "$prior" || { echo "PRIOR_THIRD_COHORT_RUN_EXISTS $prior; refuse duplicate requests"; exit 1; }
+          test "$(gh api "repos/$REPO/actions/runs/43708230511" --jq .conclusion)" = success
+          mkdir -p source
+          curl --fail --location --silent --show-error --retry 2 \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14157705123/zip' \
+            --output source/colxr37104.zip
+          echo 'abcd3aee766c85a92b86a8f93f8ed696bbe49d0f6cf2f64e5f75b457abf78e6a  source/colxr37104.zip' | sha256sum -c -
+      - name: Record exact 180 heldout keys and certify no overlap with prior two cohorts BEFORE GBIF lookup
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import io,json,hashlib,pandas as pd
+          from pathlib import Path
+          from zipfile import ZipFile
+          from scripts.analysis.mois_gbif_colour_country_facets_20261115 import roster
+          x=roster('source/colxr37104.zip',20,start=40)
+          a=roster('source/colxr37104.zip',20,start=0)
+          b=roster('source/colxr37104.zip',20,start=20)
+          assert len(a)==len(b)==len(x)==180
+          assert not (set(x.key)&(set(a.key)|set(b.key)))
+          assert x.key.is_unique and x.groupby('source_hue9').size().eq(20).all()
+          Path('frozen').mkdir()
+          x.to_csv('frozen/source_third_180_disjoint_GBIF_colxr_species.csv',index=False)
+          d={'stage':'source-hash-locked-before-third-wave-GBIF-access',
+             'photo_hue_count':9,'species_per_hue':20,'target_species':180,
+             'rank_start_in_each_hue':40,'previous_sampled_accepted_species':360,
+             'prior_360_overlap_keys':0,'GBIF_occurrence_returned_yet':False,
+             'source_COLXR_artifact_sha256':'abcd3aee766c85a92b86a8f93f8ed696bbe49d0f6cf2f64e5f75b457abf78e6a',
+             'frozen_species_csv_sha256':hashlib.sha256(Path('frozen/source_third_180_disjoint_GBIF_colxr_species.csv').read_bytes()).hexdigest()}
+          Path('frozen/source_receipt.json').write_text(json.dumps(d,indent=2,sort_keys=True)+'\n')
+          print('MOIS_GBIF_THIRD_180_HUE_BLANDED_SOURCE_SEALED',json.dumps(d,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-GBIF-nine-hue-third-180-source-frozen-before-occurrence-query
+          path: frozen/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Fetch official real GBIF georeferenced country and continent facet for rank40-59
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colour_country_facets_20261115 \
+            --source source/colxr37104.zip --per-hue 20 --rank-start 40 --output gbif_third
+          python - <<'PY'
+          import hashlib,json,pandas as pd
+          from pathlib import Path
+          a=pd.read_csv('frozen/source_third_180_disjoint_GBIF_colxr_species.csv',dtype=str)
+          b=pd.read_csv('gbif_third/source_selected_20_per_photo_hue.csv',dtype=str)
+          r=json.load(open('gbif_third/receipt.json'))
+          assert a.key.tolist()==b.key.tolist() and len(a)==180
+          assert r['sampled_accepted_species']==180 and r['within_hue_rank_start']==40
+          assert r['all_country_facets_complete_under_cap']
+          assert r['GBIF_authenticated_bulk_download_submitted'] is False
+          print('MOIS_THIRD_REAL_180_GBIF_SOURCE_COMPLETE',r['georeferenced_occurrences_total_for_sample'],flush=True)
+          PY
+      - name: Pre-specified directional recheck for orange vs purple South America and white country breadth
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,numpy as np,pandas as pd
+          from pathlib import Path
+          from scipy.stats import fisher_exact,kruskal
+          import statsmodels.formula.api as smf
+          d=pd.read_csv('gbif_third/species_GBIF_country_continent_facets.csv',dtype={'gbif_colxr_species_key':str})
+          c=pd.read_csv('gbif_third/species_x_continent_real_GBIF_records.csv',dtype={'gbif_colxr_species_key':str})
+          assert len(d)==180 and d.groupby('photo_hue9').size().eq(20).all()
+          presence=c.loc[c.continent.eq('SOUTH_AMERICA'),['gbif_colxr_species_key','GBIF_georeferenced_records']]
+          q=d.merge(presence,on='gbif_colxr_species_key',how='left',validate='one_to_one')
+          q['south_america_records']=q.GBIF_georeferenced_records.fillna(0).astype(int)
+          orange=int((q.photo_hue9.eq('orange')&q.south_america_records.ge(1)).sum())
+          purple=int((q.photo_hue9.eq('purple')&q.south_america_records.ge(1)).sum())
+          p_sa=float(fisher_exact([[orange,20-orange],[purple,20-purple]],alternative='greater').pvalue)
+          q['white_photo']=(q.photo_hue9=='white').astype(int)
+          q['log_countries']=np.log1p(q.countries_GBIF_1plus)
+          q['log_occ']=np.log1p(q.GBIF_georeferenced_occurrence_total)
+          fit=smf.ols('log_countries ~ white_photo + log_occ',data=q).fit(cov_type='HC3')
+          h=['white','yellow','orange','red','pink','magenta','purple','blue','bronze']
+          kw=kruskal(*[q.loc[q.photo_hue9.eq(x),'countries_GBIF_1plus'] for x in h])
+          r={'schema':'mois_third_holdout180_photo9_GBIF_country_sa_v1',
+             'sampled_species':len(q),'per_hue':20,'prior_360_overlap':0,
+             'prespecified_SA_orange_present':orange,'prespecified_SA_purple_present':purple,
+             'prespecified_orange_gt_purple_fisher_p':p_sa,
+             'white_vs_other_country_breadth_effort_adjusted_beta':float(fit.params['white_photo']),
+             'white_vs_other_country_breadth_95CI_HC3':[float(v) for v in fit.conf_int().loc['white_photo']],
+             'white_vs_other_country_breadth_p_HC3':float(fit.pvalues['white_photo']),
+             'country_breadth_nine_hue_Kruskal_p':float(kw.pvalue),
+             'all_photo_hues_unconfirmed_as_petal_truth':True,
+             'native_range_unknown':True,'species_phylogeny_not_controlled':True,
+             'GBIF_SQL_37104_global_grid_still_unretrieved':True}
+          Path('gbif_third/third_180_independent_heldout_test_receipt.json').write_text(json.dumps(r,sort_keys=True,indent=2)+'\n')
+          print('MOIS_THIRD_180_GBIF_HUE_COUNTRY_INDEPENDENT_TEST',json.dumps(r,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-GBIF-third180-real-country-continent-facets-and-test-20261115
+          path: gbif_third/
+          retention-days: 90
+          if-no-files-found: warn
