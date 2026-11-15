@@ -60,7 +60,22 @@ jobs:
             printf '%s  %s\n' "$digest" "/tmp/mois_artifact_$artifact.zip" | sha256sum -c -
           done < /tmp/mois_prev_zip_expected.txt
           count="$(gh run list --repo "$REPO" --workflow mois-20261116-epoch5-offset0-new-created-window-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID)] | length")"
-          test "$count" = 0
+          # The first attempt #43771955500 failed before any API query, source ZIP,
+          # worker, audit or append: importing patched source_last23 rejected quota=128.
+          # Permit exactly this one audited pre-source failure, never a repeat.
+          test "$count" = 1
+          python - <<'PY'
+          import json,subprocess
+          repo="zuizui0223/mois";bad=43771955500
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          r=get(f"repos/{repo}/actions/runs/{bad}")
+          assert (r["status"],r["conclusion"])==("completed","failure")
+          assert get(f"repos/{repo}/actions/runs/{bad}/artifacts?per_page=100")["artifacts"]==[]
+          j={x["name"]:x["conclusion"] for x in get(f"repos/{repo}/actions/runs/{bad}/jobs?per_page=100")["jobs"]}
+          assert j=={"source-only-first128":"failure","pixel-worker-only-if-novel-original":"skipped",
+                      "independent-strict9-audit":"skipped","formal-append-after-audit":"skipped"}
+          print("EPOCH5_ONE_PRE_SOURCE_FAILURE_ONLY_RETRY_ALLOWED")
+          PY
       - name: Require final epoch4 2,199-taxon sweep fully terminal and byte-signed
         run: |
           set -euo pipefail
@@ -154,7 +169,7 @@ jobs:
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import csv,json
           r=json.load(open("newest/receipt.json"))
-          assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_attempt_ID_count"],r["old_original_photo_obs_ID_overlap"])==(2176,23,0,1231345,0)
+          assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_attempt_ID_count"],r["old_original_photo_obs_ID_overlap"])==(0,128,0,1231345,0)
           assert r["original_pixels_fetched"]==r["strict9_numeric_photos"]==0
           assert r["old_all_image_raw_SHA_disjointness_proven"] is False
           rows=list(csv.DictReader(open("newest/source_taxon_status.csv")))
