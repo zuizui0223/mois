@@ -57,3 +57,28 @@
 **要確認5件を優先し、モデル検出マスクの位置・花被器官の正しさ・12アンカー生画素数・9色残存率を監査する。** 現行の凍結9色法を勝手に変更しない。数値が出たからといって13分類群を本体atlasへ自動昇格しない。署名付き元画像と植物学的QAがそろうまでは13件すべて「再測定候補」のままとする。
 
 関連：scripts/analysis/mois_visual38_existing_v4_20261115.py、tests/test_mois_visual38_existing_v4_20261115.py、.github/workflows/mois-visual38-existing-v4-20261115.yml。いずれもPR #200の未マージ解析ブランチ上。
+
+
+## 追加追跡：原terminalに残った12アンカー生カウント・ROI品質数値
+
+上記の「12アンカー生画素数を監査する」は、追加の写真取得・再推論なしで**実行できた**。先のreal worker terminal CSVには12アンカー全画素数、nuisance_pixel_fraction、mask_pixels、水平反転mask IoUと色差ΔE、failure_reasonsが含まれていた。原terminalのSHAは上記の署名済み値を再確認済み。マスク画像の座標ポリゴンそのものは保存されていない。
+
+**失敗25枚の具体的内訳：**
+- 12枚：retained flower instance 0、mask_pixels 0（「花が存在しない」の証拠ではない）。
+- 11枚：正のmask_pixelsが存在するのに水平反転mask/色安定性の基準で失敗。
+- 2枚：マスク・9色計数は存在するが、4色形態判定が曖昧。
+
+複数のfailure_reasonsは重複するため、単純な理由別足算はできない。ROI/flip失敗23枚の中で水平反転mask不安定フラグ21、色差不安定フラグ21（重複あり）。13枚の数値成功群のnuisance_pixel_fraction中央値は0.2773、0.40を超えるものは4枚。
+
+**実測mask内画素の例**（専門家が花被組織と認定したmaskではない）：
+
+| photo ID / 見かけの問題 | 全mask画素 | white画素 | yellow画素 | bronze画素 | green画素 | brown画素 | black画素 | 9色代表結果 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| 255188296 Artabotrys zeylanicus：緑花被 | 20,028 | 11,834 | 0 | 0 | **42** | 7,879 | 273 | white=100% |
+| 446129531 Bignonia sciuripabulum：紫花 | 1,281 | 788 | 4 | 0 | 489 | 0 | 0 | white=99.5% |
+| 111641760 Aristolochia macrocarpa：暗赤花被 | 1,068 | 1,005 | 0 | 2 | 0 | 61 | 0 | white=99.8% |
+| 487988985 Libidibia parvifolia：黄花 | 48,784 | 34 | 11,550 | 23,625 | 2,265 | 10,681 | 582 | bronze=67.0% |
+
+Artabotrysの前回手選パッチは緑色花被内部1,324画素で9色分母0だったが、今回の検出maskには緑アンカーは42画素しかない。**緑画素の単なる9色除外だけでなく、選択されたmaskそのものの器官的妥当性を優先検証すべき**。Bignoniaも見かけは紫花なのに計測maskはwhite/greenが主で、purple/blueは0。どちらも主台帳へ白花として反映しない。
+
+数値詳細は [real worker artifact #14145555692](https://github.com/zuizui0223/mois/actions/runs/43673586307/artifacts/14145555692) 内の shard_000/sealed/terminal_p000_b0000000.csv と独立audit artifact #14144984441。外部向け統合QAパッケージは原terminal由来の全38写真の12アンカー数、反転値、失敗理由、13写真のAI視覚フラグを含む。画像ピクセル自体は非同梱。新規ROI採用数は引き続き0。
