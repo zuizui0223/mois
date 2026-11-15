@@ -70,10 +70,10 @@ jobs:
               "independent-byte-identity-and-strict9-audit":"skipped",
               "formal-append-only-after-independent-audit":"skipped"},jobs
           a=get(f"repos/{repo}/actions/runs/{rid}/artifacts?per_page=100")["artifacts"]
-          assert len(a)==1 and a[0]["id"]==14177882344 and
+          assert (len(a)==1 and a[0]["id"]==14177882344 and
               a[0]["name"]=="mois-20261116-epoch4-offset1920-signed-1231344-ID-disjoint-source" and
               a[0]["digest"]=="sha256:9347236b94e03e91d423a7b3b67f0ba0515c86f82d59e1083f793754112f73a6" and
-              not a[0]["expired"],a
+              not a[0]["expired"]),a
           PY
       - name: Load certified new 1231344-attempt atlas, signed 1792 stage and full historical ID/UUID deltas
         run: |
