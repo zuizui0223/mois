@@ -61,3 +61,13 @@
 - 対話に添付した360種統合QAは、二つの真正180-species source ZIPと全37,104 species photo trait ZIPを各SHA256で照合し再集計。結果には全360種の学名・色・国数・生態的品質フラグ、南米の両標本色別集計、白色係数の感度解析と再実行コードを保持。
 
 **主要な再現判定：南米のorange対purpleの地理パターンは支持されず、他の写真9色×GBIF出現国数の関連も全球の生態学的機構や在来分布の証明には未到達。**
+
+
+### 認証設定後の初回250種の安全な入口
+
+149 SQLの完全な署名付き原本から先頭250受容種を、**ユーザーがGitHub ActionsのGBIF_USERNAME（もしくはGBIF_USER）とGBIF_PASSWORDをRepository Secretsへ設定した後にだけ**一回提出する専用のone-shot workflowを、未マージPR #200へ追加した：
+
+- .github/workflows/mois-gbif-37104-first250-on-demand-after-secrets.yml
+- 直前の2026-11-15認証ゲートのreceiptはGBIF_CREDENTIALS_NOT_CONFIGURED、正式送信0、downloadKey0、DOI0。パスワード値はGitHubのSecretsでのみ受け取る。直接チャット・Git・結果CSVへ保存しない。
+- **GitHubのworkflow_dispatchは対象ワークフローがdefault branchに存在しないと起動できない**。本workflowは現時点で未マージ解析ブランチにあるので、実際の手動実行には適切なレビュー／default branch反映が別途必要。今回も実送信は一切していない。
+- SQL POSTが受理されてもDOIとgrid ZIPは非同期で後から作られる。HTTP 201とキーの受信のみで全球格子取得「完了」と判定しない。
