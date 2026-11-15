@@ -34,5 +34,9 @@ class TestGBIFCountryFacets(unittest.TestCase):
         self.assertEqual(len(a),18)
         self.assertEqual(a.key.tolist(),b.key.tolist())
         self.assertTrue(a.groupby("source_hue9").size().eq(2).all())
+        first=choose(d,2,start=0)
+        heldout=choose(d,2,start=2)
+        self.assertEqual(len(heldout),18)
+        self.assertTrue(set(first.key).isdisjoint(set(heldout.key)))
 
 if __name__=="__main__":unittest.main()
