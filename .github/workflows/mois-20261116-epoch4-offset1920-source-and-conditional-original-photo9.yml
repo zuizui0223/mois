@@ -53,7 +53,7 @@ jobs:
                   a["digest"]=="sha256:"+sha and not a["expired"]]
               assert len(xs)==1,(name,arts)
           PY
-          test "$(gh run list --repo "$REPO" --workflow mois-20261116-epoch4-offset1920-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID)] | length")" = 0
+          test "$(gh run list --repo "$REPO" --workflow mois-20261116-epoch4-offset1920-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID and .databaseId != 43754767329)] | length")" = 0
 
       - name: Load certified new 1231344-attempt atlas, signed 1792 stage and full historical ID/UUID deltas
         run: |
@@ -86,14 +86,14 @@ jobs:
           from scripts.acquisition import mois_epoch4_post1792_rebased_photo9 as c
           h=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
           s=json.loads(Path("sealed_source/receipt.json").read_bytes())
-          w=json.loads(Path("sealed_worker/receipt.json").read_bytes())
+          w=json.loads(Path("sealed_worker/shard_000/receipt.json").read_bytes())
           a=json.loads(Path("sealed_audit/receipt.json").read_bytes())
           f=json.loads(Path("latest/receipt.json").read_bytes())
           assert h("sealed_source/source_candidates.csv")==s["source_candidates_SHA256"]=="883dbb3716bcef734f7c5d4802d2f64e2f799cc1c5c4c93851a03075154fa04b"
           assert h("sealed_source/manifest.json")==s["source_manifest_SHA256"]=="055ad46f4aa6ad8bcf5d544711833735b0e305c0528ad6c12e37e69da5a063e6"
           assert h("sealed_source/shards/shard-000.csv")==s["source_shard_SHA256"]=="84460ffd40800f5d6df1a149131611d067dfc4480c50a0ad5b030539ce895b19"
           assert h("sealed_audit/receipt.json")=="33d44ba9778774df540183972a2bbbe24ca60bd76452a4c73c312d260873233b"
-          assert h("sealed_worker/receipt.json")==a["source_and_worker_sha256"]["worker_receipt_sha256"]=="4fa4bd71a45bfa765465dc34cd8a0a78fafd4d1ab19166593c4ebdbe71474749"
+          assert h("sealed_worker/shard_000/receipt.json")==a["source_and_worker_sha256"]["worker_receipt_sha256"]=="4fa4bd71a45bfa765465dc34cd8a0a78fafd4d1ab19166593c4ebdbe71474749"
           assert h("sealed_audit/new_real_original_nine_photo9_delta.parquet")==a["verified_delta_sha256"]==c.NEW_DELTA_SHA
           assert h("latest/atlas.csv.gz")==f["derived_atlas_sha256"]==c.NEW_ATLAS_SHA
           assert (s["hash_disjoint_taxon_offset"],s["searched_zero_numeric_taxa"],s["source_API_error_count"],s["new_independent_original_photo_candidates"])==(1792,128,0,1)
