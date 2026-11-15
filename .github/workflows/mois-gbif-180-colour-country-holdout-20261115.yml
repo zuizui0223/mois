@@ -36,8 +36,8 @@ jobs:
           test "$GITHUB_RUN_ATTEMPT" = 1
           # Prior run 43706895018 failed at unittest import; NO GBIF API query started.
           # Refuse another successful or unknown prior run instead of blindly replaying.
-          old=$(gh run list --repo "$REPO" --workflow mois-gbif-180-colour-country-20261115.yml \
-            --limit 100 --json databaseId,conclusion --jq ".[] | select(.databaseId < $GITHUB_RUN_ID and .databaseId != 43706895018) | .databaseId")
+          old=$(gh run list --repo "$REPO" --workflow mois-gbif-180-colour-country-holdout-20261115.yml \
+            --limit 100 --json databaseId,conclusion --jq ".[] | select(.databaseId < $GITHUB_RUN_ID and .databaseId != 43708042835) | .databaseId")
           test -z "$old" || { echo "Another prior GBIF country extraction run exists: $old"; exit 1; }
           test "$(gh api "repos/$REPO/actions/runs/43703313170" --jq .conclusion)" = success
           test "$(gh api "repos/$REPO/actions/runs/43703313170/artifacts" \
