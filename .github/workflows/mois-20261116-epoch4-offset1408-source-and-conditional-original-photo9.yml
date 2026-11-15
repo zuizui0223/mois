@@ -3,7 +3,7 @@ on:
   push:
     branches: [analysis/mois-species-first-palette9-20261111]
     paths:
-      - .github/workflows/mois-20261116-epoch4-offset1408-r2-source-and-conditional-original-photo9.yml
+      - .github/workflows/mois-20261116-epoch4-offset1408-source-and-conditional-original-photo9.yml
 permissions:
   contents: read
   actions: read
@@ -46,7 +46,7 @@ jobs:
           sha="4615223e205dafe41ee2ef8794f266141e37c14cf03768ce609f5693a4b148bd"
           assert sum(a["name"]==name and a["digest"]=="sha256:"+sha and not a["expired"] for a in arts)==1,arts
           PY
-          test "$(gh run list --repo "$REPO" --workflow mois-20261116-epoch4-offset1408-r2-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID)] | length")" = 0
+          test "$(gh run list --repo "$REPO" --workflow mois-20261116-epoch4-offset1408-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID)] | length")" = 0
 
       - name: Require terminal signed offset1280 r2 before offset1408
         run: |
