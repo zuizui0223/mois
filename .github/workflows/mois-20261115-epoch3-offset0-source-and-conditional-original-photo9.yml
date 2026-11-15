@@ -125,7 +125,12 @@ jobs:
         id: freeze
         run: |
           set -euo pipefail
-          test "$(gh run list --repo "$REPO" --workflow mois-20261115-epoch3-offset0-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID)] | length")" = 0
+          # Only prior run 43671276145 stopped at the pre-query taxon exclusion test.
+          # Its source step never ran and its run has zero artifacts, so it cannot
+          # have frozen a source SHA or downloaded original pixels.
+          test "$(gh api "repos/$REPO/actions/runs/43671276145" --jq .conclusion)" = failure
+          test "$(gh api "repos/$REPO/actions/runs/43671276145/artifacts?per_page=100" --jq .total_count)" = 0
+          test "$(gh run list --repo "$REPO" --workflow mois-20261115-epoch3-offset0-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID and .databaseId != 43671276145)] | length")" = 0
           python -m scripts.acquisition.mois_epoch3_new_created_disjoint_photo9 source --atlas latest/atlas.csv.gz --output newest --offset 0
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import csv,json
