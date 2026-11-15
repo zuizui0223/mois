@@ -103,7 +103,8 @@ def merge(*,inventory,accepted,shards,out):
     shard_receipts,stats,dirs=confirm_object_coverage(shards,expected)
     out.mkdir(parents=True)
     (out/"citation.txt").write_bytes(citation)
-    con=duckdb.connect(str(out/"temporary_merge.duckdb"))
+    con=duckdb.connect(database=":memory:")
+    con.execute("SET temp_directory='/tmp/mois-gbif-duckdb-spill'")
     con.execute("SET memory_limit='3GB'")
     con.execute("SET threads=2")
     con.execute("SET preserve_insertion_order=false")
@@ -114,20 +115,20 @@ def merge(*,inventory,accepted,shards,out):
                "species_x_countrycode.csv.gz")
     g_out=str(out/"all_37104_species_x_EPSG6933_100km_cells.parquet")
     c_out=str(out/"all_37104_species_x_countrycode.parquet")
-    con.execute("""COPY (
+    con.execute(f"""COPY (
         SELECT specieskey,
             CAST(grid_x AS INTEGER) AS grid_x,
             CAST(grid_y AS INTEGER) AS grid_y,
             SUM(CAST(occurrence_count AS BIGINT))::BIGINT AS occurrence_count
-        FROM read_csv_auto(?, all_varchar=true, header=true)
+        FROM read_csv_auto('{g_glob}', all_varchar=true, header=true)
         GROUP BY specieskey, grid_x, grid_y
-        ) TO ? (FORMAT parquet, COMPRESSION ZSTD)""", [g_glob,g_out])
-    con.execute("""COPY (
+        ) TO '{g_out}' (FORMAT parquet, COMPRESSION ZSTD)""")
+    con.execute(f"""COPY (
         SELECT specieskey, countrycode,
             SUM(CAST(occurrence_count AS BIGINT))::BIGINT AS occurrence_count
-        FROM read_csv_auto(?, all_varchar=true, header=true)
+        FROM read_csv_auto('{c_glob}', all_varchar=true, header=true)
         GROUP BY specieskey, countrycode
-        ) TO ? (FORMAT parquet, COMPRESSION ZSTD)""",[c_glob,c_out])
+        ) TO '{c_out}' (FORMAT parquet, COMPRESSION ZSTD)""")
     summary=con.execute("""SELECT specieskey, COUNT(*) AS occupied_grid_cells,
         SUM(occurrence_count)::BIGINT AS records_passed_spatial_QA
         FROM read_parquet(?) GROUP BY specieskey""",[g_out]).df()
@@ -160,8 +161,7 @@ def merge(*,inventory,accepted,shards,out):
     g_count=int(con.execute("SELECT COUNT(*) FROM read_parquet(?)",[g_out]).fetchone()[0])
     c_count=int(con.execute("SELECT COUNT(*) FROM read_parquet(?)",[c_out]).fetchone()[0])
     con.close()
-    try:(out/"temporary_merge.duckdb").unlink()
-    except FileNotFoundError:pass
+
     receipt={"schema":"mois_GBIF_anonymous_S3_Nov2026_complete_37104_taxa_global_grid_v1",
       "GBIF_source_snapshot_date":"2026-11-01",
       "complete_public_S3_object_count":10346,
