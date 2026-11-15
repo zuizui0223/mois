@@ -8,7 +8,7 @@ Snapshot specieskeys must also match accepted binomials for STRICT matches.
 Do not report a subset scan as complete global distributions.
 """
 from __future__ import annotations
-import argparse,collections,hashlib,io,json,math
+import argparse,collections,hashlib,io,json,math,re
 from pathlib import Path
 from zipfile import ZipFile
 import pandas as pd
@@ -30,8 +30,7 @@ def sha(x):return hashlib.sha256(x).hexdigest()
 def canonical_pair(s):
     parts=str(s).strip().split()
     if len(parts)<2:return None
-    if not (parts[0][:1].isupper() and parts[1].islower()
-            and parts[1].isalpha()):return None
+    if not (parts[0][:1].isupper() and re.fullmatch(r'[a-z]+(?:-[a-z]+)*',parts[1])):return None
     return parts[0]+" "+parts[1]
 
 def flags(x):
