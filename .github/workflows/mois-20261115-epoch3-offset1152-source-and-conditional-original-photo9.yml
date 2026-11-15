@@ -98,7 +98,7 @@ jobs:
             (768,43684813161,'mois-20261115-epoch3-offset768-signed-1231341-ID-disjoint-source',
              '33704ad045547889c2aaae18fdac96f104537e43f0a57014643197a3ab28afb4',
              '1a0f60e010e66db610b5c037974721a5da2c13ae6b31be1a0467986df75c4200',
-             '017af7a2e78ad22d7bc4253e24a1c6559c0196a60f941fa2ed72529b972aa9b2',
+             '017af7a2e78ad22d7bc4253e24a1c6559c0196a60f941fa2ed72529b972aa9b2'),
             (896,43687426193,'mois-20261115-epoch3-offset896-signed-1231341-ID-disjoint-source',
              'dd7aa2694135e460340ef443c115f93c087ad206595956a1874571405d532ece',
              'abfe1cbba90424ffbc8d21662033e24940806b20020eab06f69c632573d644a0',
@@ -203,7 +203,11 @@ jobs:
           # Preceding offset1024 source-only terminal SUCCESS and zero candidates verified.
           # Any earlier run of this offset1152 workflow is a hard stop, even on retry.
           test "$(gh api "repos/$REPO/actions/runs/43687721566" --jq .conclusion)" = success
-          test "$(gh run list --repo "$REPO" --workflow mois-20261115-epoch3-offset1152-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID)] | length")" = 0
+          # Prior attempted run failed in the pre-source Python syntax parser; never queried the API or created an artifact.
+          test "$(gh api "repos/$REPO/actions/runs/43694971159" --jq .conclusion)" = failure
+          test "$(gh api "repos/$REPO/actions/runs/43694971159/artifacts?per_page=100" --jq .total_count)" = 0
+          test "$(gh api "repos/$REPO/actions/runs/43694971159/jobs?per_page=100" --jq '[.jobs[] | select(.name=="source-only-historical-independent-new-created-CC-pictures") | .steps[] | select(.name=="Query 128 new-epoch hash-disjoint taxa for only unused CC originals; prevent same source re-start") | .conclusion] | index("success") == null')" = true
+          test "$(gh run list --repo "$REPO" --workflow mois-20261115-epoch3-offset1152-source-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID and .databaseId != 43694971159)] | length")" = 0
           python -m scripts.acquisition.mois_epoch3_new_created_disjoint_photo9 source --atlas latest/atlas.csv.gz --output newest --offset 1152
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import csv,json
