@@ -1,0 +1,68 @@
+name: MOIS epoch4 terminal last23 source ZIP byte and receipt audit
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-20261116-epoch4-last23-readonly-terminal-SHA-audit.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify-terminal-source-zip-and-status:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify one completed source and three deliberately skipped downstream jobs
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          repo="zuizui0223/mois";rid=43763583148
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          r=get(f"repos/{repo}/actions/runs/{rid}")
+          assert r["status"]=="completed" and r["conclusion"]=="success"
+          j={x["name"]:x["conclusion"] for x in get(f"repos/{repo}/actions/runs/{rid}/jobs?per_page=100")["jobs"]}
+          assert j=={"source-only-last23":"success",
+            "pixel-worker-only-if-novel-original":"skipped",
+            "independent-strict9-audit":"skipped",
+            "formal-append-after-audit":"skipped"},j
+          a=get(f"repos/{repo}/actions/runs/{rid}/artifacts?per_page=100")["artifacts"]
+          assert len(a)==1 and a[0]["id"]==14181027973 and not a[0]["expired"] and \
+            a[0]["name"]=="mois-20261116-epoch4-offset2176-last23-signed-1231345-ID-source" and \
+            a[0]["digest"]=="sha256:0e5a7de73c69fab5e4bd5104178d95d4d5d8680680dc62818640585fbd08eac3"
+          PY
+      - name: Download genuine uploaded ZIP and independently hash bytes against GitHub digest
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/actions/artifacts/14181027973/zip" \
+            -o last23.zip
+          echo "0e5a7de73c69fab5e4bd5104178d95d4d5d8680680dc62818640585fbd08eac3  last23.zip" | sha256sum -c -
+          mkdir -p source
+          unzip -q last23.zip -d source
+      - name: Check three inner byte hashes, exact disjoint 23 statuses and missing worker
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv,hashlib,json,pathlib
+          p=pathlib.Path("source")
+          h=lambda fn:hashlib.sha256((p/fn).read_bytes()).hexdigest()
+          r=json.loads((p/"receipt.json").read_bytes())
+          assert sorted(x.name for x in p.iterdir())==["receipt.json","source_candidates.csv","source_taxon_status.csv"]
+          assert h("source_taxon_status.csv")==r["source_status_SHA256"]=="3f31ca44b68b70acfa71ecb436b96ab31c9c75a6a5f94c952a537ed70a238923"
+          assert h("source_candidates.csv")==r["source_candidates_SHA256"]=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+          rows=list(csv.DictReader((p/"source_taxon_status.csv").open()))
+          assert len(rows)==len({row["inat_taxon_id"] for row in rows})==23
+          assert all(row["status"]=="source_queried" and row["accepted_unused_photo"]=="0" for row in rows)
+          assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],
+            r["source_API_error_count"],r["new_independent_original_photo_candidates"],
+            r["original_pixels_fetched"],r["strict9_numeric_photos"],
+            r["old_original_photo_attempt_ID_count"],r["old_original_photo_obs_ID_overlap"])==(2176,23,0,0,0,0,1231345,0)
+          assert r["old_all_image_raw_SHA_disjointness_proven"] is False
+          print("MOIS_LAST23_SOURCE_ZIP_BYTES_STATUS_23_NO_NEW_PIXEL_SHA_AUDIT_SUCCESS",h("receipt.json"),flush=True)
+          PY
