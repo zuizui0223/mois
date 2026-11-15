@@ -77,13 +77,12 @@ def read_signed_inputs(source,manifest,partition,limit=None):
     require(len(selected)>0,"empty shard")
     return taxa,selected,receipt
 
-def accumulate_arrow_batch(batch, names_by_key, proj, stats, grid, country):
+def accumulate_arrow_batch(batch, names_by_key, pa_keys, proj, stats, grid, country):
     import pyarrow as pa
     import pyarrow.compute as pc
     if batch.num_rows==0:return
     # Project source keys first; avoid materializing 100% of all GBIF rows in pandas.
-    keyset=pa.array(list(names_by_key),type=pa.string())
-    keymask=pc.is_in(batch.column("specieskey"),value_set=keyset)
+    keymask=pc.is_in(batch.column("specieskey"),value_set=pa_keys)
     matches=batch.filter(keymask)
     stats["source_key_hits"]+=matches.num_rows
     if matches.num_rows==0:return
@@ -136,6 +135,8 @@ def scan(source,manifest,partition,out,limit=None):
     wanted=["specieskey","species","kingdom","occurrencestatus",
             "decimallatitude","decimallongitude","coordinateuncertaintyinmeters",
             "issue","countrycode"]
+    import pyarrow as pa
+    pa_keys=pa.array(list(names_by_key),type=pa.string())
     grid=collections.Counter();country=collections.Counter();stats=collections.Counter()
     objects_read=[]
     for j,row in enumerate(objects.itertuples(index=False),1):
@@ -146,7 +147,7 @@ def scan(source,manifest,partition,out,limit=None):
                     "required GBIF Parquet field missing")
             stats["parquet_rows_scanned"]+=pqfile.metadata.num_rows
             for batch in pqfile.iter_batches(batch_size=131072,columns=wanted):
-                accumulate_arrow_batch(batch,names_by_key,proj,stats,grid,country)
+                accumulate_arrow_batch(batch,names_by_key,pa_keys,proj,stats,grid,country)
         objects_read.append({"key":row.key,"size":int(row.bytes),"etag":str(row.etag)})
         stats["file_count_scanned"]+=1
         if j%10==0 or j==len(objects):
@@ -165,7 +166,7 @@ def scan(source,manifest,partition,out,limit=None):
     result={"schema":"mois_anonymous_GBIF_20261101_37k_species_equal_area_grid_shard_v1",
          "source_snapshot":"2026-11-01","source_storage":"S3 public anonymous",
          "partition":partition,"total_partitions":16,
-         "files_in_this_partition":int((full_receipt["Parquet_file_count"]+15)//16) if limit is None else len(objects),
+         "files_in_this_partition":int(len(objects)),
          "files_actually_scanned":len(objects),
          "full_partition_scan":limit is None,
          "entire_snapshot_objects":full_receipt["Parquet_file_count"],
