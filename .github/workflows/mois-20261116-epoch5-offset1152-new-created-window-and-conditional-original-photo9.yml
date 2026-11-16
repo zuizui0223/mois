@@ -169,11 +169,11 @@ jobs:
         id: freeze
         run: |
           set -euo pipefail
-          python -m scripts.acquisition.mois_epoch5_postlast23_created_photo9_offset1152 source --atlas latest/atlas.csv.gz --output newest --offset 1024
+          python -m scripts.acquisition.mois_epoch5_postlast23_created_photo9_offset1152 source --atlas latest/atlas.csv.gz --output newest --offset 1152
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json,csv
           r=json.load(open("newest/receipt.json"))
-          assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_attempt_ID_count"],r["old_original_photo_obs_ID_overlap"])==(1024,128,0,1231346,0)
+          assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_attempt_ID_count"],r["old_original_photo_obs_ID_overlap"])==(1152,128,0,1231346,0)
           assert r["old_all_image_raw_SHA_disjointness_proven"] is False
           st=list(csv.DictReader(open("newest/source_taxon_status.csv")))
           assert len(st)==len({x["inat_taxon_id"] for x in st})==128
