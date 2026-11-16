@@ -1,0 +1,75 @@
+name: MOIS ESA Biomass CCI v7 global 10km AGB and SD public genuine raster probe
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-ESA-CCI-v7-AGB10km-public-probe-20261116.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mois-ESA-CCI-v7-public-global-AGB10km-one-source-probe
+  cancel-in-progress: false
+jobs:
+  public-source-biomass-AGB:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch actual nonlogin global aggregated CCI biomass AGB/uncertainty 10km GeoTIFFs
+        run: |
+          set -euo pipefail
+          mkdir -p biomass
+          base='https://dap.ceda.ac.uk/neodc/esacci/biomass/data/agb/maps/v7.0/geotiff/aggregated'
+          for name in 'ESACCI-BIOMASS-L4-AGB-MERGED-10000m-fv7.0.tif' \
+                      'ESACCI-BIOMASS-L4-AGB_SD-MERGED-10000m-fv7.0.tif'; do
+            curl --fail --location --silent --show-error --retry 2 \
+              --max-time 380 "$base/$name?download=1" --output "biomass/$name"
+            printf 'MOIS_AGB_SOURCE_REAL_BYTES %s %s\n' "$name" "$(stat -c%s "biomass/$name")"
+          done
+      - name: Inspect actual CRS, epoch bands and nodata; fail on HTML placeholders
+        run: |
+          set -euo pipefail
+          python -m pip install -q rasterio==1.4.3 numpy==2.1.3
+          python - <<'PY'
+          import json,hashlib,rasterio
+          from pathlib import Path
+          root=Path('biomass');results={}
+          for p in sorted(root.glob('*.tif')):
+              b=p.read_bytes()
+              with rasterio.open(p) as ds:
+                  assert ds.width>50 and ds.height>50 and ds.count>=1
+                  assert ds.crs is not None
+                  print('MOIS_ESA_BIOMASS_REAL_TIF_PROPERTIES',p.name,
+                     ds.width,ds.height,ds.count,ds.crs,ds.descriptions,ds.nodata,ds.tags(),flush=True)
+                  results[p.name]={'bytes':len(b),'SHA256':hashlib.sha256(b).hexdigest(),
+                     'CRS':str(ds.crs),'width':ds.width,'height':ds.height,
+                     'bands':ds.count,'band_descriptions':ds.descriptions,
+                     'tags':ds.tags(),'nodata':ds.nodata,'bounds':tuple(ds.bounds),
+                     'dtypes':list(ds.dtypes)}
+          report={'schema':'mois_ESA_CCI_v7_global_AGB_10km_public_source_v1',
+            'dataset_DOI':'10.5285/6429d1aafe1e43b9b414e4a5a7f8b903',
+            'NASA_NPP_same_as_AGB':False,'NDVI_same_as_AGB':False,
+            'AGB_units':'Mg of woody dry biomass per hectare',
+            'coverage':'forest woody biomass, not all herbaceous plant mass',
+            'original_rasters':results,
+            'no_auth_used':True,
+            'species_grid_biomass_joined_yet':False,
+            'temporal_band_semantics_requires_inspection':True}
+          (root/'receipt.json').write_text(json.dumps(report,sort_keys=True,indent=2,default=str)+'\n')
+          assert len(results)==2
+          print('MOIS_REAL_ESA_CCI_v7_10km_AGB_PUBLIC_GEO_TIFF_RETRIEVED',
+                json.dumps(report,sort_keys=True,default=str),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-ESA-CCI-v7-global-10km-AGB-and-SD-true-public-raster-20261116
+          path: biomass/
+          retention-days: 90
+          if-no-files-found: warn
