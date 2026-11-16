@@ -124,9 +124,11 @@ def read_band(path, index, label):
         # Generic BIL may not advertise CRS; in that case require global WGS84 bounds.
         if ds.crs is not None:
             require(ds.crs.to_epsg() == 4326, f"{label}: not EPSG 4326")
+        # WorldClim covers global land except Antarctica; bottom latitude is
+        # typically -60, not -90. Do not incorrectly reject official rasters.
         require(abs(ds.bounds.left + 180) < 1.0 and abs(ds.bounds.right - 180) < 1.0
-                and abs(ds.bounds.top - 90) < 1.0 and abs(ds.bounds.bottom + 90) < 1.0,
-                f"{label}: not global longitude/latitude rasters")
+                and abs(ds.bounds.top - 90) < 1.0 and -90.1 <= ds.bounds.bottom <= -55,
+                f"{label}: unexpected WorldClim longitude/latitude raster bounds")
         a = ds.read(1).astype(np.float32)
         nodata = ds.nodata
         if nodata is not None:
