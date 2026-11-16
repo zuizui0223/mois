@@ -202,13 +202,17 @@ def build_cell_changes(grid, current_zip, lgm_zips):
                "points_per_cell":25}
     with tempfile.TemporaryDirectory() as td:
         paths = extract_two_bioclim(current_zip,td,"CURRENT")
-        base = [extract_at_points(*read_band(paths[k][0],k,"CURRENT"),coords)
-                for k in (1,12)]
+        base = []
+        for k in (1,12):
+            values,affine = read_band(paths[k][0],k,"CURRENT")
+            base.append(extract_at_points(values,coords,affine))
         receipt["current_BIO_layer_SHA256"] = {f"BIO{k}":paths[k][1] for k in (1,12)}
         for label, zipname in zip(GCMS,lgm_zips):
             p = extract_two_bioclim(zipname,td,label.replace("-","_"))
-            lgm = [extract_at_points(*read_band(p[k][0],k,label),coords)
-                   for k in (1,12)]
+            lgm = []
+            for k in (1,12):
+                values,affine = read_band(p[k][0],k,label)
+                lgm.append(extract_at_points(values,coords,affine))
             n, t, rain = paired_change(base, lgm)
             prefix=label.replace("-","_")
             cells[f"{prefix}_paired_points"] = n.astype("int16")
