@@ -39,7 +39,7 @@ def history_after_offset128():
                   "earlier signed independent audit changed: " + p)
     m.require(Path(NEW_DELTA).is_file() and m.sha256(NEW_DELTA) == NEW_DELTA_SHA,
               "offset128 signed audit delta absent or altered")
-    ids, observations, raw = core.history()
+    ids, observations, raw = predecessor.previous.predecessor.prev._full_history()
     m.require(len(ids) == 1231347 and len(raw) == 103 and
               "764358617" in ids and
               "8137069d-6363-4326-a9ab-e1547ae8006f" in observations and
