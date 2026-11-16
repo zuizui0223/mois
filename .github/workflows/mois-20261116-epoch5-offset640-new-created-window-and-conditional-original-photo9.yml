@@ -59,8 +59,21 @@ jobs:
               -o "/tmp/mois_artifact_$artifact.zip"
             printf '%s  %s\n' "$digest" "/tmp/mois_artifact_$artifact.zip" | sha256sum -c -
           done < /tmp/mois_prev_zip_expected.txt
-          count="$(gh run list --repo "$REPO" --workflow mois-20261116-epoch5-offset640-new-created-window-and-conditional-original-photo9.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID)] | length")"
+          count="$(gh run list --repo "$REPO" --workflow mois-20261116-epoch5-offset640-new-created-window-and-conditional-original-photo9.yml --limit 100 --json databaseId,conclusion --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID and .conclusion == \"success\")] | length")"
           test "$count" = 0
+          python - <<'PY'
+          import json,subprocess
+          repo="zuizui0223/mois";rid=43805841462
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          previous=get(f"repos/{repo}/actions/runs/{rid}")
+          assert (previous["status"],previous["conclusion"])==("completed","failure")
+          previous_arts=get(f"repos/{repo}/actions/runs/{rid}/artifacts?per_page=100")["artifacts"]
+          assert len(previous_arts)==0, "previous offset640 source had already been sealed, must not start duplicate"
+          jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/{rid}/jobs?per_page=100")["jobs"]}
+          assert jobs=={"source-only-first128":"failure","pixel-worker-only-if-novel-original":"skipped",
+                       "independent-strict9-audit":"skipped","formal-append-after-audit":"skipped"},jobs
+          print("PREVIOUS_OFFSET640_UNSEALED_POST_API_ASSERT_FAILURE_NO_ARTIFACT_NO_PIXEL_DUPLICATE",flush=True)
+          PY
       - name: Verify epoch5 offset128 SUCCESS, terminal signed artifact actual ZIP and photo-source receipt
         run: |
           set -euo pipefail
