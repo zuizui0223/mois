@@ -5,6 +5,7 @@ on:
     branches: [analysis/mois-species-first-palette9-20261111]
     paths:
       - .github/workflows/mois-20261117-epoch6-offset256-new-created-window-and-conditional-original-photo9.yml
+      - scripts/acquisition/mois_epoch6_post_complete2199_new_created_original_photo9_offset256.py
 permissions:
   contents: read
   actions: read
