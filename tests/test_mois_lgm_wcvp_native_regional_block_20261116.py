@@ -22,7 +22,7 @@ class TestWCVPNativeRegion(unittest.TestCase):
                                ["no_accepted_species_match"],
             "wcvp_accepted_plant_name_id":["10","11","12","13",""]
         })
-        d=match_gbif_to_wcvp(photo,names)
+        d=match_gbif_to_wcvp(photo,names,expected_species=4)
         self.assertEqual(d.wcvp_match_exact_binomial.tolist(),
                          [True,True,False,False])
         self.assertEqual(d.wcvp_accepted_plant_name_id.iloc[0],"10")
