@@ -5,6 +5,8 @@ on:
     branches: [analysis/mois-species-first-palette9-20261111]
     paths:
       - .github/workflows/mois-AGB-NDVI-multimethod-drivers-20261116.yml
+      - scripts/analysis/mois_global_AGB_NDVI_driver_comparison_20261116.py
+      - tests/test_mois_global_AGB_NDVI_driver_comparison_20261116.py
   workflow_dispatch:
 
 permissions:
