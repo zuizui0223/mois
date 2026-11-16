@@ -1,0 +1,97 @@
+name: MOIS GBIF family-null genus segregation with 23-year real NPP AGB NDVI and LGM
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-GBIF-family-genus-true-NPP-AGB-NDVI-LGM-20261116.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-GBIF-real-MOD17-NPP-additive-family-genus-AEB-20261116
+  cancel-in-progress: false
+
+jobs:
+  current-annual-productivity-independent-effects:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned statistical packages and test 100km GBIF family-regional sensitivity
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 \
+            statsmodels==0.14.4 scipy==1.15.2
+          python -m py_compile scripts/analysis/mois_gbif_family_genus_npp_AGB_NDVI_20261116.py
+          python -m unittest discover -s tests -p 'test_mois_gbif_family_genus_npp_AGB_NDVI_20261116.py' -v
+      - name: Download and verify five signed true-source analytic artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p sources
+          for asset in \
+            '14234623179 FAMILY 0259071f76ffad271e5113b792c7c21f27c0c1d10ef99a215ff3a7779ce6a27b' \
+            '14227246751 SPATIAL e209257adbc185b4855f3b8d76aeaa50d2e2afe8a1feeb0f76013366e57c4d16' \
+            '14228652073 NATIVE b72b7358ed5382d625583ad61b90952e4e77377296fe90ae677bf9481aa80a7f' \
+            '14219565387 NDVI e08e81d1c2afd1a2ee5312f3ebc4aeb5ab7678988c2453a2a9c63d28c82eb17a' \
+            '14235983742 NPP 68b2cfa1aeac9dc5d02cd310c9b2f45553a5be4db3319a1e40897612ad9b1bef'; do
+            set -- $asset
+            curl --fail --location --silent --show-error --retry 3 --retry-delay 5 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/$1/zip" \
+              -o "sources/$2.zip"
+            echo "$3  sources/$2.zip" | sha256sum -c -
+          done
+      - name: Estimate 23-year annual NPP increment on WCVP genus selection within original GBIF spatial blocks
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_family_genus_npp_AGB_NDVI_20261116 \
+            --family sources/FAMILY.zip \
+            --spatial sources/SPATIAL.zip \
+            --native sources/NATIVE.zip \
+            --ndvi sources/NDVI.zip \
+            --npp sources/NPP.zip \
+            --output MOIS_GBIF_NPP_against_familynull
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('MOIS_GBIF_NPP_against_familynull/receipt.json').read_text())
+          assert a['source_GBIF_accepted_species']==37104
+          assert a['source_GBIF_species_x_100km_pairs']==5493931
+          assert a['response_uses_no_photo_hue']
+          assert a['NPP_is_annual_carbon_flux_not_woody_biomass']
+          assert a['NPP_source_0point5deg_is_not_original_500m']
+          for mode in ('strict','moderate'):
+              r=a['results'][mode]
+              assert r['n_cells_18plus_NPP_same_GBIF_full_environment']>2000
+              models=r['models']['residual_after_family_conditioning']
+              full=models['500km_full_NPP_AGB_NDVI']
+              assert full['n_cells']>2000
+              assert 'NPP_annual_carbon_flux' in full['effects']
+              assert 'NPP_annual_carbon_flux' not in models['500km_no_NPP']['effects']
+          print('MOIS_GBIF_FAMILY_GENUS_NPP_REAL_SUCCESS',
+                json.dumps({k:{
+                  'n':v['n_cells_18plus_NPP_same_GBIF_full_environment'],
+                  'correlations':v['corr_spearman'],
+                  'effects':v['models']['residual_after_family_conditioning'][
+                           '500km_full_NPP_AGB_NDVI']['effects']}
+                  for k,v in a['results'].items()},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-real-GBIF-WCVP-family-genus-NPP-2001-2023-AGB-NDVI-LGM
+          path: MOIS_GBIF_NPP_against_familynull/
+          retention-days: 90
+          if-no-files-found: warn
