@@ -51,11 +51,19 @@ def run(output):
             if not link or f["size"]>150_000_000:
                 evidence["raster_status"]="available_metadata_only_unbounded_or_large"
             else:
-                image=request(link)
-                sha=hashlib.sha256(image).hexdigest()
-                evidence["download_sha256"]=sha
-                evidence["download_bytes"]=len(image)
-                path=out/"ndvi_annual_climatology.zip";path.write_bytes(image)
+                path=out/"ndvi_annual_climatology.zip"
+                req=urllib.request.Request(link,headers={"User-Agent":"MOIS-NDVI-signed-source/20261116"})
+                count=0; digest=hashlib.sha256()
+                with urllib.request.urlopen(req,timeout=150) as incoming, path.open("wb") as target:
+                    while True:
+                        b=incoming.read(1<<20)
+                        if not b:break
+                        count+=len(b)
+                        if count>150_000_000:raise RuntimeError("NDVI download exceeds fixed source cap")
+                        target.write(b);digest.update(b)
+                evidence["download_sha256"]=digest.hexdigest()
+                evidence["download_bytes"]=count
+                if f["size"] and count!=f["size"]:raise RuntimeError("NDVI size mismatch")
                 with zipfile.ZipFile(path) as z:
                     members=[{"name":x.filename,"uncompressed":x.file_size} for x in z.infolist()]
                 evidence["archive_members"]=members
