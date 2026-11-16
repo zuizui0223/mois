@@ -92,9 +92,9 @@ jobs:
             assert (r["status"],r["conclusion"])==("completed","success")
             arts={a["id"]:a for a in get(f"repos/{repo}/actions/runs/{rid}/artifacts?per_page=100")["artifacts"]}
             assert aid in arts and arts[aid]["digest"]=="sha256:"+sha and not arts[aid]["expired"]
-             if off==1024:
-               jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/{rid}/jobs?per_page=100")["jobs"]}
-               assert jobs=={"source-only-first128":"success","pixel-worker-only-if-novel-original":"skipped","independent-strict9-audit":"skipped","formal-append-after-audit":"skipped"},jobs
+            if off==1024:
+              jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/{rid}/jobs?per_page=100")["jobs"]}
+              assert jobs=={"source-only-first128":"success","pixel-worker-only-if-novel-original":"skipped","independent-strict9-audit":"skipped","formal-append-after-audit":"skipped"},jobs
           with open("/tmp/mois_previous_source.txt","w") as f:
             for rid,aid,sha,off in expected:f.write(f"{aid} {sha} {off}\n")
           PY
@@ -114,11 +114,11 @@ jobs:
               statuses=list(csv.DictReader(io.StringIO(z.read("source_taxon_status.csv").decode())))
               assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]
               assert h(z.read("source_candidates.csv"))==r["source_candidates_SHA256"]
-               if off==1024:
-                 assert h(z.read("receipt.json"))=="019412097f791fc1a106ab544fa7c7bc5548ec33126d8be29b13ab11294a013a"
-                 assert h(z.read("source_taxon_status.csv"))=="b9917e52cad029e08b952b82294e3ade84b123e163aad1457b92a31a86a53389"
-                 assert h(z.read("source_candidates.csv"))=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
-                 assert r["new_independent_original_photo_candidates"]==0
+              if off==1024:
+                assert h(z.read("receipt.json"))=="019412097f791fc1a106ab544fa7c7bc5548ec33126d8be29b13ab11294a013a"
+                assert h(z.read("source_taxon_status.csv"))=="b9917e52cad029e08b952b82294e3ade84b123e163aad1457b92a31a86a53389"
+                assert h(z.read("source_candidates.csv"))=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+                assert r["new_independent_original_photo_candidates"]==0
               assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"])==(off,128,0)
               assert r["new_independent_original_photo_candidates"]==(1 if off==896 else 0)
               assert r["old_original_photo_attempt_ID_count"]==(1231346 if off==1024 else 1231345)
