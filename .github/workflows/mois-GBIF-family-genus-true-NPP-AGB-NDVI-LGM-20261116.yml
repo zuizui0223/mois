@@ -80,6 +80,9 @@ jobs:
               assert full['n_cells']>2000
               assert 'NPP_annual_carbon_flux' in full['effects']
               assert 'NPP_annual_carbon_flux' not in models['500km_no_NPP']['effects']
+              assert 'family_conditioned_expected_jaccard' in r['models']
+              for factors in r['same_design_raw_expected_excess_slope_additivity'].values():
+                  assert all(abs(err)<1e-10 for err in factors.values())
           print('MOIS_GBIF_FAMILY_GENUS_NPP_REAL_SUCCESS',
                 json.dumps({k:{
                   'n':v['n_cells_18plus_NPP_same_GBIF_full_environment'],
