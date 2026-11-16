@@ -32,8 +32,8 @@ m.DELTA_N = m.DELTA_N + (1,)
 def history_after_offset128():
     # Validate the old historical SHA chain and *new* independent audit bytes.
     for p, sha in (
-        (predecessor.previous.previous.predecessor.prev.EPOCH3_DELTA_PATH,
-         predecessor.previous.previous.predecessor.prev.EPOCH3_DELTA_SHA),
+        (predecessor.previous.LAST_DELTA_PATH,
+         predecessor.previous.LAST_DELTA_SHA),
     ):
         m.require(Path(p).is_file() and m.sha256(p) == sha,
                   "earlier signed independent audit changed: " + p)
