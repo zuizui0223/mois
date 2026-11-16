@@ -1,0 +1,86 @@
+name: MOIS 37104 true biomass NDVI moisture drivers RF HGB logistic genus-FE validation
+
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-AGB-NDVI-multimethod-drivers-20261116.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-real-AGB-37104-compare-moisture-NDVI-climate-models-source-v1
+  cancel-in-progress: false
+
+jobs:
+  accepted-species-genus-independent-replication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 85
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '2'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install audited numerical ML and spatial predictor dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1 \
+            scipy==1.15.2 scikit-learn==1.6.1 statsmodels==0.14.4
+          python -m unittest discover -s tests -p test_mois_global_AGB_NDVI_driver_comparison_20261116.py -v
+      - name: Load EXACT 37104 accepted species real ESA CCI AGB and climate NDVI signed output
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          curl --fail --location --silent --show-error --retry 2 \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14219399376/zip' \
+            --output source/real_AGB_37104.zip
+          echo 'd8b97528188d9f8d63cb802d5b3f6e8f7f251937fd30af42aeae47e43ebad1fc  source/real_AGB_37104.zip' | sha256sum -c -
+          python - <<'PY'
+          import zipfile,hashlib,json
+          z=zipfile.ZipFile('source/real_AGB_37104.zip')
+          r=json.loads(z.read('receipt.json'))
+          name='BIO19_weather_NDVI_ESACCIv7_AGB_37104_accepted_species.parquet'
+          assert hashlib.sha256(z.read(name)).hexdigest()==r['output_SHA256'][name]
+          assert r['source_global_accepted_species']==37104
+          assert r['species_with_both_AGB_NDVI_BIO19']==36753
+          assert r['source_GBIF_valid_occurrences']==396142825
+          assert r['global_AGB_woody_biomass_equals_all_grassland_biomass'] is False
+          print('MOIS_ESACCI_37104_REAL_WOODY_AGB_NDVI_BIO19_INPUT_VERIFIED')
+          PY
+      - name: Fit same genus-blocked species folds with RF, nonRF gradient boosting, logistic and within-genus conditional associations
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global_AGB_NDVI_driver_comparison_20261116 \
+            --AGB-features source/real_AGB_37104.zip --output driver_results
+          python - <<'PY'
+          import json,pandas as pd
+          d=json.load(open('driver_results/receipt.json'))
+          s=pd.read_csv('driver_results/three_model_families_and_9hue_summary.csv')
+          p=pd.read_csv('driver_results/AGB_NDVI_moisture_RF_HGB_logistic_3fold_genus_disjoint.csv')
+          assert d['source_eligible_complete_species']==36753
+          assert d['three_fold_genus_disjoint']
+          assert {'RF','HGB','logistic'}<=set(s.model_type)
+          assert set(p.fold)=={0,1,2}
+          assert p[p.outcome.eq('white_vs_eight_other_photo_hues')].AUC.between(0,1).all()
+          assert d['genus_FE_group_joint_tests']['within_genus_mixed_genera']>2000
+          assert d['not_ecologically_decisive_causal_predictor']
+          assert d['ESACCI_AGB_measures_woody_aboveground_biomass_not_all_plants']
+          print('MOIS_MULTIMETHOD_37104_REAL_BIOMASS_DECISIVE_DRIVER_AUDIT_SUCCESS',d['RF_loss_when_drop_environment_group_AUC'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-AGB-woody-vs-NDVI-moisture-multimodel-37104-accepted-photo9-CV
+          path: driver_results/
+          retention-days: 90
+          if-no-files-found: warn
