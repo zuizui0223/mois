@@ -44,9 +44,7 @@ class TestNPPIncrement(unittest.TestCase):
         self.assertGreater(full["effects"]["NPP_annual_carbon_flux"]["beta_per_global_SD"],0)
         self.assertNotIn("NPP_annual_carbon_flux",no_npp["effects"])
         self.assertGreaterEqual(full["R2_in_sample"]+1e-10,no_npp["R2_in_sample"])
-        self.assertTrue(full["NPP_is_annual_carbon_flux_not_biomass"] if
-                        "NPP_is_annual_carbon_flux_not_biomass" in full
-                        else full["NPP_is_annual_carbon_flux_not_biomass"])
+        self.assertTrue(full["R2_is_in_sample_not_external_predictive_validity"])
     def test_sensitivity_all_three_vegetation_groups(self):
         d=self.fixture()
         rows=[
