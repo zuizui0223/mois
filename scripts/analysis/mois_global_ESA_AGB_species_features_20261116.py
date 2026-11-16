@@ -40,7 +40,7 @@ def read_inputs(feature_zip,agb_zip,global_zip,bio_zip):
     b=f.read(member)
     require(sha(b)==r["output_SHA256"][member],"original 18577 cell feature SHA changed")
     cell=pq.read_table(io.BytesIO(b)).to_pandas()
-    require(len(cell)==18577 and not cell[["grid_x","grid_y"]].duplicated().any().any(),
+    require(len(cell)==18577 and not cell[["grid_x","grid_y"]].duplicated().any(),
             "unique GBIF equal-area cells changed")
     member="WorldClim19_weather_NDVI_37104_COLXR_photo9_species.parquet"
     b=f.read(member)
@@ -130,7 +130,7 @@ def combine_sources(cell,rasters):
     extra["ESA_AGB_2024_minus_2020_Mg_ha"]=(
         extra.ESA_AGB_woody_Mg_ha_2024-extra.ESA_AGB_woody_Mg_ha_2020)
     source_info["2020_uncertainty"]={"source_band":detail}
-    require(len(extra)==18577 and not extra[["grid_x","grid_y"]].duplicated().any().any(),
+    require(len(extra)==18577 and not extra[["grid_x","grid_y"]].duplicated().any(),
             "ESACCI original 100km cell keys altered")
     return extra,source_info
 
