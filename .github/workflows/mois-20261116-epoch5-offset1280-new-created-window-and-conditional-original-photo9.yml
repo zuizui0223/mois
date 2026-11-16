@@ -162,7 +162,7 @@ jobs:
           python - <<'PY'
           import numpy as np,pandas as pd,hashlib
           from scripts.acquisition import mois_epoch5_postlast23_created_photo9_offset1280 as c
-          hist,obs,raw=c.history_1152()
+          hist,obs,raw=c.history_1280()
           a=c.m.read_atlas("latest/atlas.csv.gz")
           vals=a.loc[a.after_strict9.gt(0),["observed_mean_"+s for s in c.m.PALETTE]].to_numpy(float)
           missing=a.loc[a.after_strict9.eq(0),["observed_mean_"+s for s in c.m.PALETTE]]
