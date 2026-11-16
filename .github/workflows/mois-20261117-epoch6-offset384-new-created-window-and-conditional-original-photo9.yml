@@ -206,7 +206,7 @@ jobs:
             p1=set(open("/tmp/epoch6_offset128_taxon_ids.txt").read().splitlines())
             assert len(ids)==len(set(ids))==128 and not set(ids).intersection(p0|p1)
             assert all(a["status"]=="source_queried" for a in rows)
-            open("/tmp/epoch6_offset256_taxon_ids.txt","w").write("\\n".join(ids)+"\\n")
+            open("/tmp/epoch6_offset256_taxon_ids.txt","w").write("\n".join(ids)+"\n")
             print("OFFSET256_INDEPENDENT_REAL_ZIP_SHA_RECEIPT_COHORT_128_DISJOINT",flush=True)
           PY
       - name: Independently inspect 2,176 source taxa across seventeen signed hash-disjoint cohorts
@@ -572,7 +572,7 @@ jobs:
           with open("/tmp/latest_artifacts.tsv","w") as f:
             for obj in a:
               assert not obj["expired"] and obj["digest"].startswith("sha256:")
-              f.write(str(obj["id"])+" "+obj["digest"][7:]+" "+obj["name"]+"\\n")
+              f.write(str(obj["id"])+" "+obj["digest"][7:]+" "+obj["name"]+"\n")
           print("TERMINAL_EXPECTED_ARTIFACTS",expected,"HAS_NEW",os.environ["HAS_NEW"],flush=True)
           PY
           mkdir -p /tmp/mois_artifacts
