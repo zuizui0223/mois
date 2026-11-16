@@ -92,7 +92,7 @@ jobs:
           for aid,name,digest in expected:
             a=arts[aid]
             assert a["name"]==name and a["digest"]=="sha256:"+digest and not a["expired"]
-          now=get(f"repos/{repo}/actions/workflows/mois-20261117-epoch6-offset128-new-created-window-and-conditional-original-photo9.yml/runs?per_page=100")
+          now=get(f"repos/{repo}/actions/workflows/mois-20261117-epoch6-offset256-new-created-window-and-conditional-original-photo9.yml/runs?per_page=100")
           assert not any(r["id"]!=int(__import__("os").environ["GITHUB_RUN_ID"]) and r["conclusion"]=="success" for r in now["workflow_runs"])
           with open("/tmp/mois_expected_896.txt","w") as f:
             for aid,_,digest in expected:f.write(f"{aid} {digest}\n")
