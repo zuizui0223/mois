@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from scripts.analysis.mois_global_AGB_NDVI_driver_comparison_20261116 import (
     ENV_GROUPS,GROUPS,BIOMASS,NDVI,MOISTURE,
-    columns,genus_folds,white_scores,SEED
+    columns,genus_folds,eval_white,SEED
 )
 class TestBiomassCandidateDrivers(unittest.TestCase):
     def test_biomass_is_independent_from_vegetation_greenness(self):
@@ -33,5 +33,5 @@ class TestBiomassCandidateDrivers(unittest.TestCase):
     def test_AUC_not_probably_biomass_causality(self):
         y=np.array([0,1,0,1])
         p=np.array([0.1,0.9,0.3,0.8])
-        self.assertEqual(white_scores(y,p)["AUC"],1.0)
+        self.assertEqual(eval_white(y,p)["AUC"],1.0)
 if __name__=="__main__":unittest.main()
