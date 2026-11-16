@@ -210,10 +210,10 @@ def run(native_zip,spatial_zip,common_zip,output):
             "500km_models":tests["500"],
             "1000km_models":tests["1000"]
         }
+        # Shared-species fractions already occur in COMPONENTS; keep
+        # names unique for Parquet schema and reproducible downstream joins.
         tab=d[["grid_x","grid_y","n_shared_genera","native_species_n",
                "introduced_species_n","native_white_n","introduced_white_n",
-               "native_species_share_in_common_genera",
-               "introduced_species_share_in_common_genera",
                *COMPONENTS]].copy()
         tab["region_assignment_mode"]=mode
         out_tables.append(tab)
