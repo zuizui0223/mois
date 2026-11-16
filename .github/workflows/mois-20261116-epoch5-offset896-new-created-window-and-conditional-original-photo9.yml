@@ -342,6 +342,22 @@ jobs:
           assert len(last)==128 and len(set(last))==128
           print("MOIS_EPOCH5_OFFSET640_FULL_1231345_ID_UUID_RECENT101_SHA_ATLAS9_GATE_SUCCESS",flush=True)
           PY
+      - name: Prove prior failed offset896 was unsealed, with no signed source, pixel worker, or append
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          repo="zuizui0223/mois";rid=43813484297
+          g=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          run=g(f"repos/{repo}/actions/runs/{rid}")
+          assert (run["status"],run["conclusion"])==("completed","failure")
+          jobs={j["name"]:j["conclusion"] for j in g(f"repos/{repo}/actions/runs/{rid}/jobs?per_page=100")["jobs"]}
+          assert jobs=={"source-only-first128":"failure","pixel-worker-only-if-novel-original":"skipped",
+                       "independent-strict9-audit":"skipped","formal-append-after-audit":"skipped"}
+          arts=g(f"repos/{repo}/actions/runs/{rid}/artifacts?per_page=100")["artifacts"]
+          assert len(arts)==0, "previous source was already signed; do not re-query"
+          print("PRIOR_OFFSET896_ASSERTION_FAILURE_UNSEALED_NO_PIXELS_NO_REPLAY",flush=True)
+          PY
       - name: Query fresh window for 128 zero-numeric taxa; source-only until real RGB measured
         id: freeze
         run: |
