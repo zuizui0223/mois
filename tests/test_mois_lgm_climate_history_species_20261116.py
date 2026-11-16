@@ -39,10 +39,17 @@ class TestLGMClimate(unittest.TestCase):
         pt=np.array([[5,np.nan,0],[12,8,0]],float)
         pp=np.array([[50,0,0],[60,120,np.nan]],float)
         n,t,p=paired_change((ct,cp),(pt,pp))
-        self.assertEqual(n.tolist(),[2,1,0])
+        # 0 mm of precipitation remains a real observation, not missing.
+        self.assertEqual(n.tolist(),[2,1,1])
         self.assertAlmostEqual(t[0],6.5)
         self.assertAlmostEqual(t[1],10.)
-        self.assertTrue(np.isnan(t[2]) and np.isnan(p[2]))
+        self.assertAlmostEqual(t[2],1.)
+        self.assertAlmostEqual(p[2],0.)
+        # A separate pair of wholly missing columns should become NaN.
+        bad=np.array([[np.nan],[np.nan]])
+        miss, dt, dp=paired_change((bad,bad),(bad,bad))
+        self.assertEqual(miss.tolist(),[0])
+        self.assertTrue(np.isnan(dt[0]) and np.isnan(dp[0]))
 
     def test_fast_raster_index_and_outside_missing(self):
         # 4x4 synthetic raster, x -2..2, y 2..-2, north-up
