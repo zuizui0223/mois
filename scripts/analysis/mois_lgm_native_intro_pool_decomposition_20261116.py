@@ -129,8 +129,10 @@ def fit_shared_design(d, block="500"):
             "insufficient independent geography after fixed block")
     r = {}
     for name in COMPONENTS:
-        y = d.loc[usable, name].astype(float).copy()
-        y = y - y.groupby(b.loc[usable]).transform("mean")
+        y0 = d[name].astype(float)
+        # Demean on exactly the original complete geographic block population,
+        # before dropping within-block noninformative X rows.
+        y = (y0-y0.groupby(b).transform("mean")).loc[usable]
         model = sm.OLS(y, x).fit(cov_type="cluster",
                                  cov_kwds={"groups":group}, use_t=False)
         low,high = model.conf_int().loc["LGM_warming"].tolist()
