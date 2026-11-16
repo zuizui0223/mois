@@ -26,6 +26,16 @@
 
 次に進む場合は「さらに多くのLGMモデルを追加してp値を探す」よりも、①真正花弁ROI色の独立確認、②自生分布＋現代の局所植物相の精度改善、③系統・生物地理区・空間自己相関を分離できる反復構造が最優先。**歴史気候そのものの独立した局所効果が確認された、とは書かない。**
 
+## WCVP地域内自生・導入による新しい感度検証（追加成功）
+
+[詳細：LGM×WCVP TDWG3 regional native/introduced と同一100km格子ペア解析](MOIS_LGM_WCVP_NATIVE_REGIONAL_MATCHED_CELLS_RESULTS_20261116.md)。真正GBIF 37,104種にKew WCVP学名36,762種を照合。自生地域にあると記載された種の集団だけで、LGM温暖化幅との花色関連を再計算した。
+
+**地域内native：strict 500kmブロック+0.592 pp/SD（95%CI −0.065〜+1.249、p=0.077）、moderate +0.351 pp（p=0.245）で有意でない。** broad-introducedでは負の係数が得られたが、地域・種構成・人為移動のバイアスが残る。
+
+全く同じ100km格子にnative/introducedラベルの植物種が各30種以上存在する場合、strict 3,106格子ではnative−introduced白写真ラベル率の温暖化係数は**等格子重みで+2.583 pp/SD（p=0.00322）、両群の最少種数で重み付けると+1.190 pp（p=0.1165）**。閾値20・30・50種、地域帰属strict/moderateの各条件でも**種数加重の区間は0を含む**ため、重み依存の探索的関連として記録する。
+
+**結論のゲートは不変**：これは本当の開花中の花弁色や、写真個体の野生・自生性を直接確認したものではなく、WCVP native_at_TDWG3は特定島や個体の自生を意味しない。過去の生息地・氷期レフュージアの確証なしに、氷期後の移住・進化・適応の機構証拠と呼ばない。
+
 ## 原本・成功実行・再現可能性
 
 - LGM主解析 GitHub Actions [run #43868642184](https://github.com/zuizui0223/mois/actions/runs/43868642184) **SUCCESS**。[artifact #14225733755](https://github.com/zuizui0223/mois/actions/runs/43868642184/artifacts/14225733755)、ZIP SHA256 `db3b5b4fa2133194963be9233411bb6bb50bc86393d1dc50d996cc4cc78b25ab`。内容：元データを保持する受容種Parquet、全球格子Parquet、属内モデル結果JSON、receipt JSON。
