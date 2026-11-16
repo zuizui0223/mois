@@ -64,7 +64,8 @@ jobs:
           assert r['source_GBIF_valid_occurrences']==396142825
           assert r['species_with_both_AGB_NDVI_BIO19']>30000
           assert d.key.is_unique
-          assert d.ESA_AGB_woody_Mg_ha_2020.ge(0).all()
+          assert d.ESA_AGB_woody_Mg_ha_2020.dropna().ge(0).all()
+          assert int(d.ESA_AGB_woody_Mg_ha_2020.notna().sum())==r['species_with_2020_AGB_cell_samples']
           assert r['global_AGB_woody_biomass_equals_all_grassland_biomass'] is False
           print('MOIS_FULL_37104_REAL_ESA_WOODY_BIOMASS_SOURCE_JOIN_DONE',r['species_with_both_AGB_NDVI_BIO19'],flush=True)
           PY
