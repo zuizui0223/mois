@@ -392,7 +392,7 @@ jobs:
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json,csv
           r=json.load(open("newest/receipt.json"))
-          assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_attempt_ID_count"],r["old_original_photo_obs_ID_overlap"])==(256,128,0,1231347,0)
+          assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_attempt_ID_count"],r["old_original_photo_obs_ID_overlap"])==(384,128,0,1231347,0)
           assert r["old_all_image_raw_SHA_disjointness_proven"] is False
           st=list(csv.DictReader(open("newest/source_taxon_status.csv")))
           assert len(st)==len({x["inat_taxon_id"] for x in st})==128
