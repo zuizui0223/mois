@@ -143,7 +143,9 @@ def evaluate(d,mode):
        },
        "models":{}
     }
-    for outcome in ("residual_after_family_conditioning","observed_jaccard"):
+    for outcome in ("residual_after_family_conditioning",
+                    "family_conditioned_expected_jaccard",
+                    "observed_jaccard"):
         fit_same={
             "500km_full_NPP_AGB_NDVI":fit(usable,outcome),
             "500km_no_NPP":fit(usable,outcome,npp=False),
@@ -163,6 +165,26 @@ def evaluate(d,mode):
             fit_same["500km_full_NPP_AGB_NDVI"]["R2_in_sample"]
             -fit_same["500km_no_NPP"]["R2_in_sample"])
         results["models"][outcome]=fit_same
+    # Response identity: raw Jaccard = exact family-conditional expectation
+    # + observed-minus-expected. Every regression uses identical X and rows.
+    # Reconstructed regression slopes must therefore also sum exactly.
+    additivity={}
+    for spec in ("500km_full_NPP_AGB_NDVI","500km_no_AGB",
+                 "500km_no_NDVI","1000km_full_NPP_AGB_NDVI",
+                 "500km_full_support_weighted"):
+        raw=results["models"]["observed_jaccard"][spec]["effects"]
+        expected=results["models"]["family_conditioned_expected_jaccard"][spec]["effects"]
+        excess=results["models"]["residual_after_family_conditioning"][spec]["effects"]
+        residuals={}
+        for name in raw:
+            err=raw[name]["beta_per_global_SD"]-(
+                expected[name]["beta_per_global_SD"]
+                +excess[name]["beta_per_global_SD"])
+            require(abs(err)<1e-10,
+                    f"{spec} {name}: observed=expected+excess mismatch")
+            residuals[name]=float(err)
+        additivity[spec]=residuals
+    results["same_design_raw_expected_excess_slope_additivity"]=additivity
     return results,usable
 
 def run(family,spatial,native,ndvi,npp,output):
@@ -185,10 +207,18 @@ def run(family,spatial,native,ndvi,npp,output):
         tables.append(t)
         fit0=results[mode]["models"]["residual_after_family_conditioning"]
         effects=fit0["500km_full_NPP_AGB_NDVI"]["effects"]
+        expected_effect=results[mode]["models"]["family_conditioned_expected_jaccard"][
+            "500km_full_NPP_AGB_NDVI"]["effects"]["NPP_annual_carbon_flux"]
+        raw_effect=results[mode]["models"]["observed_jaccard"][
+            "500km_full_NPP_AGB_NDVI"]["effects"]["NPP_annual_carbon_flux"]
         print("MOIS_GBIF_23YR_REAL_NPP_VS_FAMILY_FIXED_GENUS_NULL",
               json.dumps({"mode":mode,"cells":len(usable),
                 "NPP_beta":effects["NPP_annual_carbon_flux"]["beta_per_global_SD"],
                 "NPP_p":effects["NPP_annual_carbon_flux"]["p"],
+                "NPP_expected_jaccard_beta":expected_effect["beta_per_global_SD"],
+                "NPP_expected_jaccard_p":expected_effect["p"],
+                "NPP_raw_jaccard_beta":raw_effect["beta_per_global_SD"],
+                "NPP_raw_jaccard_p":raw_effect["p"],
                 "NPP_CI":effects["NPP_annual_carbon_flux"]["95CI"],
                 "LGM_p":effects["LGM_warming"]["p"],
                 "AGB_p":effects["log_woody_AGB"]["p"],
