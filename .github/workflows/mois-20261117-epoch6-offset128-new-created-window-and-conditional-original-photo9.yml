@@ -283,8 +283,8 @@ jobs:
           assert missing.isna().all().all()
           nxt=c.select_taxa_epoch6(a)
           assert len(nxt)==len(set(nxt))==128
-           prior=set(open("/tmp/epoch6_offset0_taxon_ids.txt").read().splitlines())
-           assert len(prior)==128 and not set(nxt).intersection(prior)
+          prior=set(open("/tmp/epoch6_offset0_taxon_ids.txt").read().splitlines())
+          assert len(prior)==128 and not set(nxt).intersection(prior)
           assert len(hist)==1231346 and len(raw)==102
           print("GATE_1231346_PHOTO_UUID_102_RECENT_IMAGE_SHA_42111_9COLOUR_MISSING_SUCCESS")
           PY
