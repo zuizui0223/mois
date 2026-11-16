@@ -86,7 +86,7 @@ def matrix(d):
     x["abs_lat"]=d.lat.abs().astype(float)
     x["log_native_n"]=np.log1p(d.native_species_n.astype(float))
     x["log_intro_n"]=np.log1p(d.introduced_species_n.astype(float))
-    x["log_GBIF_occ"]=np.log1p(d.GBIF_occurrence_count_regional.astype(float))
+    x["log_GBIF_occ"]=np.log1p(d.GBIF_occurrence_count.astype(float))
     sd=x.std()
     require(sd.gt(0).all() and np.isfinite(sd).all(),
             "zero variance/nonfinite model feature")
