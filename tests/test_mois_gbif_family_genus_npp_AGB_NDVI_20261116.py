@@ -32,7 +32,9 @@ class TestNPPIncrement(unittest.TestCase):
         })
         residual=.025*npp+rng.normal(0,.008,n)
         d["residual_after_family_conditioning"]=residual
-        d["observed_jaccard"]=np.clip(.12+residual,0,1)
+        d["family_conditioned_expected_jaccard"]=(.12+.001*agb)
+        d["observed_jaccard"]=(
+            d["family_conditioned_expected_jaccard"]+residual)
         return d
     def test_npp_support_independent_from_agb_ndvi(self):
         d=self.fixture()
@@ -45,6 +47,16 @@ class TestNPPIncrement(unittest.TestCase):
         self.assertNotIn("NPP_annual_carbon_flux",no_npp["effects"])
         self.assertGreaterEqual(full["R2_in_sample"]+1e-10,no_npp["R2_in_sample"])
         self.assertTrue(full["R2_is_in_sample_not_external_predictive_validity"])
+    def test_raw_expected_excess_NPP_regression_coefficients_are_exact(self):
+        d=self.fixture()
+        raw=fit(d,response="observed_jaccard")
+        ex=fit(d,response="family_conditioned_expected_jaccard")
+        res=fit(d,response="residual_after_family_conditioning")
+        for feature in ("NPP_annual_carbon_flux","LGM_warming","NDVI_mean"):
+            value=(raw["effects"][feature]["beta_per_global_SD"]
+                   -ex["effects"][feature]["beta_per_global_SD"]
+                   -res["effects"][feature]["beta_per_global_SD"])
+            self.assertLess(abs(value),1e-10)
     def test_sensitivity_all_three_vegetation_groups(self):
         d=self.fixture()
         rows=[
