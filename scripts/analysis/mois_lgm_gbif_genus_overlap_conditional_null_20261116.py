@@ -101,10 +101,10 @@ def block_mean(d,col):
     grp=d.block_500km.astype(str)
     z=sm.OLS(y,np.ones((len(y),1))).fit(
         cov_type="cluster",cov_kwds={"groups":grp},use_t=False)
-    a,b=z.conf_int().iloc[0].tolist()
+    a,b=np.asarray(z.conf_int())[0].tolist()
     return {"n_cells":len(y),"n_500km_blocks":int(grp.nunique()),
             "mean":float(y.mean()),"95CI_cluster":[float(a),float(b)],
-            "p_vs_zero":float(z.pvalues.iloc[0])}
+            "p_vs_zero":float(np.asarray(z.pvalues)[0])}
 
 def run(gbif,env,lgm,native,spatial,common,wcvp,tdwg,out):
     out=Path(out)
@@ -166,8 +166,12 @@ def run(gbif,env,lgm,native,spatial,common,wcvp,tdwg,out):
         # This is a sensitivity control, NOT causal mediation.
         d=z.rename(columns={
             "genus_turnover_one_minus_jaccard":"old_genus_turnover_rename"})
+        # The imported regression helper's covariate-name interface is
+        # re-used here solely to insert conditional-null EXCESS Jaccard.
+        # Its term labelled 'genus_turnover' is NOT raw 1 - Jaccard in
+        # this particular sensitivity.
         d["genus_turnover_one_minus_jaccard"]=(
-            -d.excess_jaccard_vs_status_random)
+            d.excess_jaccard_vs_status_random)
         results["models"]["white_hue_adjusted_for_excess_genus_overlap"]={
             "500km":model(d,"native_minus_intro_white","500",True),
             "1000km":model(d,"native_minus_intro_white","1000",True)}
