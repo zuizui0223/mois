@@ -29,7 +29,7 @@ m.OLD_CLEAR_TAXA = 39173
 m.DELTA_FILES = m.DELTA_FILES + (LAST_DELTA_PATH,)
 m.DELTA_N = m.DELTA_N + (1,)
 
-def history_1280():
+def history_1408():
     checks = (
         (predecessor.prev.EPOCH3_DELTA_PATH, predecessor.prev.EPOCH3_DELTA_SHA),
         (predecessor.prev.PREV_DELTA_PATH, predecessor.prev.PREV_DELTA_SHA),
@@ -52,7 +52,7 @@ def history_1280():
         "formal post-offset896 history/102 recent raw SHA incomplete")
     return ids, observations, recent_raw
 
-def select_taxa_1280(atlas, n=128, offset=1280):
+def select_taxa_1408(atlas, n=128, offset=1408):
     z = atlas.loc[atlas.after_strict9.eq(0)].copy()
     m.require(len(atlas) == 42111 and len(z) == 2199 and
               atlas.inat_taxon_id.is_unique and
@@ -69,8 +69,8 @@ def select_taxa_1280(atlas, n=128, offset=1280):
               "next cohort reused previous 1,408 taxon IDs")
     return selected
 
-m.history = history_1280
-m.select_taxa = select_taxa_1280
+m.history = history_1408
+m.select_taxa = select_taxa_1408
 m.source = core_source
 
 def main():
