@@ -58,7 +58,7 @@ def get_wcvp_source(folder):
             "WCVP regional accepted-name/distro rows drift")
     return nm,di,receipt
 
-def match_gbif_to_wcvp(photo_species,names):
+def match_gbif_to_wcvp(photo_species,names,expected_species=37104):
     """Conservative exact species binomials only, never assume taxonomic IDs map."""
     need=["source_species_exact_binomial","wcvp_match_state",
           "wcvp_accepted_plant_name_id"]
@@ -74,7 +74,7 @@ def match_gbif_to_wcvp(photo_species,names):
     match=match.drop_duplicates("source_species_exact_binomial")
     species=photo_species[["key","species","source_hue9","hue_status"]].copy()
     species["key"]=species.key.astype(str)
-    require(len(species)==37104 and species.key.is_unique,"signed COLXR accepted source changed")
+    require(len(species)==expected_species and species.key.is_unique,"signed COLXR accepted source changed")
     species=species.merge(match,how="left",left_on="species",
                           right_on="source_species_exact_binomial",
                           validate="many_to_one")
@@ -144,8 +144,7 @@ def summarize_photo_species_by_tdwg(pairs,species,regions,distribution,mode="str
     require(mode in ("strict","moderate"),"unknown region stringency")
     flag="region_"+mode
     r=regions.loc[regions[flag],["grid_x","grid_y","code"]].copy()
-    require(r[["grid_x","grid_y"]].is_unique.all() if hasattr(r[["grid_x","grid_y"]],"is_unique") else True,
-            "region cells duplicated")
+    require(not r[["grid_x","grid_y"]].duplicated().any(),"region cells duplicated")
     p=pairs.merge(species[[
         "key","source_hue9","wcvp_accepted_plant_name_id","wcvp_match_exact_binomial"]],
         left_on="specieskey",right_on="key",how="left",validate="many_to_one")
