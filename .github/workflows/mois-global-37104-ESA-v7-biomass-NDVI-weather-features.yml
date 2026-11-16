@@ -1,0 +1,78 @@
+name: MOIS global 37104 species real ESA CCI v7 woody AGB MODIS NDVI WorldClim
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-global-37104-ESA-v7-biomass-NDVI-weather-features.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-ESA-CCI-v7-real-AGB-WC19-NDVI-37104-one-source
+  cancel-in-progress: false
+jobs:
+  join-actual-aboveground-biomass-to-accepted-species:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned 10-km actual forest AGB reader, GBIF and species source QA tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 rasterio==1.4.3 pyproj==3.7.1
+          python -m unittest discover -s tests -p test_mois_global_ESA_AGB_species_features_20261116.py -v
+      - name: Restore exact SHA-pinned global NDVI/BIO19 sources, full GBIF grid, and true 18-year ESA AGB GeoTIFFs
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          for entry in \
+             '14219565387 climate_ndvi e08e81d1c2afd1a2ee5312f3ebc4aeb5ab7678988c2453a2a9c63d28c82eb17a' \
+             '14220300302 biomass 4b90104549bc05eb3a9c2ca1cac84d56994a3f0a56a0fae1372d31662cf57407' \
+             '14166701658 global 422f6d6489e61c6e57c5d51db614e47f613039781a901e3fd3481c13b2b085c2'; do
+            set -- $entry
+            curl --fail --location --silent --show-error --retry 2 \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/$1/zip" \
+              --output "source/$2.zip"
+            echo "$3  source/$2.zip" | sha256sum -c -
+          done
+          curl --fail --location --silent --show-error --retry 3 \
+            --max-time 200 \
+            'https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_bio.zip' \
+            --output source/real_wc21_bio.zip
+          echo '00513224583665ec0f2f955a4ec252730c4deb2004cce9e793492a3f26df4dcf  source/real_wc21_bio.zip' | sha256sum -c -
+      - name: Read source 2010 2020 2024 real biomass bands and keep 100km habitat biomass separate from NDVI and climate
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global_ESA_AGB_species_features_20261116 \
+            --features source/climate_ndvi.zip --agb source/biomass.zip \
+            --gbif source/global.zip --worldclim-bio source/real_wc21_bio.zip \
+            --output real_AGB_37104
+          python - <<'PY'
+          import json,pandas as pd
+          r=json.load(open('real_AGB_37104/receipt.json'))
+          assert r['source_global_accepted_species']==37104
+          assert r['source_GBIF_species_grid_pairs']==5493931
+          assert r['species_with_both_AGB_NDVI_BIO19']>30000
+          assert not r['AGB_biomass_is_not_NDVI'] is False
+          assert r['zero_forest_AGB_does_not_mean_no_vegetation']
+          x=pd.read_parquet('real_AGB_37104/BIO19_weather_NDVI_ESACCIv7_AGB_37104_accepted_species.parquet')
+          assert len(x)==37104 and x.key.is_unique
+          assert x.ESA_AGB_woody_Mg_ha_2020.max()<=1000
+          print('MOIS_REAL_AGB_10KM_NDVI_CLIMATE_ALL37104_TAXA_JOIN_VERIFIED',r['species_with_both_AGB_NDVI_BIO19'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-global-37104-real-ESA-v7-woody-biomass-2010-2020-2024-WC19-NDVI
+          path: real_AGB_37104/
+          retention-days: 90
+          if-no-files-found: warn
