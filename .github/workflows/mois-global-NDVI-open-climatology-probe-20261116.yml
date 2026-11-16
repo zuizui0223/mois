@@ -1,0 +1,33 @@
+name: MOIS public MODIS-derived NDVI climatology source integrity and availability (no auth)
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-global-NDVI-open-climatology-probe-20261116.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect-actual-remote-sensing-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe public Zenodo MODIS NDVI 10-km annual normals and validate real bytes if accessible
+        run: |
+          python -m scripts.analysis.mois_global_ndvi_public_source_probe_20261116 --output ndvi_source
+          python - <<'PY'
+          import json
+          d=json.load(open('ndvi_source/receipt.json'))
+          assert d['NDVI_is_biomass'] is False
+          assert d['GBIF_species_NDVI_joined'] is False
+          print('MOIS_NDVI_REAL_SOURCE_STATUS',d['raster_status'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-MODIS-global-NDVI-normal-source-credential-free-audit-20261116
+          path: ndvi_source/
+          retention-days: 90
+          if-no-files-found: error
