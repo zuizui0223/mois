@@ -1,4 +1,5 @@
 name: MOIS epoch5 new-created offset1408 signed disjoint original ROI9
+# Retry only after fixing pre-source history_1408/select_taxa_1408 symbols; zero original downloaded by prior attempt.
 on:
   push:
     branches: [analysis/mois-species-first-palette9-20261111]
