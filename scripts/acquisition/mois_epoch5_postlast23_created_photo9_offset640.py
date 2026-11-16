@@ -64,7 +64,7 @@ def main():
         m.source(a.atlas, a.output, quota=128, offset=a.offset)
         receipt_path = Path(a.output) / "receipt.json"
         r = json.loads(receipt_path.read_bytes())
-        m.require(r["hash_disjoint_taxon_offset"] == 512 and
+        m.require(r["hash_disjoint_taxon_offset"] == 640 and
                   r["searched_zero_numeric_taxa"] == 128 and
                   r["source_API_error_count"] == 0 and
                   r["old_original_photo_attempt_ID_count"] == 1231345 and
