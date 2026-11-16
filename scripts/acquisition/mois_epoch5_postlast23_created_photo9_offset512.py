@@ -76,7 +76,7 @@ def main():
         r["recent_known_original_image_raw_SHA_count"] = 101
         r.pop("recent_97_nonempty_raw_image_SHA_count", None)
         receipt_path.write_text(json.dumps(r, sort_keys=True, indent=2) + "\n")
-        print("MOIS_EPOCH5_OFFSET256_SOURCE_128_AFTER_SIGNED_OFFSET384_SUCCESS", json.dumps(r, sort_keys=True), flush=True)
+        print("MOIS_EPOCH5_OFFSET512_SOURCE_128_AFTER_SIGNED_OFFSET384_SUCCESS", json.dumps(r, sort_keys=True), flush=True)
     elif a.stage == "audit":
         m.audit(a.source, a.worker, a.output)
     else:
