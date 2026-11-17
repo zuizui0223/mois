@@ -240,7 +240,7 @@ def grouped_bootstrap(y, genera, results, kind, outcome, repeats):
             observed_auc_diff = float(roc_auc_score(y, b) - roc_auc_score(y, a))
         else:
             la, lb = loss_nine(y, a), loss_nine(y, b)
-            observed_auc_diff = np.nan
+            observed_auc_diff = None
         observed_nll_diff = float(np.mean(lb - la))
         ci_auc, ci_nll = [], []
         for _ in range(repeats):
