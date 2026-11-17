@@ -185,11 +185,11 @@ jobs:
         id: freeze
         run: |
           set -euo pipefail
-          python -m scripts.acquisition.mois_epoch6_post_complete2199_new_created_original_photo9_offset1152 source --atlas latest/atlas.csv.gz --output newest --offset 1024
+          python -m scripts.acquisition.mois_epoch6_post_complete2199_new_created_original_photo9_offset1152 source --atlas latest/atlas.csv.gz --output newest --offset 1152
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json,csv
           r=json.load(open("newest/receipt.json"))
-          assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_attempt_ID_count"],r["old_original_photo_obs_ID_overlap"])==(1024,128,0,1231349,0)
+          assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_attempt_ID_count"],r["old_original_photo_obs_ID_overlap"])==(1152,128,0,1231349,0)
           assert r["old_all_image_raw_SHA_disjointness_proven"] is False
           st=list(csv.DictReader(open("newest/source_taxon_status.csv")))
           assert len(st)==len({x["inat_taxon_id"] for x in st})==128
@@ -404,7 +404,7 @@ jobs:
                   assert r["new_independent_original_photo_candidates"]==0
                 assert h(vals["source_taxon_status.csv"])==r["source_status_SHA256"]
                 assert h(vals["source_candidates.csv"])==r["source_candidates_SHA256"]
-                assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(1024,128,0,0)
+                assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(1152,128,0,0)
                 assert r["old_all_image_raw_SHA_disjointness_proven"] is False
                 rows=list(csv.DictReader(io.StringIO(vals["source_taxon_status.csv"].decode())))
                 ids=[x["inat_taxon_id"] for x in rows]
