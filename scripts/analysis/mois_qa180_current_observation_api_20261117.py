@@ -32,8 +32,9 @@ def get_batch(ids, session):
     last = None
     for attempt in range(3):
         try:
-            r = session.get(API,
-                params={"id": ",".join(ids), "per_page": len(ids)},
+            # Official recommended bulk-by-ID path avoids incomplete search-index filters.
+            # https://www.inaturalist.org/pages/api+recommended+practices
+            r = session.get(API + "/" + ",".join(ids),
                 headers=headers, timeout=(8, 30))
             if r.status_code in (429, 500, 502, 503, 504):
                 if attempt != 2:
@@ -164,7 +165,7 @@ def main():
     receipt = {
         "schema": "mois_QA180_original_538_current_photo_observation_and_licence_metadata_v1",
         "utc": datetime.now(timezone.utc).isoformat(),
-        "current_api": API,
+        "current_api": API + "/{comma_separated_observation_ids}",
         "batch_size": BATCH_SIZE,
         "requests": len(batch_digests),
         "raw_api_responses_not_redistributed": True,
