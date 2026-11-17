@@ -1,0 +1,96 @@
+name: MOIS gllvm actual fourth corner flower-colour by GBIF recorded community 500km heldout
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-GLLVM-real-fourthcorner-GBIF-native-pilot-20261117.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-gllvm-20261117-European-500km-heldout-source-WCVP
+  cancel-in-progress: false
+
+jobs:
+  true_GBIF_native_recording_fourthcorner_pilot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::gllvm
+            any::jsonlite
+          cache: true
+      - name: Confirm official gllvm fourth-corner package and source
+        run: |
+          set -euo pipefail
+          Rscript -e 'stopifnot(requireNamespace("gllvm",quietly=TRUE), utils::compareVersion(as.character(packageVersion("gllvm")),"2.0.0")>=0);cat("MOIS_GLLVM_VERSION",as.character(packageVersion("gllvm")),"\n")'
+      - name: Download previously SHA-audited true GBIF, WCVP, photo9 and NPP regional Y X TR matrices
+        run: |
+          set -euo pipefail
+          mkdir -p sources
+          curl --fail --location --silent --show-error --retry 3 --retry-delay 5 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14292573380/zip" \
+            -o sources/JSDM_native_WCVP_recording.zip
+          echo 'e9136c8c79a55986ebb6034273027554c02aaf391c6cf60e182942a792e8edb6  sources/JSDM_native_WCVP_recording.zip' | sha256sum -c -
+          (cd sources && unzip -q JSDM_native_WCVP_recording.zip)
+          python3 - <<'PY'
+          import json,csv
+          x=json.load(open('sources/receipt.json'))
+          assert x['source_accepted_species']==37104
+          assert x['response_is_apparent_recorded_species_not_true_occupancy']
+          assert x['GBIF_reporting_effort_proxy_in_X']
+          assert x['no_genus_effect_or_genus_selection']
+          for part in ('Europe_temperate','East_Asia_temperate',
+                       'North_America_temperate'):
+              z=x['panels'][part]
+              assert z['n_sites']==300 and z['n_species']>100
+              with open('sources/'+part+'/X_true_GBIF_100km_environment.csv') as f:
+                  cols=next(csv.reader(f))
+              assert 'GBIF_all_selected_species_record_count' in cols
+          print('MOIS_PREVIOUS_SIGNED_JSDM_Y_X_TR_SOURCE_CONFIRMED')
+          PY
+      - name: Fit two actual 1-latent-factor gllvm recorded-community models and test new 500km blocks
+        run: |
+          set -euo pipefail
+          Rscript scripts/analysis/mois_gllvm_photo9_fourthcorner_recording_pilot_20261117.R \
+            sources/Europe_temperate MOIS_gllvm_Europe_firstshot
+          python3 - <<'PY'
+          import json
+          d=json.load(open('MOIS_gllvm_Europe_firstshot/receipt.json'))
+          assert d['n_sites']==300
+          assert d['n_species']>=60
+          assert d['genus_effect_in_model'] is False
+          assert d['prediction_heldout_block_and_level0'] is True
+          assert d['response_is_opportunistic_GBIF_recording'] is True
+          assert d['model_is_not_true_SD_or_refugia'] is True
+          assert len(d['models'])==2
+          assert all(m['n_eligible_test_species_sites']>500
+                     for m in d['models'])
+          print('MOIS_GLLVM_FIRSTSHOT_GBIF_RECORDING_BENCHMARK_ACTUALLY_FITTED',
+                {k:d[k] for k in ('source_panel','n_species',
+                'heldout_delta_logloss_full_minus_current',
+                'heldout_delta_AUC_full_minus_current')})
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-gllvm-actual-fourthcorner-Europe-GBIF-recording-colour-NPP-LGM-holdout
+          path: MOIS_gllvm_Europe_firstshot/
+          retention-days: 90
+          if-no-files-found: warn
