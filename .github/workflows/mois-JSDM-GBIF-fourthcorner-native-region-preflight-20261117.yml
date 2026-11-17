@@ -89,6 +89,8 @@ jobs:
           assert m['source_accepted_species']==37104
           assert m['source_GBIF_species_100km_pairs']==5493931
           assert m['no_genus_effect_or_genus_selection']
+          assert m['GBIF_reporting_effort_proxy_in_X']
+          assert not m['GBIF_reporting_effort_proxy_is_not_survey_effort'] is False
           assert m['response_is_apparent_recorded_species_not_true_occupancy']
           assert m['not_fitted_JSDM_yet']
           panels=m['panels']
