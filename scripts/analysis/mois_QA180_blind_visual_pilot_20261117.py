@@ -25,17 +25,20 @@ def draw_font(size):
         except OSError:pass
     return ImageFont.load_default()
 
-def prepare(blind,metadata):
+def prepare(blind,metadata,photos_per_species):
+    req(photos_per_species in (1,2,3),"invalid number of photos per frozen species")
     with open(blind,newline="",encoding="utf-8-sig") as f:rows=list(csv.DictReader(f))
     req(len(rows)==538 and len({x["blind_photo_review_id"] for x in rows})==538,
         "frozen original photo sheet 538 changed")
     selected=[]
     for number in range(1,181,10):
-        ident=f"MOIS-QA-{number:03d}-P01"
-        row=[x for x in rows if x["blind_photo_review_id"]==ident]
-        req(len(row)==1,"no exact blind photo "+ident)
-        selected.append(row[0])
-    req(len(selected)==18 and len({x["original_photo_page"] for x in selected})==18,
+        for ordinal in range(1,photos_per_species+1):
+            ident=f"MOIS-QA-{number:03d}-P{ordinal:02d}"
+            row=[x for x in rows if x["blind_photo_review_id"]==ident]
+            req(len(row)==1,"no exact blind photo "+ident)
+            selected.append(row[0])
+    req(len(selected)==18*photos_per_species and
+        len({x["original_photo_page"] for x in selected})==len(selected),
         "pilot sample not disjoint")
 
     with zipfile.ZipFile(metadata) as z:
@@ -101,9 +104,9 @@ def make_contact_sheet(items,index,path):
         draw.rectangle((x0+2,y0+2,x0+508,y0+433),outline=(193,206,214),width=2)
     page.save(path,format="JPEG",quality=91,optimize=True)
 
-def run(blind,metadata,outdir):
+def run(blind,metadata,outdir,photos_per_species):
     out=Path(outdir);req(not out.exists(),"no overwrites")
-    items=prepare(blind,metadata)
+    items=prepare(blind,metadata,photos_per_species)
     with requests.Session() as s:
         get_attributed_photos(items,s)
         out.mkdir(parents=True)
@@ -137,8 +140,9 @@ def run(blind,metadata,outdir):
             item["photo_id"]=receipts[-1]["photo_id"]
             print("MOIS_QA180_BLIND_VISUAL_ORIGINAL_PHOTO",k+1,item["blind_photo_review_id"],w,h,flush=True)
             time.sleep(.35)
-    make_contact_sheet(items[:9],0,out/"blind_contact_sheet_1.jpg")
-    make_contact_sheet(items[9:],1,out/"blind_contact_sheet_2.jpg")
+    for start in range(0,len(items),9):
+        num=start//9+1
+        make_contact_sheet(items[start:start+9],num,out/f"blind_contact_sheet_{num}.jpg")
     (out/"SOURCE_CREDITS_AND_SCOPE.txt").write_text(
        "18 iNaturalist public photographs used as NONCOMMERCIAL temporary research preview.\n"
        "Author attribution, photo pages and current CC licenses are preserved per photo in\n"
@@ -148,12 +152,13 @@ def run(blind,metadata,outdir):
     (out/"source_license_manifest.json").write_text(
         json.dumps(receipts,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
     report={
-      "source_blind_sheet_n":538,"pilot_n_photos":18,"pilot_n_unique_species":18,
+      "source_blind_sheet_n":538,"pilot_n_photos":len(items),"pilot_n_unique_species":18,
       "all_preview_source_licenses_and_attributions_matched":True,
       "photo_selection_without_known_model_colour":True,"blinded_species":True,
       "actual_petal_colour_manual_review_completed":0,
       "photo_source_URL_based_on_current_iNaturalist_api":True,
-      "pilot_selects_each_10th_blind_species_first_photo":True,
+      "pilot_selects_each_10th_blind_species_first_photo":(photos_per_species==1),
+      "photos_per_blind_species":photos_per_species,
       "image_SHA256":{p.name:sha(p.read_bytes()) for p in out.glob("blind_contact_sheet_*.jpg")}
     }
     (out/"receipt.json").write_text(json.dumps(report,indent=2)+"\n")
@@ -162,5 +167,6 @@ def run(blind,metadata,outdir):
 if __name__=="__main__":
     p=argparse.ArgumentParser()
     for x in ("blind","meta","out"):p.add_argument("--"+x,required=True)
+    p.add_argument("--photos-per-species",type=int,choices=(1,2,3),default=1)
     a=p.parse_args()
-    run(a.blind,a.meta,a.out)
+    run(a.blind,a.meta,a.out,a.photos_per_species)
