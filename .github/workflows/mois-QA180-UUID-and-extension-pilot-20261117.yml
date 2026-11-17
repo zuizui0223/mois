@@ -1,0 +1,73 @@
+name: "MOIS QA180: diagnose observation UUID and photo extension paths"
+on:
+  push:
+    branches:
+      - analysis/mois-qa180-original-photo-audit-20261117
+    paths:
+      - .github/workflows/mois-QA180-UUID-and-extension-pilot-20261117.yml
+permissions:
+  contents: read
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --disable-pip-version-check "requests>=2.31,<3"
+      - name: Test v2 UUID exact-record endpoint and medium.jpg/jpeg (HEAD only)
+        run: |
+          python - <<'PY'
+          import requests,time,json
+          U=[
+            ("b4dba9de-f9c2-4841-a2d3-a7127118283d","655417744"),
+            ("7636b5d8-353d-4f42-bb10-15d01177fa78","670234322"),
+            ("1193d7ed-bbc4-4329-b5bb-ffbb22b2c060","686025791"),
+          ]
+          s=requests.Session()
+          with open("uuid_extension_pilot.jsonl","w") as out:
+            for oid,pid in U:
+              a={}
+              url="https://api.inaturalist.org/v2/observations/"+oid+"?fields=all"
+              try:
+                r=s.get(url,headers={"User-Agent":"MOIS-QA180-UUID-source-proof/1.0"},timeout=20)
+                a["v2_status"]=r.status_code
+                if r.ok:
+                  x=r.json()
+                  a["v2_top_keys"]=list(x.keys())[:20]
+                  y=x.get("results",[x])
+                  if isinstance(y,list) and y:y=y[0]
+                  a["uuid_returned"]=str(y.get("uuid",""))
+                  a["numeric_id_returned"]=y.get("id")
+                  p=y.get("photos") or []
+                  a["photo_count"]=len(p)
+                  a["original_photo_in_v2"]=any(str(t.get("id"))==pid for t in p)
+                  matched=next((t for t in p if str(t.get("id"))==pid),None)
+                  if matched:
+                    a["matched_photo_keys"]=list(matched.keys())[:30]
+                    a["photo_url"]=matched.get("url")
+                    a["photo_license"]=matched.get("license_code")
+                else:
+                  a["response_error_type"]=r.text[:100]
+              except Exception as e:a["v2_error"]=type(e).__name__+":"+str(e)[:100]
+              for ext in ("jpg","jpeg"):
+                time.sleep(1.2)
+                try:
+                  p=s.head("https://inaturalist-open-data.s3.amazonaws.com/photos/"+pid+"/medium."+ext,
+                    timeout=15)
+                  a["medium_"+ext+"_status"]=p.status_code
+                  a["medium_"+ext+"_type"]=p.headers.get("Content-Type","")
+                except Exception as e:a["medium_"+ext+"_error"]=type(e).__name__
+              print("MOIS_QA_UUID_EXTENSION_PILOT",json.dumps({"id":oid,**a}),flush=True)
+              out.write(json.dumps({"uuid":oid,"photo":pid,**a})+"\n")
+              time.sleep(1.2)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-QA180-uuid-jpeg-probe
+          path: uuid_extension_pilot.jsonl
+          retention-days: 14
+          if-no-files-found: error

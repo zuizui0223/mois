@@ -1,0 +1,59 @@
+name: "MOIS QA180: public observation/photo identity and licence metadata"
+on:
+  push:
+    branches:
+      - analysis/mois-qa180-original-photo-audit-20261117
+    paths:
+      - "scripts/analysis/mois_qa180_current_observation_api_20261117.py"
+      - ".github/workflows/mois-QA180-current-observation-metadata-20261117.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  signed-original-538-photo-current-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install read-only API metadata dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "numpy>=1.26,<3" "pandas>=2.1,<3" "requests>=2.31,<3"
+      - name: Acquire only two signed historical source archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p .qa_source
+          curl --fail --silent --show-error --location --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14093884178/zip" \
+            -o .qa_source/registry.zip
+          curl --fail --silent --show-error --location --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14157705123/zip" \
+            -o .qa_source/traits.zip
+          echo "ac558f06e5a0f75cf0fab2d0a37e3f17b2fe3428f788cccb801b5a01dd2b81ac  .qa_source/registry.zip" | sha256sum -c
+          echo "abcd3aee766c85a92b86a8f93f8ed696bbe49d0f6cf2f64e5f75b457abf78e6a  .qa_source/traits.zip" | sha256sum -c
+      - name: Original observation x exact photo ID current official iNaturalist API audit
+        run: |
+          python -m scripts.analysis.mois_qa180_current_observation_api_20261117 \
+            --blind qa/mois_QA180_20261117/blinded_original_photo_review_sheet.csv \
+            --registry .qa_source/registry.zip \
+            --traits .qa_source/traits.zip \
+            --out .qa_current_public_api
+      - name: Upload only derived verified public metadata, aggregate receipt, no photo pixels
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-QA180-original538-photo-observation-license-public-API
+          path: .qa_current_public_api/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 21

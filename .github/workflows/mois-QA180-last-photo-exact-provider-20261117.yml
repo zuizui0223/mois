@@ -1,0 +1,58 @@
+name: "MOIS QA180: diagnose last unconfirmed original photo 2963387"
+on:
+  push:
+    branches:
+      - analysis/mois-qa180-original-photo-audit-20261117
+    paths:
+      - .github/workflows/mois-QA180-last-photo-exact-provider-20261117.yml
+permissions:
+  contents: read
+jobs:
+  one-photo-no-pixels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --disable-pip-version-check "requests>=2.31,<3"
+      - name: Verify current official photo host URL and HEAD exact extension
+        run: |
+          python - <<'PY'
+          import json,requests
+          from urllib.parse import urlsplit,urlunsplit
+          obs_id="2641319";photo_id="2963387"
+          s=requests.Session()
+          api=s.get("https://api.inaturalist.org/v1/observations/"+obs_id,
+                    timeout=20,headers={"User-Agent":"MOIS-frozen-blind-photo-one-URL-QA/1.0"})
+          api.raise_for_status()
+          rr=api.json()["results"]
+          assert len(rr)==1 and str(rr[0]["id"])==obs_id
+          photo=next((x for x in rr[0].get("photos",[]) if str(x.get("id"))==photo_id),None)
+          assert photo is not None
+          original=photo.get("url") or ""
+          u=urlsplit(original)
+          assert u.scheme=="https" and u.hostname in ("inaturalist-open-data.s3.amazonaws.com","static.inaturalist.org")
+          assert "/photos/"+photo_id+"/" in u.path
+          derived_path=u.path.replace("/square.","/medium.")
+          assert derived_path!=u.path
+          full=urlunsplit((u.scheme,u.netloc,derived_path,u.query,""))
+          p=s.head(full,timeout=(5,15),allow_redirects=True,
+                   headers={"User-Agent":"MOIS-frozen-blind-photo-one-URL-QA/1.0"})
+          result={"photo_id":photo_id,"source_numeric_observation_id":obs_id,
+                  "api_full_photo_id_present":True,"current_photo_license":photo.get("license_code"),
+                  "provider_host":u.hostname,"source_photo_extension":u.path.rsplit(".",1)[-1],
+                  "source_exact_size_url_HEAD":p.status_code,
+                  "source_exact_size_mime":p.headers.get("Content-Type"),
+                  "resolved_photo_url":full if p.ok else None,
+                  "photo_pixels_downloaded":0,"petal_colour_verified":False}
+          print("MOIS_QA180_LAST_PHOTO_SOURCE_URL",json.dumps(result),flush=True)
+          open("photo_2963387_current_provider_HEAD.json","w").write(json.dumps(result,indent=2)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-QA180-original-photo2963387-current-exact-provider
+          path: photo_2963387_current_provider_HEAD.json
+          retention-days: 14
+          if-no-files-found: error
