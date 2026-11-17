@@ -1,0 +1,107 @@
+name: MOIS fitted Hmsc GBIF flower-white fourth-corner NorthAmerica EastAsia holdout
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-Hmsc-GBIF-native-white-fourthcorner-NA-EA-spatial-heldout-20261117.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-Hmsc-true-GBIF-native-NorthAmerica-EastAsia-fourthcorner-20261117
+  cancel-in-progress: false
+
+jobs:
+  actual-multichain-fourthcorner-region:
+    strategy:
+      fail-fast: false
+      matrix:
+        region: [North_America_temperate, East_Asia_temperate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      MOIS_REGION: ${{ matrix.region }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::Hmsc
+            any::jsonlite
+            any::coda
+            any::pROC
+          cache: true
+      - name: Restore verified full source GBIF WCVP 3-region NA-mask panel
+        run: |
+          set -euo pipefail
+          mkdir -p sources
+          curl --fail --location --silent --show-error --retry 4 --retry-delay 6 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14292573380/zip" \
+            -o sources/YXTR.zip
+          echo 'e9136c8c79a55986ebb6034273027554c02aaf391c6cf60e182942a792e8edb6  sources/YXTR.zip' | sha256sum -c -
+          (cd sources && unzip -q YXTR.zip)
+          python3 - <<'PY'
+          import json,os,csv
+          from pathlib import Path
+          region=os.environ['MOIS_REGION']
+          r=json.load(open('sources/receipt.json'))
+          assert r['response_is_apparent_recorded_species_not_true_occupancy']
+          assert r['GBIF_reporting_effort_proxy_in_X']
+          assert r['no_genus_effect_or_genus_selection']
+          assert r['panels'][region]['n_sites']==300
+          assert r['panels'][region]['n_species']>=150
+          assert Path('sources',region,'X_true_GBIF_100km_environment.csv').is_file()
+          print('MOIS_NATIVE_JSDM_SOURCE_REGION_VERIFIED',region)
+          PY
+      - name: Run real 2x180 Hmsc Gibbs posterior and independent 500km heldout predictive evaluation
+        run: |
+          set -euo pipefail
+          Rscript scripts/analysis/mois_hmsc_fourthcorner_recording_spatial_holdout_20261117.R \
+             "sources/$MOIS_REGION" "MOIS_Hmsc_$MOIS_REGION" "$MOIS_REGION"
+          python3 - <<'PY'
+          import json,math,os
+          from pathlib import Path
+          region=os.environ['MOIS_REGION']
+          p=Path('MOIS_Hmsc_'+region,'receipt.json')
+          r=json.load(open(p))
+          assert r['region']==region
+          assert r['GBIF_unrecorded_is_not_true_absence']
+          assert r['geographic_test_blocks_not_train']
+          assert r['site_latent_effect_not_estimated_using_test_Y']
+          assert r['X_standardization_training_only']
+          assert r['n_test_cells']>25
+          assert r['n_included_species']>=40
+          assert len(r['heldout_prediction_metrics'])==4
+          assert len(r['fourthcorner_white_photo_gamma'])==3
+          for v in ['current_climate_only','plus_NPP_AGB_NDVI','plus_LGM_history']:
+              x=r['sample_diagnostics'][v]
+              assert x['n_chains']==2
+              assert x['posterior_draws_per_chain']==180
+          print('MOIS_HMSC_NATIVE_GBIF_PHOTO_WHITE_FOURTHCORNER_REGION_FINAL',
+                region,json.dumps({
+                'n_species':r['n_included_species'],
+                'n_train':r['n_train_cells'],'n_test':r['n_test_cells'],
+                'metrics':r['heldout_prediction_metrics'],
+                'NPP_trait':r['fourthcorner_white_photo_gamma']['plus_LGM_history']['NPP_2001_2023'],
+                'LGM_trait':r['fourthcorner_white_photo_gamma']['plus_LGM_history']['LGM_warming']
+                },sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-Hmsc-trueGBIF-white-fourthcorner-${{ matrix.region }}-twochain-spatialheldout
+          path: MOIS_Hmsc_${{ matrix.region }}/
+          retention-days: 90
+          if-no-files-found: warn
