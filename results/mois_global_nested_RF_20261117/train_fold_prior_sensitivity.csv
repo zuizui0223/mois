@@ -1,0 +1,7 @@
+stage,outcome,n_species,n_genera,fold_train_prior_baseline_LL,raw_class_weighted_RF_LL,train_prior_reweighted_LL,prior_reweighted_balanced_accuracy
+A_current_full_climate,white,36581,6562,0.684937,0.686364,0.680632,0.524935
+B_plus_NPP_NDVI_AGB,white,36581,6562,0.684937,0.686481,0.680797,0.523946
+C_plus_LGM_3GCM,white,36581,6562,0.684937,0.686458,0.680737,0.522355
+A_current_full_climate,nine,36581,6562,1.424663,2.022611,1.414672,0.111111
+B_plus_NPP_NDVI_AGB,nine,36581,6562,1.424663,2.020312,1.415205,0.111111
+C_plus_LGM_3GCM,nine,36581,6562,1.424663,2.019132,1.414176,0.111111
