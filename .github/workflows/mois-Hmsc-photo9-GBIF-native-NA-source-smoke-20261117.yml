@@ -1,0 +1,78 @@
+name: MOIS Hmsc native-range NA-safe GBIF flower-colour fourth corner source smoke
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-Hmsc-photo9-GBIF-native-NA-source-smoke-20261117.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-hmsc-native-range-GBIF-photo9-NA-mask-smoke-20261117
+  cancel-in-progress: false
+
+jobs:
+  source_preserving_Hmsc_photo9:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::Hmsc
+            any::jsonlite
+          cache: true
+      - name: Restore exact original GBIF and WCVP native-range JSDM 3-region source output
+        run: |
+          set -euo pipefail
+          mkdir -p sources
+          curl --fail --location --silent --show-error --retry 4 --retry-delay 6 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14292573380/zip" \
+            -o sources/YXTR.zip
+          echo 'e9136c8c79a55986ebb6034273027554c02aaf391c6cf60e182942a792e8edb6  sources/YXTR.zip' | sha256sum -c -
+          (cd sources && unzip -q YXTR.zip)
+          python3 - <<'PY'
+          import json
+          j=json.load(open('sources/receipt.json'))
+          assert j['response_is_apparent_recorded_species_not_true_occupancy']
+          assert j['GBIF_reporting_effort_proxy_in_X']
+          assert j['no_genus_effect_or_genus_selection']
+          print('MOIS_HMSC_NATIVE_GBIF_JSDM_ORIGINAL_YXTR_SOURCE_VERIFIED')
+          PY
+      - name: Technical Hmsc 1-chain five posterior sample source/NA compatibility only
+        run: |
+          set -euo pipefail
+          Rscript scripts/analysis/mois_hmsc_fourthcorner_NA_mask_smoketest_20261117.R \
+            sources/Europe_temperate MOIS_Hmsc_photo9_NA_smoke
+          python3 - <<'PY'
+          import json
+          r=json.load(open('MOIS_Hmsc_photo9_NA_smoke/receipt.json'))
+          assert r['uses_WCVP_native_range_NA_mask']
+          assert r['mcmc_only_5_samples_after_5_transient']
+          assert r['model_convergence_and_posterior_inference_NOT_assessed']
+          assert not r['genus_as_model_covariate']
+          assert r['n_native_eligible_site_species']>2000
+          print('MOIS_HMSC_TRUE_GBIF_NA_SOURCE_ONLY_SMOKE_COMPLETED',
+                {k:r[k] for k in ('n_species','n_sites','Hmsc_version')})
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-Hmsc-floral-white-fourthcorner-GBIF-native-NA-matrix-technical-smoke
+          path: MOIS_Hmsc_photo9_NA_smoke/
+          retention-days: 90
+          if-no-files-found: warn
