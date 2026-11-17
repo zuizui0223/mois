@@ -1,0 +1,10 @@
+outcome,model,stage,n_species,n_genera,n_predictors,ROC_AUC,balanced_accuracy,log_loss
+white_vs_nonwhite,RF,A_current_full_climate,36581,6562,39,0.562278,0.544027,0.686364
+white_vs_nonwhite,RF,B_plus_NPP_NDVI_AGB,36581,6562,45,0.561666,0.542345,0.686481
+white_vs_nonwhite,RF,C_plus_LGM_3GCM,36581,6562,47,0.562574,0.545501,0.686458
+white_vs_nonwhite,HGB,A_current_full_climate,36581,6562,39,0.565560,0.518829,0.677876
+white_vs_nonwhite,HGB,B_plus_NPP_NDVI_AGB,36581,6562,45,0.565585,0.517913,0.677928
+white_vs_nonwhite,HGB,C_plus_LGM_3GCM,36581,6562,47,0.565916,0.517419,0.677785
+nine_hues,RF,A_current_full_climate,36581,6562,39,,0.158069,2.022611
+nine_hues,RF,B_plus_NPP_NDVI_AGB,36581,6562,45,,0.161508,2.020312
+nine_hues,RF,C_plus_LGM_3GCM,36581,6562,47,,0.160001,2.019132
