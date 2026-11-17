@@ -60,13 +60,20 @@ def prepare(blind,metadata,photos_per_species):
 
 def get_attributed_photos(selected,session):
     ids=list(dict.fromkeys(x["canonical_observation_id"] for x in selected))
-    api="https://api.inaturalist.org/v1/observations/"+",".join(ids)
-    r=session.get(api,headers={"User-Agent":"MOIS-538-blind-petal-pilot-source-identity/1.0"},
-                  timeout=(8,30))
-    r.raise_for_status()
-    j=r.json()
-    req(len(j.get("results",[]))==len(ids),"wrong iNaturalist API batch size")
-    lookup={str(x["id"]):x for x in j["results"]}
+    lookup={}
+    for start in range(0,len(ids),25):
+        batch=ids[start:start+25]
+        api="https://api.inaturalist.org/v1/observations/"+",".join(batch)
+        r=session.get(api,headers={"User-Agent":"MOIS-538-blind-petal-pilot-source-identity/1.0"},
+                      timeout=(8,30))
+        r.raise_for_status()
+        j=r.json()
+        req(len(j.get("results",[]))==len(batch),"wrong iNaturalist API batch size")
+        found={str(x["id"]):x for x in j["results"]}
+        req(set(found)==set(batch) and not set(found).intersection(lookup),
+            "current iNaturalist returned wrong or duplicate observation IDs")
+        lookup.update(found)
+        time.sleep(1.25)
     req(set(lookup)==set(ids),"iNaturalist observation IDs drift")
     for item in selected:
         obs=lookup[item["canonical_observation_id"]]
