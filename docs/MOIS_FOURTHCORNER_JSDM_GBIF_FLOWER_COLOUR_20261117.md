@@ -40,6 +40,12 @@ JSDMは、MOISの**植物種の現在GBIF記録分布（地域×種）**を応�
 - 補助：`Hmsc`（種形質の階層効果・必要なら系統情報）、`sjSDM`（大規模計算）。それぞれの主効果を同じものとして解釈しない。
 - ベースライン：花色を目的とする既存RF/HGB/GAM／正則化ロジスティック回帰。JSDMのみが花色を直接測定できるわけではない。
 
+## 実モデルの最初の診断：gllvmのTMB初期化エラーとNA保持
+
+- 原本照合と同一の300格子・170候補種の欧州パネルからGBIF記録JSDMを試験する[GitHub Actions run #44003711557](https://github.com/zuizui0223/mois/actions/runs/44003711557)を実行した。公式gllvm 2.xのインストールと元Y/X/TR・GBIF記録努力のSHA検査は**PASS**。
+- モデルの最初の`gllvm(..., TR = white_proxy, num.lv = 1, family = "binomial", method = "VA")`実行時、TMBの`MakeADFun`内で**Segmentation fault（exit code 139）**。**係数・予測・適合度は得ていない**。GBIFの真正な不在データがないまま非自生域NAを0で埋める処置はしていない。
+- エラーが入力のNAパターンか、パッケージ／R/TMBの組合せか、第四コーナーTMBの実装かは未確定。候補ごとに切り分ける必要がある。まず**NA応答を明示的に扱うHmsc**へ移し、`scripts/analysis/mois_hmsc_fourthcorner_NA_mask_smoketest_20261117.R`で少数反復の動作のみ検証する。5サンプル＋5burn-inで済んでも**収束や独立した花色×環境係数の検証とは呼ばない**。
+
 ## 検証を進めるゲート
 
 1. **観測過程**：GBIFで記録がないことは、現地で調査して不在と確認されたことではない。XへGBIF記録数・記録種数を観測努力の粗いproxyとして加えても、本来の検出確率や非記録の理由は識別できない。したがって本パイロットでは「GBIF**記録**JSDM」と表記し、占有・定着JSDMとして断定しない。
