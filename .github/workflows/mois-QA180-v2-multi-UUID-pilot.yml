@@ -1,0 +1,38 @@
+name: "MOIS QA180: v2 multi-UUID batch support pilot"
+on:
+  push:
+    branches:
+      - analysis/mois-qa180-original-photo-audit-20261117
+    paths:
+      - .github/workflows/mois-QA180-v2-multi-UUID-pilot.yml
+permissions:
+  contents: read
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: 
+          python-version: "3.11"
+      - run: python -m pip install --disable-pip-version-check "requests>=2.31,<3"
+      - name: Check one v2 request with three known authentic source observation UUIDs
+        run: |
+          python - <<'PY'
+          import requests,json
+          ids=["b4dba9de-f9c2-4841-a2d3-a7127118283d",
+               "7636b5d8-353d-4f42-bb10-15d01177fa78",
+               "1193d7ed-bbc4-4329-b5bb-ffbb22b2c060"]
+          r=requests.get("https://api.inaturalist.org/v2/observations/"+",".join(ids),
+                         params={"fields":"id,uuid,photos,taxon"},timeout=25,
+                         headers={"User-Agent":"MOIS-QA180-UUID-batch-preflight/1.0"})
+          z={"http":r.status_code}
+          if r.ok:
+              a=r.json()
+              z["total_results"]=a.get("total_results")
+              z["uuid_returned"]=[v.get("uuid") for v in a.get("results",[])]
+              z["matched_original_three"]=(set(z["uuid_returned"])==set(ids))
+          else:z["body_preview"]=r.text[:160]
+          print("MOIS_QA180_V2_UUID_BATCH_PILOT",json.dumps(z),flush=True)
+          PY
