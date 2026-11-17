@@ -157,6 +157,53 @@ def main():
                 batch_index += 1
                 print("MOIS_QA180_CURRENT_INAT_BATCH",kind,batch_index,
                       len(part),"/",len(batch),flush=True)
+    # Use the v2 UUID-to-numeric-ID mapping to retrieve detailed photo metadata
+    # (licence, attribution and URL) from the stable v1 numeric-ID endpoint.
+    # v2 minimal fields preserve exact photo membership, but strip photo metadata.
+    uuid_to_numeric = {}
+    for u in uuid:
+        o = found.get(u)
+        if o is None:
+            continue
+        ensure(str(o.get("uuid")) == u and str(o.get("id", "")).isdecimal(),
+               "v2 UUID-to-numeric observation mapping invalid")
+        uuid_to_numeric[u] = str(o["id"])
+    ensure(len(uuid_to_numeric) == len(uuid), "some frozen UUID observations unresolved")
+    ensure(len(set(uuid_to_numeric.values())) == len(uuid_to_numeric),
+           "multiple UUIDs map to same numeric public observation")
+    ensure(not set(numeric).intersection(uuid_to_numeric.values()),
+           "UUID-resolved numeric IDs duplicate historical numeric observations")
+    with requests.Session() as session:
+        converted_ids = sorted(set(uuid_to_numeric.values()), key=int)
+        v1_details = {}
+        for i in range(0, len(converted_ids), BATCH_SIZE):
+            time.sleep(API_SPACING)
+            batch = converted_ids[i:i+BATCH_SIZE]
+            part, digest = get_batch(batch, session, "numeric")
+            ensure(not set(part).intersection(v1_details),
+                   "duplicate current public numeric observation on second pass")
+            v1_details.update(part)
+            batch_digests.append({
+                "identifier_kind": "uuid_v2_mapped_numeric_v1_detail",
+                "first_index_in_kind": i, "request_ids": len(batch),
+                "returned_public_observations": len(part),
+                "public_response_sha256": digest,
+            })
+            print("MOIS_QA180_UUID_TO_NUMERIC_V1_DETAIL_BATCH",
+                  i//BATCH_SIZE+1,len(part),"/",len(batch),flush=True)
+    ensure(set(v1_details) == set(uuid_to_numeric.values()),
+           "v2 UUID map could not be resolved back to all v1 observation records")
+    for u, numeric_id in uuid_to_numeric.items():
+        detail = dict(v1_details[numeric_id])
+        if detail.get("uuid") not in (None, "", u):
+            raise ValueError("v1/v2 disagree on the actual observation UUID")
+        detail["uuid"] = u
+        # Both independent API versions must return the frozen original photo set.
+        before = {str(p.get("id")) for p in (found[u].get("photos") or [])}
+        after = {str(p.get("id")) for p in (detail.get("photos") or [])}
+        ensure(before <= after and before,
+               "v1/v2 photo identities disagree for current UUID observation")
+        found[u] = detail
     df = pd.DataFrame([inspect_one(row, found.get(str(row.observation_id)))
                        for row in joined.itertuples(index=False)])
     df["historical_observation_id_kind"] = df.original_observation_id.map(
@@ -178,6 +225,7 @@ def main():
         "current_UUID_records_found": int(df.loc[
             df.historical_observation_id_kind.eq("uuid"),
             "current_observation_record_found"].sum()),
+        "UUID_v2_to_numeric_v1_detail_matches": len(v1_details),
         "returned_current_public_observation": int(df.current_observation_record_found.sum()),
         "original_photo_still_present_with_original_observation": int(df.same_original_photo_in_current_observation.sum()),
         "current_photo_license_code_present": int(df.current_photo_license_code.ne("").sum()),
@@ -196,7 +244,8 @@ def main():
         "schema": "mois_QA180_original_538_current_photo_observation_and_licence_metadata_v1",
         "utc": datetime.now(timezone.utc).isoformat(),
         "current_api": [API_V1 + "/{comma_separated_numeric_ids}",
-                        API_V2 + "/{comma_separated_UUIDs}?fields=id,uuid,taxon,photos"],
+                        API_V2 + "/{comma_separated_UUIDs}?fields=id,uuid,taxon,photos",
+                        "v2 UUID -> numeric ID -> v1 full photo metadata"],
         "batch_size": BATCH_SIZE,
         "requests": len(batch_digests),
         "raw_api_responses_not_redistributed": True,
