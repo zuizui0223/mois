@@ -101,7 +101,7 @@ def main():
     ):
         q=stages.add_parser(stage)
         for key in keys:q.add_argument("--"+key,required=True)
-        if stage=="source":q.add_argument("--offset",type=int,default=896)
+        if stage=="source":q.add_argument("--offset",type=int,default=1024)
     args=p.parse_args()
     if args.stage=="source":
         m.source(args.atlas,args.output,quota=128,offset=args.offset)
