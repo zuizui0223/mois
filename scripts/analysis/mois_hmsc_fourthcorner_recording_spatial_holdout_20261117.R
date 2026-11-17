@@ -60,7 +60,7 @@ rownames(trait)<-Tr$key
 colnames(Y)<-Tr$key
 stopifnot(sum(trait$white_proxy==1)>8L,
           sum(trait$white_proxy==0)>8L,
-          colSums(!is.na(Y[train,,drop=FALSE])) |> min()>=25L)
+          min(colSums(!is.na(Y[train,,drop=FALSE])))>=25L)
 raw<-data.frame(
     current_temperature_C=as.numeric(X$present_temperature_C),
     log_current_precip=log1p(as.numeric(X$present_precip_mm)),
@@ -185,10 +185,13 @@ for (variant in names(variants)) {
          error=function(e)NaN)
     ess<-tryCatch(as.numeric(coda::effectiveSize(postchain)[1]),
          error=function(e)NaN)
-    value<-as.numeric(post$mean[ix,wcol])
-    lo<-as.numeric(post$quantiles[ix,wcol,1])
-    hi<-as.numeric(post$quantiles[ix,wcol,2])
-    pos<-as.numeric(post$support[ix,wcol])
+    pooled<-unlist(bychain,use.names=FALSE)
+    value<-mean(pooled)
+    ci<-as.numeric(stats::quantile(pooled,c(.025,.975),names=FALSE))
+    lo<-ci[1];hi<-ci[2]
+    pos<-mean(pooled>0)
+    stopifnot(abs(value-as.numeric(post$mean[ix,wcol]))<1e-8,
+              abs(pos-as.numeric(post$support[ix,wcol]))<1e-8)
     # Do NOT call posterior sign/probability a causal selection result.
     result[[v]]<-list(gamma_trait_environment_probit_mean=value,
            CrI_95=c(lo,hi),posterior_support_positive=pos,
