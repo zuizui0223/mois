@@ -6,7 +6,7 @@ JSDMは、MOISの**植物種の現在GBIF記録分布（地域×種）**を応�
 
 まず巨大な37,104種×18,577格子の一括モデルを行わず、事前に花色を見ずに指定した3地域の真正GBIF記録行列と、WCVP地域自生可否・環境データ・種別花色ラベルの3表を作った。
 
-**GitHub Actions [run #44002905583](https://github.com/zuizui0223/mois/actions/runs/44002905583) SUCCESS**、[artifact #14293695159](https://github.com/zuizui0223/mois/actions/runs/44002905583/artifacts/14293695159)、署名ZIP SHA256 `c07239b2890811b8400984a5657563f07ff6545d26ffdb719205779216bfa586`。後続runではGBIF記録努力の補助量（その格子内の全対象種GBIF occurrence計数・記録種数）をX表へ付与する変更も導入。解析の主線は**花色**であり、属・Jaccardを主目的変数に変更しない。属の固定効果・重み・選抜は今回のパイロットに使わない。
+**GitHub Actions [run #44002905583](https://github.com/zuizui0223/mois/actions/runs/44002905583) SUCCESS**、[artifact #14293695159](https://github.com/zuizui0223/mois/actions/runs/44002905583/artifacts/14293695159)、署名ZIP SHA256 `c07239b2890811b8400984a5657563f07ff6545d26ffdb719205779216bfa586`。追加の**[run #44003290846](https://github.com/zuizui0223/mois/actions/runs/44003290846) SUCCESS**（[artifact #14292573380](https://github.com/zuizui0223/mois/actions/runs/44003290846/artifacts/14292573380)、ZIP SHA256 `e9136c8c79a55986ebb6034273027554c02aaf391c6cf60e182942a792e8edb6`）では、GBIF記録努力の補助量（その格子内の全対象種GBIF occurrence計数・記録種数）をX表へ付与して3地域の結果を再実行した。どちらも画像色ラベルによる対象選択は行わない。解析の主線は**花色**であり、属・Jaccardを主目的変数に変更しない。属の固定効果・重み・選抜は今回のパイロットに使わない。
 
 実装 `scripts/analysis/mois_jsdm_fourthcorner_gbif_native_pilot_20261117.py`、小規模テスト `tests/test_mois_jsdm_fourthcorner_gbif_native_pilot_20261117.py`、Actions `.github/workflows/mois-JSDM-GBIF-fourthcorner-native-region-preflight-20261117.yml`。
 
@@ -52,4 +52,4 @@ JSDMは、MOISの**植物種の現在GBIF記録分布（地域×種）**を応�
 
 37,104種を全18,577格子へゼロ充填した上で標準gllvm/Hmscへ投入しない。生データの5,493,931種×格子の**記録あり**は8.57億でなく約550万であり、密な種×格子配列の多数の0は真の非出現ではない。まず固定3パネルの小規模・明示的なpseudoabsence挙動を検証する。次に生物地理区ごとの学習・空間holdoutを拡張し、個別の草本・島嶼性・送粉シンドロームの問いは後段で処理する。
 
-**現在実際に達成したのは真のsourceからのJSDM入出力行列の生成と交絡チェック用の前処理。JSDMを適合して花色×NPPや花色×LGMの係数が出たという主張はしていない。**
+**現在実際に達成したのは真のsourceからのJSDM入出力行列の生成と交絡チェック用の前処理**。次段として`scripts/analysis/mois_gllvm_photo9_fourthcorner_recording_pilot_20261117.R` と `.github/workflows/mois-GLLVM-real-fourthcorner-GBIF-native-pilot-20261117.yml`を追加。欧州の300格子・500km空間ブロックで、公式gllvmの1潜在因子モデル（現在環境のみ vs NPP＋LGMと白色交互作用）を試験実行する。**別runのSUCCESSが確認されるまでは、JSDMを適合して係数が出たという主張はしない**。
