@@ -77,6 +77,7 @@ def inspect_one(row, observation):
         "original_observation_id": oid,
         "original_inat_taxon_id": str(row.inat_taxon_id),
         "current_observation_record_found": observation is not None,
+        "current_numeric_observation_id": "",
         "same_original_photo_in_current_observation": False,
         "current_taxon_same_as_historical_source": "",
         "current_photo_license_code": "",
@@ -94,6 +95,7 @@ def inspect_one(row, observation):
     else:
         ensure(str(observation.get("id")) == oid,
                "v1 API numeric observation ID mismatch")
+    out["current_numeric_observation_id"] = str(observation.get("id") or "")
     current_taxon = (observation.get("taxon") or {}).get("id")
     if current_taxon is not None:
         out["current_taxon_same_as_historical_source"] = (
@@ -171,11 +173,12 @@ def main():
     ensure(len(uuid_to_numeric) == len(uuid), "some frozen UUID observations unresolved")
     ensure(len(set(uuid_to_numeric.values())) == len(uuid_to_numeric),
            "multiple UUIDs map to same numeric public observation")
-    ensure(not set(numeric).intersection(uuid_to_numeric.values()),
-           "UUID-resolved numeric IDs duplicate historical numeric observations")
+    alias_current_numeric = sorted(set(numeric).intersection(uuid_to_numeric.values()),key=int)
+    # A UUID and a numeric ID may name the SAME actual observation.
+    # Do not mistake distinct historical text strings for independent visits.
     with requests.Session() as session:
-        converted_ids = sorted(set(uuid_to_numeric.values()), key=int)
-        v1_details = {}
+        converted_ids = sorted(set(uuid_to_numeric.values()) - set(numeric), key=int)
+        v1_details = {k: found[k] for k in alias_current_numeric}
         for i in range(0, len(converted_ids), BATCH_SIZE):
             time.sleep(API_SPACING)
             batch = converted_ids[i:i+BATCH_SIZE]
@@ -209,11 +212,30 @@ def main():
     df["historical_observation_id_kind"] = df.original_observation_id.map(
         lambda x: "numeric" if str(x).isdecimal() else "uuid"
     )
+    ensure(df.current_numeric_observation_id.ne("").all(),
+           "a frozen observation has no current canonical numeric identifier")
+    df["qa_species_id"] = df.blind_photo_review_id.str.extract(
+        r"^(MOIS-QA-\d{3})-P\d{2}$", expand=False
+    )
+    ensure(df.qa_species_id.notna().all(), "invalid frozen blind species key")
+    photos_by_species = df.groupby("qa_species_id").original_photo_id.nunique()
+    independent_by_species = df.groupby("qa_species_id").current_numeric_observation_id.nunique()
+    species_with_alias = independent_by_species[photos_by_species != independent_by_species]
+    alias_details = df.loc[
+        df.current_numeric_observation_id.duplicated(keep=False),
+        ["blind_photo_review_id", "original_photo_id",
+         "original_observation_id", "current_numeric_observation_id",
+         "qa_species_id"]
+    ].sort_values(["current_numeric_observation_id", "original_photo_id"])
+    # Preserve all 538 fixed photos. Do not silently reselect or drop any.
     ensure(len(df) == 538 and df.original_photo_id.is_unique,
            "original 538 photo mapping changed")
     out.mkdir(parents=True)
     target = out / "original_photo_current_iNaturalist_API_status.csv"
     df.to_csv(target, index=False)
+    if not alias_details.empty:
+        alias_details.to_csv(out / "numeric_UUID_same_current_observation_aliases.csv",
+                             index=False)
     summary = {
         "n_frozen_original_photo_ids": 538,
         "n_original_accepted_species": 180,
@@ -226,6 +248,12 @@ def main():
             df.historical_observation_id_kind.eq("uuid"),
             "current_observation_record_found"].sum()),
         "UUID_v2_to_numeric_v1_detail_matches": len(v1_details),
+        "historical_numeric_UUID_same_observation_alias_count": len(alias_current_numeric),
+        "distinct_current_numeric_observation_ids": int(df.current_numeric_observation_id.nunique()),
+        "nonindependent_photo_rows_after_current_ID_canonicalization": int(
+            len(df) - df.current_numeric_observation_id.nunique()),
+        "species_with_fewer_current_distinct_observations_than_photos": int(len(species_with_alias)),
+        "minimum_current_distinct_observations_per_blind_species": int(independent_by_species.min()),
         "returned_current_public_observation": int(df.current_observation_record_found.sum()),
         "original_photo_still_present_with_original_observation": int(df.same_original_photo_in_current_observation.sum()),
         "current_photo_license_code_present": int(df.current_photo_license_code.ne("").sum()),
@@ -256,6 +284,10 @@ def main():
         "frozen_source_provenance": source,
         "current_metadata": summary,
         "numeric_output_sha": sha(target),
+        "numeric_UUID_alias_csv_sha": (
+            sha(out / "numeric_UUID_same_current_observation_aliases.csv")
+            if not alias_details.empty else None
+        ),
     }
     (out / "receipt.json").write_text(json.dumps(
         receipt, indent=2, ensure_ascii=False
