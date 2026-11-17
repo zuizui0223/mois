@@ -235,10 +235,10 @@ def main(argv=None):
         df.to_csv(out / "original_photo_url_HEAD_only.csv", index=False)
         pstats = {
             "probed_photos": len(df),
-            "s3_http_200_image": int(
+            "s3_http_200_image": int((
                 (df.provider_medium_http == 200)
                 & df.provider_medium_mime.str.startswith("image/")
-            ).sum(),
+            ).sum()),
             "s3_http_403": int(df.provider_medium_http.eq(403).sum()),
             "s3_http_404": int(df.provider_medium_http.eq(404).sum()),
             "provider_network_or_timeout_errors": int(
