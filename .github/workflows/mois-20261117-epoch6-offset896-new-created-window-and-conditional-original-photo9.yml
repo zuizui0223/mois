@@ -1,0 +1,827 @@
+name: MOIS epoch6 new-created offset896 signed disjoint genuine original ROI9
+# New hash-partitioned epoch after completed 2,199-taxon sweep; no original photo/UUID reuse.
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-20261117-epoch6-offset896-new-created-window-and-conditional-original-photo9.yml
+      - scripts/acquisition/mois_epoch6_post_complete2199_new_created_original_photo9_offset896.py
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-epoch6-offset896-only-once-signed-history
+  cancel-in-progress: false
+
+jobs:
+  source-only-first128:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PYTHONUNBUFFERED: '1'
+    outputs:
+      has_new: ${{ steps.freeze.outputs.has_new }}
+    steps:
+      - name: Independently gate on offset128 signed terminal, ZIP and receipt chain
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          repo="zuizui0223/mois"
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          run=get(f"repos/{repo}/actions/runs/43932884084")
+          assert (run["status"],run["conclusion"])==("completed","success")
+          jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/43932884084/jobs?per_page=100")["jobs"]}
+          assert jobs=={"source-only-first128":"success","pixel-worker-only-if-novel-original":"success","independent-strict9-audit":"success","formal-append-after-audit":"success"}
+          checks=[(14259857099,"b0f0b1b1b113c7a58dbcf4fa879d44dba117e542219d5197076b508eef1612ec"),(14258758210,"e24fff3648d4c980b1096350d2766d028f56e9a0d80a382c726d7b908c6506f4"),(14259332911,"e226efe14a123935275c1a9917a4be447939f9bed97f99b0d19a58f3a32f1d05"),(14258294884,"045a42a0d6680d1e90d6290a244f527ba4eb8cbe20ff80c757773825c7c2f648")]
+          arts={a["id"]:a for a in get(f"repos/{repo}/actions/runs/43932884084/artifacts?per_page=100")["artifacts"]}
+          assert set(arts)=={i for i,_ in checks}
+          for i,h in checks: assert arts[i]["digest"]=="sha256:"+h and not arts[i]["expired"]
+          now=get(f"repos/{repo}/actions/workflows/mois-20261117-epoch6-offset896-new-created-window-and-conditional-original-photo9.yml/runs?per_page=100")
+          assert not any(x["id"]!=int(__import__("os").environ["GITHUB_RUN_ID"]) and x["conclusion"]=="success" for x in now["workflow_runs"])
+          with open("/tmp/mois_gate_offset128.txt","w") as f:
+            for i,h in checks:f.write(f"{i} {h}\n")
+          PY
+          while read -r i h; do
+            curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/actions/artifacts/$i/zip" -o "/tmp/prior_$i.zip"
+            echo "$h  /tmp/prior_$i.zip" | sha256sum -c -
+          done < /tmp/mois_gate_offset128.txt
+          python - <<'PY'
+          import zipfile,json,csv,hashlib,io
+          def d(i):
+            with zipfile.ZipFile("/tmp/prior_"+str(i)+".zip") as z:return {n:z.read(n) for n in z.namelist()}
+          h=lambda b:hashlib.sha256(b).hexdigest()
+          s=d(14259857099);w=d(14258758210);a=d(14259332911);f=d(14258294884)
+          sr=json.loads(s["receipt.json"]);wr=json.loads(w["shard_000/receipt.json"])
+          ar=json.loads(a["receipt.json"]);fr=json.loads(f["receipt.json"])
+          assert h(s["receipt.json"])=="349620c888fa648483892214352f556479605fa9703cdc3bd794cf2aadec30da"
+          assert h(s["manifest.json"])==sr["source_manifest_SHA256"]=="8607fb435945a261e62c0a94fc7ac734087f36a64159a6fde9163cb933353993"
+          assert h(s["shards/shard-000.csv"])==sr["source_shard_SHA256"]=="b07a2b22355821c9e9ca7735db36bcced9a74b662e318f94facb9deb5152c77f"
+          assert h(w["shard_000/receipt.json"])=="84c6dfd6e2f47c6bf5101b29bfcdc28c0a9e99adfaec91cfd373221dbdf4fcf6"
+          assert h(w["shard_000/photos.csv"])==wr["photos_sha256"]=="6c3627333414c0260128fe64961dd279a4b794a9aaa5689e09ef3fd4002b8aa5"
+          assert h(a["receipt.json"])==fr["audit_receipt_sha256"]=="48a4e5a672e91223c9b2509c104a16c0978bd3efdd6e7ee7e7031669bad60184"
+          assert h(a["new_real_original_nine_photo9_delta.parquet"])==ar["verified_delta_sha256"]=="117d262b70866a367f11684a5340a285e30c898810a29e67b69c59578bc54d4a"
+          assert h(f["mois_42111_post20261114_new_independent_original_photo9.csv.gz"])==fr["derived_atlas_sha256"]=="fe2799372abcd0223328cafa8dc37a3a2113230bdd0e7832d281eee2882a2a24"
+          assert (fr["cumulative_photo_attempts"],fr["cumulative_genuine_numeric_photos"],fr["cumulative_numeric_taxa"],fr["cumulative_clear_sampled_photo_taxa"],fr["zero_numeric_remaining"])==(1231347,467566,39912,39173,2199)
+          assert (ar["new_authentic_original_attempts"],ar["new_strict9_numeric_photos"],ar["new_technical_unknowns"],ar["all_historical_photo_and_observation_ID_collisions"])==(1,0,1,0)
+          assert ar["technical_unknown_nine_fractions_all_missing"] is True and fr["old1231244_raw_SHA_fully_compared"] is False
+          ids=[r["inat_taxon_id"] for r in csv.DictReader(io.StringIO(s["source_taxon_status.csv"].decode()))]
+          assert len(ids)==len(set(ids))==128
+          open("/tmp/epoch6_offset128_taxon_ids.txt","w").write("\n".join(ids)+"\n")
+          print("PREDECESSOR_OFFSET128_FOUR_ZIP_BYTE_SHA_RECEIPT_ATLAS_128_TAXA_VALIDATED",flush=True)
+          PY
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require successful terminal predecessor 2048, plus full 896 four-stage history and ZIP bytes
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          repo="zuizui0223/mois"
+          run=get(f"repos/{repo}/actions/runs/43814075592")
+          assert (run["status"],run["conclusion"])==("completed","success")
+          jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/43814075592/jobs?per_page=100")["jobs"]}
+          assert jobs=={"source-only-first128":"success","pixel-worker-only-if-novel-original":"success","independent-strict9-audit":"success","formal-append-after-audit":"success"},jobs
+          expected=[[14201821924,"mois-20261116-epoch5-offset896-signed-1231345-ID-source","4582bcca137a59291a724af5be26848542d6fe5753a6f9587481aeffc98aad1c"],[14201687920,"mois-20261116-epoch5-offset896-genuine-FCP-ROI9-terminal","076450b323de3708db0feebce914cabfb11e1a5983c9ff892e4ba8935747e681"],[14202216277,"mois-20261116-epoch5-offset896-independent-strict9-audit","d1b48be2e9a9a6e0275cf10775f8024dfbfe9cc6e7d225df8410ff2f2f21b88f"],[14201962201,"mois-20261116-epoch5-offset896-genuine-original-42111-taxonomy-append","7e57f3dd49901de5228e44f4b76801f1af432913858aa0db2d546f158732bfdc"]]
+          arts={a["id"]:a for a in get(f"repos/{repo}/actions/runs/43814075592/artifacts?per_page=100")["artifacts"]}
+          assert set(arts)=={a for a,_,_ in expected}
+          for aid,name,digest in expected:
+            a=arts[aid]
+            assert a["name"]==name and a["digest"]=="sha256:"+digest and not a["expired"]
+          now=get(f"repos/{repo}/actions/workflows/mois-20261117-epoch6-offset896-new-created-window-and-conditional-original-photo9.yml/runs?per_page=100")
+          assert not any(r["id"]!=int(__import__("os").environ["GITHUB_RUN_ID"]) and r["conclusion"]=="success" for r in now["workflow_runs"])
+          with open("/tmp/mois_expected_896.txt","w") as f:
+            for aid,_,digest in expected:f.write(f"{aid} {digest}\n")
+          print("PREVIOUS_896_FOUR_OF_FOUR_TERMINAL_AND_SIGNED_META_SUCCESS")
+          PY
+          while read -r id sha; do
+            curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/actions/artifacts/$id/zip" -o "/tmp/mois_$id.zip"
+            echo "$sha  /tmp/mois_$id.zip" | sha256sum -c -
+          done < /tmp/mois_expected_896.txt
+          python - <<'PY'
+          import zipfile,hashlib,json
+          h=lambda b:hashlib.sha256(b).hexdigest()
+          def unpack(art):
+            with zipfile.ZipFile("/tmp/mois_"+str(art)+".zip") as z:
+              names=z.namelist(); return {n:z.read(n) for n in names}
+          s=unpack(14201821924);w=unpack(14201687920);a=unpack(14202216277);f=unpack(14201962201)
+          sr=json.loads(s["receipt.json"])
+          wr=json.loads(w["shard_000/receipt.json"])
+          ar=json.loads(a["receipt.json"])
+          fr=json.loads(f["receipt.json"])
+          assert h(s["receipt.json"])=="fd1c03b057b013faf12bec8e53a76b338f816384260e20bead523456d326389a"
+          assert h(s["manifest.json"])==sr["source_manifest_SHA256"]=="de5a34fadfad6e1167ec0007f809a581eb0d7d8265d6194b4b600aa4735a5a26"
+          assert h(s["shards/shard-000.csv"])==sr["source_shard_SHA256"]=="44d4210bab66e8c2c9f584b4f47c150d0fcd0a4c005c99f82690b7e6e0934704"
+          assert h(s["source_taxon_status.csv"])==sr["source_status_SHA256"]=="a68af2f35323ffe1bf558a0311d858a5ce424a3b0de5fb4ae8afc7c19f7880ac"
+          assert h(s["source_candidates.csv"])==sr["source_candidates_SHA256"]=="d72ec64d77d60a8ef81f68e280e88737f8a5d0f929684385a2cc3b940e0dd129"
+          assert h(w["shard_000/receipt.json"])==ar["source_and_worker_sha256"]["worker_receipt_sha256"]=="ee054f4d21fe26e85481a6fde9f0040f9f77b9bda4e454e6398e91ad47badf47"
+          assert h(w["shard_000/photos.csv"])==wr["photos_sha256"]=="1e4d7e5dffd4c2e69bd9b87fe09a5a55232513b695b18b4704ec89f5c4a4cae4"
+          assert h(a["receipt.json"])==fr["audit_receipt_sha256"]=="37e16cb44e07477b0af7597986f5e1140c79d71d55118711117d2018769c0d7f"
+          assert h(a["new_real_original_nine_photo9_delta.parquet"])==ar["verified_delta_sha256"]=="545d034d3a396db769a9ca26640405bfd9d9b0349074306259cfb906f0a52b11"
+          assert h(f["mois_42111_post20261114_new_independent_original_photo9.csv.gz"])==fr["derived_atlas_sha256"]=="c8c9084ff6ba6d587c41ffd168b942fa21a2fc9932520092598b420dc89bf2b1"
+          assert (fr["cumulative_photo_attempts"],fr["cumulative_genuine_numeric_photos"],fr["cumulative_numeric_taxa"],fr["cumulative_clear_sampled_photo_taxa"],fr["zero_numeric_remaining"])==(1231346,467566,39912,39173,2199)
+          assert (ar["new_authentic_original_attempts"],ar["new_strict9_numeric_photos"],ar["new_technical_unknowns"])==(1,0,1)
+          assert ar["technical_unknown_nine_fractions_all_missing"] is True and fr["old1231244_raw_SHA_fully_compared"] is False
+          print("PREVIOUS_896_REAL_BYTE_SHA_RECEIPT_WORKER_AUDIT_ATLAS_CHAIN_VERIFIED",flush=True)
+          PY
+      - name: Require epoch6 offset0 terminal, signed source ZIP, and actual prior 128 UUID/taxa partition
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          repo="zuizui0223/mois"
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          r=get(f"repos/{repo}/actions/runs/43931289660")
+          assert (r["status"],r["conclusion"])==("completed","success")
+          assert r["head_sha"]=="75e542501c4fa530715dce0f55e8782a8a54b821"
+          jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/43931289660/jobs?per_page=100")["jobs"]}
+          assert jobs=={"source-only-first128":"success","pixel-worker-only-if-novel-original":"skipped","independent-strict9-audit":"skipped","formal-append-after-audit":"skipped"},jobs
+          arts={a["id"]:a for a in get(f"repos/{repo}/actions/runs/43931289660/artifacts?per_page=100")["artifacts"]}
+          assert set(arts)=={14258616417}
+          a=arts[14258616417]
+          assert a["name"]=="mois-20261117-epoch6-offset0-signed-1231346-ID-source"
+          assert a["digest"]=="sha256:b119ef2b645ae6ff52340f728e6957fea25cced915caf9b2fcd4b858c080299c" and not a["expired"]
+          print("EPOCH6_OFFSET0_TERMINAL_SUCCESS_AND_SIGNED_META")
+          PY
+          curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/actions/artifacts/14258616417/zip" -o /tmp/mois_epoch6_offset0.zip
+          echo "b119ef2b645ae6ff52340f728e6957fea25cced915caf9b2fcd4b858c080299c  /tmp/mois_epoch6_offset0.zip" | sha256sum -c -
+          python - <<'PY'
+          import zipfile,hashlib,json,csv,io
+          h=lambda b:hashlib.sha256(b).hexdigest()
+          with zipfile.ZipFile("/tmp/mois_epoch6_offset0.zip") as z:
+            receipt=z.read("receipt.json")
+            r=json.loads(receipt)
+            assert h(receipt)=="072fad42be8b65dbd0fda5ce2fa6f06188583099aede19b48046d0502402f87e"
+            assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]=="ccaa0bab6dd3390445bb1ad67e8d10b66d58006ec0a64434ea9d035eb761eb0d"
+            assert h(z.read("source_candidates.csv"))==r["source_candidates_SHA256"]=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+            assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(0,128,0,0,0)
+            assert r["old_all_image_raw_SHA_disjointness_proven"] is False
+            rows=list(csv.DictReader(io.StringIO(z.read("source_taxon_status.csv").decode())))
+            ids=[x["inat_taxon_id"] for x in rows]
+            assert len(ids)==len(set(ids))==128 and all(x["status"]=="source_queried" for x in rows)
+            open("/tmp/epoch6_offset0_taxon_ids.txt","w").write("\n".join(ids)+"\n")
+            print("EPOCH6_OFFSET0_SIGNED_REAL_ZIP_RECEIPT_STATUS_PHOTO_UUID_ZERO_SUCCESS")
+          PY
+      - name: Require offset256 SUCCESS, signed ZIP byte chain and independent third taxon partition
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess,os
+          repo="zuizui0223/mois"
+          get=lambda path:json.loads(subprocess.check_output(["gh","api",path]))
+          prev=get(f"repos/{repo}/actions/runs/43953442756")
+          assert prev["status"]=="completed" and prev["conclusion"]=="success" and prev["head_sha"]=="f4012cf154d53b2442529d2c9971bdda15d83500"
+          jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/43953442756/jobs?per_page=100")["jobs"]}
+          assert jobs=={"source-only-first128":"success","pixel-worker-only-if-novel-original":"skipped","independent-strict9-audit":"skipped","formal-append-after-audit":"skipped"},jobs
+          arts={a["id"]:a for a in get(f"repos/{repo}/actions/runs/43953442756/artifacts?per_page=100")["artifacts"]}
+          assert set(arts)=={14271765487}
+          art=arts[14271765487]
+          assert art["digest"]=="sha256:0b694af6857f4411760ab1782cd732f68dac99d2d95c4b1bbaaba053805e5b4b" and not art["expired"]
+          curr=get(f"repos/{repo}/actions/workflows/mois-20261117-epoch6-offset896-new-created-window-and-conditional-original-photo9.yml/runs?per_page=100")
+          assert not any(x["id"]!=int(os.environ["GITHUB_RUN_ID"]) and x["conclusion"]=="success" for x in curr["workflow_runs"])
+          print("OFFSET256_FINISHED_SOURCE_ONLY_0_NEW_PIXEL_OR_ATLAS_NO_REPLAY")
+          PY
+          curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/actions/artifacts/14271765487/zip" -o /tmp/epoch6_offset256_source.zip
+          echo "0b694af6857f4411760ab1782cd732f68dac99d2d95c4b1bbaaba053805e5b4b  /tmp/epoch6_offset256_source.zip" | sha256sum -c -
+          python - <<'PY'
+          import zipfile,json,hashlib,csv,io
+          h=lambda b:hashlib.sha256(b).hexdigest()
+          with zipfile.ZipFile("/tmp/epoch6_offset256_source.zip") as z:
+            rb=z.read("receipt.json")
+            r=json.loads(rb)
+            assert h(rb)=="905d1b422ea291cc5628221561355c96cf92ec60d0f65c3939b0fc4d48ad6476"
+            status=z.read("source_taxon_status.csv"); candidate=z.read("source_candidates.csv")
+            assert h(status)==r["source_status_SHA256"]=="ec89819d3017254ccfe2ba081104bd75f2831e2098e014959d0390414deff7dc"
+            assert h(candidate)==r["source_candidates_SHA256"]=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+            assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(256,128,0,0,0)
+            assert r["old_all_image_raw_SHA_disjointness_proven"] is False
+            rows=list(csv.DictReader(io.StringIO(status.decode())))
+            ids=[a["inat_taxon_id"] for a in rows]
+            p0=set(open("/tmp/epoch6_offset0_taxon_ids.txt").read().splitlines())
+            p1=set(open("/tmp/epoch6_offset128_taxon_ids.txt").read().splitlines())
+            assert len(ids)==len(set(ids))==128 and not set(ids).intersection(p0|p1)
+            assert all(a["status"]=="source_queried" for a in rows)
+            open("/tmp/epoch6_offset256_taxon_ids.txt","w").write("\n".join(ids)+"\n")
+            print("OFFSET256_INDEPENDENT_REAL_ZIP_SHA_RECEIPT_COHORT_128_DISJOINT",flush=True)
+          PY
+      - name: Gate epoch6 offset384 terminal signed source ZIP bytes and fourth 128-taxon partition
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, subprocess, os
+          repo="zuizui0223/mois"
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          r=get(f"repos/{repo}/actions/runs/43962573359")
+          assert (r["status"],r["conclusion"])==("completed","success"),r
+          jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/43962573359/jobs?per_page=100")["jobs"]}
+          assert jobs=={"source-only-first128":"success","pixel-worker-only-if-novel-original":"skipped","independent-strict9-audit":"skipped","formal-append-after-audit":"skipped","independent-final-byte-audit":"success"},jobs
+          a=get(f"repos/{repo}/actions/runs/43962573359/artifacts?per_page=100")["artifacts"]
+          assert len(a)==1 and a[0]["id"]==14273534566 and a[0]["name"]=="mois-20261117-epoch6-offset384-signed-1231347-ID-source" and not a[0]["expired"] and a[0]["digest"]=="sha256:5ef3a3d2079183f3faabc1924d748c78d6bd17a0d14cd99d9dae749a2974395d",a
+          # Freeze only a brand-new source; refuse replay even after a failed previous run
+          now=get(f"repos/{repo}/actions/workflows/mois-20261117-epoch6-offset896-new-created-window-and-conditional-original-photo9.yml/runs?per_page=100")
+          for old in now["workflow_runs"]:
+            if old["id"]==int(os.environ["GITHUB_RUN_ID"]):continue
+            assert old["conclusion"]!="success","already successfully completed offset896"
+            prior=get(f"repos/{repo}/actions/runs/{old['id']}/artifacts?per_page=100")["artifacts"]
+            assert not prior,"earlier offset896 run published source; never refetch the same signed source"
+          PY
+          curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/actions/artifacts/14273534566/zip" -o /tmp/mois_epoch6_offset384_source.zip
+          echo "5ef3a3d2079183f3faabc1924d748c78d6bd17a0d14cd99d9dae749a2974395d  /tmp/mois_epoch6_offset384_source.zip" | sha256sum -c -
+          python - <<'PY'
+          import csv,io,hashlib,json,zipfile
+          h=lambda b:hashlib.sha256(b).hexdigest()
+          with zipfile.ZipFile("/tmp/mois_epoch6_offset384_source.zip") as z:
+            r=json.loads(z.read("receipt.json"))
+            assert h(z.read("receipt.json"))=="56cb24fcc729d7c8354f2736f9b5bb98367bee07eb85c097632c3000df4fce9d"
+            assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]=="a3ceeb296a1130da53ef3ad91dcbf7474bd1566caa32ef550d007c380bf50202"
+            assert h(z.read("source_candidates.csv"))==r["source_candidates_SHA256"]=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+            assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(384,128,0,0,0),r
+            assert r["old_all_image_raw_SHA_disjointness_proven"] is False
+            ids=[x["inat_taxon_id"] for x in csv.DictReader(io.StringIO(z.read("source_taxon_status.csv").decode()))]
+            assert len(ids)==len(set(ids))==128
+            prior=set(open("/tmp/epoch6_offset0_taxon_ids.txt").read().splitlines())
+            prior128=set(open("/tmp/epoch6_offset128_taxon_ids.txt").read().splitlines())
+            prior256=set(open("/tmp/epoch6_offset256_taxon_ids.txt").read().splitlines())
+            assert len(prior|prior128|prior256)==384 and not set(ids).intersection(prior|prior128|prior256)
+            open("/tmp/epoch6_offset384_taxon_ids.txt","w").write("\n".join(ids)+"\n")
+            print("PREVIOUS_OFFSET384_SIGNED_BYTE_RECEIPT_128_DISJOINT_SOURCE_ONLY_SUCCESS",flush=True)
+          PY
+      - name: Independently inspect 2,176 source taxa across seventeen signed hash-disjoint cohorts
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          repo="zuizui0223/mois"
+          expected=[[43772102468,14184518712,"4ae4073f17810f9f78af720e7241ea1bfbced4745c2d8266e677659d242cd510",0],[43779275858,14186834831,"bb1b79e73a2ec098136b0e53f12224b20760b2461d0aaad50826ea856e3fc887",128],[43783789589,14189582536,"edb167851c5e8dee40a2ae19bad8c2ed320189ee8360ec0dd9d11ad2bc02c882",256],[43792595984,14193430488,"d32b4d7254aad1f5991ac656f7085d7571cca13392f72155df362d8767f90f3e",384],[43795340655,14193744661,"56a553d64163ad47825e4cc746f54f72af6c2ef7e7b744b00250e142c23bba5a",512],[43806328311,14197993517,"4089f8e81fc9e1ed949290a04a226ce13522ab6862ff6ca85c91b73968e386d0",640],[43809194943,14200066748,"193a1eabd8c2e617fff787975ed754d1fe1eb57b0195bddd1bccc2ecb0a90e77",768],[43814075592,14201821924,"4582bcca137a59291a724af5be26848542d6fe5753a6f9587481aeffc98aad1c",896],[43829247738,14208306405,"9d7784101761730ee47bf6539203a0cabaf2184172f85ac10d261e67f77ae617",1024],[43842359369,14213044456,"f4350e3ca92a0e2b595e5ad179efc86fcd8bceb0f203e08857c8dd3c8c1a6720",1152],[43849544303,14217516072,"44ec168aac564694ce4d10ef58a091b163cc57295bdce4fee4a577653b9b929f",1280], [43859360760,14221943243,"8049f3d3d03cb0b0fcb91aa1ef987e7ee93913fd1994be074960047613b9adfe",1408],[43861855282,14223742082,"3167be54142c2126e7e4d4f8d00095c53571d005f629d9e38ff36966549a7db0",1536],[43883058644,14232578462,"54f4eda5ccc45738e9664490c58f384203ddb3c1dcae7620ee0befe20939e9f8",1664],[43899857491,14240953057,"b304201ac58a13dfdda97e8a183b6b3b8eaa4ca2219c03aaf8f73d21b2e05475",1792], [43906185019,14245102819,"d37dd34ec26548206250b2a8bdb19e58b4c9629ee42d1147a72e33527ba39d21",1920], [43916783813,14252475455,"2ab286ae196d2d4db489772b4b45f97c06a944234a761c752a4db16dfedfb82d",2048]]
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          assert len(expected)==17 and len({v[3] for v in expected})==17
+          for rid,aid,sha,off in expected:
+            r=get(f"repos/{repo}/actions/runs/{rid}")
+            assert (r["status"],r["conclusion"])==("completed","success")
+            arts={a["id"]:a for a in get(f"repos/{repo}/actions/runs/{rid}/artifacts?per_page=100")["artifacts"]}
+            assert aid in arts and arts[aid]["digest"]=="sha256:"+sha and not arts[aid]["expired"]
+            if off==1024:
+              jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/{rid}/jobs?per_page=100")["jobs"]}
+              assert jobs=={"source-only-first128":"success","pixel-worker-only-if-novel-original":"skipped","independent-strict9-audit":"skipped","formal-append-after-audit":"skipped"},jobs
+          independent=get(f"repos/{repo}/actions/runs/43917735872")
+          assert (independent["status"],independent["conclusion"])==("completed","success")
+          independent_jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/43917735872/jobs?per_page=100")["jobs"]}
+          assert independent_jobs=={"audit-existing-signed-source-without-replay":"success"},independent_jobs
+          latest=get(f"repos/{repo}/actions/runs/43916783813")
+          assert (latest["status"],latest["conclusion"])==("completed","success")
+          jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/43916783813/jobs?per_page=100")["jobs"]}
+          assert jobs=={"source-only-first128":"success","pixel-worker-only-if-novel-original":"skipped","independent-strict9-audit":"skipped","formal-append-after-audit":"skipped"},jobs
+          with open("/tmp/mois_previous_source.txt","w") as f:
+            for rid,aid,sha,off in expected:f.write(f"{aid} {sha} {off}\n")
+          PY
+          while read -r id sha off; do
+            if [ "$off" = 896 ]; then cp /tmp/mois_14201821924.zip "/tmp/mois_prev_$off.zip"; else
+              curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/actions/artifacts/$id/zip" -o "/tmp/mois_prev_$off.zip"
+            fi
+            echo "$sha  /tmp/mois_prev_$off.zip" | sha256sum -c -
+          done < /tmp/mois_previous_source.txt
+          python - <<'PY'
+          import zipfile,hashlib,json,csv,io
+          h=lambda b:hashlib.sha256(b).hexdigest()
+          seen=set()
+          for off in range(0,2176,128):
+            with zipfile.ZipFile("/tmp/mois_prev_"+str(off)+".zip") as z:
+              r=json.loads(z.read("receipt.json"))
+              statuses=list(csv.DictReader(io.StringIO(z.read("source_taxon_status.csv").decode())))
+              assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]
+              assert h(z.read("source_candidates.csv"))==r["source_candidates_SHA256"]
+              if off==1024:
+                assert h(z.read("receipt.json"))=="019412097f791fc1a106ab544fa7c7bc5548ec33126d8be29b13ab11294a013a"
+                assert h(z.read("source_taxon_status.csv"))=="b9917e52cad029e08b952b82294e3ade84b123e163aad1457b92a31a86a53389"
+                assert h(z.read("source_candidates.csv"))=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+                assert r["new_independent_original_photo_candidates"]==0
+              if off==1152:
+                assert h(z.read("receipt.json"))=="0d1ed70cfd63e1290798f653eba4a914d7e9c0accdd5a1450c6822fec2a4de8b"
+                assert h(z.read("source_taxon_status.csv"))=="23440fe7c5019cc87fbbb869b60c2ecc9ec6c58f033ab6f33da2a4e9a3f66a81"
+                assert h(z.read("source_candidates.csv"))=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+                assert r["new_independent_original_photo_candidates"]==0
+              if off==1280:
+                assert h(z.read("receipt.json"))=="631dcad09ff1103a11c40bb0405eacd50357d229d9e9caa27efe151a4009777e"
+                assert h(z.read("source_taxon_status.csv"))=="61519f7737d3ce8f0e47bc9d2543c8998023b8ecf033c7cbdd4a625a69297a42"
+                assert h(z.read("source_candidates.csv"))=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+                assert r["new_independent_original_photo_candidates"]==0
+              if off==1536:
+                assert h(z.read("receipt.json"))=="d5b35b241b0e3114eed1863d9169e14252c605e905c296639f18c2cb2fb26379"
+                assert h(z.read("source_taxon_status.csv"))=="39ccfd31c5474b5c38c159fe348e489b02a835e14338bccda638b1d459f66568"
+                assert h(z.read("source_candidates.csv"))=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+                assert r["new_independent_original_photo_candidates"]==0
+              if off==2048:
+                assert h(z.read("receipt.json"))=="3794419f6098cdbf85f4b0586ec391378c8c10206d9e1afce12955125882d429"
+                assert h(z.read("source_taxon_status.csv"))=="a1c1f0a839bbf0c782de3ca8de05a1bb1384995358be31a5a5b561d237bd064f"
+                assert h(z.read("source_candidates.csv"))=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+                assert r["new_independent_original_photo_candidates"]==0
+              if off==1920:
+                assert h(z.read("receipt.json"))=="2e5fb98b52bcf02bab831b504e1d5c06a956f1a5b1063b82f7106ae9b81910b8"
+                assert h(z.read("source_taxon_status.csv"))=="64e994a54e9a128719f62fb1a48b0820f5f4495f6d1dd706a8d775c45d0cb3cc"
+                assert h(z.read("source_candidates.csv"))=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+                assert r["new_independent_original_photo_candidates"]==0
+              if off==1792:
+                assert h(z.read("receipt.json"))=="395917905a8edc14a958b3415c018ec31e433ed93f40fa179fc78b77d00bc866"
+                assert h(z.read("source_taxon_status.csv"))=="b1469d23fd0cdd9fb8aac42734325ee6c1f063dcab59836fb2bc480ceebbef67"
+                assert h(z.read("source_candidates.csv"))=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+                assert r["new_independent_original_photo_candidates"]==0
+              if off==1664:
+                assert h(z.read("receipt.json"))=="4c47e10448a4c9d39c7de17e0dce60f7bad5454239fc2ddd4cf07e02139ee7aa"
+                assert h(z.read("source_taxon_status.csv"))=="dd6f93e2a727c3ade09393291072f80c1e7dd3c6d12b4ea437287d431ca5365b"
+                assert h(z.read("source_candidates.csv"))=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+                assert r["new_independent_original_photo_candidates"]==0
+              if off==1408:
+                assert h(z.read("receipt.json"))=="5c6e8a4bb8e5ef74ae119ce5496c85311eeb9abb53901fd92e0bc57831f69932"
+                assert h(z.read("source_taxon_status.csv"))=="1884d8957c4887f4ed5f2ff5c2ab3630573536c10793fe533e1d18e1bf16ce84"
+                assert h(z.read("source_candidates.csv"))=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+                assert r["new_independent_original_photo_candidates"]==0
+              assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"])==(off,128,0)
+              assert r["new_independent_original_photo_candidates"]==(1 if off==896 else 0)
+              assert r["old_original_photo_attempt_ID_count"]==(1231346 if off>=1024 else 1231345)
+              ids=[x["inat_taxon_id"] for x in statuses]
+              assert len(ids)==len(set(ids))==128 and not seen.intersection(ids)
+              assert all(x["status"]=="source_queried" for x in statuses)
+              seen.update(ids)
+          assert len(seen)==2176
+          import subprocess,os
+          repo="zuizui0223/mois"
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          terminal=get(f"repos/{repo}/actions/runs/43918271936")
+          assert (terminal["status"],terminal["conclusion"])==("completed","success")
+          terminal_jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/43918271936/jobs?per_page=100")["jobs"]}
+          assert terminal_jobs=={"source-only-first128":"success","pixel-worker-only-if-novel-original":"skipped","independent-strict9-audit":"skipped","formal-append-after-audit":"skipped"}
+          final_artifacts={a["id"]:a for a in get(f"repos/{repo}/actions/runs/43918271936/artifacts?per_page=100")["artifacts"]}
+          assert final_artifacts[14252241881]["digest"]=="sha256:1b66363adfbd967e417c472e79e700b0c49d1f6d0fa3b6f063723db620205216"
+          independent=get(f"repos/{repo}/actions/runs/43918798958")
+          assert (independent["status"],independent["conclusion"])==("completed","success")
+          independent_artifacts={a["id"]:a for a in get(f"repos/{repo}/actions/runs/43918798958/artifacts?per_page=100")["artifacts"]}
+          assert independent_artifacts[14253115296]["digest"]=="sha256:edb9b55293996d23025c393d0af622135bb6f6ac617505e1eacc8e9cb459eda1"
+          for aid,digest in [(14252241881,"1b66363adfbd967e417c472e79e700b0c49d1f6d0fa3b6f063723db620205216"),(14253115296,"edb9b55293996d23025c393d0af622135bb6f6ac617505e1eacc8e9cb459eda1")]:
+            path=f"/tmp/mois_epoch5_terminal_{aid}.zip"
+            subprocess.check_call(["curl","-fsSL","--retry","3","-H","Authorization: Bearer "+os.environ["GH_TOKEN"],"-H","Accept: application/vnd.github+json",f"https://api.github.com/repos/{repo}/actions/artifacts/{aid}/zip","-o",path])
+            assert h(open(path,"rb").read())==digest
+          with zipfile.ZipFile("/tmp/mois_epoch5_terminal_14252241881.zip") as z:
+            rec=json.loads(z.read("receipt.json"))
+            rows=list(csv.DictReader(io.StringIO(z.read("source_taxon_status.csv").decode())))
+            assert h(z.read("receipt.json"))=="18cf49f46218f54b818c8d155a009d7f1c43252ca0ff7b79831b6863e389eeb7"
+            assert h(z.read("source_taxon_status.csv"))==rec["source_status_SHA256"]=="0974ac87501c37d0955f548c71d30798201385bb1d7bd1b21c274cddaa50f55d"
+            assert h(z.read("source_candidates.csv"))==rec["source_candidates_SHA256"]=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+            assert (rec["hash_disjoint_taxon_offset"],rec["searched_zero_numeric_taxa"],rec["source_API_error_count"],rec["new_independent_original_photo_candidates"])==(2176,23,0,0)
+            ids=[x["inat_taxon_id"] for x in rows]
+            assert len(ids)==len(set(ids))==23 and not seen.intersection(ids)
+            assert all(x["status"]=="source_queried" for x in rows)
+            seen.update(ids)
+          with zipfile.ZipFile("/tmp/mois_epoch5_terminal_14253115296.zip") as z:
+            audit=json.loads(z.read("independent_signed_source.json"))
+            assert audit["run"]==43918271936 and audit["candidate_rows"]==0
+            assert audit["receipt_byte_sha256"]=="18cf49f46218f54b818c8d155a009d7f1c43252ca0ff7b79831b6863e389eeb7"
+          assert len(seen)==2199
+          print("EPOCH5_ALL_PREVIOUS_2199_DISTINCT_TAXA_BYTE_SIGNED_AND_ZERO_API_ERRORS")
+          PY
+      - name: Verify epoch6 offset512 completed, exact signed ZIP/receipt and fifth cohort
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          repo="zuizui0223/mois"
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          r=get(f"repos/{repo}/actions/runs/43969414117")
+          assert (r["status"],r["conclusion"])==("completed","success"),r
+          jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/43969414117/jobs?per_page=100")["jobs"]}
+          assert jobs=={"source-only-first128":"success","pixel-worker-only-if-novel-original":"skipped","independent-strict9-audit":"skipped","formal-append-after-audit":"skipped","independent-final-byte-audit":"success"},jobs
+          arts=get(f"repos/{repo}/actions/runs/43969414117/artifacts?per_page=100")["artifacts"]
+          assert len(arts)==1 and arts[0]["id"]==14277358779 and arts[0]["name"]=="mois-20261117-epoch6-offset512-signed-1231347-ID-source",arts
+          assert not arts[0]["expired"] and arts[0]["digest"]=="sha256:f9f522488fa5f34c257e88051899b7660d402f670a872ff3382b2bd5db5cffc8"
+          print("OFFSET512_SIGNED_TERMINAL_SUCCESS_AND_WORKER_AUDIT_APPEND_SKIPPED",flush=True)
+          PY
+          curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/actions/artifacts/14277358779/zip" -o /tmp/mois_epoch6_offset512_source.zip
+          echo "f9f522488fa5f34c257e88051899b7660d402f670a872ff3382b2bd5db5cffc8  /tmp/mois_epoch6_offset512_source.zip" | sha256sum -c -
+          python - <<'PY'
+          import csv,hashlib,io,json,zipfile
+          h=lambda b:hashlib.sha256(b).hexdigest()
+          with zipfile.ZipFile("/tmp/mois_epoch6_offset512_source.zip") as z:
+            rbytes=z.read("receipt.json");r=json.loads(rbytes)
+            status=z.read("source_taxon_status.csv");candidate=z.read("source_candidates.csv")
+            assert h(rbytes)=="cbc96651e79d5cd40446b82050fe26869b95ae40c4be68f511139496ca9a1e7d"
+            assert h(status)==r["source_status_SHA256"]=="605b8a4936172800b5d4478a362cfedbabfe4d8ad46815795910f5512441cc0c"
+            assert h(candidate)==r["source_candidates_SHA256"]=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+            assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["new_independent_original_photo_candidates"],r["old_original_photo_obs_ID_overlap"])==(512,128,0,0,0)
+            assert r["old_original_photo_attempt_ID_count"]==1231347 and r["recent_known_original_image_raw_SHA_count"]==103
+            assert r["old_all_image_raw_SHA_disjointness_proven"] is False
+            rows=list(csv.DictReader(io.StringIO(status.decode())))
+            ids=[x["inat_taxon_id"] for x in rows]
+            seen=set()
+            for off in (0,128,256,384):
+              p="/tmp/epoch6_offset"+str(off)+"_taxon_ids.txt"
+              group=set(open(p).read().splitlines())
+              assert len(group)==128 and not seen.intersection(group)
+              seen.update(group)
+            assert len(ids)==len(set(ids))==128 and not seen.intersection(ids)
+            assert all(x["status"]=="source_queried" for x in rows)
+            open("/tmp/epoch6_offset512_taxon_ids.txt","w").write("\n".join(ids)+"\n")
+            print("OFFSET512_REAL_ZIP_RECEIPT_AND_SOURCE_COHORT_DISJOINT_640_TAXA",flush=True)
+          PY
+      - name: Gate epoch6 offset640 on 5 terminal SUCCESS jobs and independent four ZIP byte SHA chains
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          repo="zuizui0223/mois"
+          run=get(f"repos/{repo}/actions/runs/43980043678")
+          assert (run["status"],run["conclusion"])==("completed","success")
+          jobs={a["name"]:a["conclusion"] for a in get(f"repos/{repo}/actions/runs/43980043678/jobs?per_page=100")["jobs"]}
+          assert jobs=={a:"success" for a in ("source-only-first128","pixel-worker-only-if-novel-original","independent-strict9-audit","formal-append-after-audit","independent-final-byte-audit")}
+          expect={14283177408:"ff7fb557850a68593ef1c6676ce9d6d04e6524cbebb3f0e91dee88fc4c5b4bcf",14282188506:"0dbf137efc945b8e99961411f778765536334aaaf15ba507a5b4c97b174124a3",14282824614:"fbbb6bf03532895431a1172dd7cf1f25f9dca9e991da37ba190177b299a5b7c5",14282799524:"47dbe0eee873f297ad34ebab74949fac48b51f858583504bb1bd7a3e838eeb25"}
+          artifacts={a["id"]:a for a in get(f"repos/{repo}/actions/runs/43980043678/artifacts?per_page=100")["artifacts"]}
+          assert artifacts.keys()==expect.keys()
+          with open("/tmp/epoch6_previous640_sha.txt","w") as f:
+            for i,sha in expect.items():
+              assert artifacts[i]["digest"]=="sha256:"+sha and not artifacts[i]["expired"]
+              f.write(f"{i} {sha}\n")
+          print("OFFSET640_FINAL_FIVE_JOBS_AND_FOUR_GITHUB_DIGESTS_SUCCESS")
+          PY
+          while read -r id sha; do
+            curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/actions/artifacts/$id/zip" -o "/tmp/epoch6_prior_$id.zip"
+            echo "$sha  /tmp/epoch6_prior_$id.zip" | sha256sum -c -
+          done < /tmp/epoch6_previous640_sha.txt
+          python - <<'PY'
+          import zipfile,json,csv,hashlib,io
+          h=lambda b:hashlib.sha256(b).hexdigest()
+          def unpack(i):
+            with zipfile.ZipFile(f"/tmp/epoch6_prior_{i}.zip") as z:return {x:z.read(x) for x in z.namelist() if not x.endswith("/")}
+          s=unpack(14283177408);w=unpack(14282188506);a=unpack(14282824614);f=unpack(14282799524)
+          sr=json.loads(s["receipt.json"]);wr=json.loads(w["shard_000/receipt.json"])
+          ar=json.loads(a["receipt.json"]);fr=json.loads(f["receipt.json"])
+          assert h(s["receipt.json"])=="e6f50378c919f0f5a3f8dad3eff330334e8f90afd528ef56cc36933d606343b0"
+          assert h(s["manifest.json"])==sr["source_manifest_SHA256"]=="fceea050bb3a6a0b1f4ab94a7db9781a05c6f305a88a482236adfc3cad171f82"
+          assert h(s["source_taxon_status.csv"])==sr["source_status_SHA256"]=="19823414411e1af8bfc6ce91017f101ec4c12d2ff12a20042310f2c6aae4d830"
+          assert h(s["source_candidates.csv"])==sr["source_candidates_SHA256"]=="ee53b47b37093b832bb36ec66412d216dfb6e4c298b06a371c62a2be139fb9c7"
+          assert h(w["shard_000/receipt.json"])=="4bbb60829e9c0b94b8a3a3738afc1b3938273a883496288ca2c9a0076bec57db"
+          assert h(w["shard_000/photos.csv"])==wr["photos_sha256"]=="a973921101cfd5583592cc5062e785ae5649593e37390eb2fd33703f6d003a89"
+          assert h(a["receipt.json"])==fr["audit_receipt_sha256"]=="fba4e9e6894ccb8754bd16a8a3ca7dd86400820c836ec31415997b61e13c75f6"
+          assert h(a["new_real_original_nine_photo9_delta.parquet"])==ar["verified_delta_sha256"]=="9b27a4535fd4f6f5db6e0f2329449730301e83a3cc6b47f1380b1e371f002a59"
+          assert h(f["mois_42111_post20261114_new_independent_original_photo9.csv.gz"])==fr["derived_atlas_sha256"]=="ee28c331a58c1f16fcd91de31b189366cf16ba76750737741f6fb5b36306b923"
+          assert (sr["hash_disjoint_taxon_offset"],sr["searched_zero_numeric_taxa"],sr["source_API_error_count"],sr["old_original_photo_attempt_ID_count"],sr["old_original_photo_obs_ID_overlap"])==(640,128,0,1231347,0)
+          assert (ar["new_authentic_original_attempts"],ar["new_strict9_numeric_photos"],ar["new_technical_unknowns"],ar["all_historical_photo_and_observation_ID_collisions"])==(1,0,1,0)
+          assert ar["technical_unknown_nine_fractions_all_missing"] is True
+          assert (fr["cumulative_photo_attempts"],fr["cumulative_genuine_numeric_photos"],fr["cumulative_numeric_taxa"],fr["cumulative_clear_sampled_photo_taxa"],fr["zero_numeric_remaining"])==(1231348,467566,39912,39173,2199)
+          assert fr["old1231244_raw_SHA_fully_compared"] is False
+          rows=list(csv.DictReader(io.StringIO(s["source_taxon_status.csv"].decode())))
+          ids={x["inat_taxon_id"] for x in rows}
+          assert len(rows)==len(ids)==128 and all(x["status"]=="source_queried" for x in rows)
+          seen=set()
+          for off in (0,128,256,384,512):
+            group=set(open(f"/tmp/epoch6_offset{off}_taxon_ids.txt").read().splitlines())
+            assert len(group)==128 and not seen.intersection(group)
+            seen.update(group)
+          assert len(seen)==640 and not seen.intersection(ids)
+          open("/tmp/epoch6_offset640_taxon_ids.txt","w").write("\n".join(sorted(ids))+"\n")
+          print("OFFSET640_VERIFIED_SOURCE_WORKER_AUDIT_ATLAS_AND_768_DISJOINT_TAXA",flush=True)
+          PY
+      - name: Require offset768 five terminal jobs and independent signed four-ZIP byte history
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          repo="zuizui0223/mois";rid=43988986347
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          r=get(f"repos/{repo}/actions/runs/{rid}")
+          assert (r["status"],r["conclusion"],r["head_sha"])==("completed","success","80f0f1c2f25a9cbddf70637f8589e700874691b5")
+          j={x["name"]:x["conclusion"] for x in get(f"repos/{repo}/actions/runs/{rid}/jobs?per_page=100")["jobs"]}
+          assert j=={x:"success" for x in ("source-only-first128","pixel-worker-only-if-novel-original","independent-strict9-audit","formal-append-after-audit","independent-final-byte-audit")}
+          d={14286299250:"e77af26461ca00087f5e07a495225f36674505a462716797d87ac3c6f17530f0",14287525809:"0a4ba5c8d8b06f91276c24af4b5690ab05df59d5700766bbbc2e861c6642d451",14286543375:"8860fc3a41b55416af4b5364b17a9f6875e509c6a1b0211753e990b9600bd914",14286513515:"7f2871647c6e5ca597779803d388bc76b592f189b03f3df8901e1bb732fb684d"}
+          a={x["id"]:x for x in get(f"repos/{repo}/actions/runs/{rid}/artifacts?per_page=100")["artifacts"]}
+          assert a.keys()==d.keys()
+          for id,h in d.items():assert a[id]["digest"]=="sha256:"+h and not a[id]["expired"]
+          open("/tmp/prev768.sha","w").write("".join(f"{id} {h}\n" for id,h in d.items()))
+          PY
+          while read -r id h; do
+            curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/actions/artifacts/$id/zip" -o "/tmp/prev768_$id.zip"
+            echo "$h  /tmp/prev768_$id.zip" | sha256sum -c -
+          done < /tmp/prev768.sha
+          python - <<'PY'
+          import zipfile,hashlib,json,csv,io
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          def z(id):
+            with zipfile.ZipFile(f"/tmp/prev768_{id}.zip") as f:return {n:f.read(n) for n in f.namelist() if not n.endswith("/")}
+          s=z(14286299250);w=z(14287525809);a=z(14286543375);f=z(14286513515)
+          sr=json.loads(s["receipt.json"]);wr=json.loads(w["shard_000/receipt.json"])
+          ar=json.loads(a["receipt.json"]);fr=json.loads(f["receipt.json"])
+          assert sha(s["receipt.json"])=="7c726f5f6ec3428eb0084146a42be7e38b3f1047b003498928d72e560e827aa7"
+          assert sha(s["manifest.json"])==sr["source_manifest_SHA256"]=="4d7297f3717abb76f636d4769ac79a8230fdfb9f7a3e92f48bae27edfce62d05"
+          assert sha(s["source_taxon_status.csv"])==sr["source_status_SHA256"]=="5ac239f247d27d9ba3774d9a6fa68d966886227f6741be9affa0c73951cd33b6"
+          assert sha(s["source_candidates.csv"])==sr["source_candidates_SHA256"]=="9e9bb6f16979715191965b1262071b29af7db4298dc85f5a5323a7f5fc655125"
+          assert sha(w["shard_000/receipt.json"])=="b86d2a4c4d031dda89e3cfebcaf935026fc1046e86b323a9d7fa9911a24b91d3"
+          assert sha(w["shard_000/photos.csv"])==wr["photos_sha256"]
+          assert sha(a["receipt.json"])==fr["audit_receipt_sha256"]=="1695bfe321965f77356b28e6f8e2d74ce81bbf6c388139106b17137d6dd3e5d3"
+          assert sha(a["new_real_original_nine_photo9_delta.parquet"])==ar["verified_delta_sha256"]=="6d7f7cb748c0ef349d777cf6c417ddffa262de5ee7234ddb7877c1cce2dabe01"
+          assert sha(f["mois_42111_post20261114_new_independent_original_photo9.csv.gz"])==fr["derived_atlas_sha256"]=="124672d2073f490ceb26bd7132b234912221f278a7528c4063273743db03f9b4"
+          assert (ar["new_authentic_original_attempts"],ar["new_strict9_numeric_photos"],ar["new_technical_unknowns"],ar["all_historical_photo_and_observation_ID_collisions"])==(1,1,0,0)
+          assert (fr["cumulative_photo_attempts"],fr["cumulative_genuine_numeric_photos"],fr["cumulative_numeric_taxa"],fr["cumulative_clear_sampled_photo_taxa"],fr["zero_numeric_remaining"])==(1231349,467567,39913,39173,2198)
+          assert fr["old1231244_raw_SHA_fully_compared"] is False
+          ids={x["inat_taxon_id"] for x in csv.DictReader(io.StringIO(s["source_taxon_status.csv"].decode()))}
+          assert len(ids)==128 and "1249987" in ids
+          prior=set()
+          for off in (0,128,256,384,512,640):
+            q=set(open(f"/tmp/epoch6_offset{off}_taxon_ids.txt").read().splitlines())
+            assert len(q)==128 and not prior.intersection(q)
+            prior.update(q)
+          assert len(prior)==768 and not prior.intersection(ids)
+          open("/tmp/epoch6_offset768_taxon_ids.txt","w").write("\n".join(sorted(ids))+"\n")
+          print("OFFSET768_FOUR_REAL_ZIP_SHA_HISTORY_9COLOUR_ATLAS_AND_COHORT_VERIFIED",flush=True)
+          PY
+      - name: Load formal offset768 atlas and full 1,231,349 photo ID/UUID ledger
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          mkdir -p latest
+          gh run download 43988986347 --repo "$REPO" --name mois-20261117-epoch6-offset768-genuine-original-42111-taxonomy-append --dir latest
+          mkdir -p old/history old/new11 old/new64 old/new18 old/offset1152 old/offset1536 old/offset1792 old/offset2048 old/epoch3_offset1792 old/epoch4_offset896 old/epoch4_offset1792 old/epoch4_offset2048 old/epoch5_offset896 old/epoch6_offset128 old/epoch6_offset640 old/epoch6_offset768
+          gh run download 43546479575 --repo "$REPO" --name mois-postsnapshot-two-CC-photos-full-1231244-ID-source --dir old/history
+          gh run download 43561529394 --repo "$REPO" --name mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append --dir old/new11
+          gh run download 43562522326 --repo "$REPO" --name mois-new1909-fresh-original-real-ROI9-42111-taxonomy-appended --dir old/new64
+          gh run download 43566369683 --repo "$REPO" --name mois-postsnap-remaining18-genuine-ROI9-cumulative-atlas --dir old/new18
+          gh run download 43599310470 --repo "$REPO" --name mois-20261114-offset1152-independent-strict9-audit --dir old/offset1152
+          gh run download 43608952945 --repo "$REPO" --name mois-20261114-offset1536-independent-strict9-audit --dir old/offset1536
+          gh run download 43612554673 --repo "$REPO" --name mois-20261114-offset1792-independent-strict9-audit --dir old/offset1792
+          gh run download 43669250173 --repo "$REPO" --name mois-20261115-epoch2-offset2048-independent-strict9-audit --dir old/offset2048
+          gh run download 43702087793 --repo "$REPO" --name mois-20261115-epoch3-offset1792-independent-strict9-audit --dir old/epoch3_offset1792
+          gh run download 43731496142 --repo "$REPO" --name mois-20261116-epoch4-offset896-independent-strict9-audit --dir old/epoch4_offset896
+          gh run download 43748476569 --repo "$REPO" --name mois-20261116-epoch4-offset1792-independent-strict9-audit --dir old/epoch4_offset1792
+          gh run download 43755422537 --repo "$REPO" --name mois-20261116-epoch4-offset2048-independent-strict9-audit --dir old/epoch4_offset2048
+          gh run download 43814075592 --repo "$REPO" --name mois-20261116-epoch5-offset896-independent-strict9-audit --dir old/epoch5_offset896
+          gh run download 43932884084 --repo "$REPO" --name mois-20261117-epoch6-offset128-independent-strict9-audit --dir old/epoch6_offset128
+          gh run download 43980043678 --repo "$REPO" --name mois-20261117-epoch6-offset640-independent-strict9-audit --dir old/epoch6_offset640
+          gh run download 43988986347 --repo "$REPO" --name mois-20261117-epoch6-offset768-independent-strict9-audit --dir old/epoch6_offset768
+          cp latest/mois_42111_post20261114_new_independent_original_photo9.csv.gz latest/atlas.csv.gz
+          python - <<'PY'
+          import numpy as np,pandas as pd,hashlib
+          from scripts.acquisition import mois_epoch6_post_complete2199_new_created_original_photo9_offset896 as c
+          hist,obs,raw=c.m.history()
+          a=c.m.read_atlas("latest/atlas.csv.gz")
+          vals=a.loc[a.after_strict9.gt(0),["observed_mean_"+s for s in c.m.PALETTE]].to_numpy(float)
+          missing=a.loc[a.after_strict9.eq(0),["observed_mean_"+s for s in c.m.PALETTE]]
+          assert len(a)==42111 and a.after_strict9.gt(0).sum()==39913 and len(missing)==2198
+          assert np.isfinite(vals).all() and (vals>=0).all() and np.all(np.abs(vals.sum(axis=1)-1)<=.001)
+          assert missing.isna().all().all()
+          nxt=c.select_taxa_epoch6(a)
+          assert len(nxt)==len(set(nxt))==128
+          prior=set(open("/tmp/epoch6_offset0_taxon_ids.txt").read().splitlines())
+          assert len(prior)==128 and not set(nxt).intersection(prior)
+          prior128=set(open("/tmp/epoch6_offset128_taxon_ids.txt").read().splitlines())
+          assert len(prior128)==128 and not set(nxt).intersection(prior128) and not prior128.intersection(prior)
+          prior256=set(open("/tmp/epoch6_offset256_taxon_ids.txt").read().splitlines())
+          assert len(prior256)==128 and not prior256.intersection(prior|prior128|set(nxt))
+          prior384=set(open("/tmp/epoch6_offset384_taxon_ids.txt").read().splitlines())
+          assert len(prior384)==128 and not set(nxt).intersection(prior384|prior|prior128|prior256)
+          assert len(prior|prior128|prior256|prior384)==512
+          p512=set(open("/tmp/epoch6_offset512_taxon_ids.txt").read().splitlines())
+          p640=set(open("/tmp/epoch6_offset640_taxon_ids.txt").read().splitlines())
+          p768=set(open("/tmp/epoch6_offset768_taxon_ids.txt").read().splitlines())
+          assert len(p768)==128 and not set(nxt).intersection(p768)
+          assert len(p512)==len(p640)==128 and not set(nxt).intersection(p512|p640)
+          assert not set(nxt).intersection(prior|prior128|prior256|prior384)
+          assert not (prior|prior128|prior256|prior384).intersection(p512|p640|p768) and not p512.intersection(p640|p768) and not p640.intersection(p768)
+          d=pd.read_parquet("old/epoch6_offset768/new_real_original_nine_photo9_delta.parquet")
+          assert len(d)==1 and bool(d.iloc[0].strict9)
+          assert d.loc[~d.strict9,["strict9_"+s for s in c.m.PALETTE]].isna().all().all()
+          assert len(hist)==1231349 and len(raw)==105
+          print("GATE_1231349_PHOTO_UUID_105_RECENT_IMAGE_SHA_42111_9COLOUR_MISSING_SUCCESS")
+          PY
+      - name: Search fresh iNat observation window; freeze source candidates without calling them measured
+        id: freeze
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_epoch6_post_complete2199_new_created_original_photo9_offset896 source --atlas latest/atlas.csv.gz --output newest --offset 896
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json,csv
+          r=json.load(open("newest/receipt.json"))
+          assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_attempt_ID_count"],r["old_original_photo_obs_ID_overlap"])==(896,128,0,1231349,0)
+          assert r["old_all_image_raw_SHA_disjointness_proven"] is False
+          st=list(csv.DictReader(open("newest/source_taxon_status.csv")))
+          assert len(st)==len({x["inat_taxon_id"] for x in st})==128
+          assert all(x["status"]=="source_queried" for x in st)
+          print("has_new="+str(r["new_independent_original_photo_candidates"]>0).lower())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261117-epoch6-offset896-signed-1231349-ID-source
+          path: newest/
+          retention-days: 90
+          if-no-files-found: error
+
+  pixel-worker-only-if-novel-original:
+    needs: source-only-first128
+    if: needs.source-only-first128.outputs.has_new == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-20261117-epoch6-offset896-signed-1231349-ID-source
+          path: signed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bootstrap pinned genuine FCP YOLO11/EfficientSAM RGB ROI-v4
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Download provider actual RGB and assess strict nine numerical ROI
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-epoch6-offset896-original-only"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work --source signed --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" --group 0 --output pixel
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-20261117-epoch6-offset896-genuine-FCP-ROI9-terminal
+          path: pixel/
+          retention-days: 90
+          if-no-files-found: warn
+
+  independent-strict9-audit:
+    needs: [source-only-first128, pixel-worker-only-if-novel-original]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read signed source/worker and independent full-history photo/UUID ledger
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          mkdir -p signed pixel
+          gh run download "$GITHUB_RUN_ID" --repo "$REPO" --name mois-20261117-epoch6-offset896-signed-1231349-ID-source --dir signed
+          gh run download "$GITHUB_RUN_ID" --repo "$REPO" --name mois-20261117-epoch6-offset896-genuine-FCP-ROI9-terminal --dir pixel
+          mkdir -p old/history old/new11 old/new64 old/new18 old/offset1152 old/offset1536 old/offset1792 old/offset2048 old/epoch3_offset1792 old/epoch4_offset896 old/epoch4_offset1792 old/epoch4_offset2048 old/epoch5_offset896 old/epoch6_offset128 old/epoch6_offset640 old/epoch6_offset768
+          gh run download 43546479575 --repo "$REPO" --name mois-postsnapshot-two-CC-photos-full-1231244-ID-source --dir old/history
+          gh run download 43561529394 --repo "$REPO" --name mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append --dir old/new11
+          gh run download 43562522326 --repo "$REPO" --name mois-new1909-fresh-original-real-ROI9-42111-taxonomy-appended --dir old/new64
+          gh run download 43566369683 --repo "$REPO" --name mois-postsnap-remaining18-genuine-ROI9-cumulative-atlas --dir old/new18
+          gh run download 43599310470 --repo "$REPO" --name mois-20261114-offset1152-independent-strict9-audit --dir old/offset1152
+          gh run download 43608952945 --repo "$REPO" --name mois-20261114-offset1536-independent-strict9-audit --dir old/offset1536
+          gh run download 43612554673 --repo "$REPO" --name mois-20261114-offset1792-independent-strict9-audit --dir old/offset1792
+          gh run download 43669250173 --repo "$REPO" --name mois-20261115-epoch2-offset2048-independent-strict9-audit --dir old/offset2048
+          gh run download 43702087793 --repo "$REPO" --name mois-20261115-epoch3-offset1792-independent-strict9-audit --dir old/epoch3_offset1792
+          gh run download 43731496142 --repo "$REPO" --name mois-20261116-epoch4-offset896-independent-strict9-audit --dir old/epoch4_offset896
+          gh run download 43748476569 --repo "$REPO" --name mois-20261116-epoch4-offset1792-independent-strict9-audit --dir old/epoch4_offset1792
+          gh run download 43755422537 --repo "$REPO" --name mois-20261116-epoch4-offset2048-independent-strict9-audit --dir old/epoch4_offset2048
+          gh run download 43814075592 --repo "$REPO" --name mois-20261116-epoch5-offset896-independent-strict9-audit --dir old/epoch5_offset896
+          gh run download 43932884084 --repo "$REPO" --name mois-20261117-epoch6-offset128-independent-strict9-audit --dir old/epoch6_offset128
+          gh run download 43980043678 --repo "$REPO" --name mois-20261117-epoch6-offset640-independent-strict9-audit --dir old/epoch6_offset640
+          gh run download 43988986347 --repo "$REPO" --name mois-20261117-epoch6-offset768-independent-strict9-audit --dir old/epoch6_offset768
+      - name: Verify independent real RGB worker, uniqueness, strict9 or full missing
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_epoch6_post_complete2199_new_created_original_photo9_offset896 audit --source signed --worker pixel --output audited
+          python - <<'PY'
+          import json,pandas as pd
+          from scripts.acquisition import mois_epoch6_post_complete2199_new_created_original_photo9_offset896 as c
+          q=pd.read_parquet("audited/new_real_original_nine_photo9_delta.parquet")
+          r=json.load(open("audited/receipt.json"))
+          assert len(q)==r["new_authentic_original_attempts"] and int(q.strict9.sum())==r["new_strict9_numeric_photos"]
+          assert q.photo_id.astype(str).is_unique and q.observation_id.astype(str).is_unique
+          assert q.loc[~q.strict9,["strict9_"+p for p in c.m.PALETTE]].isna().all().all()
+          assert r["all_historical_photo_and_observation_ID_collisions"]==0
+          assert r["raw_byte_SHA_collisions_with_old1231244_certified"] is False
+          print("INDEPENDENT_PHOTO_UUID_STRICT9_MISSINGNESS_AUDIT_TERMINAL",flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261117-epoch6-offset896-independent-strict9-audit
+          path: audited/
+          retention-days: 90
+          if-no-files-found: error
+
+  formal-append-after-audit:
+    needs: [source-only-first128, pixel-worker-only-if-novel-original, independent-strict9-audit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download verified previous atlas, source, worker, independent audit
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          mkdir -p latest signed pixel audited
+          gh run download 43988986347 --repo "$REPO" --name mois-20261117-epoch6-offset768-genuine-original-42111-taxonomy-append --dir latest
+          gh run download "$GITHUB_RUN_ID" --repo "$REPO" --name mois-20261117-epoch6-offset896-signed-1231349-ID-source --dir signed
+          gh run download "$GITHUB_RUN_ID" --repo "$REPO" --name mois-20261117-epoch6-offset896-genuine-FCP-ROI9-terminal --dir pixel
+          gh run download "$GITHUB_RUN_ID" --repo "$REPO" --name mois-20261117-epoch6-offset896-independent-strict9-audit --dir audited
+      - name: Append audited 9-colour measurements; never turn unknown into zero-vector
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_epoch6_post_complete2199_new_created_original_photo9_offset896 append --atlas latest/mois_42111_post20261114_new_independent_original_photo9.csv.gz --source signed --worker pixel --audit audited --output appended
+          python - <<'PY'
+          import json
+          r=json.load(open("appended/receipt.json"))
+          assert r["cumulative_photo_attempts"]==1231349+r["new_original_photo_attempts"]
+          assert r["cumulative_numeric_taxa"]==39913+r["new_first_numeric_taxa"]
+          assert r["cumulative_clear_sampled_photo_taxa"]==39173+r["new_clear_sampled_photo_hue_taxa"]
+          assert r["old1231244_raw_SHA_fully_compared"] is False
+          print("FORMAL_42111_ATLAS_APPEND_TERMINAL",json.dumps(r,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261117-epoch6-offset896-genuine-original-42111-taxonomy-append
+          path: appended/
+          retention-days: 90
+          if-no-files-found: error
+
+  independent-final-byte-audit:
+    needs: [source-only-first128, pixel-worker-only-if-novel-original, independent-strict9-audit, formal-append-after-audit]
+    if: always() && needs.source-only-first128.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      HAS_NEW: ${{ needs.source-only-first128.outputs.has_new }}
+      PIXEL_RESULT: ${{ needs.pixel-worker-only-if-novel-original.result }}
+      AUDIT_RESULT: ${{ needs.independent-strict9-audit.result }}
+      APPEND_RESULT: ${{ needs.formal-append-after-audit.result }}
+    steps:
+      - name: Independently audit latest artifact ZIP bytes, receipt and four-stage terminal status
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess,os
+          repo="zuizui0223/mois";rid=os.environ["GITHUB_RUN_ID"]
+          d=json.loads(subprocess.check_output(["gh","api",f"repos/{repo}/actions/runs/{rid}/artifacts?per_page=100"]))
+          a=d["artifacts"]
+          expected=1 if os.environ["HAS_NEW"]=="false" else 4
+          assert len(a)==expected,(expected,a)
+          if expected==1:
+            assert [os.environ[x] for x in ("PIXEL_RESULT","AUDIT_RESULT","APPEND_RESULT")]==["skipped"]*3
+          else:
+            assert [os.environ[x] for x in ("PIXEL_RESULT","AUDIT_RESULT","APPEND_RESULT")]==["success"]*3
+          with open("/tmp/latest_artifacts.tsv","w") as f:
+            for obj in a:
+              assert not obj["expired"] and obj["digest"].startswith("sha256:")
+              f.write(str(obj["id"])+" "+obj["digest"][7:]+" "+obj["name"]+"\n")
+          print("TERMINAL_EXPECTED_ARTIFACTS",expected,"HAS_NEW",os.environ["HAS_NEW"],flush=True)
+          PY
+          mkdir -p /tmp/mois_artifacts
+          while read -r id sha name; do
+            curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/actions/artifacts/$id/zip" -o "/tmp/mois_artifacts/$id.zip"
+            echo "$sha  /tmp/mois_artifacts/$id.zip" | sha256sum -c -
+            echo "INDEPENDENT_BYTE_ZIP_SHA256 $id $name $sha"
+          done < /tmp/latest_artifacts.tsv
+          python - <<'PY'
+          import json,csv,io,zipfile,hashlib,glob,os
+          h=lambda b:hashlib.sha256(b).hexdigest()
+          a={}
+          for f in glob.glob("/tmp/mois_artifacts/*.zip"):
+            with zipfile.ZipFile(f) as z:
+              for n in z.namelist():
+                if ".." in n.split("/"):raise AssertionError("unsafe zip path")
+              # Explicit provenance check of every present inner receipt
+              vals={n:z.read(n) for n in z.namelist() if not n.endswith("/")}
+              a.update({os.path.basename(f)+"/"+n:v for n,v in vals.items()})
+              name=" ".join(k for k in vals)
+              if "source_taxon_status.csv" in vals:
+                r=json.loads(vals["receipt.json"])
+                assert h(vals["source_taxon_status.csv"])==r["source_status_SHA256"]
+                assert h(vals["source_candidates.csv"])==r["source_candidates_SHA256"]
+                assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(768,128,0,0)
+                assert r["old_all_image_raw_SHA_disjointness_proven"] is False
+                rows=list(csv.DictReader(io.StringIO(vals["source_taxon_status.csv"].decode())))
+                ids=[x["inat_taxon_id"] for x in rows]
+                assert len(ids)==len(set(ids))==128
+                assert all(x["status"]=="source_queried" for x in rows)
+                print("SOURCE_MANIFEST_AND_RECEIPT_BYTE_SHA256",h(vals["receipt.json"]),h(vals["source_taxon_status.csv"]),h(vals["source_candidates.csv"]),flush=True)
+                print("NEW_SOURCE_CANDIDATES",r["new_independent_original_photo_candidates"],flush=True)
+              elif "receipt.json" in vals:
+                receipt=json.loads(vals["receipt.json"])
+                if "derived_atlas_sha256" in receipt:
+                  assert h(vals["mois_42111_post20261114_new_independent_original_photo9.csv.gz"])==receipt["derived_atlas_sha256"]
+                print("OTHER_INNER_RECEIPT_BYTE_SHA256",h(vals["receipt.json"]),flush=True)
+          assert any(k.endswith("/source_taxon_status.csv") for k in a)
+          print("INDEPENDENT_FINAL_BYTE_AUDIT_SUCCESS",len(a),flush=True)
+          PY
