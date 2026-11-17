@@ -1,0 +1,48 @@
+name: "MOIS QA180: real public-photo blind visual pilot with attribution"
+on:
+  push:
+    branches:
+      - analysis/mois-qa180-original-photo-audit-20261117
+    paths:
+      - scripts/analysis/mois_QA180_blind_visual_pilot_20261117.py
+      - .github/workflows/mois-QA180-blind-visual-pilot-20261117.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  pilot18:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install read-only image audit libraries
+        run: python -m pip install --disable-pip-version-check "pillow>=10,<13" "requests>=2.31,<3"
+      - name: Recover frozen iNaturalist observation-photo mapping
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          curl -fsSL --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14331878149/zip" \
+            -o source/verified538_observation_photo.zip
+          echo "46f05942ebd9a07190a984a68d275edfb7820c9f990e3e25a1f8539372108170  source/verified538_observation_photo.zip" | sha256sum -c
+      - name: Fetch 18 signed-source photo previews from current provider and create blinded contact sheets
+        run: |
+          python scripts/analysis/mois_QA180_blind_visual_pilot_20261117.py \
+            --blind qa/mois_QA180_20261117/blinded_original_photo_review_sheet.csv \
+            --meta source/verified538_observation_photo.zip \
+            --out qa_visual_pilot
+      - name: Upload only temporary attributed review previews, never commit image bytes
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-QA180-18-attributed-real-photo-blind-visual-pilot
+          path: qa_visual_pilot/
+          retention-days: 1
+          if-no-files-found: error
