@@ -46,6 +46,14 @@ JSDMは、MOISの**植物種の現在GBIF記録分布（地域×種）**を応�
 - モデルの最初の`gllvm(..., TR = white_proxy, num.lv = 1, family = "binomial", method = "VA")`実行時、TMBの`MakeADFun`内で**Segmentation fault（exit code 139）**。**係数・予測・適合度は得ていない**。GBIFの真正な不在データがないまま非自生域NAを0で埋める処置はしていない。
 - エラーが入力のNAパターンか、パッケージ／R/TMBの組合せか、第四コーナーTMBの実装かは未確定。候補ごとに切り分ける必要がある。まず**NA応答を明示的に扱うHmsc**へ移し、`scripts/analysis/mois_hmsc_fourthcorner_NA_mask_smoketest_20261117.R`で少数反復の動作のみ検証する。5サンプル＋5burn-inで済んでも**収束や独立した花色×環境係数の検証とは呼ばない**。
 
+### 欠測NAを保持したHmsc 3.3.7の真正な動作検証（SUCCESS）
+
+[Actions run #44004107312](https://github.com/zuizui0223/mois/actions/runs/44004107312) **SUCCESS**。[成果物 #14293502431](https://github.com/zuizui0223/mois/actions/runs/44004107312/artifacts/14293502431)、ZIP SHA256 `c98d00c06caf09eb7aecda6501e32389873c4f05c9ec1915ed620f37785ae9d7`。コード `scripts/analysis/mois_hmsc_fourthcorner_NA_mask_smoketest_20261117.R`、ワークフロー `.github/workflows/mois-Hmsc-photo9-GBIF-native-NA-source-smoke-20261117.yml`。
+
+- 公式Hmsc **3.3.7**、probit応答、種の写真white trait `TrFormula=~white_proxy`、現在気候・NPP2001–2023・木質AGB2020・NDVI・LGM3GCM履歴・GBIF報告量代理変数、サイトrandom level・低次因子を入れて、**実際のMCMCサンプラを5 transient + 5 samples、1 chainで完走**。属は固定効果・標本選択に不使用。
+- 欧州の本来の300 GBIF格子のうち同一格子を使い、支えのある80植物種に限定した **300×80種×格子（24,000個）** を正確に保持。このうちWCVP広域自生地域内にある **12,243組**のみのGBIF記録1／未記録0を解析し、広域自生地域外の **11,757組**を欠測NAのまま保持した。NAを「不在0」へ強制する修正は行っていない。
+- **成功の意味は入力スキーマ、NA処理、Hmsc構造および短いサンプラの技術的整合まで**。5サンプルでの係数・有意性・credible interval・予測性能を推定しておらず、論文の花色×生産力／LGMの肯定結果には含めない。次の統計的実証には十分な複数MCMC chains・収束Rhat/ESS・500kmブロックholdoutと検出過程の補正が必要。
+
 ## 検証を進めるゲート
 
 1. **観測過程**：GBIFで記録がないことは、現地で調査して不在と確認されたことではない。XへGBIF記録数・記録種数を観測努力の粗いproxyとして加えても、本来の検出確率や非記録の理由は識別できない。したがって本パイロットでは「GBIF**記録**JSDM」と表記し、占有・定着JSDMとして断定しない。
