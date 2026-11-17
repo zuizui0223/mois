@@ -77,4 +77,5 @@ jobs:
             .qa_results_pilot/
             .qa_results_full/
           retention-days: 21
-          if-no-files-found: warn
+          if-no-files-found: error
+          include-hidden-files: true
