@@ -82,7 +82,9 @@ def inspect_one(row, observation):
         "current_taxon_same_as_historical_source": "",
         "current_photo_license_code": "",
         "photo_attribution_metadata_present": False,
+        "current_photo_attribution": "",
         "current_photo_url_metadata_present": False,
+        "current_photo_public_url": "",
         "observed_on_public": "",
         "observation_level_flowering_annotation": False,
         "not_biologically_verified": True,
@@ -106,7 +108,9 @@ def inspect_one(row, observation):
             out["same_original_photo_in_current_observation"] = True
             out["current_photo_license_code"] = str(p.get("license_code") or "")
             out["photo_attribution_metadata_present"] = bool(p.get("attribution"))
+            out["current_photo_attribution"] = str(p.get("attribution") or "")
             out["current_photo_url_metadata_present"] = bool(p.get("url"))
+            out["current_photo_public_url"] = str(p.get("url") or "")
             break
     observed = observation.get("observed_on")
     if observed:
@@ -230,6 +234,9 @@ def main():
     # Preserve all 538 fixed photos. Do not silently reselect or drop any.
     ensure(len(df) == 538 and df.original_photo_id.is_unique,
            "original 538 photo mapping changed")
+    ensure(df.current_photo_attribution.ne("").all() and
+           df.current_photo_public_url.ne("").all(),
+           "public photo byline or real source URL absent")
     out.mkdir(parents=True)
     target = out / "original_photo_current_iNaturalist_API_status.csv"
     df.to_csv(target, index=False)
@@ -258,6 +265,7 @@ def main():
         "original_photo_still_present_with_original_observation": int(df.same_original_photo_in_current_observation.sum()),
         "current_photo_license_code_present": int(df.current_photo_license_code.ne("").sum()),
         "attribution_metadata_present": int(df.photo_attribution_metadata_present.sum()),
+        "attribution_text_verified": int(df.current_photo_attribution.ne("").sum()),
         "photo_url_metadata_present": int(df.current_photo_url_metadata_present.sum()),
         "current_original_inat_taxon_id_matches": int(df.current_taxon_same_as_historical_source.eq(True).sum()),
         "current_original_inat_taxon_id_changed": int(df.current_taxon_same_as_historical_source.eq(False).sum()),
