@@ -60,4 +60,4 @@
 
 既存の降水量・写真白ラベルの**観察群集内関連**は残す一方、種レベルの属外汎化において **NPP/植生やLGMを追加しても、写真花色を説明する独立の予測増分は小さく再現性が不明**と明記。新しい適応的機構を過剰に作らない。次段は独立の盲検花被ROI QA（固定180種/538候補写真）、地域外・属外の二重holdout、変数ソースの現代期間一致の検証。レフュージア仮説には化石・花粉・系統地理など別データが必要。
 
-再現コード：scripts/analysis/mois_global_nested_rf_NPP_LGM_20261117.py。元のsigned numerical results は[Actions artifact 14327033140](https://github.com/zuizui0223/mois/actions/runs/44081311708/artifacts/14327033140)にある。独立の学習fold色頻度補正のソースコード・集計値は同日会話成果物として保持する。
+再現コード：scripts/analysis/mois_global_nested_rf_NPP_LGM_20261117.py。元のsigned numerical results は[Actions artifact 14327033140](https://github.com/zuizui0223/mois/actions/runs/44081311708/artifacts/14327033140)にある。独立の学習fold色頻度補正は scripts/analysis/mois_rf_train_prior_sensitivity_20261117.py と [Actions #44083052715](https://github.com/zuizui0223/mois/actions/runs/44083052715) で再実行して**SUCCESS**。prior感度 artifact #14327377868、ZIP SHA256 c6842a08b2a4adc953a8c077d1770dce46e6fcea0387fd74a12f7ce23b9d696a。内部CSV・JSON2ファイルのSHA全一致を独立検証し、同一6比較の推定値がローカル独立解析と小数点誤差1e-10以下で一致。
