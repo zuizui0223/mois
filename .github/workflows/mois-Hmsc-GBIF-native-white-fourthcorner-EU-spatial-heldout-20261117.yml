@@ -1,0 +1,102 @@
+name: MOIS fitted Hmsc GBIF flower-white fourth-corner Europe 500km holdout
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-Hmsc-GBIF-native-white-fourthcorner-EU-spatial-heldout-20261117.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-Hmsc-true-GBIF-native-European-fourthcorner-fit-20261117
+  cancel-in-progress: false
+
+jobs:
+  valid-multichain-hmsc-spatial-holdout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::Hmsc
+            any::jsonlite
+            any::coda
+            any::pROC
+          cache: true
+      - name: Compile real Hmsc R source and restore exact 300-cell native GBIF Europe panel
+        run: |
+          set -euo pipefail
+          Rscript -e "parse(file='scripts/analysis/mois_hmsc_fourthcorner_recording_spatial_holdout_20261117.R');stopifnot(as.character(packageVersion('Hmsc'))=='3.3.7');cat('MOIS_HMSC_R_V337_PARSED')"
+          mkdir -p sources
+          curl --fail --location --silent --show-error --retry 4 --retry-delay 6 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14292573380/zip" \
+            -o sources/YXTR.zip
+          echo 'e9136c8c79a55986ebb6034273027554c02aaf391c6cf60e182942a792e8edb6  sources/YXTR.zip' | sha256sum -c -
+          (cd sources && unzip -q YXTR.zip)
+          python3 - <<'PY'
+          import json
+          m=json.load(open('sources/receipt.json'))
+          assert m['response_is_apparent_recorded_species_not_true_occupancy']
+          assert m['GBIF_reporting_effort_proxy_in_X']
+          assert m['no_genus_effect_or_genus_selection']
+          p=m['panels']['Europe_temperate']
+          assert p['n_sites']==300 and p['n_species']==170
+          assert p['n_500km_blocks']==50
+          print('MOIS_HMSC_EUROPE_300CELL_NATIVE_SOURCE_ORIGINAL_VERIFIED')
+          PY
+      - name: Fit 2-chain Hmsc with latent site level and three nested fourth-corner environmental groups
+        run: |
+          set -euo pipefail
+          Rscript scripts/analysis/mois_hmsc_fourthcorner_recording_spatial_holdout_20261117.R \
+             sources/Europe_temperate MOIS_Hmsc_Europe_true_GBIF_spatial_holdout Europe_temperate
+          python3 - <<'PY'
+          import json,math
+          from pathlib import Path
+          m=json.load(open('MOIS_Hmsc_Europe_true_GBIF_spatial_holdout/receipt.json'))
+          assert m['GBIF_unrecorded_is_not_true_absence']
+          assert m['white_is_species_photo9_proxy_not_verified_petal']
+          assert m['geographic_test_blocks_not_train']
+          assert m['site_latent_effect_not_estimated_using_test_Y']
+          assert m['X_standardization_training_only']
+          assert m['n_included_species']>=40
+          assert m['n_test_cells']>25
+          assert m['n_test_500km_blocks']>=6
+          assert len(m['heldout_prediction_metrics'])==4
+          assert len(m['fourthcorner_white_photo_gamma'])==3
+          for var in ['current_climate_only','plus_NPP_AGB_NDVI','plus_LGM_history']:
+              q=m['sample_diagnostics'][var]
+              assert q['n_chains']==2 and q['posterior_draws_per_chain']==180
+              for x in m['fourthcorner_white_photo_gamma'][var].values():
+                  assert math.isfinite(x['gamma_trait_environment_probit_mean'])
+                  assert len(x['CrI_95'])==2
+          print('MOIS_HMSC_GBIF_WHITE_FOURTHCORNER_MODEL_DATA_SUCCESS',
+                json.dumps({
+                   'region':m['region'],'n_species':m['n_included_species'],
+                   'n_train_sites':m['n_train_cells'],'n_test_sites':m['n_test_cells'],
+                   'prediction_metrics':m['heldout_prediction_metrics'],
+                   'NPP_gamma':m['fourthcorner_white_photo_gamma']['plus_LGM_history']['NPP_2001_2023'],
+                   'LGM_gamma':m['fourthcorner_white_photo_gamma']['plus_LGM_history']['LGM_warming']
+                },sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-Hmsc-GBIF-white-fourthcorner-Europe-twochain-spatialheldout
+          path: MOIS_Hmsc_Europe_true_GBIF_spatial_holdout/
+          retention-days: 90
+          if-no-files-found: warn
