@@ -234,6 +234,19 @@ def run(gbif,env,lgm,spatial,ndvi,npp,wcvp,tdwg,out):
     require(not out.exists(),"refuse overwrite")
     pairs,photo=read_signed_sources(gbif,env)
     environmental=read_paired_environment(lgm,spatial,ndvi,npp)
+    # Explicit detection/reporting effort controls are crucial for opportunistic
+    # GBIF recording outcomes. These describe record intensity, not survey effort.
+    effort=pairs.groupby(["grid_x","grid_y"],sort=False).agg(
+        GBIF_all_selected_species_record_count=("occurrence_count","sum"),
+        GBIF_all_selected_species_recorded_richness=("specieskey","size")
+    ).reset_index()
+    require(int(effort.GBIF_all_selected_species_record_count.sum())==396142825
+            and int(effort.GBIF_all_selected_species_recorded_richness.sum())==5493931,
+            "GBIF recording opportunity denominator drift")
+    environmental=environmental.merge(effort,on=["grid_x","grid_y"],
+                                      how="left",validate="one_to_one")
+    require(environmental.GBIF_all_selected_species_record_count.notna().all(),
+            "source effort missing from a GBIF selected cell")
     names,dist,_=get_wcvp_source(wcvp)
     regions=assign_cells_broad_region(
         # Read original complete climate 18577 table, not only the ~12k
@@ -253,6 +266,8 @@ def run(gbif,env,lgm,spatial,ndvi,npp,wcvp,tdwg,out):
                "grid_x","grid_y","lat","lon","code",
                "block_500km","block_1000km",
                "present_temperature_C","present_precip_mm",
+               "GBIF_all_selected_species_record_count",
+               "GBIF_all_selected_species_recorded_richness",
                "threeGCM_delta_temperature_C_median",
                "threeGCM_delta_log_precip_median",NPP_FIELD,
                "MODIS_NDVI_2001_2021_mean",
@@ -286,6 +301,8 @@ def run(gbif,env,lgm,spatial,ndvi,npp,wcvp,tdwg,out):
      "sampling_not_selected_for_phenotype_result":True,
      "no_genus_effect_or_genus_selection":True,
      "response_is_apparent_recorded_species_not_true_occupancy":True,
+     "GBIF_reporting_effort_proxy_in_X":True,
+     "GBIF_reporting_effort_proxy_is_not_survey_effort":True,
      "unrecorded_cells_must_not_be_called_true_absence":True,
      "not_fitted_JSDM_yet":True,
      "panels":panels}
