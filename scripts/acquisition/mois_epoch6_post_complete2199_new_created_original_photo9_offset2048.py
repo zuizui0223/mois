@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MOIS epoch6 offset2048, 15 signed disjoint predecessor source cohorts.
+"""MOIS epoch6 offset2048, 16 signed disjoint predecessor source cohorts.
 
 The frozen 2,199-taxon ordering predates first-ROI gains at offsets 768 and 1792.
 Restore both newly covered taxa into the original priority frame before slicing
@@ -20,7 +20,7 @@ NEW_DELTA = "old/epoch6_offset1920/new_real_original_nine_photo9_delta.parquet"
 NEW_DELTA_SHA = "81edb60fd6682df660289d7e76c1d446ea622fe0c73f721c84e6ff8e82c8583f"
 PREVIOUS_NEW_NUMERIC = ("1249987", "560402")
 m.SCHEMA = "mois_incremental_20261117_epoch6_offset2048_after_terminal1920_1231352_original_photo9_v1"
-m.SOURCE_ARM = "MOIS_EPOCH6_OFFSET1920_POST_SIGNED1920_FULL_1231352_FROZEN2199_DISJOINT"
+m.SOURCE_ARM = "MOIS_EPOCH6_OFFSET2048_POST_SIGNED1920_FULL_1231352_FROZEN2199_DISJOINT"
 m.MIN_CREATED = "2026-11-15T21:27:57+00:00"
 m.CREATED_D1 = "2026-11-15"
 m.MAX_SOURCE_TAXA = 128
@@ -62,14 +62,14 @@ def history_after_offset1920():
               "complete independent original photo ID or available raw SHA count mismatch")
     return ids, observations, raw
 
-def select_taxa_epoch6(atlas, n=128, offset=1920):
+def select_taxa_epoch6(atlas, n=128, offset=2048):
     missing = atlas.loc[atlas.after_strict9.eq(0)].copy()
     two_new = atlas.loc[atlas.inat_taxon_id.isin(PREVIOUS_NEW_NUMERIC)].copy()
     m.require(len(atlas) == 42111 and atlas.inat_taxon_id.is_unique
               and len(missing) == 2197 and len(two_new) == 2
               and two_new.after_strict9.eq(1).all()
               and not set(PREVIOUS_NEW_NUMERIC).intersection(missing.inat_taxon_id)
-              and n == 128 and offset == 1920,
+              and n == 128 and offset == 2048,
               "restore exactly two numeric first-coverage taxa before frozen slice")
     frozen = pd.concat([missing, two_new], ignore_index=True)
     m.require(len(frozen) == 2199 and frozen.inat_taxon_id.is_unique
@@ -116,7 +116,7 @@ def main():
         m.require(
             (r["hash_disjoint_taxon_offset"], r["searched_zero_numeric_taxa"],
              r["source_API_error_count"], r["old_original_photo_attempt_ID_count"],
-             r["old_original_photo_obs_ID_overlap"]) == (1920, 128, 0, 1231352, 0)
+             r["old_original_photo_obs_ID_overlap"]) == (2048, 128, 0, 1231352, 0)
             and r["old_all_image_raw_SHA_disjointness_proven"] is False
             and r["created_utc_lower_bound"] == m.MIN_CREATED
             and r["original_pixels_fetched"] == r["strict9_numeric_photos"] == 0,
@@ -128,7 +128,7 @@ def main():
         r["new_numeric_taxa_removed_from_sampling_only"] = list(PREVIOUS_NEW_NUMERIC)
         r.pop("recent_97_nonempty_raw_image_SHA_count", None)
         rp.write_text(json.dumps(r, sort_keys=True, indent=2) + "\n")
-        print("MOIS_EPOCH6_OFFSET1920_SOURCE_SIGNED",
+        print("MOIS_EPOCH6_OFFSET2048_SOURCE_SIGNED",
               json.dumps(r, sort_keys=True), flush=True)
     elif args.stage == "audit":
         m.audit(args.source, args.worker, args.output)
