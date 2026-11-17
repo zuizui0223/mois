@@ -85,8 +85,18 @@ jobs:
             with zipfile.ZipFile(f"/tmp/mois_previous_source_zips/{off}.zip") as z:
               assert not any(".." in n.split("/") for n in z.namelist())
               r=json.loads(z.read("receipt.json"))
-              for name,key in (("manifest.json","source_manifest_SHA256"),("shards/shard-000.csv","source_shard_SHA256"),("source_taxon_status.csv","source_status_SHA256"),("source_candidates.csv","source_candidates_SHA256")):
+              # Empty source-only cohorts do not emit an original-image manifest or worker shard.
+              # Verify every existing byte; require manifest/shard when an image candidate exists.
+              for name,key in (("source_taxon_status.csv","source_status_SHA256"),("source_candidates.csv","source_candidates_SHA256")):
                 assert h(z.read(name))==r[key],(off,name)
+              if "manifest.json" in z.namelist():
+                assert h(z.read("manifest.json"))==r["source_manifest_SHA256"]
+              else:
+                assert r["new_independent_original_photo_candidates"]==0
+              if "shards/shard-000.csv" in z.namelist():
+                assert h(z.read("shards/shard-000.csv"))==r["source_shard_SHA256"]
+              else:
+                assert r["new_independent_original_photo_candidates"]==0
               assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(off,128,0,0)
               assert r["old_all_image_raw_SHA_disjointness_proven"] is False
               assert r["new_independent_original_photo_candidates"]==(1 if off in (128,640,768) else 0)
@@ -374,8 +384,14 @@ jobs:
               name=" ".join(k for k in vals)
               if "source_taxon_status.csv" in vals:
                 r=json.loads(vals["receipt.json"])
-                assert h(vals["manifest.json"])==r["source_manifest_SHA256"]
-                assert h(vals["shards/shard-000.csv"])==r["source_shard_SHA256"]
+                if "manifest.json" in vals:
+                  assert h(vals["manifest.json"])==r["source_manifest_SHA256"]
+                else:
+                  assert r["new_independent_original_photo_candidates"]==0
+                if "shards/shard-000.csv" in vals:
+                  assert h(vals["shards/shard-000.csv"])==r["source_shard_SHA256"]
+                else:
+                  assert r["new_independent_original_photo_candidates"]==0
                 assert h(vals["source_taxon_status.csv"])==r["source_status_SHA256"]
                 assert h(vals["source_candidates.csv"])==r["source_candidates_SHA256"]
                 assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(1024,128,0,0)
