@@ -1,0 +1,58 @@
+name: "MOIS QA180: v2 UUID minimal-fields and historical JPG-missing extension pilot"
+on:
+  push:
+    branches:
+      - analysis/mois-qa180-original-photo-audit-20261117
+    paths:
+      - .github/workflows/mois-QA180-uuid-v2-minimal-field-pilot.yml
+permissions:
+  contents: read
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --disable-pip-version-check "requests>=2.31,<3"
+      - name: Probe v2 UUID with subset fields and exact missing jpg candidates
+        run: |
+          python - <<'PY'
+          import requests,time,json
+          ids=["b4dba9de-f9c2-4841-a2d3-a7127118283d",
+               "7636b5d8-353d-4f42-bb10-15d01177fa78",
+               "1193d7ed-bbc4-4329-b5bb-ffbb22b2c060"]
+          imgids=["11171898","255999243","64099886","380333659","331401873","413759292"]
+          s=requests.Session()
+          with open("uuid_v2_minimal_extension.jsonl","w") as f:
+            for uid in ids:
+              for mode in ("id,uuid,taxon,photos","all"):
+                r=s.get("https://api.inaturalist.org/v2/observations/"+uid,
+                        params={"fields":mode},
+                        headers={"User-Agent":"MOIS-QA180-UUID-verified-minimal/1.0"},
+                        timeout=25)
+                z={"id":uid,"fields":mode,"http_status":r.status_code}
+                if r.ok:
+                  j=r.json(); q=j.get("results") or []
+                  p=q[0] if q else {}
+                  z.update({"count":len(q),"uuid":p.get("uuid"),"numeric_id":p.get("id"),
+                           "photos_len":len(p.get("photos") or []),
+                           "photo_ids":[v.get("id") for v in (p.get("photos") or [])[:6]]})
+                else:z["error_preview"]=r.text[:160]
+                print("MOIS_QA_V2_FIELD_PILOT",json.dumps(z),flush=True);f.write(json.dumps(z)+"\n")
+                time.sleep(1.4)
+            for pid in imgids:
+              z={"photo_id":pid}
+              for ext in ("jpg","jpeg","png"):
+                rr=s.head("https://inaturalist-open-data.s3.amazonaws.com/photos/"+pid+"/medium."+ext,timeout=15)
+                z[ext]=rr.status_code;time.sleep(1.4)
+              print("MOIS_QA_IMAGE_EXT_PILOT",json.dumps(z),flush=True);f.write(json.dumps(z)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-QA180-v2-minimal-and-jpg404-extension
+          path: uuid_v2_minimal_extension.jsonl
+          retention-days: 14
