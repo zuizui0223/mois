@@ -107,7 +107,7 @@ def main():
         for key in keys:
             q.add_argument("--" + key, required=True)
         if stage == "source":
-            q.add_argument("--offset", type=int, default=1920)
+            q.add_argument("--offset", type=int, default=2048)
     args = p.parse_args()
     if args.stage == "source":
         m.source(args.atlas, args.output, quota=128, offset=args.offset)
