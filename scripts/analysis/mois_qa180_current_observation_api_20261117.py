@@ -20,21 +20,26 @@ from scripts.analysis.mois_qa180_original_photo_head_audit_20261117 import (
     TRAITS_ZIP_SHA, TRAIT_MEMBER, TRAIT_MEMBER_SHA, ensure, sha,
 )
 
-API = "https://api.inaturalist.org/v1/observations"
+API_V1 = "https://api.inaturalist.org/v1/observations"
+API_V2 = "https://api.inaturalist.org/v2/observations"
 BATCH_SIZE = 30
 API_SPACING = 1.25
 
 
-def get_batch(ids, session):
+def get_batch(ids, session, kind):
+    ensure(kind in ("numeric", "uuid"), "unrecognized identifier kind")
     ensure(1 <= len(ids) <= BATCH_SIZE and len(set(ids)) == len(ids),
            "invalid unique original observation ID batch")
     headers = {"User-Agent": "MOIS-blinded-180-source-metadata-QA/1.0 (noncommercial)"}
     last = None
     for attempt in range(3):
         try:
-            # Official recommended bulk-by-ID path avoids incomplete search-index filters.
-            # https://www.inaturalist.org/pages/api+recommended+practices
-            r = session.get(API + "/" + ",".join(ids),
+            # Source observation IDs are mixed: 126 numeric, 412 UUID.
+            # iNaturalist v2 supports UUID lists with minimal requested fields.
+            # 'fields=all' triggers a confirmed server HTTP 500 on a known UUID.
+            url = (API_V1 if kind == "numeric" else API_V2) + "/" + ",".join(ids)
+            fields = None if kind == "numeric" else {"fields": "id,uuid,taxon,photos"}
+            r = session.get(url, params=fields,
                 headers=headers, timeout=(8, 30))
             if r.status_code in (429, 500, 502, 503, 504):
                 if attempt != 2:
@@ -49,7 +54,7 @@ def get_batch(ids, session):
                    "unexpected pagination or ignored ID filter")
             found = {}
             for o in obj["results"]:
-                k = str(o.get("id"))
+                k = str(o.get("id") if kind == "numeric" else o.get("uuid"))
                 ensure(k in ids and k not in found, "unexpected or repeated public observation ID")
                 found[k] = o
             digest = hashlib.sha256(json.dumps(
@@ -83,7 +88,12 @@ def inspect_one(row, observation):
     }
     if observation is None:
         return out
-    ensure(str(observation.get("id")) == oid, "API observation ID mismatch")
+    if "-" in oid:
+        ensure(str(observation.get("uuid")) == oid,
+               "v2 API observation UUID mismatch")
+    else:
+        ensure(str(observation.get("id")) == oid,
+               "v1 API numeric observation ID mismatch")
     current_taxon = (observation.get("taxon") or {}).get("id")
     if current_taxon is not None:
         out["current_taxon_same_as_historical_source"] = (
@@ -122,24 +132,36 @@ def main():
     joined, source = audit(args.blind, reg, traits)
     obsids = sorted(joined.observation_id.astype(str).unique())
     ensure(len(obsids) == 538, "independent original observation count changed")
+    numeric = [k for k in obsids if k.isdecimal()]
+    uuid = [k for k in obsids if len(k) == 36 and k.count("-") == 4]
+    ensure(len(numeric) == 126 and len(uuid) == 412
+           and len(numeric) + len(uuid) == len(obsids),
+           "historical mixed-format observation identity counts drifted")
     found, batch_digests = {}, []
+    batch_index = 0
     with requests.Session() as session:
-        for i in range(0, len(obsids), BATCH_SIZE):
-            if i:
-                time.sleep(API_SPACING)
-            batch = obsids[i:i+BATCH_SIZE]
-            part, digest = get_batch(batch, session)
-            ensure(not set(part).intersection(found), "a public observation is repeated across API batches")
-            found.update(part)
-            batch_digests.append({
-                "first_index": i, "request_ids": len(batch),
-                "returned_public_observations": len(part),
-                "public_response_sha256": digest,
-            })
-            print("MOIS_QA180_CURRENT_INAT_BATCH",i//BATCH_SIZE+1,
-                  len(part),"/",len(batch),flush=True)
+        for kind, kindids in (("numeric", numeric), ("uuid", uuid)):
+            for i in range(0, len(kindids), BATCH_SIZE):
+                if batch_index:
+                    time.sleep(API_SPACING)
+                batch = kindids[i:i+BATCH_SIZE]
+                part, digest = get_batch(batch, session, kind)
+                ensure(not set(part).intersection(found), "a public observation is repeated across API batches")
+                found.update(part)
+                batch_digests.append({
+                    "identifier_kind": kind,
+                    "first_index_in_kind": i, "request_ids": len(batch),
+                    "returned_public_observations": len(part),
+                    "public_response_sha256": digest,
+                })
+                batch_index += 1
+                print("MOIS_QA180_CURRENT_INAT_BATCH",kind,batch_index,
+                      len(part),"/",len(batch),flush=True)
     df = pd.DataFrame([inspect_one(row, found.get(str(row.observation_id)))
                        for row in joined.itertuples(index=False)])
+    df["historical_observation_id_kind"] = df.original_observation_id.map(
+        lambda x: "numeric" if str(x).isdecimal() else "uuid"
+    )
     ensure(len(df) == 538 and df.original_photo_id.is_unique,
            "original 538 photo mapping changed")
     out.mkdir(parents=True)
@@ -148,6 +170,14 @@ def main():
     summary = {
         "n_frozen_original_photo_ids": 538,
         "n_original_accepted_species": 180,
+        "historical_numeric_observation_ids": 126,
+        "historical_uuid_observation_ids": 412,
+        "current_numeric_records_found": int(df.loc[
+            df.historical_observation_id_kind.eq("numeric"),
+            "current_observation_record_found"].sum()),
+        "current_UUID_records_found": int(df.loc[
+            df.historical_observation_id_kind.eq("uuid"),
+            "current_observation_record_found"].sum()),
         "returned_current_public_observation": int(df.current_observation_record_found.sum()),
         "original_photo_still_present_with_original_observation": int(df.same_original_photo_in_current_observation.sum()),
         "current_photo_license_code_present": int(df.current_photo_license_code.ne("").sum()),
@@ -165,7 +195,8 @@ def main():
     receipt = {
         "schema": "mois_QA180_original_538_current_photo_observation_and_licence_metadata_v1",
         "utc": datetime.now(timezone.utc).isoformat(),
-        "current_api": API + "/{comma_separated_observation_ids}",
+        "current_api": [API_V1 + "/{comma_separated_numeric_ids}",
+                        API_V2 + "/{comma_separated_UUIDs}?fields=id,uuid,taxon,photos"],
         "batch_size": BATCH_SIZE,
         "requests": len(batch_digests),
         "raw_api_responses_not_redistributed": True,
