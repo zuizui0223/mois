@@ -11,9 +11,9 @@ permissions:
   contents: read
   actions: read
 jobs:
-  pilot18:
+  pilot54:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -38,11 +38,12 @@ jobs:
           python scripts/analysis/mois_QA180_blind_visual_pilot_20261117.py \
             --blind qa/mois_QA180_20261117/blinded_original_photo_review_sheet.csv \
             --meta source/verified538_observation_photo.zip \
-            --out qa_visual_pilot
+            --photos-per-species 3 \
+            --out qa_visual_pilot54
       - name: Upload only temporary attributed review previews, never commit image bytes
         uses: actions/upload-artifact@v4
         with:
-          name: mois-QA180-18-attributed-real-photo-blind-visual-pilot
-          path: qa_visual_pilot/
+          name: mois-QA180-54-attributed-real-photo-blind-visual-pilot
+          path: qa_visual_pilot54/
           retention-days: 1
           if-no-files-found: error
