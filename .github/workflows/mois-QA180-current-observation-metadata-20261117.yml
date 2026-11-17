@@ -55,4 +55,5 @@ jobs:
           name: mois-QA180-original538-photo-observation-license-public-API
           path: .qa_current_public_api/
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 21
