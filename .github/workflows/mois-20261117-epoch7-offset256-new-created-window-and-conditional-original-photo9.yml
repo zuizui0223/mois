@@ -1,5 +1,6 @@
 name: MOIS epoch7 offset256 disjoint original ROI9 after terminal signed offset128
-# Frozen original hash order and already-signed source/audit history. Do not rescan prior source.
+# Frozen original hash order and already-signed source/audit history.
+# The previous epoch6 offset128 path is immutable: do not substitute current epoch7 offset256. Do not rescan prior source.
 on:
   push:
     branches: [analysis/mois-species-first-palette9-20261111]
@@ -179,7 +180,7 @@ jobs:
           python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
           mkdir -p latest
           gh run download 44053424693 --repo "$REPO" --name mois-20261117-epoch6-offset1920-genuine-original-42111-taxonomy-append --dir latest
-          mkdir -p old/history old/new11 old/new64 old/new18 old/offset1152 old/offset1536 old/offset1792 old/offset2048 old/epoch3_offset1792 old/epoch4_offset896 old/epoch4_offset1792 old/epoch4_offset2048 old/epoch5_offset896 old/epoch6_offset256 old/epoch6_offset640 old/epoch6_offset768 old/epoch6_offset1152 old/epoch6_offset1792 old/epoch6_offset1920
+          mkdir -p old/history old/new11 old/new64 old/new18 old/offset1152 old/offset1536 old/offset1792 old/offset2048 old/epoch3_offset1792 old/epoch4_offset896 old/epoch4_offset1792 old/epoch4_offset2048 old/epoch5_offset896 old/epoch6_offset128 old/epoch6_offset640 old/epoch6_offset768 old/epoch6_offset1152 old/epoch6_offset1792 old/epoch6_offset1920
           gh run download 43546479575 --repo "$REPO" --name mois-postsnapshot-two-CC-photos-full-1231244-ID-source --dir old/history
           gh run download 43561529394 --repo "$REPO" --name mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append --dir old/new11
           gh run download 43562522326 --repo "$REPO" --name mois-new1909-fresh-original-real-ROI9-42111-taxonomy-appended --dir old/new64
@@ -193,7 +194,7 @@ jobs:
           gh run download 43748476569 --repo "$REPO" --name mois-20261116-epoch4-offset1792-independent-strict9-audit --dir old/epoch4_offset1792
           gh run download 43755422537 --repo "$REPO" --name mois-20261116-epoch4-offset2048-independent-strict9-audit --dir old/epoch4_offset2048
           gh run download 43814075592 --repo "$REPO" --name mois-20261116-epoch5-offset896-independent-strict9-audit --dir old/epoch5_offset896
-          gh run download 43932884084 --repo "$REPO" --name mois-20261117-epoch6-offset256-independent-strict9-audit --dir old/epoch6_offset256
+          gh run download 43932884084 --repo "$REPO" --name mois-20261117-epoch6-offset256-independent-strict9-audit --dir old/epoch6_offset128
           gh run download 43980043678 --repo "$REPO" --name mois-20261117-epoch6-offset640-independent-strict9-audit --dir old/epoch6_offset640
           gh run download 43988986347 --repo "$REPO" --name mois-20261117-epoch6-offset768-independent-strict9-audit --dir old/epoch6_offset768
           gh run download 44006976625 --repo "$REPO" --name mois-20261117-epoch6-offset1152-independent-strict9-audit --dir old/epoch6_offset1152
@@ -309,7 +310,7 @@ jobs:
           mkdir -p signed pixel
           gh run download "$GITHUB_RUN_ID" --repo "$REPO" --name mois-20261117-epoch7-offset256-signed-1231352-ID-source --dir signed
           gh run download "$GITHUB_RUN_ID" --repo "$REPO" --name mois-20261117-epoch7-offset256-genuine-FCP-ROI9-terminal --dir pixel
-          mkdir -p old/history old/new11 old/new64 old/new18 old/offset1152 old/offset1536 old/offset1792 old/offset2048 old/epoch3_offset1792 old/epoch4_offset896 old/epoch4_offset1792 old/epoch4_offset2048 old/epoch5_offset896 old/epoch6_offset256 old/epoch6_offset640 old/epoch6_offset768 old/epoch6_offset1152 old/epoch6_offset1792 old/epoch6_offset1920
+          mkdir -p old/history old/new11 old/new64 old/new18 old/offset1152 old/offset1536 old/offset1792 old/offset2048 old/epoch3_offset1792 old/epoch4_offset896 old/epoch4_offset1792 old/epoch4_offset2048 old/epoch5_offset896 old/epoch6_offset128 old/epoch6_offset640 old/epoch6_offset768 old/epoch6_offset1152 old/epoch6_offset1792 old/epoch6_offset1920
           gh run download 43546479575 --repo "$REPO" --name mois-postsnapshot-two-CC-photos-full-1231244-ID-source --dir old/history
           gh run download 43561529394 --repo "$REPO" --name mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append --dir old/new11
           gh run download 43562522326 --repo "$REPO" --name mois-new1909-fresh-original-real-ROI9-42111-taxonomy-appended --dir old/new64
@@ -323,7 +324,7 @@ jobs:
           gh run download 43748476569 --repo "$REPO" --name mois-20261116-epoch4-offset1792-independent-strict9-audit --dir old/epoch4_offset1792
           gh run download 43755422537 --repo "$REPO" --name mois-20261116-epoch4-offset2048-independent-strict9-audit --dir old/epoch4_offset2048
           gh run download 43814075592 --repo "$REPO" --name mois-20261116-epoch5-offset896-independent-strict9-audit --dir old/epoch5_offset896
-          gh run download 43932884084 --repo "$REPO" --name mois-20261117-epoch6-offset256-independent-strict9-audit --dir old/epoch6_offset256
+          gh run download 43932884084 --repo "$REPO" --name mois-20261117-epoch6-offset256-independent-strict9-audit --dir old/epoch6_offset128
           gh run download 43980043678 --repo "$REPO" --name mois-20261117-epoch6-offset640-independent-strict9-audit --dir old/epoch6_offset640
           gh run download 43988986347 --repo "$REPO" --name mois-20261117-epoch6-offset768-independent-strict9-audit --dir old/epoch6_offset768
           gh run download 44006976625 --repo "$REPO" --name mois-20261117-epoch6-offset1152-independent-strict9-audit --dir old/epoch6_offset1152
