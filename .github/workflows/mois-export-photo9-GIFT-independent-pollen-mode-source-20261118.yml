@@ -1,0 +1,51 @@
+name: "MOIS: source-verified photo9 species environment crosswalk for independent pollen-mode analysis"
+on:
+  push:
+    branches:
+      - analysis/mois-gift-independent-pollination-mode-20261118
+    paths:
+      - scripts/analysis/mois_export_photo9_species_environment_for_independent_pollination_20261118.py
+      - .github/workflows/mois-export-photo9-GIFT-independent-pollen-mode-source-20261118.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  source-verified-colour-environment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install signed Parquet and CSV converter
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "numpy>=1.26,<3" "pandas>=2.1,<3" "pyarrow>=17,<25"
+          python -m py_compile \
+            scripts/analysis/mois_export_photo9_species_environment_for_independent_pollination_20261118.py
+      - name: Verify original 37,104-species full ecology nine-hue traits
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          curl -fLsS --retry 3 \
+             -H "Authorization: Bearer $GH_TOKEN" \
+             -H "Accept: application/vnd.github+json" \
+             "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14219399376/zip" \
+             -o source/MOIS_true_photo9_37104.zip
+          echo "d8b97528188d9f8d63cb802d5b3f6e8f7f251937fd30af42aeae47e43ebad1fc  source/MOIS_true_photo9_37104.zip" | sha256sum -c
+      - name: Export read-only matched-species source columns with internal parquet SHA check
+        run: |
+          python scripts/analysis/mois_export_photo9_species_environment_for_independent_pollination_20261118.py \
+            --source source/MOIS_true_photo9_37104.zip \
+            --out results/mois_independent_pollination_source_37104_20261118
+      - name: Upload only MOIS accepted species source adapter, not independent GIFT labels
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-original-37104-species-photo9-environment-for-GIFT-20261118
+          path: results/mois_independent_pollination_source_37104_20261118/
+          if-no-files-found: error
+          retention-days: 30
