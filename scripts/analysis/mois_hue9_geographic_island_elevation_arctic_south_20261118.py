@@ -321,7 +321,6 @@ def run(args):
     coords=np.asarray(x["cell_key"].tolist(),dtype=np.int64)
     check(np.array_equal(coords,null[["grid_x","grid_y"]].to_numpy()),
           "Source original 18577 GBIF cells mismatch stricter 9-hue null")
-    from pathlib import Path
     check(sha(args.GSHHG)==GSHHG_SHA,
           "This must use the same GSHHG coastline source as old MOIS island photo analysis")
     with tempfile.TemporaryDirectory() as scratch:
