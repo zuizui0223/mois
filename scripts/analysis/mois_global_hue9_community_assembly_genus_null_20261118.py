@@ -96,15 +96,20 @@ def baseline(pairs,species,null_model="genus"):
     # footprint size bands. The colour-richness association with occupancy
     # breadth is thus not arbitrarily erased in every genus permutation.
     species_grid_n=np.bincount(ix,minlength=len(species)).astype(np.int32)
-    check(species_grid_n.min()>0,
-          "Genuine accepted source species unrepresented in GBIF cell table")
+    available=np.flatnonzero(species_grid_n>0)
+    check(len(available)>30000,
+          "Too few genuine observed species have GBIF grid footprints")
+    # DO NOT shuffle absent-source species into any real assemblage.
+    # Their photo hues are outside the documented 100km GBIF species pool.
     if null_model=="genus":
-        shuffle_codes=gcodes
+        group_codes=gcodes[available].astype(np.int64)
     else:
         breadth=np.digitize(species_grid_n,[2,6,21,101]).astype(np.int32)
-        shuffle_codes=gcodes.astype(np.int64)*5+breadth
-    order=np.argsort(shuffle_codes,kind="stable")
-    start=np.r_[0,1+np.flatnonzero(np.diff(shuffle_codes[order]))]
+        group_codes=gcodes[available].astype(np.int64)*5+breadth[available]
+    indexed_sort=np.argsort(group_codes,kind="stable")
+    order=available[indexed_sort]
+    sorted_group_codes=group_codes[indexed_sort]
+    start=np.r_[0,1+np.flatnonzero(np.diff(sorted_group_codes))]
     end=np.r_[start[1:],len(order)]
     groups=[order[a:b] for a,b in zip(start,end)]
     variable_groups=[g for g in groups if len(g)>1 and len(set(hue[g]))>1]
@@ -122,6 +127,8 @@ def baseline(pairs,species,null_model="genus"):
       "n_genera_with_variable_null_strata":
           len(set(int(gcodes[g[0]]) for g in variable_groups)),
       "n_species_in_variable_strata":varying_species,
+      "n_accepted_species_with_at_least_one_GBIF_cell":int(len(available)),
+      "n_accepted_species_without_GBIF_cells":int(len(species)-len(available)),
       "null_model":null_model,
     }
 
@@ -257,6 +264,8 @@ def main(gbif,env,out,n,null_model):
         "n_variable_hue_genera":x["n_genera_with_variable_null_strata"],
         "n_variable_shuffle_strata":x["n_variable_null_strata"],
         "n_species_in_exchangeable_colour_strata":x["n_species_in_variable_strata"],
+        "n_accepted_species_with_GBIF_cells":x["n_accepted_species_with_at_least_one_GBIF_cell"],
+        "n_accepted_species_without_GBIF_cells":x["n_accepted_species_without_GBIF_cells"],
         "genus_preserving_global_species_hue_label_permutations":n,
         "random_seed":SEED,
         "source_GBIF_sha256":GBIF_SHA,
