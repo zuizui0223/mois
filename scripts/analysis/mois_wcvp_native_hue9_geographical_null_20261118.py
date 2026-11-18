@@ -115,9 +115,8 @@ def source_guild_rows(pairs,species,lgm,wcvp,tdwg,original_grid):
     check((ii>=0).all() and (jj>=0).all(),
           "Original signed WCVP native source GBIF cell/species not in null")
     check(np.array_equal(
-        np.asarray([x["source_hue9"] for x in
-                    species.iloc[jj][["source_hue9"]].to_dict("records")])[:4],
-        src.source_hue9.iloc[:4].to_numpy()),
+        species.source_hue9.iloc[jj].to_numpy(str),
+        src.source_hue9.to_numpy(str)),
         "Source original species hue order mapping does not reproduce")
     # Ensure crosswalk rows describe one original GBIF species in one cell.
     check(not src[["grid_x","grid_y","specieskey"]].duplicated().any(),
@@ -126,7 +125,7 @@ def source_guild_rows(pairs,species,lgm,wcvp,tdwg,original_grid):
     for name in COHORT_NAMES:
         moderate=name.startswith("moderate")
         native=name.endswith("_native")
-        condition=(src.region_moderate if moderate else src.region_strict)
+        condition=(src.region_moderate if moderate else src.region_strict).copy()
         condition &= src.status.eq("native_at_TDWG3" if native else
                                    "introduced_at_TDWG3")
         keep=condition.to_numpy(bool)
