@@ -159,8 +159,8 @@ def fit_one(d,cols,block_km,weighting):
     valid=xc.abs().sum(axis=1)>1e-12
     xv=xc.loc[valid];yv=yc.loc[valid]
     groups=b.loc[valid]
-    check(len(yv)>700 and groups.nunique()>100,
-          "Not enough geographically informative WCVP cells")
+    check(len(yv)>700 and groups.nunique()>(60 if block_km==1000 else 100),
+          "Not enough geographically informative WCVP cells and regional blocks")
     rank=int(np.linalg.matrix_rank(xv.to_numpy()))
     check(rank==len(xv.columns),"Severe source covariate collinearity")
     fit=sm.WLS(yv,xv,weights=w[valid.to_numpy()]).fit(
