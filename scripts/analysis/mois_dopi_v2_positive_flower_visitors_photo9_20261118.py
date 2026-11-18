@@ -295,13 +295,21 @@ def paired_study_hue(positive,lookup):
              method="bh")
         for j,v in zip(eligible,q):
             results[j]["BH_q_among_supported_90_screen"]=float(v)
+    eligible_study_pairs=defaultdict(set)
+    for (scope,study,guild_name),plants in positive.items():
+        if len(plants)>=MIN_PLANTS_PER_GUILD_STUDY:
+            eligible_study_pairs[(scope,study)].add(guild_name)
     return results,{
       "planned_tests":len(results),
       "tested_supported_panels":len(eligible),
       "unsupported_panels":len(results)-len(eligible),
-      "n_papers_with_any_two_positive_visitor_guilds":len(set().union(*[
-          {study for study,_,_,_ in []}
-      ])),
+      "n_publications_with_at_least_two_supported_guilds_by_evidence_scope":{
+          scope:int(sum(
+              len(guilds)>=2 for (sc,study),guilds in eligible_study_pairs.items()
+              if sc==scope))
+          for scope in SCOPES
+      },
+      "exploratory_FDR_scope":"90 predeclared photo-colour comparisons, tested support subset only",
     }
 
 def run(mois_zip,dopi_csv,out):
