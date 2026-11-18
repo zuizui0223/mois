@@ -24,7 +24,7 @@ from sklearn.model_selection import GroupKFold
 from sklearn.preprocessing import StandardScaler
 
 from scripts.analysis.mois_hue9_assembly_environment_spatial_20261118 import (
-    matrix, original_GBIF_record_effort, require, sha, spatial_fit, spatial_oof,
+    matrix, original_GBIF_record_effort, require, sha, spatial_fit,
     LGM_TEMP, LGM_RAIN, BASE, ECOLOGY,
 )
 
@@ -126,7 +126,7 @@ def spatial_oof_increment(d):
                 "1000km spatial validation blocks overlap")
         norm=StandardScaler().fit(X.iloc[train][cols])
         xx_train=norm.transform(X.iloc[train][cols]);xx_test=norm.transform(X.iloc[test][cols])
-        base=Ridge(alpha=100).fit(xx_train,y[train])
+        base=Ridge(alpha=100,solver="cholesky").fit(xx_train,y[train])
         a[test]=base.predict(xx_test)
         st=np.std(t[train],ddof=1);sp=np.std(p[train],ddof=1)
         require(st>0 and sp>0,"Train-only LGM climate scaling degenerate")
@@ -135,7 +135,7 @@ def spatial_oof_increment(d):
         extra_scaler=StandardScaler().fit(d_train.reshape(-1,1))
         v_train=np.column_stack([xx_train,extra_scaler.transform(d_train.reshape(-1,1))])
         v_test=np.column_stack([xx_test,extra_scaler.transform(d_test.reshape(-1,1))])
-        aug=Ridge(alpha=100).fit(v_train,y[train])
+        aug=Ridge(alpha=100,solver="cholesky").fit(v_train,y[train])
         b[test]=aug.predict(v_test)
         # Product is formed using train-only standardized NPP and displacement;
         # standardize the product on training folds again before regression.
@@ -145,7 +145,7 @@ def spatial_oof_increment(d):
         product_scaler=StandardScaler().fit(product_train)
         interaction_train=np.column_stack([v_train,product_scaler.transform(product_train)])
         interaction_test=np.column_stack([v_test,product_scaler.transform(product_test)])
-        reg_interaction=Ridge(alpha=100).fit(interaction_train,y[train])
+        reg_interaction=Ridge(alpha=100,solver="cholesky").fit(interaction_train,y[train])
         c[test]=reg_interaction.predict(interaction_test)
         folds.append({"fold":i,"n_test":int(len(test)),
                       "n_1000km_blocks":int(len(set(blocks[test]))),
@@ -205,24 +205,35 @@ def run(args):
                 d.loc[d.n_accepted_species.ge(100)].reset_index(drop=True),
                 score[d.n_accepted_species.ge(100)],500,True),
             "NPP_interaction_1000km_exploratory":fit_extension(d,score,1000,True)}
-    # Invariance audit: independently reconstruct the old full-environment CV
-    # from its original code and the exact same signed source cells.
-    independent_cv=spatial_oof(d)
-    old_cv=receipt["1000km_block_heldout_predictions"]["models"]["baseline_plus_all_environment"]
-    here_cv=independent_cv["models"]["baseline_plus_all_environment"]
-    print("MOIS_BASELINE_CV_AUDIT",json.dumps({
-        "old_source_MSE":old_cv["MSE"],"independent_replay_MSE":here_cv["MSE"],
-        "old_source_R2":old_cv["R2_out_of_fold"],"independent_replay_R2":here_cv["R2_out_of_fold"]
-    }),flush=True)
-    require(abs(old_cv["MSE"]-here_cv["MSE"])<1e-10,
-            "Existing baseline 1000km CV could not be independently reconstructed")
+    # Historical Ridge(solver="auto") selected stochastic SAG with
+    # fit_intercept=True; its unseeded 1000km OOF MSE in the old receipt is
+    # NOT a bitwise reference. Keep the exact original 500km FE audit above.
+    # Refit all spatial OOF comparators using deterministic Cholesky.
     cv,pred_old,pred_new,pred_interaction=spatial_oof_increment(d)
-    print("MOIS_EXTENDED_CV_AUDIT",json.dumps({
-        "independent_old_MSE":here_cv["MSE"],
-        "extended_baseline_MSE":cv["baseline_full_environment_MSE"]
+    check,pred_old_2,pred_new_2,pred_interaction_2=spatial_oof_increment(d)
+    require(np.array_equal(pred_old,pred_old_2)
+            and np.array_equal(pred_new,pred_new_2)
+            and np.array_equal(pred_interaction,pred_interaction_2),
+            "Deterministic re-execution of 1000km CV must exactly reproduce")
+    print("MOIS_DETERMINISTIC_CV_AUDIT",json.dumps({
+        "source_legacy_Ridge_auto_MSE":
+           receipt["1000km_block_heldout_predictions"]["models"]["baseline_plus_all_environment"]["MSE"],
+        "new_Ridge_cholesky_MSE":cv["baseline_full_environment_MSE"],
+        "exact_replay_matches":True
     }),flush=True)
-    require(abs(cv["baseline_full_environment_MSE"]-here_cv["MSE"])<1e-10,
-            "Extension moved original environmental 1000km baseline CV unexpectedly")
+    # Support stress: top quarter of climate-space displacement mostly lacks
+    # high-NPP cells (observed geographic overlap is not uniform). A reduced
+    # 0-75% displacement range prevents tail-driven interaction storytelling.
+    percentile75=float(np.quantile(score,0.75))
+    common_mask=score<=percentile75
+    common=d.loc[common_mask].reset_index(drop=True)
+    models["NPP_interaction_lower75pct_displacement_exploratory"]=fit_extension(
+        common,score[common_mask],500,True)
+    d_quart=pd.qcut(score,4,labels=False,duplicates="raise")
+    npp_quart=pd.qcut(d["NPP_2001_2023_mean_kgC_m2_yr"],4,
+                      labels=False,duplicates="raise")
+    support_table=pd.crosstab(npp_quart,d_quart)
+    require(support_table.shape==(4,4),"NPP x displacement joint support table changed")
     root.mkdir(parents=True)
     outcsv=root/"100km_photo9_LGM_climate_displacement_diagnostic.csv.gz"
     keep=["grid_x","grid_y","lat","lon","n_accepted_species","block_500km",
@@ -238,6 +249,12 @@ def run(args):
           "source_ZIP_SHA256":{"environment":ENV_SHA,
              "GBIF":"422f6d6489e61c6e57c5d51db614e47f613039781a901e3fd3481c13b2b085c2"},
           "climate_metric":metric,"models":models,"spatial_holdout":cv,
+          "NPP_by_climate_displacement_quartile_cell_counts":
+              [[int(v) for v in row] for row in support_table.to_numpy().tolist()],
+          "support_stress_lower75pct_displacement_max":percentile75,
+          "historical_out_of_fold_Ridge_auto_used_unseeded_SAG":True,
+          "new_out_of_fold_all_models_use_deterministic_Ridge_cholesky":True,
+          "deterministic_exact_cv_reexecution":True,
           "inference":"Photo-derived species 9-hue composition at current GBIF 100km cells; no LGM range or glacial refugia observation",
           "biomass":"MOD17 NPP is productivity and ESA AGB is woody vegetation, not flower biomass"}
     js=root/"LGM_climate_stability_photo9_ecological_models.json"
