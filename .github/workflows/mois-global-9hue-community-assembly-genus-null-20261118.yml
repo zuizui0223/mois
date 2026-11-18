@@ -58,11 +58,22 @@ jobs:
             --gbif source/GBIF_37104_species_5493931_grid_pairs.zip \
             --env source/ENV_37104_species_photo9.zip \
             --permutations 199 \
+            --null-model genus \
             --out results/mois_global_9hue_community_assembly_20261118
+      - name: Strict range-size-matched species-label null, same original GBIF species assemblages
+        run: |
+          python scripts/analysis/mois_global_hue9_community_assembly_genus_null_20261118.py \
+            --gbif source/GBIF_37104_species_5493931_grid_pairs.zip \
+            --env source/ENV_37104_species_photo9.zip \
+            --permutations 199 \
+            --null-model genus_breadth \
+            --out results/mois_global_9hue_community_assembly_breadth_20261118
       - uses: actions/upload-artifact@v4
         if: success()
         with:
           name: mois-global-nine-hue-community-assembly-genus-conditional-null-20261118
-          path: results/mois_global_9hue_community_assembly_20261118/
+          path: |
+            results/mois_global_9hue_community_assembly_20261118/
+            results/mois_global_9hue_community_assembly_breadth_20261118/
           retention-days: 30
           if-no-files-found: error
