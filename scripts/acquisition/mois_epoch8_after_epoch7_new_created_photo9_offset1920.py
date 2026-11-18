@@ -264,7 +264,7 @@ def main():
         r["previous_epoch8_offset1792_source_artifact"] = 14443567563
         r["previous_epoch8_offset1792_source_ZIP_SHA256"] = "d8392cf143b17eacc5a05724f64ba4ab05aa5f83f6eb00ed8e70def151e2dfcf"
         r["previous_epoch8_offset1792_source_receipt_SHA256"] = "b85eae13eca430b4994e2d24334759ddf8c05846629ab1ae1cb455e9016761d9"
-        r["previous_epoch8_offset1792_source_status_SHA256"] = "77ef2681228159e3caf5ca11dc8f72be0204c94e9cdf"
+        r["previous_epoch8_offset1792_source_status_SHA256"] = "77ef2681228159e3caf5ca11dc8f72dce0dc6abda51f301f72be0204c94e9cdf"
         r["previous_epoch8_offset1792_new_source_candidates"] = 0
         r["previous_epoch6_terminal_source_ZIP_SHA256"] = (
             "3ce764b6d837348d02009173513539772d71de569088832a2f768d09c22fb87e"

@@ -1339,7 +1339,7 @@ jobs:
               seen.update(ids)
               if off==1792:
                 assert hashlib.sha256(rb).hexdigest()=="b85eae13eca430b4994e2d24334759ddf8c05846629ab1ae1cb455e9016761d9"
-                assert hashlib.sha256(sb).hexdigest()=="77ef2681228159e3caf5ca11dc8f72be0204c94e9cdf"
+                assert hashlib.sha256(sb).hexdigest()=="77ef2681228159e3caf5ca11dc8f72dce0dc6abda51f301f72be0204c94e9cdf"
                 assert hashlib.sha256(cb).hexdigest()=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
           assert len(seen)==1920 and len(hashes)==15
           print("EPOCH8_1920_PRIOR_TAXA_15_SIGNED_ZIP_BYTES_AUDITED",flush=True)
