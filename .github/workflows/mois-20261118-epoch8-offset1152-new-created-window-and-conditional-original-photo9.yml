@@ -1075,7 +1075,7 @@ jobs:
         id: freeze
         run: |
           set -euo pipefail
-          python -m scripts.acquisition.mois_epoch8_after_epoch7_new_created_photo9_offset1024 source --atlas latest/atlas.csv.gz --output newest --offset 1152
+          python -m scripts.acquisition.mois_epoch8_after_epoch7_new_created_photo9_offset1152 source --atlas latest/atlas.csv.gz --output newest --offset 1152
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json,csv
           r=json.load(open("newest/receipt.json"))
@@ -1206,10 +1206,10 @@ jobs:
       - name: Verify independent real RGB worker, uniqueness, strict9 or full missing
         run: |
           set -euo pipefail
-          python -m scripts.acquisition.mois_epoch8_after_epoch7_new_created_photo9_offset1024 audit --source signed --worker pixel --output audited
+          python -m scripts.acquisition.mois_epoch8_after_epoch7_new_created_photo9_offset1152 audit --source signed --worker pixel --output audited
           python - <<'PY'
           import json,pandas as pd
-          from scripts.acquisition import mois_epoch8_after_epoch7_new_created_photo9_offset1024 as c
+          from scripts.acquisition import mois_epoch8_after_epoch7_new_created_photo9_offset1152 as c
           q=pd.read_parquet("audited/new_real_original_nine_photo9_delta.parquet")
           r=json.load(open("audited/receipt.json"))
           assert len(q)==r["new_authentic_original_attempts"] and int(q.strict9.sum())==r["new_strict9_numeric_photos"]
@@ -1250,7 +1250,7 @@ jobs:
       - name: Append audited 9-colour measurements; never turn unknown into zero-vector
         run: |
           set -euo pipefail
-          python -m scripts.acquisition.mois_epoch8_after_epoch7_new_created_photo9_offset1024 append --atlas latest/mois_42111_post20261114_new_independent_original_photo9.csv.gz --source signed --worker pixel --audit audited --output appended
+          python -m scripts.acquisition.mois_epoch8_after_epoch7_new_created_photo9_offset1152 append --atlas latest/mois_42111_post20261114_new_independent_original_photo9.csv.gz --source signed --worker pixel --audit audited --output appended
           python - <<'PY'
           import json
           r=json.load(open("appended/receipt.json"))
