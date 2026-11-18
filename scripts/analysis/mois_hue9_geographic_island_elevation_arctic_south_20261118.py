@@ -62,8 +62,8 @@ def load_coast_and_continents(zippath,work):
     with zipfile.ZipFile(zippath) as z:
         for item in z.namelist():
             filename=Path(item).name
-            if filename.startswith("GSHHS_h_L1.") and
-                filename.split(".")[-1].lower() in ("shp","shx","dbf","prj","cpg"):
+            if (filename.startswith("GSHHS_h_L1.") and
+                filename.split(".")[-1].lower() in ("shp","shx","dbf","prj","cpg")):
                 dest=work/filename
                 dest.write_bytes(z.read(item))
                 copied.append(filename)
