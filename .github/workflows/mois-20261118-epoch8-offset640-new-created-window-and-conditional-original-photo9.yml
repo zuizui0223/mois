@@ -681,7 +681,7 @@ jobs:
           assert np.all(np.abs(vals.sum(axis=1)-1)<=.001)
           assert missing.isna().all().all()
           assert len(ids)==1231355 and len(raw)==111
-          selected=c.select_taxa_epoch8(a,offset=512)
+          selected=c.select_taxa_epoch8(a,offset=640)
           historic_taxa=set()
           for off in list(range(0,2176,128))+[2176]:
             with zipfile.ZipFile(f"/tmp/mois_epoch6_zips/epoch7_{off}.zip") as z:
@@ -965,7 +965,7 @@ jobs:
         run: |
           set -euo pipefail
           export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
-          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-epoch8-offset512-original-only"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-epoch8-offset640-original-only"
           python -m scripts.acquisition.mois_full_index_real_original_photo_measure work --source signed --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" --group 0 --output pixel
       - uses: actions/upload-artifact@v4
         if: always()
