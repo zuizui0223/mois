@@ -24,7 +24,7 @@ from sklearn.model_selection import GroupKFold
 from sklearn.preprocessing import StandardScaler
 
 from scripts.analysis.mois_hue9_assembly_environment_spatial_20261118 import (
-    matrix, original_GBIF_record_effort, require, sha, spatial_fit,
+    matrix, original_GBIF_record_effort, require, sha, spatial_fit, spatial_oof,
     LGM_TEMP, LGM_RAIN, BASE, ECOLOGY,
 )
 
@@ -205,7 +205,24 @@ def run(args):
                 d.loc[d.n_accepted_species.ge(100)].reset_index(drop=True),
                 score[d.n_accepted_species.ge(100)],500,True),
             "NPP_interaction_1000km_exploratory":fit_extension(d,score,1000,True)}
+    # Invariance audit: independently reconstruct the old full-environment CV
+    # from its original code and the exact same signed source cells.
+    independent_cv=spatial_oof(d)
+    old_cv=receipt["1000km_block_heldout_predictions"]["models"]["baseline_plus_all_environment"]
+    here_cv=independent_cv["models"]["baseline_plus_all_environment"]
+    print("MOIS_BASELINE_CV_AUDIT",json.dumps({
+        "old_source_MSE":old_cv["MSE"],"independent_replay_MSE":here_cv["MSE"],
+        "old_source_R2":old_cv["R2_out_of_fold"],"independent_replay_R2":here_cv["R2_out_of_fold"]
+    }),flush=True)
+    require(abs(old_cv["MSE"]-here_cv["MSE"])<1e-10,
+            "Existing baseline 1000km CV could not be independently reconstructed")
     cv,pred_old,pred_new,pred_interaction=spatial_oof_increment(d)
+    print("MOIS_EXTENDED_CV_AUDIT",json.dumps({
+        "independent_old_MSE":here_cv["MSE"],
+        "extended_baseline_MSE":cv["baseline_full_environment_MSE"]
+    }),flush=True)
+    require(abs(cv["baseline_full_environment_MSE"]-here_cv["MSE"])<1e-10,
+            "Extension moved original environmental 1000km baseline CV unexpectedly")
     root.mkdir(parents=True)
     outcsv=root/"100km_photo9_LGM_climate_displacement_diagnostic.csv.gz"
     keep=["grid_x","grid_y","lat","lon","n_accepted_species","block_500km",
