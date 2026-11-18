@@ -552,7 +552,7 @@ jobs:
           assert np.all(np.abs(vals.sum(axis=1)-1)<=.001)
           assert missing.isna().all().all()
           assert len(ids)==1231354 and len(raw)==110
-          selected=c.select_taxa_epoch7(a,offset=1792
+          selected=c.select_taxa_epoch7(a,offset=1792)
           with zipfile.ZipFile("/tmp/mois_epoch6_zips/epoch7_0.zip") as z:
             prev={x["inat_taxon_id"] for x in csv.DictReader(io.StringIO(z.read("source_taxon_status.csv").decode()))}
           with zipfile.ZipFile("/tmp/mois_epoch6_zips/epoch7_128.zip") as z:
