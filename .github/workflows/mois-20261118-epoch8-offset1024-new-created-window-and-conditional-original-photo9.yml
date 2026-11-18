@@ -1,4 +1,4 @@
-name: MOIS epoch8 offset896 first128 zero-ROI taxa in fresh observation-created window
+name: MOIS epoch8 offset1024 first128 zero-ROI taxa in fresh observation-created window
 # Frozen original hash order and already-signed source/audit history.
 # The previous epoch6 offset128 path is immutable: do not substitute current epoch7 offset2176. Do not rescan prior source.
 on:
@@ -52,7 +52,7 @@ jobs:
           for x in get(f"repos/{repo}/actions/workflows/{wf}/runs?per_page=100")["workflow_runs"]:
             if x["id"]==int(os.environ["GITHUB_RUN_ID"]):continue
             ar=get(f"repos/{repo}/actions/runs/{x['id']}/artifacts?per_page=100")["artifacts"]
-            assert not ar and x["conclusion"]!="success","epoch8 offset896 already signed; source SHA replay forbidden"
+            assert not ar and x["conclusion"]!="success","epoch8 offset1024 already signed; source SHA replay forbidden"
           expected=[
             [0,43931289660,14258616417,"b119ef2b645ae6ff52340f728e6957fea25cced915caf9b2fcd4b858c080299c"],
             [128,43932884084,14259857099,"b0f0b1b1b113c7a58dbcf4fa879d44dba117e542219d5197076b508eef1612ec"],
@@ -681,7 +681,7 @@ jobs:
           assert np.all(np.abs(vals.sum(axis=1)-1)<=.001)
           assert missing.isna().all().all()
           assert len(ids)==1231355 and len(raw)==111
-          selected=c.select_taxa_epoch8(a,offset=896)
+          selected=c.select_taxa_epoch8(a,offset=1024)
           historic_taxa=set()
           for off in list(range(0,2176,128))+[2176]:
             with zipfile.ZipFile(f"/tmp/mois_epoch6_zips/epoch7_{off}.zip") as z:
