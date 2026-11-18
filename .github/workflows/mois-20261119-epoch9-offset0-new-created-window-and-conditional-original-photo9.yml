@@ -34,7 +34,7 @@ jobs:
           repo="zuizui0223/mois"
           api=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
           known=[
-            (44390103486,14467379690,"05a535684f45cf8b4761c36501f83243a66c66c992c1e3cc5e71193d2c8179",2048,128),
+            (44390103486,14467379690,"05a535684f45cf8b4761c36501f83243a66c66c6c992c1e3cc5e71193d2c8179",2048,128),
             (44398620519,14471993326,"fbf238cda39fa8016767604dcf815324dd793189e5319072a3c2255ad8b2cbfd",2176,21)]
           ids=set()
           for run,aid,sha,offset,n in known:
