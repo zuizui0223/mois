@@ -132,7 +132,15 @@ def genus_fit(d,x,hue="white",var="temperature_X_log_precip",
       "CI95_fraction":[float(v) for v in fit.conf_int().loc[var]],
       "p_genus_cluster":float(fit.pvalues[var]),
       "beta_log_precip":float(fit.params["log_precip"]),
-      "n_parameters":len(xc.columns)
+      "n_parameters":len(xc.columns),
+      "ecological_main_effects":{
+        k:{"beta_pp_per_SD":float(fit.params[k]*100),
+           "CI95_pp":[float(v*100) for v in fit.conf_int().loc[k]],
+           "p_genus_cluster":float(fit.pvalues[k])}
+        for k in ("log_precip","vpd","temperature","solar","wind",
+                  "NPP","NDVI","woody_AGB","LGM_warming")
+        if k in fit.params
+      }
     }
     if var=="temperature_X_log_precip":
         v=fit.cov_params().loc[["log_precip",var],["log_precip",var]].to_numpy()
@@ -157,6 +165,14 @@ def estimate_all(d,x):
             row.append(r)
         q=multipletests([r["p_genus_cluster"] for r in row],method="fdr_bh")[1]
         for r,p in zip(row,q):r["BH_q_nine_hues_this_weighting"]=float(p)
+        # Prespecified ecological colour-palette check: water covariates
+        # precipitation and atmospheric dryness VPD across all nine hues.
+        # Correct across all 18 comparisons, not one favourable hue.
+        tests=[(r,k) for r in row for k in ("log_precip","vpd")]
+        qwater=multipletests([r["ecological_main_effects"][k]["p_genus_cluster"]
+                             for r,k in tests],method="fdr_bh")[1]
+        for (r,k),p in zip(tests,qwater):
+            r["ecological_main_effects"][k]["BH_q_18_water_tests_this_weighting"]=float(p)
         out.extend(row)
     r=genus_fit(d,x,var="temperature_X_vpd");r["cohort"]="all";out.append(r)
     r=genus_fit(d,x,adjust_status=False);r["cohort"]="all";out.append(r)
@@ -251,8 +267,10 @@ def run(mainzip,envzip,dest):
        "n_species":len(d),"n_genera":int(d.genus.nunique()),"white":primary,
        "prediction":{k:holdout[k] for k in ("AUC_no_interaction","AUC_with_interaction",
                   "delta_logloss_with_minus_without","delta_logloss_genus_bootstrap_CI95")},
-       "nine_hues":[{k:r.get(k) for k in
-                    ("hue","beta_fraction","p_genus_cluster","BH_q_nine_hues_this_weighting")}
+       "nine_hues":[{**{k:r.get(k) for k in
+                    ("hue","beta_fraction","p_genus_cluster","BH_q_nine_hues_this_weighting")},
+                     "precip":r["ecological_main_effects"]["log_precip"],
+                     "vpd":r["ecological_main_effects"]["vpd"]}
                     for r in estimates[:9]]},allow_nan=False),flush=True)
 
 def smoke():
