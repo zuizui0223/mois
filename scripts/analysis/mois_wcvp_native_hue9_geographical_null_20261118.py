@@ -42,7 +42,7 @@ import geopandas as gpd
 from pyproj import Transformer
 from scripts.analysis.mois_real350399_wcvp_geographic_native_status_20261019 import polygons_read
 
-LGM_SHA="db3b5b4fa2133194963be9233411bb6bb50d996cc4cc78b25ab"
+LGM_SHA="db3b5b4fa2133194963be9233411bb6bb50bc86393d1dc50d996cc4cc78b25ab"
 LGM_CELL="WorldClim1p4_LGM_threeGCM_18577_cells.parquet"
 TDWG_GEO_SHA="c172bcf6aba20e19477adc60aebf0023068f0175dca8480f0760b090dcf64840"
 NAME_FILE="mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz"
