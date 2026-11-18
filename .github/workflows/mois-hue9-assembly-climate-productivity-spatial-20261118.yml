@@ -39,6 +39,7 @@ jobs:
           set -euo pipefail
           mkdir -p sources
           for item in \
+            '14166701658 GBIF 422f6d6489e61c6e57c5d51db614e47f613039781a901e3fd3481c13b2b085c2' \
             '14397106083 null 596166fa2fe8bfb28653c325a3a8f1a1495c0792688a7fdb781014cfedaa88c7' \
             '14227246751 spatial e209257adbc185b4855f3b8d76aeaa50d2e2afe8a1feeb0f76013366e57c4d16' \
             '14219565387 NDVI e08e81d1c2afd1a2ee5312f3ebc4aeb5ab7678988c2453a2a9c63d28c82eb17a' \
@@ -55,6 +56,7 @@ jobs:
         run: |
           python -m scripts.analysis.mois_hue9_assembly_environment_spatial_20261118 \
             --null sources/null.zip \
+            --GBIF sources/GBIF.zip \
             --spatial sources/spatial.zip \
             --NDVI sources/NDVI.zip \
             --NPP sources/NPP.zip \
