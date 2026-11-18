@@ -119,6 +119,7 @@ def spatial_oof_increment(d):
     p=d[LGM_RAIN].to_numpy(float)
     a=np.full(len(d),np.nan)
     b=np.full(len(d),np.nan)
+    c=np.full(len(d),np.nan)
     folds=[]
     for i,(train,test) in enumerate(GroupKFold(n_splits=5).split(X,y,blocks)):
         require(set(blocks[train]).isdisjoint(set(blocks[test])),
@@ -136,26 +137,47 @@ def spatial_oof_increment(d):
         v_test=np.column_stack([xx_test,extra_scaler.transform(d_test.reshape(-1,1))])
         aug=Ridge(alpha=100).fit(v_train,y[train])
         b[test]=aug.predict(v_test)
+        # Product is formed using train-only standardized NPP and displacement;
+        # standardize the product on training folds again before regression.
+        npp_ix=cols.index("NPP")
+        product_train=(v_train[:,-1]*v_train[:,npp_ix]).reshape(-1,1)
+        product_test=(v_test[:,-1]*v_test[:,npp_ix]).reshape(-1,1)
+        product_scaler=StandardScaler().fit(product_train)
+        interaction_train=np.column_stack([v_train,product_scaler.transform(product_train)])
+        interaction_test=np.column_stack([v_test,product_scaler.transform(product_test)])
+        reg_interaction=Ridge(alpha=100).fit(interaction_train,y[train])
+        c[test]=reg_interaction.predict(interaction_test)
         folds.append({"fold":i,"n_test":int(len(test)),
                       "n_1000km_blocks":int(len(set(blocks[test]))),
                       "baseline_MSE":float(mean_squared_error(y[test],a[test])),
-                      "plus_distance_MSE":float(mean_squared_error(y[test],b[test]))})
-    require(np.isfinite(a).all() and np.isfinite(b).all(),"Incomplete spatial heldout predictions")
-    delta=(y-b)**2-(y-a)**2
+                      "plus_distance_MSE":float(mean_squared_error(y[test],b[test])),
+                      "plus_NPP_interaction_MSE":float(mean_squared_error(y[test],c[test]))})
+    require(np.isfinite(a).all() and np.isfinite(b).all() and np.isfinite(c).all(),
+            "Incomplete spatial heldout predictions")
     ids,inv=np.unique(blocks,return_inverse=True)
-    counts=np.bincount(inv,minlength=len(ids));sums=np.bincount(inv,weights=delta,minlength=len(ids))
+    counts=np.bincount(inv,minlength=len(ids))
     rng=np.random.default_rng(SEED+909)
-    boot=[]
-    for _ in range(2000):
-        draws=np.bincount(rng.integers(len(ids),size=len(ids)),minlength=len(ids))
-        boot.append(float(np.dot(draws,sums)/np.dot(draws,counts)))
+    changes={}
+    for label,alt,ref in [("distance_vs_baseline",b,a),
+                           ("NPP_interaction_vs_baseline",c,a),
+                           ("NPP_interaction_vs_distance",c,b)]:
+        delta=(y-alt)**2-(y-ref)**2
+        sums=np.bincount(inv,weights=delta,minlength=len(ids))
+        boot=[]
+        for _ in range(2000):
+            draws=np.bincount(rng.integers(len(ids),size=len(ids)),minlength=len(ids))
+            boot.append(float(np.dot(draws,sums)/np.dot(draws,counts)))
+        changes[label]={"delta_MSE":float(np.mean(delta)),
+                        "CI95_1000km_block_bootstrap":[float(x) for x in np.quantile(boot,[.025,.975])]}
     return {"n_cells":int(len(d)),"n_heldout_blocks":int(len(ids)),
         "n_folds":5,"baseline_full_environment_MSE":float(mean_squared_error(y,a)),
         "plus_distance_MSE":float(mean_squared_error(y,b)),
+        "plus_distance_NPP_interaction_MSE":float(mean_squared_error(y,c)),
         "baseline_R2":float(r2_score(y,a)),"plus_distance_R2":float(r2_score(y,b)),
-        "delta_MSE_plus_minus_baseline":float(np.mean(delta)),
-        "delta_MSE_CI95_1000km_block_bootstrap":[float(x) for x in np.quantile(boot,[.025,.975])],
-        "folds":folds,"training_only_distance_scaling":True}, a,b
+        "plus_distance_NPP_interaction_R2":float(r2_score(y,c)),
+        "paired_MSE_delta":changes,
+        "folds":folds,"training_only_distance_scaling":True,
+        "exploratory_interaction_train_only_scaled":True}, a,b,c
 
 
 def run(args):
@@ -178,8 +200,12 @@ def run(args):
             "richness100_500km":fit_extension(d.loc[d.n_accepted_species.ge(100)].reset_index(drop=True),
                                             score[d.n_accepted_species.ge(100)],500),
             "spatial_1000km":fit_extension(d,score,1000),
-            "NPP_interaction_exploratory":fit_extension(d,score,500,True)}
-    cv,pred_old,pred_new=spatial_oof_increment(d)
+            "NPP_interaction_exploratory":fit_extension(d,score,500,True),
+            "NPP_interaction_richness100_exploratory":fit_extension(
+                d.loc[d.n_accepted_species.ge(100)].reset_index(drop=True),
+                score[d.n_accepted_species.ge(100)],500,True),
+            "NPP_interaction_1000km_exploratory":fit_extension(d,score,1000,True)}
+    cv,pred_old,pred_new,pred_interaction=spatial_oof_increment(d)
     root.mkdir(parents=True)
     outcsv=root/"100km_photo9_LGM_climate_displacement_diagnostic.csv.gz"
     keep=["grid_x","grid_y","lat","lon","n_accepted_species","block_500km",
@@ -187,6 +213,7 @@ def run(args):
           "LGM_climate_displacement","NPP_2001_2023_mean_kgC_m2_yr","ESA_AGB_woody_Mg_ha_2020"]
     grid=d[keep].copy();grid["CV_pred_baseline_all_env"]=pred_old
     grid["CV_pred_add_LGM_displacement"]=pred_new
+    grid["CV_pred_add_NPP_interaction"]=pred_interaction
     grid.to_csv(outcsv,index=False,compression="gzip")
     summary={"cohort":{"source_photo9_species":37104,"source_species_100km_pairs":5493931,
           "same_complete_case_cells":len(d),"LGM_threeGCM_median_only":True,
@@ -203,6 +230,9 @@ def run(args):
     print("MOIS_TRUE_SOURCE_LGM_STABILITY_TEST_SUCCESS",json.dumps({
         "n_cells":len(d),"coefficients":models["primary_500km"]["coefficients"],
         "sensitivity_1000km":models["spatial_1000km"]["coefficients"]["LGM_climate_displacement"],
+        "NPP_interaction_sensitivities":{
+            k:v["coefficients"]["displacement_x_NPP"]
+            for k,v in models.items() if "interaction" in k},
         "CV":cv,"source_reproduction":True},allow_nan=False),flush=True)
 
 
