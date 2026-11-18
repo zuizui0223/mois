@@ -205,8 +205,8 @@ def run(path_geography,path_environment,out):
             for weighting in ("equal_cells","min_native_intro_species"):
                 for block_km in (500,1000):
                     for spec in SPEC_COLS:
-                        if spec.startswith("full_plus_white") and
-                           (weighting!="equal_cells" or block_km!=500):
+                        if (spec.startswith("full_plus_white") and
+                            (weighting!="equal_cells" or block_km!=500)):
                             continue
                         keys=SPEC_COLS[spec]
                         model[f"{spec}_{block_km}km_{weighting}"]=fit_one(
