@@ -183,9 +183,13 @@ def test(x,permutations):
           "note":"All ecological species-cell correlations preserved in shared whole-catalogue permutation"
         }
     z=x["cell_key"]
+    # pandas.factorize(MultiIndex) may return an Index of tuples without
+    # source level names. Preserve coordinate position, never infer labels.
+    coords=np.asarray(z.tolist(),dtype=np.int64)
+    check(coords.shape==(ngrid,2),"GBIF grid x/y key dimensions changed")
     cell=pd.DataFrame({
-        "grid_x":z.get_level_values("grid_x").to_numpy(),
-        "grid_y":z.get_level_values("grid_y").to_numpy(),
+        "grid_x":coords[:,0],
+        "grid_y":coords[:,1],
         "n_accepted_species":x["cell_n"],
         "observed_hue9_Shannon":H_obs,
         "expected_hue9_Shannon_given_genus":mu,
