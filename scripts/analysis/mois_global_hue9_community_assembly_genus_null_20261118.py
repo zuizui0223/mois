@@ -76,7 +76,9 @@ def empirical_entropy(counts):
     h=-(np.where(p>0,p*np.log(np.maximum(p,1e-12)),0)).sum(axis=1)
     return h
 
-def baseline(pairs,species):
+def baseline(pairs,species,null_model="genus"):
+    check(null_model in ("genus","genus_breadth"),
+          "Unexpected conditional community null model")
     spp=pd.Index(species.key.astype(str))
     ix=spp.get_indexer(pairs.specieskey.astype(str))
     check((ix>=0).all(),"GBIF species not in signed 37,104 accepted color catalog")
@@ -90,23 +92,37 @@ def baseline(pairs,species):
     hue=np.array([HUES.index(k) for k in species.source_hue9],dtype=np.int8)
     genus=species.genus.to_numpy(str)
     gcodes,_=pd.factorize(genus,sort=True)
-    order=np.argsort(gcodes,kind="stable")
-    start=np.r_[0,1+np.flatnonzero(np.diff(gcodes[order]))]
+    # More restrictive alternative fixes genus AND species occupied-grid
+    # footprint size bands. The colour-richness association with occupancy
+    # breadth is thus not arbitrarily erased in every genus permutation.
+    species_grid_n=np.bincount(ix,minlength=len(species)).astype(np.int32)
+    check(species_grid_n.min()>0,
+          "Genuine accepted source species unrepresented in GBIF cell table")
+    if null_model=="genus":
+        shuffle_codes=gcodes
+    else:
+        breadth=np.digitize(species_grid_n,[2,6,21,101]).astype(np.int32)
+        shuffle_codes=gcodes.astype(np.int64)*5+breadth
+    order=np.argsort(shuffle_codes,kind="stable")
+    start=np.r_[0,1+np.flatnonzero(np.diff(shuffle_codes[order]))]
     end=np.r_[start[1:],len(order)]
     groups=[order[a:b] for a,b in zip(start,end)]
     variable_groups=[g for g in groups if len(g)>1 and len(set(hue[g]))>1]
     varying_species=int(sum(len(g) for g in variable_groups))
-    check(len(variable_groups)>1000 and varying_species>15000,
-          "Too few multi-colour genera for color-assembly null")
+    check(len(variable_groups)>250 and varying_species>2500,
+          "Insufficient multi-colour within-condition null permutations")
     return {
       "cell":codes.astype(np.int32),
       "species":ix.astype(np.int32),
       "cell_n":cell_n,"ngrids":ngrid,
       "cell_key":unique_grid,"hue":hue,
       "variable_groups":variable_groups,
-      "n_genera":len(groups),
-      "n_variable_genera":len(variable_groups),
-      "n_species_in_variable_genera":varying_species,
+      "n_genera":len(set(gcodes)),
+      "n_variable_null_strata":len(variable_groups),
+      "n_genera_with_variable_null_strata":
+          len(set(int(gcodes[g[0]]) for g in variable_groups)),
+      "n_species_in_variable_strata":varying_species,
+      "null_model":null_model,
     }
 
 def counts_by_cell(x,labels):
@@ -223,11 +239,11 @@ def synthetic():
     assert np.array_equal(counts_by_cell(source,p).sum(axis=1),source["cell_n"])
     print("MOIS_GENUS_CONDITIONAL_9HUE_SYNTHETIC_IDENTITY_PASS",flush=True)
 
-def main(gbif,env,out,n):
+def main(gbif,env,out,n,null_model):
     root=Path(out)
     check(not root.exists(),"Refuse overwriting previous genuine global analysis")
     pairs,species=signed_original(gbif,env)
-    x=baseline(pairs,species)
+    x=baseline(pairs,species,null_model=null_model)
     results,cell,huecounts=test(x,n)
     root.mkdir(parents=True)
     p=root/"genuine_global_100km_photo9_diversity_vs_genus_null.csv.gz"
@@ -237,8 +253,10 @@ def main(gbif,env,out,n):
         "source_photo_hue_counts":huecounts,
         "num_global_grid_cells":x["ngrids"],
         "n_original_genera":x["n_genera"],
-        "n_variable_hue_genera":x["n_variable_genera"],
-        "n_species_in_multi_hue_genera":x["n_species_in_variable_genera"],
+        "null_model":x["null_model"],
+        "n_variable_hue_genera":x["n_genera_with_variable_null_strata"],
+        "n_variable_shuffle_strata":x["n_variable_null_strata"],
+        "n_species_in_exchangeable_colour_strata":x["n_species_in_variable_strata"],
         "genus_preserving_global_species_hue_label_permutations":n,
         "random_seed":SEED,
         "source_GBIF_sha256":GBIF_SHA,
@@ -256,8 +274,11 @@ def main(gbif,env,out,n):
     receipt={**summary,"output_sha256":{p.name:sha(p),s.name:sha(s)}}
     (root/"receipt.json").write_text(json.dumps(receipt,indent=2,allow_nan=False)+"\n")
     print("MOIS_GLOBAL_FLORAL_COLOUR_ASSEMBLY_REAL_RESULT",
-          json.dumps({**results,"n_genera":x["n_genera"],
-                     "variable_genera":x["n_variable_genera"],
+          json.dumps({**results,"null_model":null_model,
+                     "n_genera":x["n_genera"],
+                     "variable_genera":x["n_genera_with_variable_null_strata"],
+                     "variable_shuffle_strata":x["n_variable_null_strata"],
+                     "exchangeable_species":x["n_species_in_variable_strata"],
                      "hue_species":huecounts},allow_nan=False),flush=True)
 
 if __name__=="__main__":
@@ -265,9 +286,11 @@ if __name__=="__main__":
     parser.add_argument("--gbif");parser.add_argument("--env")
     parser.add_argument("--out")
     parser.add_argument("--permutations",type=int,default=199)
+    parser.add_argument("--null-model",choices=("genus","genus_breadth"),
+                        default="genus")
     parser.add_argument("--selftest",action="store_true")
     args=parser.parse_args()
     if args.selftest:synthetic()
     else:
         check(args.gbif and args.env and args.out,"GBIF+ENV genuine signed zip paths needed")
-        main(args.gbif,args.env,args.out,args.permutations)
+        main(args.gbif,args.env,args.out,args.permutations,args.null_model)
