@@ -55,7 +55,7 @@ jobs:
           done
       - name: Run actual red-vs-white and red-vs-other 8 hues with all ecological checks
         run: |
-          python scripts/analysis/mois_intro_red_hue_sensitivity_20261118.py \
+          python -m scripts.analysis.mois_intro_red_hue_sensitivity_20261118 \
             --env source/ENV.zip \
             --wcvp source/WCVP \
             --out results/mois_intro_red_ecological_sensitivity_20261118
