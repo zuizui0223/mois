@@ -334,8 +334,8 @@ def run(source,out):
     rows=[]
     for mode,cohorts in analyses.items():
         for min_n,info in cohorts.items():
-            for w,regions in info["weighting"].items():
-                for geo,res in regions.items():
+            for w,region_results in info["weighting"].items():
+                for geo,res in region_results.items():
                     if res["status"]!="ok":continue
                     row={
                        "WCVP_mode":mode,"cohort":min_n,"weight":w,
