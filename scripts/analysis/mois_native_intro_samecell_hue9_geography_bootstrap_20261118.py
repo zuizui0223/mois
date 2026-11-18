@@ -113,7 +113,7 @@ def sample(d,mode,min_species=30):
         use.native_minus_intro_9hue_null_anomaly,
         atol=1e-10,rtol=0),
         "source null-anomaly same-cell response does not exactly add")
-    check(use[OUTCOMES].notna().all().all(),"missing paired ecological differences")
+    check(use[list(OUTCOMES)].notna().all().all(),"missing paired ecological differences")
     check(use["min_status_species"].min()>=min_species,
           "native or introduced side lacked enough photographed source species")
     return use
@@ -205,11 +205,11 @@ def bootstrap_geographic_contrast(d,mA,mB,weighting="equal_cells",
         end=min(n_boot,start+250)
         idx=rng.integers(0,nb,size=(end-start,nb))
         a_sum=x[idx].sum(axis=1);b_sum=y[idx].sum(axis=1)
-        valid=a_sum[:,0].gt(0) if isinstance(a_sum,pd.DataFrame) else a_sum[:,0]>0
+        valid=a_sum[:,0]>0
         valid &= b_sum[:,0]>0
         piece=np.full((end-start,len(OUTCOMES)),np.nan)
-        piece[valid]=(a_sum[valid,1:]/a_sum[valid,[0]]
-                     -b_sum[valid,1:]/b_sum[valid,[0]])
+        piece[valid]=(a_sum[valid,1:]/a_sum[valid,0][:,None]
+                     -b_sum[valid,1:]/b_sum[valid,0][:,None])
         sims[start:end]=piece
     check(np.isfinite(sims).mean()>.98,
           "Bootstrap regularly leaves out a geographic stratum")
