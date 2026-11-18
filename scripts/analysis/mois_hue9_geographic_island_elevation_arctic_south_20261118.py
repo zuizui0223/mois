@@ -80,7 +80,9 @@ def load_coast_and_continents(zippath,work):
         mask=land.geometry.covers(pt)
         found=land.loc[mask,"sibling_id"].dropna().unique()
         check(len(found)==1,"GSHHG continental seed ambiguous "+name)
-        ids[name]=str(found[0])
+        # Geopandas spatial join coerces source integer sibling_id to float
+        # because ocean points are NA. Canonical integer text is mandatory.
+        ids[name]=str(int(found[0]))
     check(len(set(ids.values()))==5,
           "Five GSHHG continental siblings should be distinct")
     areas=land.groupby("sibling_id",sort=False).area.sum()
@@ -139,7 +141,8 @@ def georeference_cells(original,land,continents,areas,elevation_tif):
     good=hits.sibling_id.notna()
     sample_land=np.full(len(cell_id),"",dtype=object)
     sample_land[hits.loc[good,"sample_id"].to_numpy(int)]=(
-        hits.loc[good,"sibling_id"].astype(str).to_numpy())
+        pd.to_numeric(hits.loc[good,"sibling_id"],errors="raise")
+          .astype(np.int64).astype(str).to_numpy())
     sample_land[np.fromiter(ambiguous,dtype=int,count=len(ambiguous))]=""
     frame=pd.DataFrame({
        "cell_index":cell_id,"sample_landmass":sample_land,
@@ -168,9 +171,17 @@ def georeference_cells(original,land,continents,areas,elevation_tif):
         "mainland","island"
     )
     actual["strict_all9_same_landmass"]=actual.n_dominant_sibling.eq(9)
+    # Entire continents must not become islands simply because sjoin
+    # returned float 0.0, 1.0 etc alongside NaN ocean observations.
+    check(actual.loc[actual.n_dominant_sibling.ge(7),
+                     "gshhg_land_class"].eq("mainland").any(),
+          "GSHHG continental sibling IDs did not match spatial join")
+    check(actual.loc[actual.n_dominant_sibling.ge(7),
+                     "gshhg_land_class"].eq("island").any(),
+          "GSHHG returned no real islands despite global land sample")
     actual["landmass_area_km2"]=pd.to_numeric(
         actual.landmass_sibling_id.map(
-            {str(k):v for k,v in areas.items()}),errors="coerce")
+            {str(int(k)):v for k,v in areas.items()}),errors="coerce")
     # Height is the source raster median of land subpoints within cell;
     # it is not the elevation of all individual source records/flowers.
     med=(frame[frame.is_land].groupby("cell_index",sort=False)
