@@ -390,7 +390,7 @@ jobs:
             r=json.loads(z.read("receipt.json"))
             assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"])==(0,128,0,0)
             assert r["old_original_photo_attempt_ID_count"]==1231352
-            assert r["created_utc_lower_bound"]=="2026-11-18T04:09:17+00:00"
+            assert r["created_utc_lower_bound"]=="2026-11-17T11:47:06+00:00"
             assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]
             assert h(z.read("source_candidates.csv"))==r["source_candidates_SHA256"]
             assert r["old_all_image_raw_SHA_disjointness_proven"] is False
@@ -402,7 +402,7 @@ jobs:
             r=json.loads(z.read("receipt.json"))
             assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"])==(128,128,0,0)
             assert r["old_original_photo_attempt_ID_count"]==1231352
-            assert r["created_utc_lower_bound"]=="2026-11-18T04:09:17+00:00"
+            assert r["created_utc_lower_bound"]=="2026-11-17T11:47:06+00:00"
             assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]
             assert h(z.read("source_candidates.csv"))==r["source_candidates_SHA256"]
             assert r["old_all_image_raw_SHA_disjointness_proven"] is False
@@ -416,7 +416,7 @@ jobs:
             r=json.loads(z.read("receipt.json"))
             assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"])==(256,128,0,0)
             assert r["old_original_photo_attempt_ID_count"]==1231352
-            assert r["created_utc_lower_bound"]=="2026-11-18T04:09:17+00:00"
+            assert r["created_utc_lower_bound"]=="2026-11-17T11:47:06+00:00"
             assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]
             assert h(z.read("source_candidates.csv"))==r["source_candidates_SHA256"]
             assert r["old_all_image_raw_SHA_disjointness_proven"] is False
@@ -430,7 +430,7 @@ jobs:
             r=json.loads(z.read("receipt.json"))
             assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"])==(384,128,0,0)
             assert r["old_original_photo_attempt_ID_count"]==1231352
-            assert r["created_utc_lower_bound"]=="2026-11-18T04:09:17+00:00"
+            assert r["created_utc_lower_bound"]=="2026-11-17T11:47:06+00:00"
             assert h(z.read("receipt.json"))=="dd13a63f38da1ce70a9efd160c2bf74effc93be1afdf5321e1c354fc27916e91"
             assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]
             assert h(z.read("source_candidates.csv"))==r["source_candidates_SHA256"]
@@ -446,7 +446,7 @@ jobs:
             r=json.loads(z.read("receipt.json"))
             assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"])==(512,128,0,0)
             assert r["old_original_photo_attempt_ID_count"]==1231352
-            assert r["created_utc_lower_bound"]=="2026-11-18T04:09:17+00:00"
+            assert r["created_utc_lower_bound"]=="2026-11-17T11:47:06+00:00"
             assert h(z.read("receipt.json"))=="48f182be9374f84bb5efe83d91ad2d9320b72e880eb5ecba7771191db2d48857"
             assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]
             assert h(z.read("source_candidates.csv"))==r["source_candidates_SHA256"]
@@ -462,7 +462,7 @@ jobs:
             r=json.loads(z.read("receipt.json"))
             assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"])==(640,128,0,0)
             assert r["old_original_photo_attempt_ID_count"]==1231352
-            assert r["created_utc_lower_bound"]=="2026-11-18T04:09:17+00:00"
+            assert r["created_utc_lower_bound"]=="2026-11-17T11:47:06+00:00"
             assert h(z.read("receipt.json"))=="0265174e51afe841013785fd7ec09d0b4d05c48f003ad404c239f4fe9a603867"
             assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]
             assert h(z.read("source_candidates.csv"))==r["source_candidates_SHA256"]
@@ -478,7 +478,7 @@ jobs:
             r=json.loads(z.read("receipt.json"))
             assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"])==(768,128,1,0)
             assert r["old_original_photo_attempt_ID_count"]==1231352
-            assert r["created_utc_lower_bound"]=="2026-11-18T04:09:17+00:00"
+            assert r["created_utc_lower_bound"]=="2026-11-17T11:47:06+00:00"
             assert h(z.read("receipt.json"))=="23b9751f40b2ec8325f1382dde8300549fac72f414acd561427d9602f27dd5c7"
             assert h(z.read("manifest.json"))==r["source_manifest_SHA256"]
             assert h(z.read("shards/shard-000.csv"))==r["source_shard_SHA256"]
@@ -510,7 +510,7 @@ jobs:
             r=json.loads(z.read("receipt.json"))
             assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(1024,128,0,0,0)
             assert r["old_original_photo_attempt_ID_count"]==1231353
-            assert r["created_utc_lower_bound"]=="2026-11-18T04:09:17+00:00"
+            assert r["created_utc_lower_bound"]=="2026-11-17T11:47:06+00:00"
             assert r["old_all_image_raw_SHA_disjointness_proven"] is False
             assert h(z.read("receipt.json"))=="b1a2f6ac73875b8af13771d68237d07678b05824cbc4c6117a5938582cdfecec"
             assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]=="ab9ec77756cd8ade741589a62f6b07f39ab77e33d56523db73a873677ffd871f"
@@ -526,7 +526,7 @@ jobs:
             r=json.loads(z.read("receipt.json"))
             assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(1152,128,0,0,0)
             assert r["old_original_photo_attempt_ID_count"]==1231353
-            assert r["created_utc_lower_bound"]=="2026-11-18T04:09:17+00:00"
+            assert r["created_utc_lower_bound"]=="2026-11-17T11:47:06+00:00"
             assert r["old_all_image_raw_SHA_disjointness_proven"] is False
             assert h(z.read("receipt.json"))=="0f783def68a9a0c9ce8d8edee86395afa684070ac7db454e8c5d7ede150fa61a"
             assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]=="7e51fb0e48c662be4dd6ed8d60341048d332c76ee72cc7824d3020d2eb113dd6"
@@ -542,7 +542,7 @@ jobs:
             r=json.loads(z.read("receipt.json"))
             assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(1280,128,0,0,0)
             assert r["old_original_photo_attempt_ID_count"]==1231353
-            assert r["created_utc_lower_bound"]=="2026-11-18T04:09:17+00:00"
+            assert r["created_utc_lower_bound"]=="2026-11-17T11:47:06+00:00"
             assert r["old_all_image_raw_SHA_disjointness_proven"] is False
             assert h(z.read("receipt.json"))=="0ff592448d75b8423ba4dccf23c101fdb6deef9eb3461f7798e78a79cdc30717"
             assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]=="3baf6d083caf394b2e4248ab48934321bb8f9bf57d8a960eb50675c2aa1c6d65"
@@ -558,7 +558,7 @@ jobs:
             r=json.loads(z.read("receipt.json"))
             assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(1408,128,0,0,0)
             assert r["old_original_photo_attempt_ID_count"]==1231353
-            assert r["created_utc_lower_bound"]=="2026-11-18T04:09:17+00:00"
+            assert r["created_utc_lower_bound"]=="2026-11-17T11:47:06+00:00"
             assert r["old_all_image_raw_SHA_disjointness_proven"] is False
             assert h(z.read("receipt.json"))=="1ebdb1b2b0cac6267170f97e1b4cc1a68df96e1e9e33149e9de1cec5dd01d11a"
             assert h(z.read("source_taxon_status.csv"))==r["source_status_SHA256"]=="7503ce80e1cad979c3afc3960445babbf43f0c1a88231b253cf665f11d452915"
