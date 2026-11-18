@@ -681,7 +681,7 @@ jobs:
           assert np.all(np.abs(vals.sum(axis=1)-1)<=.001)
           assert missing.isna().all().all()
           assert len(ids)==1231355 and len(raw)==111
-          selected=c.select_taxa_epoch8(a,offset=0)
+          selected=c.select_taxa_epoch8(a,offset=128)
           historic_taxa=set()
           for off in list(range(0,2176,128))+[2176]:
             with zipfile.ZipFile(f"/tmp/mois_epoch6_zips/epoch7_{off}.zip") as z:
