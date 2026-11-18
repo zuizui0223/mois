@@ -504,7 +504,7 @@ jobs:
           gh run download 44044547320 --repo "$REPO" --name mois-20261117-epoch6-offset1792-independent-strict9-audit --dir old/epoch6_offset1792
           gh run download 44053424693 --repo "$REPO" --name mois-20261117-epoch6-offset1920-independent-strict9-audit --dir old/epoch6_offset1920
           gh run download 44140649923 --repo "$REPO" --name mois-20261117-epoch7-offset768-independent-strict9-audit --dir old/epoch7_offset768
-          gh run download 44208024637 --repo "$REPO" --name mois-20261117-epoch7-offset1536-independent-strict9-audit --dir old/epoch7_offset1536 old/epoch7_offset1536
+          gh run download 44208024637 --repo "$REPO" --name mois-20261117-epoch7-offset1536-independent-strict9-audit --dir old/epoch7_offset1536
           cp latest/mois_42111_post20261114_new_independent_original_photo9.csv.gz latest/atlas.csv.gz
           python - <<'PY'
           import numpy as np,pandas as pd,csv,io,zipfile
@@ -686,7 +686,7 @@ jobs:
           gh run download 44044547320 --repo "$REPO" --name mois-20261117-epoch6-offset1792-independent-strict9-audit --dir old/epoch6_offset1792
           gh run download 44053424693 --repo "$REPO" --name mois-20261117-epoch6-offset1920-independent-strict9-audit --dir old/epoch6_offset1920
           gh run download 44140649923 --repo "$REPO" --name mois-20261117-epoch7-offset768-independent-strict9-audit --dir old/epoch7_offset768
-          gh run download 44208024637 --repo "$REPO" --name mois-20261117-epoch7-offset1536-independent-strict9-audit --dir old/epoch7_offset1536 old/epoch7_offset1536
+          gh run download 44208024637 --repo "$REPO" --name mois-20261117-epoch7-offset1536-independent-strict9-audit --dir old/epoch7_offset1536
       - name: Verify independent real RGB worker, uniqueness, strict9 or full missing
         run: |
           set -euo pipefail
