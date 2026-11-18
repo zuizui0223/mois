@@ -35,12 +35,155 @@ from scripts.analysis.mois_global_hue9_community_assembly_genus_null_20261118 im
 from scripts.analysis.mois_nonwhite8_assembly_white_fixed_null_20261118 import (
     load_strict_nine_null,NULL_SHA,
 )
-from scripts.analysis.mois_lgm_wcvp_native_regional_block_20261116 import (
-    assign_cells_broad_region,get_wcvp_source,match_gbif_to_wcvp,TDWG_GEO_SHA,
-)
-from scripts.analysis.mois_lgm_native_intro_common_genus_20261116 import (
-    regional_species_cell_rows,LGM_SHA,LGM_CELL,
-)
+# Keep this branch self-contained: older source-WCVP geospatial derivation
+# was on an unmerged, distinct PR. Only polygons_read is on current main.
+import re
+import geopandas as gpd
+from pyproj import Transformer
+from scripts.analysis.mois_real350399_wcvp_geographic_native_status_20261019 import polygons_read
+
+LGM_SHA="db3b5b4fa2133194963be9233411bb6bb50d996cc4cc78b25ab"
+LGM_CELL="WorldClim1p4_LGM_threeGCM_18577_cells.parquet"
+TDWG_GEO_SHA="c172bcf6aba20e19477adc60aebf0023068f0175dca8480f0760b090dcf64840"
+NAME_FILE="mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz"
+DIST_FILE="mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz"
+MANIFEST="mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json"
+VALID_STATES={"native_at_TDWG3","introduced_at_TDWG3","doubtful",
+              "extinct","unknown_flag","contradictory_TDWG3_records"}
+BINOMIAL=re.compile(r"^[A-Z][A-Za-z-]+ [a-z][A-Za-z-]+$")
+OFFSETS=(-.4,-.2,0,.2,.4)
+
+def get_wcvp_source(folder):
+    folder=Path(folder)
+    receipt=json.loads((folder/MANIFEST).read_text())
+    check(receipt["source_photo_attempts"]==350399
+          and receipt["taxa_with_any_source_photos"]==74821
+          and receipt["wcvp_distributions_resolution"]=="TDWG_level3_only"
+          and receipt["H3_native_island_hypothesis_tested"] is False,
+          "Original Kew source-wide WCVP lineage changed")
+    for fn in (NAME_FILE,DIST_FILE):
+        check(sha(folder/fn)==receipt["data_files_sha256"][fn],
+              "Original signed WCVP CSV SHA changed: "+fn)
+    nm=pd.read_csv(folder/NAME_FILE,dtype=str,keep_default_na=False)
+    di=pd.read_csv(folder/DIST_FILE,dtype=str,keep_default_na=False)
+    check(len(nm)==74821 and nm.inat_taxon_id.is_unique
+          and len(di)>=600000
+          and not di[["wcvp_accepted_plant_name_id",
+                      "tdwg_level3_code"]].duplicated().any()
+          and di.native_introduced_state.isin(VALID_STATES).all(),
+          "Original WCVP unique source taxonomy/range or state drift")
+    return nm,di,receipt
+
+def match_gbif_to_wcvp(photo_species,names):
+    fields=["source_species_exact_binomial","wcvp_match_state",
+            "wcvp_accepted_plant_name_id"]
+    check(set(fields).issubset(names),"WCVP source name match schema drift")
+    matched=names.loc[
+        names.wcvp_match_state.eq("unique_exact_name_to_accepted_id")
+        &names.wcvp_accepted_plant_name_id.ne("")
+        &names.source_species_exact_binomial.str.match(BINOMIAL),
+        fields
+    ].drop_duplicates()
+    n=matched.groupby("source_species_exact_binomial").wcvp_accepted_plant_name_id.nunique()
+    matched=matched.loc[matched.source_species_exact_binomial.isin(n.index[n.eq(1)])]
+    matched=matched.drop_duplicates("source_species_exact_binomial")
+    s=photo_species[["key","species","source_hue9","hue_status"]].copy()
+    s["key"]=s.key.astype(str)
+    check(len(s)==37104 and s.key.is_unique,"COLXR 37104 accepted species drift")
+    s=s.merge(matched,left_on="species",right_on="source_species_exact_binomial",
+              how="left",validate="many_to_one")
+    s["wcvp_match_exact_binomial"]=s.wcvp_accepted_plant_name_id.notna()
+    return s
+
+def assign_cells_broad_region(lgm_cells,tdwg_path):
+    # Same 25 equal-area offset points / 100km grid and single-TDWG-code
+    # rule as the original 2026-11-16 signed WCVP analysis.
+    check(sha(tdwg_path)==TDWG_GEO_SHA,"Pinned historical TDWG3 geojson changed")
+    polys=polygons_read(tdwg_path)
+    cells=lgm_cells[["grid_x","grid_y"]].copy().reset_index(drop=True)
+    check(len(cells)==18577 and not cells.duplicated().any(),
+          "Global 18,577 cell coordinates changed")
+    t=Transformer.from_crs("EPSG:6933","EPSG:4326",always_xy=True)
+    x=cells.grid_x.to_numpy(float); y=cells.grid_y.to_numpy(float)
+    coords=[]
+    for ox in OFFSETS:
+        for oy in OFFSETS:
+            lon,lat=t.transform((x+.5+ox)*100000.,(y+.5+oy)*100000.)
+            coords.append((lon,lat))
+    check(len(coords)==25,"Expected 25 native-range raster subpoints")
+    lon=np.stack([z[0] for z in coords],axis=0)
+    lat=np.stack([z[1] for z in coords],axis=0)
+    n=lon.shape[1]
+    spots=pd.DataFrame({
+        "subpoint_id":np.arange(n*25,dtype=np.int32),
+        "cell_index":np.tile(np.arange(n,dtype=np.int32),25),
+        "lon":lon.ravel(),"lat":lat.ravel()
+    })
+    valid=spots.lon.between(-180,180)&spots.lat.between(-90,90)
+    geo=gpd.GeoDataFrame(
+        spots.loc[valid,["subpoint_id","cell_index"]],
+        geometry=gpd.points_from_xy(spots.loc[valid,"lon"],
+                                      spots.loc[valid,"lat"]),
+        crs="EPSG:4326")
+    hits=gpd.sjoin(geo,polys[["LEVEL3_COD","geometry"]],
+                   how="inner",predicate="within")
+    codes=hits[["subpoint_id","cell_index","LEVEL3_COD"]].drop_duplicates()
+    perpoint=codes.groupby("subpoint_id").LEVEL3_COD.nunique()
+    one=perpoint.index[perpoint.eq(1)]
+    codes=codes.loc[codes.subpoint_id.isin(one)]
+    bycell=codes.groupby("cell_index").agg(
+        num_points=("subpoint_id","nunique"),
+        num_codes=("LEVEL3_COD","nunique"),
+        code=("LEVEL3_COD","first"))
+    result=cells.copy()
+    result["code"]=pd.Series(pd.NA,index=result.index,dtype="string")
+    result["tdwg3_points"]=0
+    result["tdwg3_distinct_codes"]=0
+    idx=bycell.index.astype(int)
+    result.loc[idx,"tdwg3_points"]=bycell.num_points.to_numpy(int)
+    result.loc[idx,"tdwg3_distinct_codes"]=bycell.num_codes.to_numpy(int)
+    valid_code=bycell.num_codes.eq(1)
+    result.loc[bycell.index[valid_code],"code"]=(
+        bycell.loc[valid_code,"code"].astype(str).to_numpy())
+    result["region_moderate"]=result.code.notna() & result.tdwg3_points.ge(10)
+    result["region_strict"]=result.code.notna() & result.tdwg3_points.ge(20)
+    print("MOIS_WCVP_TDWG3_ORIGINAL_25SUBPOINT_REPLAY",
+          json.dumps({"strict":int(result.region_strict.sum()),
+                      "moderate":int(result.region_moderate.sum()),
+                      "n_region_codes":int(result.code.nunique()),
+                      "ambiguous_cells":int(result.tdwg3_distinct_codes.gt(1).sum())}),flush=True)
+    return result
+
+def regional_species_cell_rows(pairs,photo_species,names,distribution,
+                               regions,matched):
+    ids=matched[["grid_x","grid_y"]].drop_duplicates()
+    ids=ids.merge(regions[["grid_x","grid_y","code","region_strict",
+                           "region_moderate"]],
+                  on=["grid_x","grid_y"],validate="one_to_one")
+    check(ids.region_moderate.all(),"Source coastal uncertainty filter broken")
+    taxon=match_gbif_to_wcvp(photo_species,names)
+    taxon["genus"]=taxon.species.str.split().str[0]
+    p=pairs.merge(ids,on=["grid_x","grid_y"],how="inner",
+                  validate="many_to_one")
+    p=p.merge(taxon[["key","genus","source_hue9",
+                     "wcvp_accepted_plant_name_id"]],
+              left_on="specieskey",right_on="key",how="left",
+              validate="many_to_one")
+    geo_dist=distribution[["wcvp_accepted_plant_name_id","tdwg_level3_code",
+                           "native_introduced_state"]]
+    p=p.merge(geo_dist,
+              left_on=["wcvp_accepted_plant_name_id","code"],
+              right_on=["wcvp_accepted_plant_name_id","tdwg_level3_code"],
+              how="left",validate="many_to_one")
+    check(not p[["specieskey","grid_x","grid_y"]].duplicated().any(),
+          "Native/introduced current GBIF presence counted more than once")
+    p["white"]=p.source_hue9.eq("white").astype("int8")
+    p["status"]=p.native_introduced_state
+    p=p.loc[p.status.isin(["native_at_TDWG3","introduced_at_TDWG3"]),
+            ["grid_x","grid_y","region_strict","region_moderate",
+             "specieskey","genus","white","status"]]
+    check(not p.empty,"No WCVP region-native/introduced source rows")
+    return p
 
 GEO_SHA="8677b4e7bf6fa85f482272f86afcc87b153e4c6ec8f8d8030bc29f89fedfdbef"
 GEO_CELL="GBIF18577_real_photo9_island_alpine_arctic_hemisphere_cells.csv.gz"
