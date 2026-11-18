@@ -30,6 +30,9 @@ from sklearn.metrics import r2_score,mean_squared_error
 
 SOURCES={
  "null":{"sha":"596166fa2fe8bfb28653c325a3a8f1a1495c0792688a7fdb781014cfedaa88c7"},
+ "GBIF":{"sha":"422f6d6489e61c6e57c5d51db614e47f613039781a901e3fd3481c13b2b085c2",
+         "member":"all_37104_species_x_EPSG6933_100km_cells.parquet",
+         "internal_sha":"e00b0408055984abfe4ec0ff0a24833fc148888afd1ea0e0c9b270a077d08b11"},
  "spatial":{"sha":"e209257adbc185b4855f3b8d76aeaa50d2e2afe8a1feeb0f76013366e57c4d16",
             "member":"LGM_white_photo9_species_assemblages_100km_cells.parquet",
             "digest_key":"output_sha256","rows":12560},
@@ -76,6 +79,28 @@ def table(zip_path,name):
             name+" grid keys or source denominator changed")
     return d
 
+def original_GBIF_record_effort(zip_path):
+    import pyarrow.parquet as pq
+    spec=SOURCES["GBIF"]
+    require(sha(zip_path)==spec["sha"],"GBIF 16-shard source ZIP changed")
+    with ZipFile(zip_path) as z:
+        raw=z.read(spec["member"])
+        rec=json.loads(z.read("receipt.json"))
+    require(sha(raw)==spec["internal_sha"]
+            and rec["all_16_shards_source_verified"]
+            and rec["GBIF_occurrences_passed_all_filters"]==396142825,
+            "GBIF original 5.49M accepted species x grid count source changed")
+    data=pq.read_table(io.BytesIO(raw),
+         columns=["grid_x","grid_y","occurrence_count"]).to_pandas()
+    require(len(data)==5493931 and int(data.occurrence_count.sum())==396142825,
+            "Full actual 396M GBIF source effort count drifted")
+    summed=data.groupby(["grid_x","grid_y"],sort=False).occurrence_count.sum().reset_index()
+    summed=summed.rename(columns={"occurrence_count":"GBIF_occurrence_count"})
+    require(len(summed)==18577 and
+            int(summed.GBIF_occurrence_count.sum())==396142825,
+            "GBIF original observation-effort grid sum changed")
+    return summed
+
 def null_tables(zip_path):
     require(sha(zip_path)==SOURCES["null"]["sha"],
             "Signed two-null global hue9 archive altered")
@@ -105,12 +130,12 @@ def null_tables(zip_path):
             "Actual richness changed between nulls")
     return a,b
 
-def join_sources(null,genus,spatial,ndvi,npp):
+def join_sources(null,genus,spatial,ndvi,npp,gbif_effort):
     original_n=len(null)
     need_spatial=["grid_x","grid_y","block_500km","block_1000km",
                   "lat","lon","present_temperature_C","present_precip_mm",
                   "ESA_AGB_woody_Mg_ha_2020",
-                  LGM_TEMP,LGM_RAIN,"GBIF_occurrence_count"]
+                  LGM_TEMP,LGM_RAIN]
     need_ndvi=["grid_x","grid_y","MODIS_NDVI_2001_2021_mean"]
     need_npp=["grid_x","grid_y",NPP,NPP_YEARS]
     for cols,df,name in ((need_spatial,spatial,"SPATIAL"),
@@ -125,6 +150,11 @@ def join_sources(null,genus,spatial,ndvi,npp):
               validate="one_to_one")
     d=d.merge(npp[need_npp],on=["grid_x","grid_y"],how="left",
               validate="one_to_one")
+    require(not gbif_effort[["grid_x","grid_y"]].duplicated().any(),
+            "GBIF observation-effort cell grid duplicates")
+    d=d.merge(gbif_effort,on=["grid_x","grid_y"],how="left",validate="one_to_one")
+    require(d.GBIF_occurrence_count.notna().all(),
+            "Some original colour cells have no signed GBIF observation effort")
     require(len(d)==original_n and not d[["grid_x","grid_y"]].duplicated().any(),
             "True source GBIF grid cells duplicated by environment join")
     fields=["observed_minus_genus_null_Shannon",
@@ -316,7 +346,8 @@ def run(args):
     spatial=table(args.spatial,"spatial")
     ndvi=table(args.NDVI,"NDVI")
     npp=table(args.NPP,"NPP")
-    d,coverage=join_sources(strict,genus,spatial,ndvi,npp)
+    gbif_effort=original_GBIF_record_effort(args.GBIF)
+    d,coverage=join_sources(strict,genus,spatial,ndvi,npp,gbif_effort)
     primary=spatial_fit(d)
     richer=spatial_fit(d[d.n_accepted_species.ge(100)].reset_index(drop=True))
     broad=spatial_fit(d,block_km=1000)
@@ -387,6 +418,7 @@ def run(args):
 if __name__=="__main__":
     p=argparse.ArgumentParser()
     p.add_argument("--null",required=True)
+    p.add_argument("--GBIF",required=True)
     p.add_argument("--spatial",required=True)
     p.add_argument("--NDVI",required=True)
     p.add_argument("--NPP",required=True)
