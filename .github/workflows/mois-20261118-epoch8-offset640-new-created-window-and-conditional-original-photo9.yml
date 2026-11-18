@@ -444,7 +444,7 @@ jobs:
           print("PREVIOUS_EPOCH7_OFFSET384_ACTUAL_ZIP_AND_RECEIPT_PASS",flush=True)
           with zipfile.ZipFile("/tmp/mois_epoch6_zips/epoch7_512.zip") as z:
             r=json.loads(z.read("receipt.json"))
-            assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"])==(640,128,0,0)
+            assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"])==(512,128,0,0)
             assert r["old_original_photo_attempt_ID_count"]==1231352
             assert r["created_utc_lower_bound"]=="2026-11-17T11:47:06+00:00"
             assert h(z.read("receipt.json"))=="48f182be9374f84bb5efe83d91ad2d9320b72e880eb5ecba7771191db2d48857"
