@@ -1,0 +1,90 @@
+name: "MOIS Ecology: same-cell same-genus hue assortativity native introduced"
+on:
+  push:
+    branches:
+      - analysis/mois-global-floral-colour-assembly-null-20261118
+    paths:
+      - scripts/analysis/mois_native_intro_samecell_shared_genus_pairhue_20261118.py
+      - .github/workflows/mois-native-intro-samecell-samegenus-pairhue-20261118.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-native-intro-samegenus-ninecolour-pairs-20261118
+  cancel-in-progress: false
+jobs:
+  actual-common-genera-pairwise-colour:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install source WCVP geospatial and numeric ecology requirements
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "numpy>=1.26,<3" "pandas>=2.1,<3" "pyarrow>=17,<25" \
+            "geopandas>=1.0,<1.2" "shapely>=2.0,<3" \
+            "pyproj>=3.6,<4" "scipy>=1.11,<2" "statsmodels>=0.14,<1"
+          python -m py_compile \
+            scripts/analysis/mois_native_intro_samecell_shared_genus_pairhue_20261118.py
+      - name: Retrieve four signed original true taxon range and geography source archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p source/WCVP
+          for original in \
+            '14166701658 GBIF 422f6d6489e61c6e57c5d51db614e47f613039781a901e3fd3481c13b2b085c2' \
+            '14219399376 ENV d8b97528188d9f8d63cb802d5b3f6e8f7f251937fd30af42aeae47e43ebad1fc' \
+            '14225733755 LGM db3b5b4fa2133194963be9233411bb6bb50bc86393d1dc50d996cc4cc78b25ab' \
+            '14399751670 GEO 8677b4e7bf6fa85f482272f86afcc87b153e4c6ec8f8d8030bc29f89fedfdbef'; do
+            set -- $original
+            curl -fsSL --retry 3 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$1/zip" \
+              -o "source/$2.zip"
+            echo "$3  source/$2.zip" | sha256sum -c
+          done
+      - name: Retrieve and verify exact WCVP region accepted species labels and 2011 TDWG3 polygons
+        env:
+          GH_TOKEN: __GHTOKEN__
+        run: |
+          set -euo pipefail
+          tag='mois-real350399-kew-wcvp-native-tdwg3-source-v1'
+          for filename in \
+            'mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' \
+            'mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz' \
+            'mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json'; do
+            curl --fail --location --silent --show-error --retry 3 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              "https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/$filename" \
+              -o "source/WCVP/$filename"
+          done
+          curl -fsSL --retry 3 \
+            "https://raw.githubusercontent.com/tdwg/wgsrpd/52da7828aba9d461dd133c27b3bd7a4407161f54/geojson/level3.geojson" \
+            -o source/TDWG3.geojson
+          echo "c172bcf6aba20e19477adc60aebf0023068f0175dca8480f0760b090dcf64840  source/TDWG3.geojson" | sha256sum -c
+      - name: True accepted species photo9 pair probability in exact same genus and 100km cell for WCVP native vs introduced
+        run: |
+          python -m scripts.analysis.mois_native_intro_samecell_shared_genus_pairhue_20261118 \
+            --GBIF source/GBIF.zip --ENV source/ENV.zip \
+            --LGM source/LGM.zip --GEO source/GEO.zip \
+            --TDWG source/TDWG3.geojson --WCVP source/WCVP \
+            --out results/mois_actual_common_genus_pair_photo9_20261118
+      - name: Preserve only output numeric bootstrap tests and source receipt
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-native-intro-samegenus-pair-photo9-spatial-blocks-20261118
+          path: results/mois_actual_common_genus_pair_photo9_20261118/
+          retention-days: 30
+          if-no-files-found: error
