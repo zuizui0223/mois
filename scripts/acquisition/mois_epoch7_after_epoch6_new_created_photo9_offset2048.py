@@ -20,6 +20,7 @@ from scripts.acquisition import (
 from scripts.acquisition import mois_20261115_created_epoch2_disjoint_original_photo9_after2048 as core
 
 from scripts.acquisition import mois_epoch7_after_epoch6_new_created_photo9_offset1536 as prior_epoch7
+from scripts.acquisition import mois_epoch7_after_epoch6_new_created_photo9_offset1920 as prior_1920
 m = prior_epoch7.m
 m.SCHEMA = "mois_incremental_20261117_epoch7_offset2048_new_time_window_1231355_original9_v1"
 m.SOURCE_ARM = "MOIS_EPOCH7_OFFSET2048_AFTER_TERMINAL_EPOCH6_2199_NEW_CREATED_INTERVAL"
@@ -57,7 +58,6 @@ def select_taxa_epoch7(atlas, n=128, offset=2048):
 
 # The 1920 source, worker, independent audit and formal append all terminated SUCCESS.
 # Only independent audited delta bytes join the all-history photo ID / UUID set.
-from scripts.acquisition import mois_epoch7_after_epoch6_new_created_photo9_offset1920 as prior_1920
 
 NEW_DELTA = "old/epoch7_offset1920/new_real_original_nine_photo9_delta.parquet"
 NEW_DELTA_SHA = "278cf722d023644025c4a4b7745753e05739a5c1d3e93f225c9441161025012c"
