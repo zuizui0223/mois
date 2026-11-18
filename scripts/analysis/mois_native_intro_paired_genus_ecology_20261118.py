@@ -123,13 +123,13 @@ def prepare(decomp,spatial,ndvi):
     require(len(matched)>4500 and
             matched.groupby("WCVP_geo_mode").size().min()>2000,
             "Insufficient actual native-introduced matched cells")
-    aux=decomp.drop_duplicates(group)[group+[NPP,LGM_T,LGM_P,
+    aux=decomp.drop_duplicates(group)[group+[NPP,LGM_T,
                                 "block_500km"]].copy()
     require(not aux.duplicated(group).any(),"Duplicate environmental cell keys")
     matched=matched.merge(aux,on=group,how="left",validate="one_to_one")
 
     s_cols=["grid_x","grid_y","lat","lon","block_500km","block_1000km",
-            "present_temperature_C","present_precip_mm",
+            "present_temperature_C","present_precip_mm",LGM_P,
             "ESA_AGB_woody_Mg_ha_2020"]
     require(set(s_cols).issubset(spatial.columns),
             "Original WorldClim1.4 present climate or AGB not accessible")
