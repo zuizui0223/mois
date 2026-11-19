@@ -160,12 +160,12 @@ def run(args):
     check(mapped.wcvp_match_exact_binomial.sum()==36762,'WCVP exact accepted matching changed')
     ids=regions.loc[regions.region_moderate,['grid_x','grid_y']].drop_duplicates()
     src=regional_species_cell_rows(pairs,species,names,dist,regions,ids)
-    check(int((src.region_strict&src.status.eq('native_at_TDWG')).sum())==2271852,
+    check(int((src.region_strict&src.status.eq('native_at_TDWG3')).sum())==2271852,
           'Original strict region-native 2.27M species×grid source did not reproduce')
-    check(int((src.region_strict&src.status.eq('introduced_at_TDWG')).sum())==436422,
+    check(int((src.region_strict&src.status.eq('introduced_at_TDWG3')).sum())==436422,
           'Original strict introduced 436K species×grid source did not reproduce')
     climate,invalid_past_rain=climate_sources(source_environment(args.ECO),lgm,regions)
-    src=src.loc[src.region_strict & src.status.eq('native_at_TDWG')].copy()
+    src=src.loc[src.region_strict & src.status.eq('native_at_TDWG3')].copy()
     src=src.merge(climate[['grid_x','grid_y','code','cell_index','block500']],
                   on=['grid_x','grid_y'],how='inner',validate='many_to_one')
     check(not src[['specieskey','cell_index']].duplicated().any(),
