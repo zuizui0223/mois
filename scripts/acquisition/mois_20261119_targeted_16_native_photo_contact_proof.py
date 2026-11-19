@@ -40,7 +40,7 @@ SOURCE_ID_COUNT=1231337
 API="https://api.inaturalist.org/v1/observations"
 TARGET_SPECIES_MAX=16
 TARGET_OBS=3
-DEFAULT_PAGE_LIMIT=100
+DEFAULT_PAGE_LIMIT=35
 MAX_IMAGE_BYTES=16_000_000
 IMAGE_SIDE=440
 
@@ -111,8 +111,8 @@ def request_observations(taxon_id):
         try:
             with urlopen(req,timeout=30) as res:
                 require(res.status==200,"iNaturalist HTTP status not 200")
-                raw=res.read(5_000_001)
-            require(len(raw)<=5_000_000,"Overlarge iNaturalist API result")
+                raw=res.read(12_000_001)
+            require(len(raw)<=12_000_000,"Overlarge iNaturalist API result")
             data=json.loads(raw)
             require(isinstance(data,dict) and isinstance(data.get("results"),list),
                     "Invalid iNaturalist result shape")
@@ -171,8 +171,10 @@ def candidates(data,tid,prior_ids,prior_obs):
 
 def fetch_original(photo):
     url=photo["photo_url_large"].replace("/large.","/original.")
-    require(url.startswith("https://inaturalist-open-data.s3.amazonaws.com/photos/") and
-            url.rsplit("/",1)[-1].startswith(photo["photo_id"]+"."),
+    match=re.fullmatch(r"/photos/(\d+)/original\.(?:jpe?g|png)",
+                       url.removeprefix("https://inaturalist-open-data.s3.amazonaws.com"))
+    require(url.startswith("https://inaturalist-open-data.s3.amazonaws.com/photos/")
+            and match is not None and match.group(1)==photo["photo_id"],
             "Original photo URL source host/ID mismatch")
     req=Request(url,headers={"User-Agent":"MOIS-open-licensed-botanical-source-QA/1.0"})
     error=None
@@ -334,6 +336,10 @@ def run(args):
     (root/"receipt.json").write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
     print("MOIS_TARGETED_16_PHOTO_PROOF_FINISHED",
           json.dumps(result,sort_keys=True),flush=True)
+    # A successful process exit is NOT source success with empty image evidence.
+    require(total>=6 and result["n_species_with_at_least_one_original_photo"]>=3
+            and result["source_api_gate_errors"]<=2,
+            "Insufficient genuine original pixels or unresolved source API errors")
 
 if __name__=="__main__":
     p=argparse.ArgumentParser()
