@@ -12,7 +12,7 @@ from scripts.acquisition import mois_epoch9_after_complete_epoch8_new_created_ph
 
 m = prev.m
 m.SCHEMA = "mois_incremental_20261119_epoch9_offset1792_post_terminal_offset1664_1231357_original9_v1"
-m.SOURCE_ARM = "MOIS_EPOCH9_OFFSET1792_AFTER_TERMINAL_OFFSET1536_NEW_CREATED"
+m.SOURCE_ARM = "MOIS_EPOCH9_OFFSET1792_AFTER_TERMINAL_OFFSET1664_NEW_CREATED"
 m.MIN_CREATED = "2026-11-18T19:07:09+00:00"
 m.CREATED_D1 = "2026-11-18"
 m.MAX_SOURCE_TAXA = 128
