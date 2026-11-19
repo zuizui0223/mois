@@ -146,6 +146,7 @@ def study_species(k,subset,grid,modern,past_by_gcm,idx_by_code):
 
 def run(args):
     root=Path(args.out)
+    check(args.max_per_hue>=0,'max-per-hue negative')
     check(not root.exists(),'Refuse overwriting source-verified output')
     pairs,species=signed_original(args.GBIF,args.ENV)
     source=baseline(pairs,species,null_model='genus_breadth')
@@ -180,7 +181,9 @@ def run(args):
     eligible['deterministic_hash']=eligible.key.map(lambda x:hashlib.sha256(
         ('MOIS-20261119-native-paleoclimate:'+str(x)).encode()).hexdigest())
     eligible=eligible.sort_values('deterministic_hash',kind='stable')
-    selected=eligible.groupby('source_hue9',sort=False).head(MAX_PER_HUE).copy()
+    selected=(eligible.copy() if args.max_per_hue==0 else
+              eligible.groupby('source_hue9',sort=False).head(args.max_per_hue).copy())
+    study_mode=('all_eligible' if args.max_per_hue==0 else 'hue_balanced_pilot')
     check(selected.source_hue9.nunique()==9 and len(selected)>250,
           'All original nine hue classes must be represented in pilot')
     native=src.loc[src.specieskey.isin(selected.key)].copy()
@@ -192,7 +195,7 @@ def run(args):
     for i,k in enumerate(selected.key):
         info=study_species(str(k),grp.get_group(str(k)),climate,modern,past,idx_by_code)
         records.append(info)
-        if (i+1)%50==0:print('MOIS_LGM_NATIVE_CLIMATE_ANALOG_SPECIES_COMPLETED',i+1,flush=True)
+        if (i+1)%500==0:print('MOIS_LGM_NATIVE_CLIMATE_ANALOG_SPECIES_COMPLETED',i+1,flush=True)
     results=pd.DataFrame(records).merge(selected[['key','species','genus','source_hue9','hue_status','n_grid']],
                                         left_on='source_specieskey',right_on='key',validate='one_to_one')
     check(len(results)==len(selected) and results.source_specieskey.is_unique,
@@ -207,9 +210,9 @@ def run(args):
         median_500km_heldout_background_lift=('modern_heldout_native_to_region_background_lift','median'),
     ).reset_index()
     root.mkdir(parents=True)
-    t=root/'WCVP_strict_native_species_LGM_3GCM_climatic_analogue_pilot.csv.gz'
+    t=root/f'WCVP_strict_native_species_LGM_3GCM_climatic_analogue_{study_mode}.csv.gz'
     results.to_csv(t,index=False,compression='gzip')
-    s=root/'nine_hue_pilot_climate_analogues_summary.csv'
+    s=root/f'nine_hue_climate_analogues_summary_{study_mode}.csv'
     group.to_csv(s,index=False)
     source_receipt={
       'source_accepted_photo_hue_taxa':37104,
@@ -224,8 +227,10 @@ def run(args):
       'WCVP_native_and_3GCM_climate_complete_candidate_grid_cells':int(len(climate)),
       'excluded_negative_backcalculated_log1p_LGM_rain_cells':int(invalid_past_rain),
       'n_species_eligible_native50_5spatialblocks':int(len(eligible)),
-      'n_species_in_stratified_deterministic_pilot':int(len(selected)),
-      'n_pilot_by_hue':{k:int(v) for k,v in selected.source_hue9.value_counts().items()},
+      'n_selected_species':int(len(selected)),
+      'selection_mode':study_mode,
+      'max_per_hue_parameter':int(args.max_per_hue),
+      'n_selected_by_hue':{k:int(v) for k,v in selected.source_hue9.value_counts().items()},
       'source_zip_SHA256':{'GBIF':GBIF_SHA,'ENVoriginal':ENV_SHA,
             'LGM':LGM_SHA,'ENVcurrent':ECO_SHA,'TDWG3_geojson':TDWG_GEO_SHA},
       'source_WCVP_manifest_SHA256':sha(Path(args.WCVP)/'mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json'),
@@ -234,15 +239,17 @@ def run(args):
       'no_glacial_fossil_or_pollen_or_phylogeography_evidence':True,
       'LGM_analogue_is_not_LGM_species_occupancy_or_refugium':True,
       'photo9_modal_roi_not_independently_validated_petal_colour':True,
-      'stratified_hue_pilot_does_not_estimate_global_colour_prevalence':True,
+      'pilot_balancing_does_not_estimate_global_hue_prevalence':bool(args.max_per_hue>0),
+      'all_eligible_still_conditional_on_50_native_grid_cells_and_5_blocks':True,
       'selection_deterministic_hash_ignores_LGM_outcome':True,
       'source_data_had_no_new_image_labeling':True,
     }
-    full=root/'source_screening_and_3GCM_PILOT.json'
+    full=root/f'source_screening_and_3GCM_{study_mode}.json'
     full.write_text(json.dumps(source_receipt,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
     source_receipt['outputs_sha256']={p.name:sha(p) for p in (t,s,full)}
     (root/'receipt.json').write_text(json.dumps(source_receipt,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
-    print('MOIS_REAL_WCVP_NATIVE_SPECIES_LGM_3GCM_PILOT_SUCCESS',json.dumps({
+    print(('MOIS_REAL_WCVP_NATIVE_SPECIES_LGM_3GCM_FULL_SUCCESS' if args.max_per_hue==0
+           else 'MOIS_REAL_WCVP_NATIVE_SPECIES_LGM_3GCM_PILOT_SUCCESS'),json.dumps({
         'eligible':len(eligible),'pilot':len(selected),
         'climate_cells':len(climate),
         'by_hue':group.to_dict('records'),
@@ -255,4 +262,6 @@ if __name__=='__main__':
     p=argparse.ArgumentParser()
     for v in ('GBIF','ENV','LGM','WCVP','TDWG','ECO','out'):
         p.add_argument('--'+v,required=True)
+    p.add_argument('--max-per-hue',type=int,default=100,
+                   help='0 uses all native eligible species; >=1 draws deterministic per-hue pilot')
     run(p.parse_args())
