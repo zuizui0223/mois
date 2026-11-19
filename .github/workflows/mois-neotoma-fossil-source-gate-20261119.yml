@@ -75,6 +75,58 @@ jobs:
           assert entries and entries[0].get('http_status')==200,'Neotoma official API unavailable or schema unreadable'
           assert any(e.get('http_status')==200 for e in entries[1:]),'No Neotoma taxon or occurrence endpoint responded'
           PY
+      - name: Re-query with canonical Neotoma taxon IDs and verify every returned fossil
+        run: |
+          python - <<'PY'
+          import json,urllib.parse,urllib.request,hashlib,pathlib,datetime,time
+          out=pathlib.Path('results/mois_neotoma_source_gate_20261119')
+          out.mkdir(parents=True,exist_ok=True)
+          def get(path,tag):
+              url='https://api.neotomadb.org'+path
+              req=urllib.request.Request(url,headers={'Accept':'application/json','User-Agent':'MOIS-official-fossil-id-check/1.0'})
+              with urllib.request.urlopen(req,timeout=35) as res:
+                  raw=res.read(8_000_001)
+                  status=res.status
+              if len(raw)>8_000_000: raise ValueError('too large')
+              result=json.loads(raw)
+              if result.get('status')!='success' or not isinstance(result.get('data'),list):
+                  raise ValueError('Unexpected Neotoma return '+str(result)[:200])
+              (out/f'{tag}.json').write_bytes(raw)
+              return result['data'],{'url':url,'sha256':hashlib.sha256(raw).hexdigest(),'status':status,'n_returned':len(result['data'])}
+          results=[]
+          failures=[]
+          for genus in ('Betula','Pinus'):
+              taxa,source=get('/v2.0/data/taxa?'+urllib.parse.urlencode({'taxonname':genus,'limit':25}),genus+'_taxon_lookup')
+              ids=[int(t['taxonid']) for t in taxa if t.get('taxonname')==genus]
+              if len(ids)!=1:
+                  failures.append(genus+': expected one exact genus taxon ID, got '+str(ids))
+                  continue
+              ident=ids[0]
+              rows,record=get('/v2.0/data/occurrences?'+urllib.parse.urlencode({
+                  'taxonid':ident,'ageyoung':19000,'ageold':26000,'limit':25
+              }),genus+'_taxonid_occurrences_19_26ka')
+              returned_ids=sorted(set(str(x.get('sample',{}).get('taxonid')) for x in rows))
+              returned_names=sorted(set(str(x.get('sample',{}).get('taxonname')) for x in rows))
+              ages=[x.get('age',{}).get('age') for x in rows]
+              id_ok=all(x.get('sample',{}).get('taxonid')==ident for x in rows)
+              age_ok=all(x is not None and 19000<=float(x)<=26000 for x in ages)
+              if rows and not(id_ok and age_ok):
+                  failures.append(genus+': taxonid or age filter failed')
+              results.append({'query_genus':genus,'taxonid':ident,'lookup':source,
+                  'occurrence_query':record,'all_records_exact_taxonid':id_ok,
+                  'all_central_age_19to26ka':age_ok,'distinct_returned_taxonids':returned_ids,
+                  'distinct_returned_names':returned_names,'sample_ages':ages[:25],
+                  'datasettypes':sorted(set(str(x.get('site',{}).get('datasettype')) for x in rows)),
+                  'not_species_level':True})
+              time.sleep(.5)
+          audit={'official_taxonid_filter_bounded_probe_20261119':True,
+                 'queried_at_UTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                 'query_genera':['Betula','Pinus'],'results':results,
+                 'failures':failures,'example_genus_fossils_not_MOIS_species_persistence':True}
+          (out/'id_filter_audit.json').write_text(json.dumps(audit,indent=2)+'\\n')
+          print('MOIS_NEOTOMA_TAXONID_FILTER_AUDIT',json.dumps(audit),flush=True)
+          if failures or len(results)<2:raise ValueError('Neotoma filtered occurrence endpoint cannot be trusted')
+          PY
       - name: Preserve audited official fossil source responses
         if: always()
         uses: actions/upload-artifact@v4
