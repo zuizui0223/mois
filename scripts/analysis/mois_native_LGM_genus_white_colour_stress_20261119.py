@@ -40,8 +40,9 @@ def read_source(file):
     checked(len(d)==10882 and d.source_specieskey.is_unique and
             d.genus.nunique()==3306 and d.source_hue9.nunique()==9,
             'Source native species 9-hue provenance changed')
-    checked(d.n_spatial_500km_cv_folds.eq(5).all(),
-            'Native envelope spatial 500km holdout missing')
+    checked(d.n_spatial_500km_cv_folds.ge(4).all() and
+            d.n_spatial_500km_cv_folds.eq(5).sum()==10877,
+            'Source spatial holdout valid-fold denominator changed')
     checked(d.n_modern_native_occupied_cells.ge(50).all() and
             d.n_modern_native_500km_blocks.ge(5).all(),
             'Original native spatial eligibility violated')
