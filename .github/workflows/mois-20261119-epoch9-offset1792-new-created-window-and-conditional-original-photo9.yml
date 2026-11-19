@@ -46,7 +46,8 @@ jobs:
             (44453284367,14496856997,"7fcb92a02e7ab26486634a8e29ee6efac0b1a95423631b2e991cf68875093bba",896,128),
             (44453805964,14496442990,"10df3eb3b92988d466bbc43e3d39c9adeaa27b2f93381ce81ce653842299a4f7",1024,128),
             (44459892412,14499662068,"9dac2ab05fa42a0f10f709a4e260dd148555e6aec89b879d74fe65de4d3f7bac",1152,128),
-            (44460557777,14499827914,"48a3471f04a81cf6ac357cda6a42187741cd4c80349f2f3ea467b0b4181c9121",1280,128)]
+            (44460557777,14499827914,"48a3471f04a81cf6ac357cda6a42187741cd4c80349f2f3ea467b0b4181c9121",1280,128),
+            (44467964373,14502659671,"f14347c1431100f25f179e89bfaff119fd9973d71b9d0b43cde6ebbdc2ad97f2",1536,128)]
           ids=set()
           for run,aid,sha,offset,n in known:
             rr=api(f"repos/{repo}/actions/runs/{run}")
@@ -64,7 +65,7 @@ jobs:
               assert hashlib.sha256(status).hexdigest()==r["source_status_SHA256"]
               assert hashlib.sha256(z.read("source_candidates.csv")).hexdigest()==r["source_candidates_SHA256"]
               assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(offset,n,0,0,0)
-              assert r["old_original_photo_attempt_ID_count"]==1231356 and r["old_all_image_raw_SHA_disjointness_proven"] is False
+              assert r["old_original_photo_attempt_ID_count"]==(1231357 if offset==1536 else 1231356) and r["old_all_image_raw_SHA_disjointness_proven"] is False
               taxa={x["inat_taxon_id"] for x in csv.DictReader(io.StringIO(status.decode()))}
               assert len(taxa)==n and not ids.intersection(taxa)
               ids.update(taxa)
