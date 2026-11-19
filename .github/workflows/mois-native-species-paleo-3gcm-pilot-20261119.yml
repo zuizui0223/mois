@@ -12,7 +12,7 @@ permissions:
   actions: read
 concurrency:
   group: mois-native-species-3gcm-analogues-20261119
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   true-source-paleo-climate-analogues:
     runs-on: ubuntu-24.04
