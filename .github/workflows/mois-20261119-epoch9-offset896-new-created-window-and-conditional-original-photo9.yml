@@ -125,7 +125,7 @@ jobs:
         id: freeze
         run: |
           set -euo pipefail
-          python -m scripts.acquisition.mois_epoch9_after_complete_epoch8_new_created_photo9_offset896 source --atlas latest/atlas.csv.gz --output newest --offset 768
+          python -m scripts.acquisition.mois_epoch9_after_complete_epoch8_new_created_photo9_offset896 source --atlas latest/atlas.csv.gz --output newest --offset 896
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json,csv
           r=json.load(open("newest/receipt.json"))
