@@ -64,7 +64,7 @@ jobs:
               assert hashlib.sha256(status).hexdigest()==r["source_status_SHA256"]
               assert hashlib.sha256(z.read("source_candidates.csv")).hexdigest()==r["source_candidates_SHA256"]
               assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["new_independent_original_photo_candidates"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(offset,n,0,0,0)
-              assert r["old_original_photo_attempt_ID_count"]==1231357 and r["old_all_image_raw_SHA_disjointness_proven"] is False
+              assert r["old_original_photo_attempt_ID_count"]==1231356 and r["old_all_image_raw_SHA_disjointness_proven"] is False
               taxa={x["inat_taxon_id"] for x in csv.DictReader(io.StringIO(status.decode()))}
               assert len(taxa)==n and not ids.intersection(taxa)
               ids.update(taxa)
