@@ -109,12 +109,22 @@ jobs:
               returned_names=sorted(set(str(x.get('sample',{}).get('taxonname')) for x in rows))
               ages=[x.get('age',{}).get('age') for x in rows]
               id_ok=all(x.get('sample',{}).get('taxonid')==ident for x in rows)
-              age_ok=all(x is not None and 19000<=float(x)<=26000 for x in ages)
-              if rows and not(id_ok and age_ok):
-                  failures.append(genus+': taxonid or age filter failed')
+              # Neotoma age range queries can include samples lacking an
+              # independently evaluable central age. Exclude them, not the
+              # entire taxon or the otherwise correct taxonid filter.
+              dated=[v for v in ages if v is not None]
+              age_ok=all(19000<=float(v)<=26000 for v in dated)
+              if rows and not id_ok:
+                  failures.append(genus+': taxonid filtering failed')
+              if dated and not age_ok:
+                  failures.append(genus+': nonnull central age outside requested window')
               results.append({'query_genus':genus,'taxonid':ident,'lookup':source,
                   'occurrence_query':record,'all_records_exact_taxonid':id_ok,
-                  'all_central_age_19to26ka':age_ok,'distinct_returned_taxonids':returned_ids,
+                  'all_available_central_ages_19to26ka':age_ok,
+                  'n_missing_central_ages_excluded':len(ages)-len(dated),
+                  'n_usable_records_with_central_age':len(dated),
+                  'missing_central_ages_not_used_for_LGM_presence':True,
+                  'distinct_returned_taxonids':returned_ids,
                   'distinct_returned_names':returned_names,'sample_ages':ages[:25],
                   'datasettypes':sorted(set(str(x.get('site',{}).get('datasettype')) for x in rows)),
                   'not_species_level':True})
