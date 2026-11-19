@@ -87,7 +87,7 @@ def load_sources(args):
                     val["beta_Shannon_per_global_SD"])<1e-9,
                 "Historic full-flora coefficient not reproduced: "+key)
     d=original.merge(geo,on=["grid_x","grid_y"],validate="one_to_one")
-    require(len(d)==12295 and d[["grid_x","grid_y"]].is_unique,
+    require(len(d)==12295 and not d[["grid_x","grid_y"]].duplicated().any(),
             "WCVP native table and original climate cells did not join exactly")
     require(d.strict_native_n_photo9_species.ge(30).sum()==7201
             and d.moderate_native_n_photo9_species.ge(30).sum()==8119,
