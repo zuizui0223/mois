@@ -78,6 +78,7 @@ jobs:
             --GBIF sources/GBIF.zip --ENV sources/ENV.zip \
             --LGM sources/LGM.zip --ECO sources/ECO.zip \
             --WCVP sources/WCVP --TDWG sources/TDWG3.geojson \
+            --max-per-hue 0 \
             --out results/mois_WCVP_native_species_LGM_threeGCM_20261119
       - name: Archive source-verified candidate climatically analogous cells, holdout diagnostics and receipts
         if: success()
