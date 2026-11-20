@@ -238,16 +238,105 @@ def audit(args):
     print('MOIS_FCP13_TRUE_FULL_ORIGINAL_BYTES_REAL_RETEST',
           json.dumps({k:v for k,v in report.items() if k!='method_attestation'},sort_keys=True),flush=True)
 
+def work(args):
+    """Use FCP's documented loader injection, preserving every model/check.
+
+    Frozen image_loader only allows /large.* paths. A pinned same-image
+    /original.* loader is authorized here by verifying provider host and photo
+    identity, 12 MiB cap, decoded JPEG and signed full image raw-byte SHA.
+    """
+    from urllib.request import Request,urlopen
+    from urllib.error import HTTPError,URLError
+    from io import BytesIO
+    from PIL import Image,UnidentifiedImageError
+    import time
+    from scripts.acquisition.run_fcp_fresh_image_partition import (
+        run_batch,verify_frozen_method,_pace_provider_request,
+        MAX_IMAGE_BYTES,PermanentOriginalPhotoError,ProviderTransientAccessError,
+    )
+    from scripts.acquisition.mois_full_index_real_original_photo_measure import measure_group
+    src=Path(args.source)
+    manifest=json.loads((src/'manifest.json').read_text())
+    shard=src/'shards/shard-000.csv'
+    check(manifest['schema']==FCP_SOURCE_SCHEMA
+          and manifest['new_photo_attempts_planned']==FAIL_COUNT
+          and manifest['photo_shard_sha256']['0']==sha(shard),
+          'Pinned original FCP source is missing or mutated')
+    items=pd.read_csv(shard,dtype=str,keep_default_na=False)
+    expected=dict(zip(items.photo_url_large,items.full_original_byte_SHA256_expected))
+    check(len(expected)==FAIL_COUNT and len(items)==FAIL_COUNT,
+          'Original photo URL and source full image SHA count mismatch')
+    original_runtime=Path(args.runtime)
+    sam=Path(args.sam)
+    measured_method=verify_frozen_method(
+        original_runtime/'scripts/analysis/measure_random_photo_first_blind_partition.py',
+        original_runtime/'data/atlas/qualification/roi_v4_training/jrc_yolo11n_last_v4.pt',sam)
+    check(measured_method==json.loads((src/'source_receipt.json').read_text())['old_FCP_method_attestation'],
+          'Frozen image ROI model/method differs from historical 19-photo comparison')
+
+    def pinned_true_original_loader(url):
+        check(url in expected,'FCP requested a URL not pinned to a source photo')
+        u=urlsplit(url)
+        check(u.scheme=='https' and u.netloc=='inaturalist-open-data.s3.amazonaws.com'
+              and not u.query and not u.fragment
+              and re.fullmatch(r'/photos/[0-9]+/original\.(?:jpg|jpeg|png)',u.path),
+              'Non original-resolution provider URL in fullres FCP batch')
+        req=Request(url,headers={'Accept':'image/*',
+                  'User-Agent':'MOIS-botanically-unverified-original13-FCP/1.0'})
+        for attempt in range(3):
+            _pace_provider_request()
+            try:
+                with urlopen(req,timeout=45) as reply:
+                    raw=reply.read(MAX_IMAGE_BYTES+1)
+                if not raw or len(raw)>MAX_IMAGE_BYTES:
+                    raise PermanentOriginalPhotoError('Original image outside frozen 12MiB bounded-source cap')
+                try:
+                    with Image.open(BytesIO(raw)) as img:
+                        img.verify()
+                except (UnidentifiedImageError,OSError,Image.DecompressionBombError) as exc:
+                    raise PermanentOriginalPhotoError('Full original image failed decode') from exc
+                # The exact bytes of this original /original photo were already
+                # downloaded/sha-certified by the first 46-photo artifact.
+                check(sha(raw)==expected[url],
+                      'Re-fetched actual original JPEG byte SHA disagrees with original source receipt')
+                return raw
+            except HTTPError as exc:
+                if exc.code in (404,410):
+                    raise PermanentOriginalPhotoError(
+                        f'Exact S3 original image HTTP {exc.code}') from exc
+                if exc.code not in (408,425,429,500,502,503,504) or attempt==2:
+                    raise ProviderTransientAccessError(
+                        f'HTTP {exc.code} for prior signed original image; stop work unit') from exc
+            except (URLError,TimeoutError,ConnectionError) as exc:
+                if attempt==2:
+                    raise ProviderTransientAccessError(
+                        'Source provider transient failure for previously signed original') from exc
+            time.sleep(2**attempt)
+        raise ProviderTransientAccessError('Exhausted signed original image retry budget')
+
+    results=measure_group(src,0,original_runtime,sam,Path(args.out),
+                          runner=run_batch,loader=pinned_true_original_loader)
+    check(len(results)==1 and results[0]['attempted']==FAIL_COUNT,
+          'FCP true-original source/worker output incomplete')
+    print('MOIS_FCP13_TRUE_ORIGINAL_CUSTOM_LOADER_SOURCE_PINNED_WORKER',
+          json.dumps({'n_photos':FAIL_COUNT,
+                      'n_classifiable':results[0]['classifiable'],
+                      'n_acquisition_failed':results[0]['acquisition_failed'],
+                      'byte_SHA_expected_for_each_original':True,
+                      'frozen_FCP_method_reused':True},sort_keys=True),flush=True)
+
+
 if __name__=='__main__':
     p=argparse.ArgumentParser()
     sub=p.add_subparsers(dest='cmd',required=True)
-    for cmd in ('source','audit'):
+    for cmd in ('source','work','audit'):
         t=sub.add_parser(cmd)
-        for name in ('previous','failed','out'):
+        arguments=(('previous','failed','out') if cmd=='source'
+                   else ('source','runtime','sam','out') if cmd=='work'
+                   else ('previous','failed','source','worker','out'))
+        for name in arguments:
             t.add_argument('--'+name,required=True)
-        if cmd=='audit':
-            for name in ('source','worker'):
-                t.add_argument('--'+name,required=True)
     args=p.parse_args()
     if args.cmd=='source':write_source(args)
+    elif args.cmd=='work':work(args)
     else:audit(args)
