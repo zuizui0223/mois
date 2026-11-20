@@ -201,6 +201,7 @@ def run(args):
                 candidates=eligible_from_page(payload,tid,used_ids,
                                                used_obs,visited,counts)
                 for photo in candidates:
+                    if len(picked)>=TARGET_OBS:break
                     if photo["photo_id"] in seen_photos or photo["observation_id"] in seen_obs:
                         continue
                     try:
