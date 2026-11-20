@@ -57,6 +57,9 @@ def sources(archive,triage_path):
           d.candidate_species.eq(d.species).all() and
           d.original_url.eq(d.original_photo_url).all(),
           "Original per-image SHA/observation/taxon provenance inconsistent")
+    check(d.photo_license_x.eq(d.photo_license_y).all(),
+          "Original iNaturalist photographic CC licence changed in review CSV")
+    d["photo_license"]=d.photo_license_x
     check(d.iNaturalist_flowers_annotation_12_13_in_response.eq(True).all(),
           "Source 12|13 flowering annotation is not verified for every photo")
     count=d.thumbnail_visual_triage.value_counts().to_dict()
