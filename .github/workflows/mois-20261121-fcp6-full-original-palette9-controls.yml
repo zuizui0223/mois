@@ -1,0 +1,86 @@
+name: "MOIS QA: six previously numeric photo9 original-resolution positive controls"
+on:
+  push:
+    branches:
+      - analysis/mois-species-first-palette9-20261111
+    paths:
+      - scripts/acquisition/mois_FCP6_full_original_positive_controls_20261121.py
+      - .github/workflows/mois-20261121-fcp6-full-original-palette9-controls.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-20261121-FCP6-true-original-positive-controls
+  cancel-in-progress: true
+jobs:
+  six-true-original-FCP-positive-controls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    env:
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install original frozen FCP dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 \
+            Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          python -m py_compile scripts/acquisition/mois_FCP13_original_resolution_retest_20261121.py \
+            scripts/acquisition/mois_FCP6_full_original_positive_controls_20261121.py
+      - name: Get the original SHA-verified 19-photo FCP baseline
+        run: |
+          set -euo pipefail
+          mkdir -p inputs
+          curl --fail --silent --show-error --location --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14636423108/zip" \
+            -o inputs/signed19.zip
+          echo "92315ef6679ced282fd822dcb08336a541add546afa949fb657cda76f6fd90ea  inputs/signed19.zip" | sha256sum -c
+      - name: Freeze only the six prior valid numeric source photos, now with true original URLs
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_FCP6_full_original_positive_controls_20261121 source \
+            --previous inputs/signed19.zip --out source
+      - name: Bootstrap original frozen FCP YOLO11 EfficientSAM evaluator (unmodified)
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Recompute six full original byte photo9 values with pinned custom loader and unchanged model
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-20261121-full-original-six-control"
+          python -m scripts.acquisition.mois_FCP6_full_original_positive_controls_20261121 work \
+            --source source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" --out pixel
+      - name: Validate same image SHA, 9 numeric fractions, strict hue stability, and frozen model
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_FCP6_full_original_positive_controls_20261121 audit \
+            --previous inputs/signed19.zip --source source --worker pixel \
+            --out results/mois_FCP6_true_original_positive_controls_20261121
+      - name: Preserve FCP original pixel paired controls and receipt, never alter species atlas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-FCP6-prior-numeric-full-original-stability-paired-20261121
+          path: |
+            source/
+            pixel/shard_000/
+            results/mois_FCP6_true_original_positive_controls_20261121/
+          retention-days: 30
+          if-no-files-found: warn
