@@ -1,0 +1,93 @@
+name: "MOIS QA: source-audited 19 flowering corolla candidates FCP ROI9 diagnostic"
+on:
+  push:
+    branches:
+      - analysis/mois-species-first-palette9-20261111
+    paths:
+      - scripts/acquisition/mois_20261120_annotated_19_FCP_ROI9_provisional.py
+      - .github/workflows/mois-20261120-FCP19-flowering-ROI9-provisional.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-20261120-FCP19-strict-photo9-provisional
+  cancel-in-progress: true
+jobs:
+  twenty-photo-ROI9-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 170
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PYTHONUNBUFFERED: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install source Parquet, original RGB FCP YOLO SAM requirements
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 \
+            scipy==1.15.2 Pillow==11.1.0 \
+            ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          python -m py_compile scripts/acquisition/mois_20261120_annotated_19_FCP_ROI9_provisional.py
+      - name: Restore signed 46 flowering photos and freeze exact 440px visual triage
+        run: |
+          set -euo pipefail
+          mkdir -p inputs
+          curl --fail --silent --show-error --location --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14635796309/zip" \
+            -o inputs/actual46.zip
+          echo "c2ae31d6d492ba08b07457ff68dfc39c76870723974383219700d7ec7ed5395e  inputs/actual46.zip" | sha256sum -c
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://raw.githubusercontent.com/zuizui0223/mois/61d5a6fdb0786adb682a0512b7eeb8684d9fd81c/analysis_specs/MOIS_FIRST16_46_FLOWERING_ANNOTATED_THUMBNAIL_PETAL_TRIAGE_20261120.csv" \
+            -o inputs/triage46.csv
+          echo "5f580ace30f8b359e3b9b7efdc22bdd90f57fb810a09d4d517aca7459399e572  inputs/triage46.csv" | sha256sum -c
+      - name: Make one immutable 19-candidate original source worker shard from exact photos and triage
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_20261120_annotated_19_FCP_ROI9_provisional source \
+            --source inputs/actual46.zip --triage inputs/triage46.csv \
+            --out source
+      - name: Bootstrap frozen FCP original YOLO11 EfficientSAM method
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Reacquire 19 licensed originals for source-bound FCP nine-colour ROI diagnostic
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois_20261120_annotated_provisional_original19"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work \
+            --source source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --group 0 --output pixel
+      - name: Independently verify all 19 photo outcomes and nine ROI numeric components
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_20261120_annotated_19_FCP_ROI9_provisional audit \
+            --source inputs/actual46.zip --triage inputs/triage46.csv \
+            --manifest source --worker pixel \
+            --out results/mois_annotated_19_unverified_RGB9_FCP_20261120
+      - name: Always preserve worker receipts and audit; no primary species atlas append
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-annotated19-FCP-RGB9-provisional-petal-unverified-20261120
+          path: |
+            source/
+            pixel/shard_000/
+            results/mois_annotated_19_unverified_RGB9_FCP_20261120/
+          retention-days: 30
+          if-no-files-found: warn
