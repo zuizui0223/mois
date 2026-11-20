@@ -66,9 +66,9 @@ jobs:
           set -euo pipefail
           export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
           export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-20261121-true-original13-source"
-          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work \
+          python -m scripts.acquisition.mois_FCP13_original_resolution_retest_20261121 work \
             --source source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
-            --group 0 --output pixel
+            --out pixel
       - name: Verify full original byte SHA, identity and paired large-vs-original ROI outcomes
         run: |
           set -euo pipefail
