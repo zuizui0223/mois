@@ -37,12 +37,23 @@ def geographic_regions(x):
     xx=(z[:,0]+.5)*100000
     yy=(z[:,1]+.5)*100000
     lon,lat=Transformer.from_crs(6933,4326,always_xy=True).transform(xx,yy)
-    check(np.isfinite(lon).all() and np.isfinite(lat).all() and
-          (np.abs(lat)<=90).all() and (np.abs(lon)<=181).all(),
-          'EPSG6933 to geographic projection invalid')
-    # 3 longitudinal partitions crossed with hemispheres (six coarse zones).
+    # The signed original 18,577 grid includes exactly 27 extreme polar
+    # EPSG:6933 Y edge cells (-74 or +73); longitude is still defined but
+    # inverse latitude is undefined outside the equal-area projection domain.
+    # Keep their geographic latitude genuinely missing; the sign of the
+    # original equal-area northing is sufficient only to classify hemisphere.
+    invalid_lat=~np.isfinite(lat)
+    check(int(invalid_lat.sum())==27 and np.isfinite(lon).all()
+          and (np.abs(lon)<=181).all()
+          and (np.abs(lat[~invalid_lat])<=90).all()
+          and np.isin(z[invalid_lat,1],[-74,73]).all(),
+          'Unexpected projection invalid geography beyond 27 polar edge cells')
+    # 3 longitudinal partitions crossed with hemisphere by signed northing.
     lonpart=np.where(lon < -30,0,np.where(lon<60,1,2)).astype(np.int8)
-    zone=(lonpart*2+(lat<0).astype(np.int8)).astype(np.int8)
+    hemi=(yy<0).astype(np.int8)
+    check(np.array_equal(hemi[~invalid_lat],(lat[~invalid_lat]<0).astype(np.int8)),
+          'Signed northing hemisphere disagrees with known geographic latitude')
+    zone=(lonpart*2+hemi).astype(np.int8)
     check(set(np.unique(zone))==set(range(6)),
           'Six coarse source zones lack any actual grid cells')
     return zone,lon,lat
@@ -246,7 +257,8 @@ def main(args):
        'source_distinct_100km_cells':x['ngrids'],
        'null_permutations':args.permutations,
        'random_seed':SEED,
-       'zone_definition':'EPSG6933 source 100km center -> lon/lat; longitudes <-30, -30..60, >=60 by N/S hemisphere; not ecoregions',
+       'zone_definition':'EPSG6933 100km center longitude; bands <-30, -30..60, >=60; N/S by source projected northing sign. 27 polar edge-cell center latitudes are undefined and stay missing. Not ecoregions',
+       'n_source_EPSG6933_polar_edge_cells_with_undefined_latitude':int(np.count_nonzero(~np.isfinite(lat))),
        'species_affinity_stratum_definition':'>=65% of occupied present GBIF grid cells in one of six zones, else multizone; group by species genus, five occupancy breadth bins, and macrozone affinity',
        'region_counts_species':{
            str(k):int((region==k).sum()) for k in range(8)},
