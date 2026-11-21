@@ -1,0 +1,54 @@
+name: "MOIS Ecology: true-source LGM climate displacement and biomass interaction"
+on:
+  push:
+    branches:
+      - analysis/mois-global-floral-colour-assembly-null-20261118
+    paths:
+      - scripts/analysis/mois_hue9_lgm_climate_displacement_20261118.py
+      - .github/workflows/mois-hue9-lgm-climate-displacement-20261118.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-hue9-lgm-climate-displacement-20261118
+  cancel-in-progress: false
+jobs:
+  test-true-historical-climate-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install reproducible ecological inference packages
+        run: |
+          python -m pip install --disable-pip-version-check             "numpy>=1.26,<3" "pandas>=2.1,<3" "pyarrow>=17,<25"             "scipy>=1.11,<2" "statsmodels>=0.14,<1" "scikit-learn>=1.5,<1.9"
+      - name: Verify immutable real environment and GBIF source ZIP digests
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources
+          for item in             '14397855889 environment 4f5d8fc3a308482fc3645d796a779d1a4725c51ed2afbf6a06e61fd6213f3ee6'             '14166701658 GBIF 422f6d6489e61c6e57c5d51db614e47f613039781a901e3fd3481c13b2b085c2'; do
+            set -- $item
+            curl --fail --silent --show-error --location --retry 3               -H "Authorization: Bearer $GH_TOKEN"               -H "Accept: application/vnd.github+json"               "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$1/zip"               -o "sources/$2.zip"
+            echo "$3  sources/$2.zip" | sha256sum -c
+          done
+      - name: Verify existing 500km coefficients and test LGM climate displacement
+        run: |
+          python -m scripts.analysis.mois_hue9_lgm_climate_displacement_20261118             --environment sources/environment.zip             --GBIF sources/GBIF.zip             --out results/mois_hue9_LGM_displacement_true_source_20261118
+      - name: Publish exact grid, CV, coefficient and SHA receipts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-hue9-LGM-climate-displacement-biomass-20261118
+          path: results/mois_hue9_LGM_displacement_true_source_20261118/
+          retention-days: 30
+          if-no-files-found: error

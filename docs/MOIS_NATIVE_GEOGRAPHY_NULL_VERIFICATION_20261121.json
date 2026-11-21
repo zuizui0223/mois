@@ -1,0 +1,546 @@
+{
+  "independent_local_numeric_verification": {
+    "checks": {
+      "all_180_statistics_recomputed": true,
+      "all_cell_counts_entropy_membership_and_masks_recomputed": true,
+      "code_hashes_verified": 9,
+      "contrast_csv_rows": 24,
+      "draw_rows": 179820,
+      "draws_per_series": 999,
+      "eight_first199_cell_vectors_independently_compared_to_original_archives": true,
+      "group_csv_rows": 156,
+      "holm8_families_verified": 2,
+      "matched_mobility_inferential_p_suppressed": true,
+      "receipt_output_hashes_verified": 8,
+      "reported_first199_gates_passed": 8,
+      "reported_source_gates_passed": 24,
+      "synchronous_contrasts_verified": 24,
+      "unique_statistic_series": 180
+    },
+    "contrast_covariance_diagnostics": [
+      {
+        "cohort": "moderate_native",
+        "contrast": "Arctic_minus_boreal",
+        "covariance": 0.00039876863723021047,
+        "null_sd_correct_paired": 0.03769333940163545,
+        "null_sd_ignoring_covariance": 0.04709909882054332,
+        "outcome": "photo9"
+      },
+      {
+        "cohort": "moderate_native",
+        "contrast": "south_minus_north",
+        "covariance": 5.219964809631799e-06,
+        "null_sd_correct_paired": 0.011821291840472708,
+        "null_sd_ignoring_covariance": 0.01225491209258109,
+        "outcome": "photo9"
+      },
+      {
+        "cohort": "strict_native",
+        "contrast": "Arctic_minus_boreal",
+        "covariance": 0.00041262712986175356,
+        "null_sd_correct_paired": 0.03345578519804897,
+        "null_sd_ignoring_covariance": 0.04409698201625027,
+        "outcome": "photo9"
+      },
+      {
+        "cohort": "strict_native",
+        "contrast": "south_minus_north",
+        "covariance": 5.217523689982022e-06,
+        "null_sd_correct_paired": 0.011890596301157129,
+        "null_sd_ignoring_covariance": 0.01232157975979767,
+        "outcome": "photo9"
+      },
+      {
+        "cohort": "moderate_native",
+        "contrast": "Arctic_minus_boreal",
+        "covariance": 0.00022677609937185743,
+        "null_sd_correct_paired": 0.02678563912115451,
+        "null_sd_ignoring_covariance": 0.0342202083844099,
+        "outcome": "whitefixed8"
+      },
+      {
+        "cohort": "moderate_native",
+        "contrast": "south_minus_north",
+        "covariance": 2.9690783646945437e-06,
+        "null_sd_correct_paired": 0.009253222273088363,
+        "null_sd_ignoring_covariance": 0.009568713558497175,
+        "outcome": "whitefixed8"
+      },
+      {
+        "cohort": "strict_native",
+        "contrast": "Arctic_minus_boreal",
+        "covariance": 0.0002535848547984507,
+        "null_sd_correct_paired": 0.02778860006607216,
+        "null_sd_ignoring_covariance": 0.03576836595693193,
+        "outcome": "whitefixed8"
+      },
+      {
+        "cohort": "strict_native",
+        "contrast": "south_minus_north",
+        "covariance": 3.0485876738555604e-06,
+        "null_sd_correct_paired": 0.00967287619629476,
+        "null_sd_ignoring_covariance": 0.0099830711335018,
+        "outcome": "whitefixed8"
+      }
+    ],
+    "maximum_absolute_discrepancy_by_check": {
+      "contrast_covariance_identity": 8.673617379884035e-19,
+      "coordinate_alignment": 0.0,
+      "csv_null_mean": 0.0,
+      "csv_null_mean_monte_carlo_se": 0.0,
+      "csv_null_quantiles": 0.0,
+      "csv_null_sd": 0.0,
+      "csv_observed": 2.220446049250313e-16,
+      "csv_observed_minus_null": 2.220446049250313e-16,
+      "csv_rank_p": 0.0,
+      "equal_sector_draw_weighting": 0.0,
+      "first199_global_expected_vectors": 0.0,
+      "first199_native_expected_vectors": 0.0,
+      "first199_reference_coordinate_order": 0.0,
+      "holm8_csv": 0.0,
+      "holm8_family": 0.0,
+      "holm8_summary": 0.0,
+      "native_observed_vs_original_reference": 0.0,
+      "native_richness_vs_original_reference": 0.0,
+      "nine_hue_entropy_decomposition": 6.661338147750939e-16,
+      "nonwhite_class_identity": 0.0,
+      "nonwhite_count_identity": 0.0,
+      "null_means_draws_vs_cells": 6.661338147750939e-16,
+      "observed_entropy_from_counts": 6.661338147750939e-16,
+      "paired_draw_difference": 0.0,
+      "richness_from_counts": 0.0,
+      "summary_null_mean": 0.0,
+      "summary_null_mean_monte_carlo_se": 0.0,
+      "summary_null_quantiles": 0.0,
+      "summary_null_sd": 0.0,
+      "summary_observed": 2.220446049250313e-16,
+      "summary_observed_minus_null": 2.220446049250313e-16,
+      "summary_rank_p": 0.0
+    },
+    "output_receipt_sha256": "bf8df2bc17abc2f910197b2ce1edfb59a87985cf11399ccf246fca6e91933a44",
+    "regional_model_headline_statistics": [
+      {
+        "cohort": "moderate_native",
+        "delta": -0.024995519411017852,
+        "n": 6076,
+        "null_mean": 1.2496523822570103,
+        "observed": 1.2246568628459924,
+        "outcome": "photo9",
+        "p_holm8": null,
+        "p_lower": 0.001,
+        "p_two": 0.002,
+        "statistic": "richness_ge100"
+      },
+      {
+        "cohort": "moderate_native",
+        "delta": -0.023363609256995765,
+        "n": 8155,
+        "null_mean": 1.233598487950249,
+        "observed": 1.2102348786932533,
+        "outcome": "photo9",
+        "p_holm8": null,
+        "p_lower": 0.001,
+        "p_two": 0.002,
+        "statistic": "richness_ge30"
+      },
+      {
+        "cohort": "moderate_native",
+        "delta": -0.016844484794071635,
+        "n": 8155,
+        "null_mean": 1.260380940410101,
+        "observed": 1.2435364556160293,
+        "outcome": "photo9",
+        "p_holm8": null,
+        "p_lower": 0.003,
+        "p_two": 0.006,
+        "statistic": "six_coordinate_sectors_equal_weight_mean"
+      },
+      {
+        "cohort": "moderate_native",
+        "delta": 0.04026637223301106,
+        "n": null,
+        "null_mean": -0.04753088988378235,
+        "observed": -0.007264517650771296,
+        "outcome": "photo9",
+        "p_holm8": null,
+        "p_lower": 0.86,
+        "p_two": 0.282,
+        "statistic": "Arctic_minus_boreal"
+      },
+      {
+        "cohort": "moderate_native",
+        "delta": 0.031589596537890424,
+        "n": null,
+        "null_mean": 0.13334393852186718,
+        "observed": 0.1649335350597576,
+        "outcome": "photo9",
+        "p_holm8": null,
+        "p_lower": 0.994,
+        "p_two": 0.014,
+        "statistic": "south_minus_north"
+      },
+      {
+        "cohort": "strict_native",
+        "delta": -0.025380320103703058,
+        "n": 5389,
+        "null_mean": 1.253729459738641,
+        "observed": 1.228349139634938,
+        "outcome": "photo9",
+        "p_holm8": null,
+        "p_lower": 0.001,
+        "p_two": 0.002,
+        "statistic": "richness_ge100"
+      },
+      {
+        "cohort": "strict_native",
+        "delta": -0.02402887509227991,
+        "n": 7231,
+        "null_mean": 1.2392974013408131,
+        "observed": 1.2152685262485332,
+        "outcome": "photo9",
+        "p_holm8": null,
+        "p_lower": 0.001,
+        "p_two": 0.002,
+        "statistic": "richness_ge30"
+      },
+      {
+        "cohort": "strict_native",
+        "delta": -0.01662804778913407,
+        "n": 7231,
+        "null_mean": 1.2651365073879401,
+        "observed": 1.248508459598806,
+        "outcome": "photo9",
+        "p_holm8": null,
+        "p_lower": 0.005,
+        "p_two": 0.01,
+        "statistic": "six_coordinate_sectors_equal_weight_mean"
+      },
+      {
+        "cohort": "strict_native",
+        "delta": 0.039527628526853015,
+        "n": null,
+        "null_mean": -0.029827546747612264,
+        "observed": 0.009700081779240755,
+        "outcome": "photo9",
+        "p_holm8": 0.492,
+        "p_lower": 0.878,
+        "p_two": 0.246,
+        "statistic": "Arctic_minus_boreal"
+      },
+      {
+        "cohort": "strict_native",
+        "delta": 0.03420915819490947,
+        "n": null,
+        "null_mean": 0.1347716253367975,
+        "observed": 0.16898078353170698,
+        "outcome": "photo9",
+        "p_holm8": 0.03,
+        "p_lower": 0.998,
+        "p_two": 0.006,
+        "statistic": "south_minus_north"
+      },
+      {
+        "cohort": "moderate_native",
+        "delta": -0.01523164278909328,
+        "n": 3440,
+        "null_mean": 1.521421635430008,
+        "observed": 1.5061899926409148,
+        "outcome": "whitefixed8",
+        "p_holm8": null,
+        "p_lower": 0.002,
+        "p_two": 0.004,
+        "statistic": "richness_ge100"
+      },
+      {
+        "cohort": "moderate_native",
+        "delta": -0.009068100871125528,
+        "n": 6527,
+        "null_mean": 1.5064310964581826,
+        "observed": 1.497362995587057,
+        "outcome": "whitefixed8",
+        "p_holm8": null,
+        "p_lower": 0.06,
+        "p_two": 0.12,
+        "statistic": "richness_ge30"
+      },
+      {
+        "cohort": "moderate_native",
+        "delta": -0.005320817639749453,
+        "n": 6527,
+        "null_mean": 1.5213788350934927,
+        "observed": 1.5160580174537432,
+        "outcome": "whitefixed8",
+        "p_holm8": null,
+        "p_lower": 0.153,
+        "p_two": 0.306,
+        "statistic": "six_coordinate_sectors_equal_weight_mean"
+      },
+      {
+        "cohort": "moderate_native",
+        "delta": 0.05502242224216207,
+        "n": null,
+        "null_mean": -0.03886502415934716,
+        "observed": 0.01615739808281491,
+        "outcome": "whitefixed8",
+        "p_holm8": null,
+        "p_lower": 0.98,
+        "p_two": 0.042,
+        "statistic": "Arctic_minus_boreal"
+      },
+      {
+        "cohort": "moderate_native",
+        "delta": 0.02425624220968764,
+        "n": null,
+        "null_mean": 0.0637084630493508,
+        "observed": 0.08796470525903843,
+        "outcome": "whitefixed8",
+        "p_holm8": null,
+        "p_lower": 0.997,
+        "p_two": 0.008,
+        "statistic": "south_minus_north"
+      },
+      {
+        "cohort": "strict_native",
+        "delta": -0.016134247834897142,
+        "n": 3051,
+        "null_mean": 1.5207640306278625,
+        "observed": 1.5046297827929653,
+        "outcome": "whitefixed8",
+        "p_holm8": null,
+        "p_lower": 0.002,
+        "p_two": 0.004,
+        "statistic": "richness_ge100"
+      },
+      {
+        "cohort": "strict_native",
+        "delta": -0.010552294104269944,
+        "n": 5799,
+        "null_mean": 1.508401550000602,
+        "observed": 1.497849255896332,
+        "outcome": "whitefixed8",
+        "p_holm8": null,
+        "p_lower": 0.042,
+        "p_two": 0.084,
+        "statistic": "richness_ge30"
+      },
+      {
+        "cohort": "strict_native",
+        "delta": -0.006124384741515332,
+        "n": 5799,
+        "null_mean": 1.5229101773702085,
+        "observed": 1.5167857926286932,
+        "outcome": "whitefixed8",
+        "p_holm8": null,
+        "p_lower": 0.131,
+        "p_two": 0.262,
+        "statistic": "six_coordinate_sectors_equal_weight_mean"
+      },
+      {
+        "cohort": "strict_native",
+        "delta": 0.049511957831899725,
+        "n": null,
+        "null_mean": -0.023924969566077547,
+        "observed": 0.025586988265822175,
+        "outcome": "whitefixed8",
+        "p_holm8": 0.36,
+        "p_lower": 0.965,
+        "p_two": 0.072,
+        "statistic": "Arctic_minus_boreal"
+      },
+      {
+        "cohort": "strict_native",
+        "delta": 0.02778691145047478,
+        "n": null,
+        "null_mean": 0.06831341668619602,
+        "observed": 0.0961003281366708,
+        "outcome": "whitefixed8",
+        "p_holm8": 0.032,
+        "p_lower": 0.999,
+        "p_two": 0.004,
+        "statistic": "south_minus_north"
+      }
+    ],
+    "richness_populations": {
+      "photo9/moderate_native": {
+        "n100": 6076,
+        "n30": 8155,
+        "sectors": {
+          "Africa_Eurasia_W_N": 1625,
+          "Africa_Eurasia_W_S": 592,
+          "Americas_N": 1875,
+          "Americas_S": 1069,
+          "Asia_Oceania_E_N": 2099,
+          "Asia_Oceania_E_S": 895
+        },
+        "source_pairs": 2604870
+      },
+      "photo9/strict_native": {
+        "n100": 5389,
+        "n30": 7231,
+        "sectors": {
+          "Africa_Eurasia_W_N": 1429,
+          "Africa_Eurasia_W_S": 552,
+          "Americas_N": 1567,
+          "Americas_S": 1006,
+          "Asia_Oceania_E_N": 1904,
+          "Asia_Oceania_E_S": 773
+        },
+        "source_pairs": 2271852
+      },
+      "whitefixed8/moderate_native": {
+        "n100": 3440,
+        "n30": 6527,
+        "sectors": {
+          "Africa_Eurasia_W_N": 1272,
+          "Africa_Eurasia_W_S": 435,
+          "Americas_N": 1571,
+          "Americas_S": 901,
+          "Asia_Oceania_E_N": 1536,
+          "Asia_Oceania_E_S": 812
+        },
+        "source_pairs": 978829
+      },
+      "whitefixed8/strict_native": {
+        "n100": 3051,
+        "n30": 5799,
+        "sectors": {
+          "Africa_Eurasia_W_N": 1105,
+          "Africa_Eurasia_W_S": 403,
+          "Americas_N": 1348,
+          "Americas_S": 846,
+          "Asia_Oceania_E_N": 1387,
+          "Asia_Oceania_E_S": 710
+        },
+        "source_pairs": 855603
+      }
+    },
+    "schema": "mois_native_georegion_independent_numeric_verification_20261121_v1",
+    "scope": "Read-only verification of saved files and draws; no simulations or source/output modifications",
+    "series_dependence": "The 180 distinct statistic series share globally permuted species and are not independent samples.",
+    "status": "passed",
+    "strict_regional_sector_statistics": [
+      {
+        "delta": -0.03725183813356736,
+        "n": 1429,
+        "outcome": "photo9",
+        "p_holm8": 0.028,
+        "p_two": 0.004,
+        "sector": "Africa_Eurasia_W_N_richness_ge30"
+      },
+      {
+        "delta": -0.0075619515064311305,
+        "n": 552,
+        "outcome": "photo9",
+        "p_holm8": 0.562,
+        "p_two": 0.562,
+        "sector": "Africa_Eurasia_W_S_richness_ge30"
+      },
+      {
+        "delta": -0.02229909740288427,
+        "n": 1567,
+        "outcome": "photo9",
+        "p_holm8": 0.396,
+        "p_two": 0.132,
+        "sector": "Americas_N_richness_ge30"
+      },
+      {
+        "delta": -0.027896458282298253,
+        "n": 1006,
+        "outcome": "photo9",
+        "p_holm8": 0.032,
+        "p_two": 0.008,
+        "sector": "Americas_S_richness_ge30"
+      },
+      {
+        "delta": -0.043908521216543095,
+        "n": 1904,
+        "outcome": "photo9",
+        "p_holm8": 0.016,
+        "p_two": 0.002,
+        "sector": "Asia_Oceania_E_N_richness_ge30"
+      },
+      {
+        "delta": 0.039149579806920576,
+        "n": 773,
+        "outcome": "photo9",
+        "p_holm8": 0.028,
+        "p_two": 0.004,
+        "sector": "Asia_Oceania_E_S_richness_ge30"
+      },
+      {
+        "delta": -0.029874388153232623,
+        "n": 1105,
+        "outcome": "whitefixed8",
+        "p_holm8": 0.10799999999999998,
+        "p_two": 0.018,
+        "sector": "Africa_Eurasia_W_N_richness_ge30"
+      },
+      {
+        "delta": 0.006780250810736632,
+        "n": 403,
+        "outcome": "whitefixed8",
+        "p_holm8": 1.0,
+        "p_two": 0.528,
+        "sector": "Africa_Eurasia_W_S_richness_ge30"
+      },
+      {
+        "delta": 0.0004925250712817242,
+        "n": 1348,
+        "outcome": "whitefixed8",
+        "p_holm8": 1.0,
+        "p_two": 0.958,
+        "sector": "Americas_N_richness_ge30"
+      },
+      {
+        "delta": 0.00035563446894859574,
+        "n": 846,
+        "outcome": "whitefixed8",
+        "p_holm8": 1.0,
+        "p_two": 0.966,
+        "sector": "Americas_S_richness_ge30"
+      },
+      {
+        "delta": -0.03188116909252403,
+        "n": 1387,
+        "outcome": "whitefixed8",
+        "p_holm8": 0.07,
+        "p_two": 0.01,
+        "sector": "Asia_Oceania_E_N_richness_ge30"
+      },
+      {
+        "delta": 0.017380838445696822,
+        "n": 710,
+        "outcome": "whitefixed8",
+        "p_holm8": 0.504,
+        "p_two": 0.126,
+        "sector": "Asia_Oceania_E_S_richness_ge30"
+      }
+    ]
+  },
+  "canonical_CI_reproduction_verified_by_root": {
+    "artifact_id": 14710329666,
+    "run_id": 44914103213,
+    "ZIP_SHA256": "c031cf8fe3f80d6cf868ee20477fdb4c550b836435b79ae16d75e771c564f951",
+    "numeric_files_identical": [
+      "full_global_first199_validation_cells.csv.gz",
+      "native_georegion_contrast_statistics.csv",
+      "native_georegion_group_statistics.csv",
+      "native_georegion_permutation_draws.csv.gz",
+      "native_photo9_georegion_cells.csv.gz",
+      "native_whitefixed8_georegion_cells.csv.gz",
+      "reproducibility_gates.json"
+    ],
+    "all_model_statistics_identical": true,
+    "taxonomy_audit_identical": true,
+    "local_imported_modules_differ_only_by_one_extra_terminal_newline": [
+      "scripts/analysis/mois_actual_photo_cohort_season_audit_20261019.py",
+      "scripts/analysis/mois_global_hue9_community_assembly_genus_null_20261118.py",
+      "scripts/analysis/mois_global_hue9_regional_pool_conditional_null_20261121.py",
+      "scripts/analysis/mois_global_photo9_whitefixed8_georegion_null_20261121.py",
+      "scripts/analysis/mois_nonwhite8_assembly_white_fixed_null_20261118.py",
+      "scripts/analysis/mois_real350399_wcvp_geographic_native_status_20261019.py",
+      "scripts/analysis/mois_wcvp_native_hue9_geographical_null_20261118.py"
+    ]
+  },
+  "canonical_CI_code_commit": "636b9736af9e087a469c8cc93fd8c2e588eb0a5a"
+}

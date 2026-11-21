@@ -1,0 +1,60 @@
+name: "MOIS Paleo: WCVP-native genus-conditioned white vs other photo hues"
+on:
+  push:
+    branches:
+      - analysis/mois-global-floral-colour-assembly-null-20261118
+    paths:
+      - scripts/analysis/mois_native_LGM_genus_white_colour_stress_20261119.py
+      - .github/workflows/mois-native-3gcm-lgm-genus-colour-stress-20261119.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-native-3gcm-LGM-genus-colour-stress-20261119
+  cancel-in-progress: true
+jobs:
+  true-source-genus-colour-stress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install statistical inference requirements
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "numpy>=1.26,<3" "pandas>=2.1,<3" \
+            "scipy>=1.11,<2" "statsmodels>=0.14,<1"
+          python -m py_compile scripts/analysis/mois_native_LGM_genus_white_colour_stress_20261119.py
+      - name: Verify exact original full source archive SHA256
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources
+          curl --fail --silent --show-error --location --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14525280772/zip" \
+            -o sources/full_native_threeGCM.zip
+          echo "955f4c0fdf2ba1be49f3195e065db52b048e28400b4a7938dc8c97222c4e280d  sources/full_native_threeGCM.zip" | sha256sum -c
+      - name: Test genus-conditioned signed white vs nonwhite climatic analogue differences
+        run: |
+          python -m scripts.analysis.mois_native_LGM_genus_white_colour_stress_20261119 \
+            --source sources/full_native_threeGCM.zip \
+            --out results/mois_native_3GCM_genus_colour_stress_20261119
+      - name: Archive inspected coefficients, confidence intervals and digests
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-WCVP-native-3GCM-genus-white-colour-robustness-20261119
+          path: results/mois_native_3GCM_genus_colour_stress_20261119/
+          retention-days: 30
+          if-no-files-found: error
