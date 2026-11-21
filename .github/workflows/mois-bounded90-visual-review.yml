@@ -1,0 +1,44 @@
+name: MOIS bounded 90 existing images for direct visual QA
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-bounded90-visual-review.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-bounded90-visual-review-one-source
+  cancel-in-progress: false
+jobs:
+  licensed-existing-derivative-QA:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify identity and licence guards
+        run: python -m unittest discover -s tests -p test_mois_bounded_visual_review_sources.py -v
+      - name: Restore exact identity and attribution sources
+        run: |
+          set -euo pipefail
+          for entry in '14113413250 source' '14113167546 metadata'; do
+            set -- $entry
+            curl --fail --location --silent --show-error \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/$1/zip" \
+              --output "$2.zip"
+          done
+      - name: Retrieve existing licensed medium images once for visual QA only
+        run: python -m scripts.analysis.mois_bounded_visual_review_sources --source source.zip --metadata metadata.zip --output output
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-existing90-medium-visual-QA-sources-20261114
+          path: output/
+          retention-days: 1
+          if-no-files-found: warn

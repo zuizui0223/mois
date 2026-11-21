@@ -1,0 +1,89 @@
+name: "MOIS QA: 13 frozen FCP failures true original-resolution retest"
+on:
+  push:
+    branches:
+      - analysis/mois-species-first-palette9-20261111
+    paths:
+      - scripts/acquisition/mois_FCP13_original_resolution_retest_20261121.py
+      - .github/workflows/mois-20261121-fcp13-true-original-resolution-gate.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-20261121-same-fcp13-true-original-unrelaxed
+  cancel-in-progress: true
+jobs:
+  original-byte-paired-fcp13:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    env:
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned frozen FCP original image analysis requirements
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 \
+            Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          python -m py_compile scripts/acquisition/mois_FCP13_original_resolution_retest_20261121.py
+      - name: Verify signed original FCP19 photo results and 13 known technical failure identities
+        run: |
+          set -euo pipefail
+          mkdir -p inputs
+          curl --fail --silent --show-error --location --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14636423108/zip" \
+            -o inputs/signed19.zip
+          echo "92315ef6679ced282fd822dcb08336a541add546afa949fb657cda76f6fd90ea  inputs/signed19.zip" | sha256sum -c
+          cp analysis_specs/MOIS_FCP19_THIRTEEN_ROI_FAILURES_REVIEW_QUEUE_20261120.csv inputs/fail13.csv
+          echo "4a45d8bdd6e1900c3597d19f2c39239f7e81cda967e4d6cb9f589442fefacb50  inputs/fail13.csv" | sha256sum -c
+      - name: Generate pinned 13-photo worker source with true original URLs rather than large JPEGs
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_FCP13_original_resolution_retest_20261121 source \
+            --previous inputs/signed19.zip --failed inputs/fail13.csv --out source
+      - name: Verify the exact frozen FCP YOLO11 and EfficientSAM models
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Re-measure the same 13 photos on full original image bytes, frozen model and strict thresholds
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-20261121-true-original13-source"
+          python -m scripts.acquisition.mois_FCP13_original_resolution_retest_20261121 work \
+            --source source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --out pixel
+      - name: Verify full original byte SHA, identity and paired large-vs-original ROI outcomes
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_FCP13_original_resolution_retest_20261121 audit \
+            --previous inputs/signed19.zip --failed inputs/fail13.csv \
+            --source source --worker pixel \
+            --out results/mois_FCP13_same_photo_original_vs_large_20261121
+      - name: Preserve full source SHA and actual numerical FCP photo diagnosis without atlas append
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-fcp13-true-original-versus-large-paired-photoROI-v4-20261121
+          path: |
+            source/
+            pixel/shard_000/
+            results/mois_FCP13_same_photo_original_vs_large_20261121/
+          retention-days: 30
+          if-no-files-found: warn

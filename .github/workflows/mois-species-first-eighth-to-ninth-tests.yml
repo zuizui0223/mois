@@ -1,0 +1,26 @@
+name: MOIS eighth to ninth signed original photo append dry tests
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_species_first_eighth_to_ninth.py
+      - tests/test_mois_species_first_eighth_to_ninth.py
+      - .github/workflows/mois-species-first-eighth-to-ninth-tests.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  eighth-to-ninth-signed-source-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Authenticate eighth terminal metadata and prohibit reusing photos, observations, or coloured taxa
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_species_first_eighth_to_ninth.py -v
+          python -m compileall -q scripts/analysis/mois_species_first_eighth_to_ninth.py

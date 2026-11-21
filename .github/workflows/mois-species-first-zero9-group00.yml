@@ -1,0 +1,74 @@
+name: MOIS zero-strict9 taxon FIRST photo sources from signed full93m group00
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/acquisition/mois_species_first_zero9_source.py
+      - tests/test_mois_species_first_zero9_source.py
+      - .github/workflows/mois-species-first-zero9-group00.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-zero-colour-species-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PHOTO_TAG: mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1
+      MASTER_TAG: mois-complete-93209351-original-photo-target-tiers-v1
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify metadata-only breadth-first selector with synthetic independent observations
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_species_first_zero9_source.py -v
+      - name: Restore signed original-photo ROI9 source and complete group00 metadata tiers
+        run: |
+          set -euo pipefail
+          mkdir -p input tiers
+          gh release download "$PHOTO_TAG" --repo "$REPO" --dir input \
+            --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --pattern mois_42111_original_taxon_9palette_before_after.csv.gz
+          gh release download "$MASTER_TAG" --repo "$REPO" --dir input \
+            --pattern mois_all_original_photo_target_tiers_receipt.json \
+            --pattern group-00-receipt.json
+          for tier in $(seq -w 0 13); do
+            gh release download "$MASTER_TAG" --repo "$REPO" --dir tiers --pattern "tier-$tier-group-00.tar"
+          done
+          test "$(find tiers -maxdepth 1 -name 'tier-??-group-00.tar' -type f | wc -l)" -eq 14
+      - name: Select next previously-unmeasured species photos from signed full93m rows, no image fetch
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_species_first_zero9_source \
+            --registry input/mois_all_original_photo_target_tiers_receipt.json \
+            --group-receipt input/group-00-receipt.json \
+            --archives tiers \
+            --photos input/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --coverage input/mois_42111_original_taxon_9palette_before_after.csv.gz \
+            --group 0 --max-fallback 4 --output source_zero9_group00
+          python - <<'PY'
+          import json,pandas as pd
+          d=json.load(open('source_zero9_group00/receipt.json'))
+          assert d['schema']=='mois_species_first_original93m_zero9_taxon_reverse_lookup_v1'
+          assert d['new_original_photo_downloads']==0 and d['new_measured_9palette_ROIs']==0
+          assert d['new_first_wave_distinct_species_photo_opportunities']==d['source_zero9_taxa_with_eligible_candidate']
+          q=pd.read_csv('source_zero9_group00/mois_species_zero9_group00_next_first_photo.csv')
+          assert len(q)==q.inat_taxon_id.nunique()==q.photo_id.nunique()==q.observation_id.nunique()
+          print('MOIS_FROZEN_FULL93M_ZERO9_SOURCE_EXTRACT_SUCCESS', d['source_zero9_taxa_with_eligible_candidate'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-source-full93m-group00-zero9-next-first-photo-plus-backups
+          path: source_zero9_group00/
+          retention-days: 90
+          if-no-files-found: warn

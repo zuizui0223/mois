@@ -1,0 +1,102 @@
+name: MOIS existing38 petaloid fixed ROI9 remeasurement (large derivative)
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-existing38-petaloid-remeasurement.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-existing38-fixed-photo-ids-once-20261114
+  cancel-in-progress: false
+jobs:
+  bounded-existing-photo-remeasurement:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Enforce one explicitly authorized repeat of existing 38 photo IDs
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          for prior in $(gh run list --repo "$REPO" --workflow mois-existing38-petaloid-remeasurement.yml --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId"); do
+            echo "Previous remeasurement exists: $prior; refuse unreviewed replay"; exit 1
+          done
+      - name: Test source identity, version and numerical invariants
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_existing38_remeasurement.py -v
+      - name: Restore only fixed metadata and catalogue, no old image bytes
+        run: |
+          set -euo pipefail
+          mkdir -p inputs
+          for item in '14111328732 qa' '14113167546 metadata' '14115235250 atlas'; do
+            set -- $item
+            curl --fail --location --silent --show-error \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/$REPO/actions/artifacts/$1/zip" \
+              --output "inputs/$2.zip"
+          done
+          python -m scripts.analysis.mois_existing38_remeasurement prepare \
+            --inputs inputs --triage results/mois_90_direct_visual_triage_20261114.csv --output frozen
+          python - <<'PY'
+          import json
+          r=json.load(open('frozen/manifest.json'))
+          assert r['photo_shard_sha256']['0']=='fd9c56cf440ca3042e2888477c8a2905e137dc2ae12a362853e00e5e81cfc595'
+          assert r['new_unique_photo_ids']==0 and r['measurement_attempts_planned']==38
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-existing38-licensed-large-remeasurement-frozen-source
+          path: frozen/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Restore the existing frozen YOLO11 and EfficientSAM numerical method
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Actually remeasure 38 existing large derivatives with the unchanged classifier
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-existing38-provider"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work \
+            --source frozen --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --group 0 --output measured
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-existing38-large-frozen-ROI9-pixel-terminal
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Independently verify all source IDs, image hashes and actual nine fractions
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_existing38_remeasurement audit \
+            --source frozen --workers measured --output audited
+          python -m pip freeze > audited/runtime_versions.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-existing38-large-ROI9-audited-results
+          path: audited/
+          retention-days: 90
+          if-no-files-found: error

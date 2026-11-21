@@ -1,0 +1,139 @@
+name: MOIS 37104 COLXR species SINGLE GBIF SQL submit after credentials (manual only)
+
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-gbif-37104-one-SQL-auth-submit-20261115.yml]
+  workflow_dispatch:
+    inputs:
+      confirm_submit_one_bulk_SQL:
+        description: "Explicitly submit ONE GBIF SQL download request for all 37,104 accepted species?"
+        required: true
+        type: choice
+        options:
+          - NO
+          - YES
+        default: NO
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-GBIF-37104-ONE-validated-SQL-authenticated-download-20261115
+  cancel-in-progress: false
+
+jobs:
+  provenance-and-one-shot-submission-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GBIF_USERNAME: ${{ secrets.GBIF_USERNAME }}
+      GBIF_USER: ${{ secrets.GBIF_USER }}
+      GBIF_PASSWORD: ${{ secrets.GBIF_PASSWORD }}
+      REPO: zuizui0223/mois
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify original one-query public validator SUCCESS and frozen 37,104 accepted keys
+        run: |
+          set -euo pipefail
+          mkdir -p signed gate
+          curl --fail --location --silent --show-error --retry 2 \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14161421174/zip' \
+            --output signed/single37104_SQL.zip
+          echo 'ecbf0d142fbe1be9670e70907006eb5321db1d1adf12a571f973cb0a6155d690  signed/single37104_SQL.zip' | sha256sum -c -
+          python - <<'PY'
+          import zipfile,hashlib,json,re,pathlib,os
+          z=zipfile.ZipFile('signed/single37104_SQL.zip')
+          receipt=json.loads(z.read('receipt.json'))
+          body=z.read('COLXR_37104_one_ISEA3H8_SQL_request.json')
+          p=json.loads(body)
+          assert receipt['all_37104_single_SQL_publicly_validated'] is True
+          assert receipt['COL_XR_accepted_species']==37104
+          assert receipt['authenticated_SQL_download_submitted'] is False
+          assert receipt['full_SQL_request_sha256']==hashlib.sha256(body).hexdigest()
+          assert receipt['full_SQL_request_sha256']=='7b760453322c79d901dee392558d71cedfed0b1d5d6b93c3b71781e700fc4892'
+          assert p['format']=='SQL_TSV_ZIP'
+          assert len(re.findall(r"'[A-Z0-9]{4,5}'",p['sql']))==37104
+          assert 'GBIF_ISEA3HCode(8' in p['sql']
+          exists=bool((os.environ.get('GBIF_USERNAME') or os.environ.get('GBIF_USER')) and os.environ.get('GBIF_PASSWORD'))
+          trace={'schema':'mois_37104_one_SQL_GBIF_auth_dispatch_gate_v1',
+                 'accepted_colxr_species':37104,
+                 'public_validator_HTTP':201,
+                 'all_keys_accepted_by_public_validator':True,
+                 'frozen_one_SQL_query_sha256':receipt['full_SQL_request_sha256'],
+                 'GBIF_credentials_present':exists,
+                 'on_push_never_submit':True,
+                 'original_photo_or_occurrence_downloads_by_gate':0,
+                 'SQL_download_submitted':False,
+                 'GBIF_download_key':None,
+                 'GBIF_download_DOI':None,
+                 'requires_manual_dispatch_and_GBIF_credentials':True}
+          pathlib.Path('gate/receipt.json').write_text(json.dumps(trace,indent=2,sort_keys=True)+'\n')
+          print('MOIS_GBIF_ONE_SQL_SAFE_AUTH_GATE_CHECK',
+                {k:v for k,v in trace.items() if k!='frozen_one_SQL_query_sha256'},flush=True)
+          PY
+      - name: Submit exactly ONE full-37k SQL only on explicitly confirmed manual dispatch
+        if: github.event_name == 'workflow_dispatch' && inputs.confirm_submit_one_bulk_SQL == 'YES'
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          python - <<'PY'
+          import json
+          r=json.load(open('gate/receipt.json'))
+          assert r['GBIF_credentials_present'], (
+             'GBIF_USERNAME (or GBIF_USER) and GBIF_PASSWORD GitHub Secrets must be set; no submission attempted')
+          PY
+          earlier=$(gh run list --repo "$REPO" \
+            --workflow mois-gbif-37104-one-SQL-auth-submit-20261115.yml \
+            --limit 100 --json databaseId,event \
+            --jq ".[] | select(.event == \"workflow_dispatch\" and .databaseId < $GITHUB_RUN_ID) | .databaseId")
+          test -z "$earlier" || { echo "PRIOR_MANUAL_ONE_SQL_ATTEMPT_EXISTS $earlier; refuse repeated POST"; exit 1; }
+          python - <<'PY'
+          import os,base64,json,re,urllib.request,urllib.error,zipfile,hashlib,pathlib
+          z=zipfile.ZipFile('signed/single37104_SQL.zip')
+          body=z.read('COLXR_37104_one_ISEA3H8_SQL_request.json')
+          assert hashlib.sha256(body).hexdigest()=='7b760453322c79d901dee392558d71cedfed0b1d5d6b93c3b71781e700fc4892'
+          username=os.getenv('GBIF_USERNAME') or os.getenv('GBIF_USER')
+          password=os.getenv('GBIF_PASSWORD')
+          assert username and password
+          authorization=base64.b64encode((username+':'+password).encode()).decode('ascii')
+          req=urllib.request.Request('https://api.gbif.org/v1/occurrence/download/request',
+              method='POST',data=body,headers={
+               'Accept':'application/json','Content-Type':'application/json',
+               'Authorization':'Basic '+authorization,
+               'User-Agent':'MOIS-COLXR-37104-one-ISEA3H8-download/20261115'})
+          # No automatic retry: server might have accepted the request without returning the key.
+          try:
+              with urllib.request.urlopen(req,timeout=120) as res:
+                  code=res.status
+                  reply=res.read(10000).decode().strip()
+          except urllib.error.HTTPError as e:
+              print('GBIF_SINGLE_37104_SQL_REQUEST_HTTP',e.code,
+                    'No retry: check account downloads before any next attempt')
+              raise
+          assert code==201 and re.fullmatch(r'\d{7}-\d{15,}',reply), (
+              'Unexpected GBIF response; do not retry until account download history checked')
+          out={'schema':'mois_GBIF_COLXR_37104_one_SQL_real_request_receipt_v1',
+               'GBIF_submission_HTTP':code,'GBIF_download_key':reply,'GBIF_download_DOI':None,
+               'source_public_validated_one_SQL_SHA256':hashlib.sha256(body).hexdigest(),
+               'requested_accepted_species':37104,'submitted_Single_GBIF_SQL_download':True,
+               'async_data_ready':False,'GBIF_species_cell_rows_downloaded':0,
+               'credentials_recorded_in_results':False,'no_fallback_chunks_submitted':True}
+          pathlib.Path('gate/submission_receipt.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print('MOIS_GBIF_37104_ONE_SQL_ASYNC_DOWNLOAD_QUEUED',json.dumps(out,sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-GBIF-37104-one-query-credential-gate-or-actual-manual-submission
+          path: gate/
+          retention-days: 90
+          if-no-files-found: warn

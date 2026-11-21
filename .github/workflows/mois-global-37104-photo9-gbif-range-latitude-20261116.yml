@@ -1,0 +1,84 @@
+name: MOIS REAL GBIF full 37104 COL XR photo9 species global 100km range and latitude
+
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-global-37104-photo9-gbif-range-latitude-20261116.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-GBIF-37104-all-global-photo9-genus-latitude-frozen-v1
+  cancel-in-progress: false
+
+jobs:
+  global-species-ecogeography-photo-hue:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numerical and projection libraries and test genus+latitude contracts
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1 \
+            pyproj==3.7.1 statsmodels==0.14.4 scipy==1.15.2
+          python -m unittest discover -s tests -p test_mois_global_photo9_grid_latitude_20261116.py -v
+      - name: Restore exact signed 37104 complete public GBIF S3 grid and accepted photo9 traits
+        run: |
+          set -euo pipefail
+          mkdir -p original
+          for spec in '14166701658 GBIF-global 422f6d6489e61c6e57c5d51db614e47f613039781a901e3fd3481c13b2b085c2' \
+                      '14157705123 COLXR-photo abcd3aee766c85a92b86a8f93f8ed696bbe49d0f6cf2f64e5f75b457abf78e6a'; do
+            set -- $spec
+            curl --fail --location --silent --show-error --retry 2 \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/$REPO/actions/artifacts/$1/zip" \
+              --output "original/$2.zip"
+            echo "$3  original/$2.zip" | sha256sum -c -
+          done
+          test "$(gh api "repos/$REPO/actions/runs/43723276949" --jq .conclusion)" = success
+      - name: Join ALL 5.49 million true species-cell pairs with photo9 and test range/latitude within genera
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global_photo9_grid_latitude_20261116 \
+            --GBIF-global-ZIP original/GBIF-global.zip \
+            --COLXR-photo-ZIP original/COLXR-photo.zip \
+            --output global_hue_geo
+          python - <<'PY'
+          import json,pandas as pd
+          r=json.load(open('global_hue_geo/receipt.json'))
+          assert r['species_accepted_total']==37104
+          assert r['species_with_observed_valid_GBIF_range']==36758
+          assert r['source_species_grid_cells']==5493931
+          assert r['source_occurrences_after_GBIF_QA']==396142825
+          assert r['source_photo_palette9_modal_vs_mean_disagreements']==2466
+          assert r['genera_with_both_white_and_nonwhite']==2376
+          m=r['statistical_models']
+          w=m['range_within_genus_white_effect_genus_cluster']
+          assert abs(w['beta']-(-0.005575707097515516))<0.0001
+          assert abs(w['p']-0.5996196641602353)<0.001
+          assert r['local_GBIF_occurrence_hue_measured'] is False
+          assert r['native_wild_range_verified'] is False
+          assert r['grid_type'].startswith('EPSG:6933')
+          s=pd.read_csv('global_hue_geo/all_37104_accepted_species_global_GBIF_photo9_georange_latitudes.csv.gz')
+          assert len(s)==37104 and s.key.is_unique
+          print('MOIS_ALL_37104_GBIF_5_49M_SPECIES_GRID_PHOTO9_ECOGEOGRAPHY_AUDIT_SUCCESS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-global-37104-real-GBIF-grid-photo9-range-within-genus-latitude-20261116
+          path: global_hue_geo/
+          retention-days: 90
+          if-no-files-found: error

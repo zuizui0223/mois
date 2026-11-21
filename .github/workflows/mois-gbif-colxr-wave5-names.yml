@@ -1,0 +1,86 @@
+name: MOIS GBIF COL XR newly measured fifth 287 photo hues exact species match
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_gbif_colxr_wave5_incremental.py
+      - tests/test_mois_gbif_colxr_wave5_incremental.py
+      - .github/workflows/mois-gbif-colxr-wave5-names.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-gbif-colxr-fifth-new-287-only
+  cancel-in-progress: false
+jobs:
+  fifth-gbif-colxr-new-hues:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      FIFTH_ATLAS_RUN: '42970701175'
+      PREVIOUS_NAMES_RUN: '42959945602'
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test newest photo-atlas name delta and conservative name matching
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_wave5_incremental.py -v
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_new_hue_incremental.py -v
+      - name: Download SHA-verified true fifth image atlas and fourth existing COL XR accepted names
+        run: |
+          set -euo pipefail
+          mkdir -p current previous
+          gh run download "$FIFTH_ATLAS_RUN" --repo "$REPO" --name mois-fifth1024-9roi-integrated-and-sixth4096-source --dir current
+          gh run download "$PREVIOUS_NAMES_RUN" --repo "$REPO" --name mois-gbif-colxr-wave4-newly-290-photo-coloured-species-accepted-and-nine-fractions --dir previous
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.analysis.mois_gbif_colxr_batch_match import source_sha
+          photo=Path('current/after_fifth/mois_species_first_42111_after4352.csv.gz')
+          rec=json.loads(Path('current/after_fifth/receipt.json').read_text())
+          assert rec['schema']=='mois_species_first_fifth1024_real_roi9_append_sixth4096_v1'
+          assert rec['real_fifth_new_numerical_nineROI']==383
+          assert rec['real_fifth_dominant_palette_photo_labels']==287
+          assert rec['source_taxa_with_numerical_nineROI']==31618
+          assert rec['source_taxa_with_dominant_nine_palette']==29168
+          assert source_sha(photo)==rec['output_sha256']['atlas']
+          previous=json.loads(Path('previous/receipt.json').read_text())
+          assert previous['schema']=='mois_species_first_real_wave4_gbif_colxr_new_names_v1'
+          assert previous['current_exact_colxr_accepted_species']==27394
+          p=Path('previous/all_current_photo9_gbif_colxr_names.csv.gz')
+          assert source_sha(p)==previous['signed_file_SHA256'][p.name]
+          print('MOIS_FIFTH_SIGNED_ATLAS_AND_FOURTH_SIGNED_27394_COLXR_MATCHES',flush=True)
+          PY
+      - name: Match only newly photographed fifth-wave 9-palette labelled taxa with official COL XR
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_wave5_incremental --atlas current/after_fifth/mois_species_first_42111_after4352.csv.gz --prior-names previous/all_current_photo9_gbif_colxr_names.csv.gz --prior-receipt previous/receipt.json --output wave5_names --batch-size 200 --pause 1.0
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('wave5_names/receipt.json').read_text())
+          assert r['schema']=='mois_species_first_real_wave5_gbif_colxr_new_names_v1'
+          assert 1<=r['new_nine_hue_nominal_taxa_queried']<=287
+          assert r['previous_gbif_accepted_species']==27394
+          assert r['current_exact_colxr_accepted_species']>=27394
+          assert r['current_GBIF_species_numeric9_fractional_traits']==r['current_exact_colxr_accepted_species']
+          assert r['GBIF_ISEA3H_SQL_request_count']>=110
+          assert r['GBIF_authenticated_bulk_occurrence_download_submitted'] is False
+          print('MOIS_FIFTH_NEW_GENUINE_NINEHUE_COLXR_ONLY',json.dumps({k:r[k] for k in ('new_nine_hue_nominal_taxa_queried','new_exact_colxr_accepted_species','current_exact_colxr_accepted_species','GBIF_ISEA3H_SQL_request_count')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-gbif-colxr-fifth-new-287-and-cumulative-accepted-nine-fractions
+          path: wave5_names/
+          retention-days: 90
+          if-no-files-found: warn

@@ -1,0 +1,116 @@
+name: MOIS original GBIF floral white genus-pool versus within-genus NPP LGM decomposition
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-photo-white-colour-genus-composition-NPP-LGM-20261117.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-original-GBIF-white-flower-genus-pool-and-within-genus-20261117
+  cancel-in-progress: false
+
+jobs:
+  floristic-composition-controls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install scientific stack and run white-photo genus composition tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 \
+            statsmodels==0.14.4 scipy==1.15.2 \
+            rasterio==1.4.3 pyproj==3.7.1 shapely==2.0.7 geopandas==1.0.1
+          python -m py_compile scripts/analysis/mois_gbif_flower_colour_genus_composition_decomposition_20261117.py
+          python -m unittest discover -s tests -p 'test_mois_gbif_flower_colour_genus_composition_decomposition_20261117.py' -v
+      - name: Restore SHA-locked GBIF 37k photo9 accepted species / NPP / LGM / WCVP
+        run: |
+          set -euo pipefail
+          mkdir -p sources/WCVP
+          for row in \
+            '14166701658 GBIF 422f6d6489e61c6e57c5d51db614e47f613039781a901e3fd3481c13b2b085c2' \
+            '14219399376 ENV d8b97528188d9f8d63cb802d5b3f6e8f7f251937fd30af42aeae47e43ebad1fc' \
+            '14225733755 LGM db3b5b4fa2133194963be9233411bb6bb50bc86393d1dc50d996cc4cc78b25ab' \
+            '14235983742 NPP 68b2cfa1aeac9dc5d02cd310c9b2f45553a5be4db3319a1e40897612ad9b1bef' \
+            '14228652073 NATIVE b72b7358ed5382d625583ad61b90952e4e77377296fe90ae677bf9481aa80a7f' \
+            '14227246751 SPATIAL e209257adbc185b4855f3b8d76aeaa50d2e2afe8a1feeb0f76013366e57c4d16' \
+            '14219565387 NDVI e08e81d1c2afd1a2ee5312f3ebc4aeb5ab7678988c2453a2a9c63d28c82eb17a'; do
+            set -- $row
+            curl --fail --location --silent --show-error --retry 3 --retry-delay 4 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/$1/zip" \
+              --output "sources/$2.zip"
+            echo "$3  sources/$2.zip" | sha256sum -c -
+          done
+      - name: Restore source-authenticated official Kew WCVP names and TDWG3 regions
+        run: |
+          set -euo pipefail
+          tag='mois-real350399-kew-wcvp-native-tdwg3-source-v1'
+          for f in \
+            'mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' \
+            'mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz' \
+            'mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json'; do
+            curl --fail --location --silent --show-error --retry 3 --retry-delay 5 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              "https://github.com/zuizui0223/mois/releases/download/$tag/$f" \
+              -o "sources/WCVP/$f"
+          done
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://raw.githubusercontent.com/tdwg/wgsrpd/52da7828aba9d461dd133c27b3bd7a4407161f54/geojson/level3.geojson" \
+            -o sources/TDWG3.geojson
+          echo 'c172bcf6aba20e19477adc60aebf0023068f0175dca8480f0760b090dcf64840  sources/TDWG3.geojson' | sha256sum -c -
+      - name: Fit exact observed = genus-expected + within-genus white-photo trait residual
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_flower_colour_genus_composition_decomposition_20261117 \
+            --gbif sources/GBIF.zip --env sources/ENV.zip \
+            --lgm sources/LGM.zip \
+            --native sources/NATIVE.zip --spatial sources/SPATIAL.zip \
+            --ndvi sources/NDVI.zip --npp sources/NPP.zip \
+            --wcvp sources/WCVP --tdwg sources/TDWG3.geojson \
+            --out MOIS_GBIF_photo_white_genus_composition
+          python - <<'PY'
+          import json
+          r=json.load(open('MOIS_GBIF_photo_white_genus_composition/receipt.json'))
+          assert r['true_GBIF_species']==37104
+          assert r['true_GBIF_species_cell_pairs']==5493931
+          assert r['flower_colour_outcome_photo9_species_modal_proxy']
+          assert not r['LGM_paleoclimate_does_not_observe_refugium'] is False
+          assert r['genus_expected_uses_species_once_not_photo_counts']
+          for mode in ("strict","moderate"):
+              for grp in ("native","introduced"):
+                  s=r['result'][mode][grp]
+                  assert s['eligible_cells']>1500
+                  for name in ("500km_equal_cell","1000km_equal_cell",
+                               "500km_species_support_weighted"):
+                      assert s[name]['additivity_max_abs']<1e-10
+                      assert s[name]['models']['residual_within_genus']['n_cells']>1000
+          print('MOIS_TRUE_GBIF_FLORAL_WHITE_GENUS_DECOMP_SUCCESS',
+                json.dumps({mode:{
+                   grp:{"n":r['result'][mode][grp]['eligible_cells'],
+                       "NPP":r['result'][mode][grp]['500km_equal_cell']['models'][
+                            'residual_within_genus']['effects']['NPP']}
+                   for grp in ('native','introduced')}
+                  for mode in ('strict','moderate')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-photo9-white-GBIF-WCVP-native-genus-pool-residual-NPP-LGM
+          path: MOIS_GBIF_photo_white_genus_composition/
+          retention-days: 90
+          if-no-files-found: warn

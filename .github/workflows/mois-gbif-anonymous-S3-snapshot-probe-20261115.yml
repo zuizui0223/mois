@@ -1,0 +1,68 @@
+name: MOIS anonymous PUBLIC GBIF S3 snapshot Parquet taxonomy-provenance pilot
+
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-gbif-anonymous-S3-snapshot-probe-20261115.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  public-unsigned-s3-one-parquet-rowgroup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      AWS_EC2_METADATA_DISABLED: 'true'
+      AWS_ACCESS_KEY_ID: ''
+      AWS_SECRET_ACCESS_KEY: ''
+      GBIF_USERNAME: ''
+      GBIF_PASSWORD: ''
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test source date and taxonomy join guards
+        run: |
+          set -euo pipefail
+          python -m pip install -q boto3==1.40.0 botocore==1.40.0 pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_gbif_anonymous_snapshot_probe_20261115.py -v
+      - name: Restore exactly accepted 37104 source keys; no GBIF login
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          curl --fail --location --silent --show-error --retry 2 \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14157705123/zip' \
+            --output source/37104_colxr.zip
+          echo 'abcd3aee766c85a92b86a8f93f8ed696bbe49d0f6cf2f64e5f75b457abf78e6a  source/37104_colxr.zip' | sha256sum -c -
+      - name: Actually list monthly public AWS snapshot and read one Parquet row group ANONYMOUSLY
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_anonymous_snapshot_probe_20261115 \
+            --source source/37104_colxr.zip \
+            --asof 2026-11-15 \
+            --output output
+          python - <<'PY'
+          import json
+          d=json.load(open('output/receipt.json'))
+          assert d['no_GBIF_username_or_password'] and d['no_AWS_access_key_or_account']
+          assert d['first_object_parquet_rows']>0
+          assert d['one_row_group_rows']>0
+          assert d['full_snapshot_scanned'] is False
+          print('MOIS_GBIF_ANONYMOUS_CLOUD_SNAPSHOT_REAL_COLUMN_READ_SUCCESS',d['date'],d['join_diagnostic'],d['specieskey_arrow_type'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-GBIF-anonymous-public-AWS-S3-snapshot-taxonomy-probe-20261115
+          path: output/
+          retention-days: 90
+          if-no-files-found: warn

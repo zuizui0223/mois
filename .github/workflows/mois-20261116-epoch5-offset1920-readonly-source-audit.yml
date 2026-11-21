@@ -1,0 +1,77 @@
+name: MOIS epoch5 offset1920 independent source ZIP byte and historical audit
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-20261116-epoch5-offset1920-readonly-source-audit.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit-existing-signed-source-without-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify 128 unique taxa, exact ZIP bytes, receipt hashes, source status and conditional skips
+        run: |
+          set -euo pipefail
+          mkdir -p verified
+          python - <<'PY'
+          import csv,hashlib,io,json,subprocess,zipfile
+          from pathlib import Path
+          repo="zuizui0223/mois"; rid=43906185019; aid=14245102819
+          expected_zip="d37dd34ec26548206250b2a8bdb19e58b4c9629ee42d1147a72e33527ba39d21"
+          name="mois-20261116-epoch5-offset1920-signed-1231346-ID-source"
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          run=get(f"repos/{repo}/actions/runs/{rid}")
+          assert (run["status"],run["conclusion"],run["head_sha"])==(
+            "completed","success","8768c98d5a03e7ea113cb0bfde356fd24cbf8873"),run
+          jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/{rid}/jobs?per_page=100")["jobs"]}
+          assert jobs=={
+            "source-only-first128":"success",
+            "pixel-worker-only-if-novel-original":"skipped",
+            "independent-strict9-audit":"skipped",
+            "formal-append-after-audit":"skipped"},jobs
+          arts=get(f"repos/{repo}/actions/runs/{rid}/artifacts?per_page=100")["artifacts"]
+          assert len(arts)==1 and arts[0]["id"]==aid and arts[0]["name"]==name and not arts[0]["expired"]
+          assert arts[0]["digest"]=="sha256:"+expected_zip
+          archive=subprocess.check_output(["gh","api",f"repos/{repo}/actions/artifacts/{aid}/zip"])
+          H=lambda b:hashlib.sha256(b).hexdigest()
+          assert H(archive)==expected_zip
+          with zipfile.ZipFile(io.BytesIO(archive)) as z:
+            assert {"receipt.json","source_taxon_status.csv","source_candidates.csv"}<=set(z.namelist())
+            r=json.loads(z.read("receipt.json"))
+            rs=H(z.read("receipt.json"))
+            sh=H(z.read("source_taxon_status.csv"))
+            ch=H(z.read("source_candidates.csv"))
+            assert sh==r["source_status_SHA256"] and ch==r["source_candidates_SHA256"]
+            assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"])==(1920,128,0)
+            assert (r["old_original_photo_attempt_ID_count"],r["old_original_photo_obs_ID_overlap"])==(1231346,0)
+            assert r["old_all_image_raw_SHA_disjointness_proven"] is False
+            assert (r["new_independent_original_photo_candidates"],r["new_independent_taxa"],r["original_pixels_fetched"],r["strict9_numeric_photos"])==(0,0,0,0)
+            assert r["recent_known_original_image_raw_SHA_count"]==102
+            assert r["created_utc_lower_bound"]=="2026-11-15T21:27:57+00:00"
+            status=list(csv.DictReader(io.StringIO(z.read("source_taxon_status.csv").decode())))
+            assert len(status)==len({row["inat_taxon_id"] for row in status})==128
+            assert all(row["status"]=="source_queried" for row in status)
+            candidates=list(csv.DictReader(io.StringIO(z.read("source_candidates.csv").decode())))
+            assert not candidates
+            record={
+              "run":rid,"artifact":aid,"head_sha":run["head_sha"],
+              "zip_byte_sha256":expected_zip,"receipt_byte_sha256":rs,
+              "source_status_byte_sha256":sh,"source_candidates_byte_sha256":ch,
+              "stages":jobs,"receipt":r,"raw_sha_1231346_complete_comparison":False,
+              "independent_taxon_ids":128,"candidate_rows":0}
+            Path("verified/independent_signed_source.json").write_text(json.dumps(record,ensure_ascii=False,sort_keys=True,indent=2)+"\n")
+            print(json.dumps(record,ensure_ascii=False,sort_keys=True,indent=2),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261116-epoch5-offset1920-independent-source-verification
+          path: verified/
+          retention-days: 90
+          if-no-files-found: error

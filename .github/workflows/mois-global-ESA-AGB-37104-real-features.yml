@@ -1,0 +1,78 @@
+name: MOIS source-verified 37104 real ESA CCI woody AGB 2010 2020 2024 plus NDVI weather
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-global-ESA-AGB-37104-real-features.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-all37104-ESA-v7-AGB10km-real-species-feature-extraction
+  cancel-in-progress: false
+jobs:
+  extract-ESA-AGB-on-real-global-GBIF-grid:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned pyarrow geospatial and species join libraries; test ESA AGB geometry
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1 rasterio==1.4.3 pyproj==3.7.1
+          python -m unittest discover -s tests -p test_mois_global_ESA_AGB_species_features_20261116.py -v
+      - name: Restore exact official ESA public aggregate, source BIO19, 37104 photo9 and 5493931 true global GBIF cell sources
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          for entry in \
+            '14219565387 features e08e81d1c2afd1a2ee5312f3ebc4aeb5ab7678988c2453a2a9c63d28c82eb17a' \
+            '14220300302 agb 4b90104549bc05eb3a9c2ca1cac84d56994a3f0a56a0fae1372d31662cf57407' \
+            '14166701658 gbif 422f6d6489e61c6e57c5d51db614e47f613039781a901e3fd3481c13b2b085c2'; do
+            set -- $entry
+            curl --fail --location --silent --show-error --retry 2 \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/$1/zip" \
+              --output "source/$2.zip"
+            echo "$3  source/$2.zip" | sha256sum -c -
+          done
+          curl --fail --location --silent --show-error --retry 2 \
+            'https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_bio.zip' \
+            --output source/bio.zip
+          echo '00513224583665ec0f2f955a4ec252730c4deb2004cce9e793492a3f26df4dcf  source/bio.zip' | sha256sum -c -
+      - name: Audit real ESA 18-band AGB/uncertainty years and 25 within-cell WorldClim-land samples
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global_ESA_AGB_species_features_20261116 \
+            --features source/features.zip --agb source/agb.zip \
+            --gbif source/gbif.zip --worldclim-bio source/bio.zip \
+            --output biomass_features
+          python - <<'PY'
+          import pandas as pd,json
+          r=json.load(open('biomass_features/receipt.json'))
+          d=pd.read_parquet('biomass_features/BIO19_weather_NDVI_ESACCIv7_AGB_37104_accepted_species.parquet')
+          assert r['source_global_accepted_species']==len(d)==37104
+          assert r['source_GBIF_valid_occurrences']==396142825
+          assert r['species_with_both_AGB_NDVI_BIO19']>30000
+          assert d.key.is_unique
+          assert d.ESA_AGB_woody_Mg_ha_2020.dropna().ge(0).all()
+          assert int(d.ESA_AGB_woody_Mg_ha_2020.notna().sum())==r['species_with_2020_AGB_cell_samples']
+          assert r['global_AGB_woody_biomass_equals_all_grassland_biomass'] is False
+          print('MOIS_FULL_37104_REAL_ESA_WOODY_BIOMASS_SOURCE_JOIN_DONE',r['species_with_both_AGB_NDVI_BIO19'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-full37104-ESA-CCI-v7-2010-2020-2024-AGB-MgHa-real-NDVI-BIO19-species
+          path: biomass_features/
+          retention-days: 90
+          if-no-files-found: warn

@@ -1,0 +1,266 @@
+name: MOIS second disjoint remaining18 actual original FCP ROI9 and 42111 atlas append
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-postsnap-new1909-remaining18-disjoint-ROI9.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-postsnap-new1909-second18-source-sha-after-43562522326-once
+  cancel-in-progress: false
+jobs:
+  freeze-only-remaining-unattempted-originals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    outputs:
+      has_new: ${{ steps.freeze.outputs.has_new }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PRIOR_64_RUN: '43562522326'
+      SOURCE82_RUN: '43562344586'
+      PREVIOUS11_RUN: '43561529394'
+      HIST_RUN: '43546479575'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline source and nine component invariant tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m py_compile scripts/acquisition/mois_postsnap1909_remaining18_original_ROI9.py
+          python -m unittest discover -s tests -p test_mois_postsnap1909_remaining_true_original_ROI9.py -v
+      - name: Require earlier 64 terminal SUCCESS, certified source worker audit atlas ZIP digests, no prior same-wave start
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/actions/runs/$PRIOR_64_RUN" --jq .conclusion)" = success
+          for job in verify-1909-taxonomy-and-freeze-real-source genuinely-measure-frozen-new-originals independent-new-1909-photo-audit append-new-originals-to-nominal-taxonomy; do
+            test "$(gh api "repos/$REPO/actions/runs/$PRIOR_64_RUN/jobs?per_page=100" --jq "[.jobs[] | select(.name==\"$job\" and .conclusion==\"success\")] | length")" = 1
+          done
+          test "$(gh api "repos/$REPO/actions/runs/$PRIOR_64_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fresh1909-64taxa-original-source-complete1231255-ID-history-safe") | .digest')" = 'sha256:ea722fa703202cc2a8be0fb7bd386be2c4561b3617bda6d4877983c1b398ff4e'
+          test "$(gh api "repos/$REPO/actions/runs/$PRIOR_64_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fresh1909-original-RGB9-FCP-actual-new-pixels") | .digest')" = 'sha256:b8e472639d3306cb66cca5193c6d1366783171face420820400c517fa57cbd0a'
+          test "$(gh api "repos/$REPO/actions/runs/$PRIOR_64_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fresh1909-genuine-new-original-photo9-independent-audit") | .digest')" = 'sha256:31da48ab23a81ef2c66a358292fd207603bd2ce7f852c2f973e9b02d9f4effcf'
+          test "$(gh api "repos/$REPO/actions/runs/$PRIOR_64_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-new1909-fresh-original-real-ROI9-42111-taxonomy-appended") | .digest')" = 'sha256:3fb099e2f005f36ffa766c23ea64d81ee0ffd2f9a8e29de157bc3ddcd626bcf1'
+          test "$(gh api "repos/$REPO/actions/runs/$SOURCE82_RUN" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/$SOURCE82_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-postsnapshot-new1909-unmeasured-original-photo-opportunities-signed") | .digest')" = 'sha256:e4183374035b53d2e7708e88e5b4f275997b7cc8293700433d72d258acaed294'
+          test "$(gh api "repos/$REPO/actions/runs/$PREVIOUS11_RUN" --jq .conclusion)" = success
+          for previous in $(gh run list --repo "$REPO" --workflow mois-postsnap-new1909-remaining18-disjoint-ROI9.yml --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId"); do
+            echo "MOIS_SECOND18_PREVIOUS_WORKFLOW_RUN_ALREADY_EXISTS $previous; refuse source/pixel re-run"
+            exit 1
+          done
+      - name: Recover exactly signed current atlas, first64 delta, original historical 1231244 plus first11, and 82 candidate metadata only
+        run: |
+          set -euo pipefail
+          mkdir -p current old source_api
+          gh run download "$PRIOR_64_RUN" --repo "$REPO" --name mois-new1909-fresh-original-real-ROI9-42111-taxonomy-appended --dir current
+          gh run download "$PREVIOUS11_RUN" --repo "$REPO" --name mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append --dir old
+          gh run download "$HIST_RUN" --repo "$REPO" --name mois-postsnapshot-two-CC-photos-full-1231244-ID-source --dir old
+          gh run download "$SOURCE82_RUN" --repo "$REPO" --name mois-postsnapshot-new1909-unmeasured-original-photo-opportunities-signed --dir source_api
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          a=json.loads(Path('current/receipt.json').read_text())
+          s=json.loads(Path('source_api/receipt.json').read_text())
+          assert a['schema']=='mois_remaining1909_new_postsnapshot_original_photo_ROI9_pipeline_v1'
+          assert a['stage']=='full_42111_taxon_atlas_new1909_true_photo9_appended'
+          assert a['cumulative_original_photo_attempts']==1231319
+          assert a['new_original_photo_attempts']==64
+          assert a['new_strict9_numeric_original_photos']==18
+          assert a['new_clear_photo_hue_taxa']==17
+          assert a['nominal_taxa_with_genuine_nineROI']==39903
+          assert a['nominal_taxa_with_clear_sampled_photo_hue']==39164
+          assert sha256('current/mois_42111_taxa_postsnap_new1909_original_photo9.csv.gz')=='edefb07d17d77ebe5ae8b939514a1ca2947a51bd76b1360caad94398f5f973b9'
+          assert sha256('current/mois_postsnap1909_authentic_original_photo9_delta.parquet')=='9b9476c2feb417c09dc8c97fd6322b6ee46eb6ffccb67aace04147d3a1a85fa5'
+          assert s['new_source_taxa_API_queried']==1909 and s['actual_new_photo_pixels_downloaded']==0
+          assert s['new_photo_IDs_before_historical_source_overlap']==82
+          print('MOIS_CONFIRMED_FIRST64_TRUE_NINE_ROI_AND_CURRENT_ATLAS', flush=True)
+          PY
+      - name: Exclude all 1231319 old photo IDs and observation UUIDs, choose only residual 18 distinct source taxa
+        id: freeze
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_postsnap1909_remaining18_original_ROI9 source \
+            --candidates source_api \
+            --atlas current/mois_42111_taxa_postsnap_new1909_original_photo9.csv.gz \
+            --historical old/historical_1231244_original_photo_observation_taxon_ID_registry.csv.gz \
+            --new11 old/mois_new11_iNat_original_photo9_audited_delta.parquet \
+            --new64 current/mois_postsnap1909_authentic_original_photo9_delta.parquet \
+            --quota 18 --output frozen
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          r=json.load(open('frozen/receipt.json'))
+          assert 0<=r['independent_new_eligible_photos']<=18
+          assert r['input_candidate_photo_IDs']==82
+          assert r['source_old_photo_ID_overlap']==0
+          assert r['source_old_observation_UUID_overlap']==0
+          print('has_new='+str(r['independent_new_eligible_photos']>0).lower())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-postsnap-remaining18-signed-1231319-disjoint-photo-source
+          path: frozen/
+          retention-days: 90
+          if-no-files-found: error
+  actually-fetch-and-measure-only-next-unused-original-pixels:
+    needs: freeze-only-remaining-unattempted-originals
+    if: needs.freeze-only-remaining-unattempted-originals.outputs.has_new == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-postsnap-remaining18-signed-1231319-disjoint-photo-source
+          path: signed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bootstrap pinned FCP original YOLO11 and EfficientSAM ROI-v4, no old pixels
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Actually fetch residual independent licensed original images and measure finite nonnegative 9 fractions
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-postsnap-remaining18-provider"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work \
+            --source signed --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --group 0 --output genuine_photos
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-postsnap-remaining18-genuine-FCP-pixel-terminal
+          path: genuine_photos/
+          retention-days: 90
+          if-no-files-found: warn
+  independent-remainder18-original-numeric-nine-audit:
+    needs: [freeze-only-remaining-unattempted-originals,actually-fetch-and-measure-only-next-unused-original-pixels]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-postsnap-remaining18-signed-1231319-disjoint-photo-source
+          path: signed
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-postsnap-remaining18-genuine-FCP-pixel-terminal
+          path: worker
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recover previous 11 and 64 signed colour deltas for original raw-image SHA anti-reuse
+        run: |
+          set -euo pipefail
+          mkdir -p old current
+          gh run download 43561529394 --repo "$REPO" --name mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append --dir old
+          gh run download 43562522326 --repo "$REPO" --name mois-new1909-fresh-original-real-ROI9-42111-taxonomy-appended --dir current
+      - name: Independently verify worker receipt hashes, photo ID UUID taxon, strict9, missingness and 75 latest image byte SHAs
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m scripts.acquisition.mois_postsnap1909_remaining18_original_ROI9 audit \
+            --source signed --workers worker \
+            --new11 old/mois_new11_iNat_original_photo9_audited_delta.parquet \
+            --new64 current/mois_postsnap1909_authentic_original_photo9_delta.parquet \
+            --output audited
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          r=json.loads(Path('audited/receipt.json').read_text())
+          assert r['stage']=='actual_new_independent_FCP_nineROI_audited'
+          assert 1<=r['new_authentic_original_photo_attempts']<=18
+          assert r['new_original_photo_numeric9_success']+r['new_technical_unknowns']==r['new_authentic_original_photo_attempts']
+          assert r['new_clear_dominant_hue9']<=r['new_original_photo_numeric9_success']
+          assert r['source_and_worker_photo_ID_UUID_collisions']==0
+          assert not r['image_SHA_collisions_with_all_1231255_prior_originals_certified']
+          print('MOIS_REMAINDER18_ORIGINAL_PIXEL_NINE_AUDIT',r,flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-postsnap-remaining18-genuine-original-independent-nine-audit
+          path: audited/
+          retention-days: 90
+          if-no-files-found: error
+  append-only-after-all-signed-complete:
+    needs: [freeze-only-remaining-unattempted-originals,independent-remainder18-original-numeric-nine-audit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install numerical photo9 dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-postsnap-remaining18-signed-1231319-disjoint-photo-source
+          path: signed
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-postsnap-remaining18-genuine-FCP-pixel-terminal
+          path: worker
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-postsnap-remaining18-genuine-original-independent-nine-audit
+          path: audit
+      - name: Restore first64 certified atlas, preceding75 photo deltas, and old immutable ID inventory
+        run: |
+          set -euo pipefail
+          mkdir -p old current
+          gh run download 43562522326 --repo "$REPO" --name mois-new1909-fresh-original-real-ROI9-42111-taxonomy-appended --dir current
+          gh run download 43561529394 --repo "$REPO" --name mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append --dir old
+          gh run download 43546479575 --repo "$REPO" --name mois-postsnapshot-two-CC-photos-full-1231244-ID-source --dir old
+      - name: Reconcile only independently audited genuine original photos and preserve unknowns
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_postsnap1909_remaining18_original_ROI9 append \
+            --atlas current/mois_42111_taxa_postsnap_new1909_original_photo9.csv.gz \
+            --historical old/historical_1231244_original_photo_observation_taxon_ID_registry.csv.gz \
+            --new11 old/mois_new11_iNat_original_photo9_audited_delta.parquet \
+            --new64 current/mois_postsnap1909_authentic_original_photo9_delta.parquet \
+            --source signed --workers worker --audit audit --output appended
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          r=json.loads(Path('appended/receipt.json').read_text())
+          assert r['stage']=='full_42111_taxon_atlas_new1909_true_photo9_appended'
+          assert r['cumulative_original_photo_attempts']>1231319
+          assert r['nominal_taxa_with_genuine_nineROI']>=39903
+          assert r['nominal_taxa_with_clear_sampled_photo_hue']>=39164
+          assert r['prior_original_photo_and_observation_UUID_collisions']==0
+          assert r['full_historical_image_content_SHA_exclusion_proven'] is False
+          print('MOIS_REMAINDER18_SIGNED_REAL_ORIGINAL9_ATLAS_APPEND',r,flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-postsnap-remaining18-genuine-ROI9-cumulative-atlas
+          path: appended/
+          retention-days: 90
+          if-no-files-found: error

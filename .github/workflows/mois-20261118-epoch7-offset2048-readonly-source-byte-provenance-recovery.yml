@@ -1,0 +1,121 @@
+name: MOIS epoch7 offset2048 read-only signed-source recovery and provenance audit
+# Preserve original 2048 source artifact; never requery iNaturalist or rerun ROI worker.
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-20261118-epoch7-offset2048-readonly-source-byte-provenance-recovery.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-epoch7-offset2048-readonly-recovery-no-replay
+  cancel-in-progress: false
+jobs:
+  independently-verify-original-source-bytes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - name: Verify previous acquisition source SUCCESS, no new pixels, and preserve immutable artifact
+        run: |
+          set -euo pipefail
+          mkdir -p recovered
+          python - <<'PY'
+          import hashlib,os,json,subprocess,csv,io,zipfile,pathlib
+          H=lambda b:hashlib.sha256(b).hexdigest()
+          repo="zuizui0223/mois"
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          # Exact disjoint source ZIP bytes from the 16 previous epochs plus the new 2048 source.
+          prior=[
+           (0,14329340951,"8eaee465a4d4b31c318a0abd26303cebcedaa23345fa32d57c16cbdd84ac28d2"),
+           (128,14329469341,"a1fdd2b04e03a7d8455c7bd09c0959016a75427bd1c6d2a6c2c35dc63d5ddf46"),
+           (256,14337793112,"7b9a159cc772dbd1b859139ff498cc900947971602a855617ace3d6322b0bf37"),
+           (384,14338729113,"9b181cbed5ba5d33e5f5accc1036751c9aa120060319331601d7d96650b4788c"),
+           (512,14347996058,"dc1f2e0171661170ed8b8d393b279169d8843f06f8def56778f436327dbaa9aa"),
+           (640,14353197289,"02c9c1b60c375f1450fe4f299ce9c793f20924f939d3dd2d27b1d5334a3c5153"),
+           (768,14354032912,"d797a36f97b6f26db6ebfeeb33ca4e8e9c7444ec5157580730af3a8be238ccd7"),
+           (896,14363370860,"c2b2d53d678ff6590abaa7cc5d5bdabbb72d5a3829b2212a6439d02c6df1647a"),
+           (1024,14367587413,"0fcc9363f7598ec278e4eb8c5cbc621abac9d617b79591fd0f1f46135539d7a4"),
+           (1152,14368388310,"e00fc9d0215f0fdb172b6fa7731db2a68307b7d4274b7e667c72a84bc2605520"),
+           (1280,14376667948,"d28b743dbff4832fd85d6c2cb4b950ddbd88a23f962615643fecd56c46913664"),
+           (1408,14381214117,"cdcba19d017db4420bddf874b7ebd5ee6e668474af0c5609f5b938013bb5f89b"),
+           (1536,14385435693,"53e6f7e83be2b7f0ff68fd800c9d6675d695efad3ec4a4a8667cefd3ff1207fe"),
+           (1664,14387762866,"8675bd7989a38132c214d66980424d361cbb73646a15a9c0378a01b3688c0b5e"),
+           (1792,14390790013,"6042d82ea0bca4894bd6b32ef9d48334c277ef1e73b8b06a527d42536181c6bb"),
+           (1920,14395566128,"3930f94aa5e4ab8c3578f3f6708053dddd932f5954a782d7f2251f825a49f511")]
+          current=(2048,14395854062,"e88a282b4c05906399cbd59ffc02a3c7babb2b8091d79130e21ffe04ae537698")
+          old=get(f"repos/{repo}/actions/runs/44233454465")
+          jobs={x["name"]:x["conclusion"] for x in get(f"repos/{repo}/actions/runs/44233454465/jobs?per_page=100")["jobs"]}
+          assert old["head_branch"]=="analysis/mois-species-first-palette9-20261111"
+          assert jobs["source-only-first128"]=="success"
+          assert all(jobs[j]=="skipped" for j in ("pixel-worker-only-if-novel-original","independent-strict9-audit","formal-append-after-audit"))
+          assert jobs["independent-final-byte-audit"]=="failure" # A 1920 offset assertion was incorrectly left in that independent checker.
+          sources={}
+          all_taxa=set()
+          for off,aid,want in prior+[current]:
+            obj=get(f"repos/{repo}/actions/artifacts/{aid}")
+            assert obj["digest"]=="sha256:"+want and not obj["expired"] and obj["workflow_run"]["head_branch"]=="analysis/mois-species-first-palette9-20261111"
+            p=f"/tmp/mois_epoch7_offset{off}_{aid}.zip"
+            subprocess.run(["curl","--fail","--silent","--show-error","--location","--retry","3","-H","Authorization: Bearer "+os.environ["GH_TOKEN"],"-H","Accept: application/vnd.github+json",f"https://api.github.com/repos/{repo}/actions/artifacts/{aid}/zip","-o",p],check=True)
+            b=pathlib.Path(p).read_bytes()
+            assert H(b)==want,(off,"ZIP-byte SHA mismatch")
+            with zipfile.ZipFile(io.BytesIO(b)) as z:
+              members=z.namelist()
+              assert not any(".." in n.split("/") for n in members)
+              r=json.loads(z.read("receipt.json"))
+              status=z.read("source_taxon_status.csv"); candidates=z.read("source_candidates.csv")
+              assert H(status)==r["source_status_SHA256"] and H(candidates)==r["source_candidates_SHA256"]
+              assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],r["source_API_error_count"],r["old_original_photo_obs_ID_overlap"])==(off,128,0,0)
+              assert r["old_all_image_raw_SHA_disjointness_proven"] is False
+              tax=list(csv.DictReader(io.StringIO(status.decode())))
+              ids={x["inat_taxon_id"] for x in tax}
+              assert len(tax)==len(ids)==128 and all(x["status"]=="source_queried" for x in tax)
+              assert not ids.intersection(all_taxa),("Repeated taxon across epoch7",off)
+              all_taxa.update(ids)
+              sources[str(off)]={"artifact_id":aid,"ZIP_SHA256":want,"receipt_SHA256":H(z.read("receipt.json")),"taxa":128,"candidates":r["new_independent_original_photo_candidates"]}
+              if off==2048:
+                assert r["new_independent_original_photo_candidates"]==r["new_independent_taxa"]==r["original_pixels_fetched"]==r["strict9_numeric_photos"]==0
+                assert r["old_original_photo_attempt_ID_count"]==1231355 and r["recent_known_original_image_raw_SHA_count"]==111
+                assert H(status)=="5e38937d41a36b91efa05926ef862f2227f6696dc4785e166bb65f9a3e7bbbe8"
+                assert H(candidates)=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+                assert r["previous_epoch7_offset1920_audited_delta_SHA256"]=="278cf722d023644025c4a4b7745753e05739a5c1d3e93f225c9441161025012c"
+                # Immutable erroneous metadata reference, explicitly corrected in this independent receipt.
+                assert r["previous_epoch7_offset1536_audited_delta_SHA256"]=="278cf722d023644025c4a4b7745753e05739a5c1d3e93f225c9441161025012c"
+          assert len(sources)==17 and len(all_taxa)==2176
+          assert sum(s["candidates"] for s in sources.values())==3
+          result={
+            "stage":"independent_readonly_byte_audit_of_preserved_2048_source",
+            "source_original_run":44233454465,
+            "source_only_success":True,
+            "original_final_audit_failed_due_stale_offset_assertion":True,
+            "new_attempts":0,
+            "original_photos_fetched":0,
+            "strict9_roi9_new":0,
+            "first_numeric_taxa_new":0,
+            "clear_photo9_taxa_new":0,
+            "gbif_exact_accepted_new":0,
+            "epoch7_exclusive_queried_taxa":len(all_taxa),
+            "remaining_epoch7_hash_order_taxa":2197-len(all_taxa),
+            "API_errors":0,
+            "current_source_zip_SHA256":current[2],
+            "current_source_artifact_id":current[1],
+            "immutable_original_source_receipt_sha256":sources["2048"]["receipt_SHA256"],
+            "original_historical_photo_attempts":1231355,
+            "full_historical_raw_image_SHA_compared":False,
+            "source_receipt_metadata_erratum":{"wrong_field":"previous_epoch7_offset1536_audited_delta_SHA256","wrong_signed_value":"278cf722d023644025c4a4b7745753e05739a5c1d3e93f225c9441161025012c","correct_from_original_1536_signed_delta":"c653d80677f10947a361ca61584450f68806392322cd9b3fcd13cc7dd00eada1","note":"Do not alter signed 2048 ZIP; the 1920 field legitimately uses 278cf722, while 1536 uses c653d806"},
+            "prior_source_receipts":sources
+          }
+          path=pathlib.Path("recovered/independent_offset2048_readonly_receipt.json")
+          path.write_text(json.dumps(result,sort_keys=True,indent=2)+"\n")
+          print("MOIS_EPOCH7_OFFSET2048_READONLY_SOURCE_BYTE_AUDIT_SUCCESS",json.dumps({k:v for k,v in result.items() if k!="prior_source_receipts"},sort_keys=True),flush=True)
+          print("INDEPENDENT_RECOVERY_RECEIPT_SHA256",H(path.read_bytes()),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261118-epoch7-offset2048-readonly-independent-source-byte-audit
+          path: recovered/
+          if-no-files-found: error
+          retention-days: 90

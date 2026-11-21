@@ -1,0 +1,63 @@
+name: MOIS real GBIF 360 species six-continent 9-photo-hue independent replication
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-gbif-continent-two-cohort-replication-20261115.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  six-regions-source-signed-nonreplication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install numerical reproducibility dependencies and run 4 source-quality tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_gbif_continent_two_cohort_qa_20261115.py -v
+      - name: Download only the 2 original signed completed GBIF API receipts
+        run: |
+          set -euo pipefail
+          mkdir -p original
+          for source in '14158822487 discovery' '14159523021 holdout'; do
+            set -- $source
+            curl --fail --location --silent --show-error --retry 2 \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/$1/zip" \
+              --output "original/$2.zip"
+          done
+          echo '2181898c7428172cd039b208a5e3fc5169c12d3a8d324bef05a84f3a6a89a446  original/discovery.zip' | sha256sum -c -
+          echo 'ec1df9eb35e856b1020e92a755aff8be8c121b640602e8e3191d528cc531df1a  original/holdout.zip' | sha256sum -c -
+      - name: Run fixed six continents x two disjoint source cohorts and BH
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_continent_two_cohort_qa_20261115 \
+            --discovery original/discovery.zip --holdout original/holdout.zip \
+            --output output
+          python - <<'PY'
+          import json,pandas as pd
+          r=json.load(open('output/receipt.json'))
+          t=pd.read_csv('output/12_region_cohort_9hue_tests_permutation_BH.csv')
+          assert r['number_of_source_species']==360 and len(t)==12
+          assert r['regions_significant_after_BH_within_both_cohorts']==[]
+          assert int(r['sum_GBIF_occurrence_API_count'])==4935142
+          assert t.groupby('cohort').size().eq(6).all()
+          assert r['botanical_petal_verified'] is False
+          print('MOIS_GBIF_9COLOUR_SIX_CONTINENT_TWO_COHORT_REPLICATION_AUDITED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-360-Gbif-six-continent-nine-photo-hue-independent-BH-QA-20261115
+          path: output/
+          retention-days: 90
+          if-no-files-found: error

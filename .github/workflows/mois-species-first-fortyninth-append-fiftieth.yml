@@ -1,0 +1,358 @@
+name: MOIS fortyninth signed 7 append and fiftieth depth128 original image ROI
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-species-first-fortyninth-append-fiftieth.yml
+      - scripts/analysis/mois_species_first_fortyninth_to_fiftieth.py
+      - scripts/analysis/mois_species_first_fiftieth_audit.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-fortyninth7-signed-to-fiftieth-depth128-one-source
+  cancel-in-progress: false
+jobs:
+  append-fortyninth-and-source-fiftieth:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 85
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+      groups: ${{ steps.plan.outputs.groups }}
+      has_next: ${{ steps.plan.outputs.has_next }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OLD_SOURCE_RUN: '43450536731'
+      OLD_AUDIT_RUN: '43450536731'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests and Python compile
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_species_first_twelfth_to_thirteenth.py -v
+          python -m unittest discover -s tests -p test_mois_species_first_wave14_artifact_paths.py -v
+          python -m py_compile scripts/analysis/mois_species_first_fortyninth_to_fiftieth.py scripts/analysis/mois_species_first_fiftieth_audit.py
+      - name: Gate signed wave49 terminal with command-level failure diagnostics; prevent duplicate source
+        id: gate
+        run: |
+          set -euo pipefail
+          # Diagnostic-only recovery: trace the exact guard condition that halted run 43453390154.
+          # The immutable source and worker/audit SHA gates below remain unchanged.
+          set -x
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          echo "MOIS_WAVE49_PREV_RUN_STATUS $(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN" --jq .status)"
+          echo "MOIS_WAVE49_PREV_RUN_CONCLUSION $(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN" --jq .conclusion)"
+          echo "MOIS_WAVE49_PREV_JOBS $(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/jobs?per_page=100" --jq '[.jobs[] | [.name,.conclusion]]')"
+          echo "MOIS_WAVE49_PREV_ARTIFACTS $(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '[.artifacts[] | [.name,.digest]]')"
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN" --jq .status)" = completed || exit 0
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN" --jq .conclusion)" = success || exit 0
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN" --jq .status)" = completed || exit 0
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "append-fortyeighth-and-source-fortyninth" and .conclusion == "success")] | length')" = 1 || exit 0
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "fortyninth-real-original-worker (0)" and .conclusion == "success")] | length')" = 1 || exit 0
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name == "fortyninth-real-original-audit" and .conclusion == "success")] | length')" = 1 || exit 0
+          candidates="$(gh run list --repo "$REPO" --workflow mois-species-first-fortyninth-append-fiftieth.yml --branch analysis/mois-species-first-palette9-20261111 --limit 100 --json databaseId --jq ".[] | select(.databaseId < $GITHUB_RUN_ID) | .databaseId")"
+          for candidate in $candidates; do
+            state="$(gh api "repos/$REPO/actions/runs/$candidate" --jq .status)"
+            if [ "$state" != completed ]; then
+              echo "MOIS_WAVE49_PRIOR_RUN_IN_FLIGHT $candidate"
+              exit 0
+            fi
+            count="$(gh api "repos/$REPO/actions/runs/$candidate/artifacts?per_page=100" --jq '[.artifacts[] | select(.name == "mois-fortyninth4096-verified-append-fiftieth-prioritized-original-source")] | length')"
+            if [ "$count" != 0 ]; then
+              echo "MOIS_WAVE49_ALREADY_FROZEN_PRIOR_SOURCE_NO_DUPLICATE $candidate"
+              exit 0
+            fi
+          done
+          audit_digest="$(gh api "repos/$REPO/actions/runs/$OLD_AUDIT_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortyninth28-real-original-photo-nineROI-audit") | .digest')"
+          source_digest="$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortyeighth4096-verified-append-fortyninth-prioritized-original-source") | .digest')"
+          worker_digest="$(gh api "repos/$REPO/actions/runs/$OLD_SOURCE_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortyninth28-real-original-worker-0") | .digest')"
+          echo "MOIS_WAVE49_DIGESTS audit=$audit_digest source=$source_digest worker=$worker_digest"
+          test "$audit_digest" = 'sha256:4462126534400929587c48bfb0cafe640c5222220ff2cc0bdf5b76aecaadd946'
+          test "$source_digest" = 'sha256:da8c63c5c844540269c14943d6c64b306d8772be1793ebd7f90210508755bab1'
+          test "$worker_digest" = 'sha256:c79a0bd4741def238f205391b624829814859b2da1a004742293210da0ceef54'
+          gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-fortyninth28-real-original-photo-nineROI-audit --dir _precheck
+          python - <<'PY'
+          import json
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          d=json.load(open('_precheck/receipt.json'))
+          assert d['schema']=='mois_species_first_fortyninth_authentic_originalROI9_audit_v1'
+          assert [d['actual_independent_original_photo_attempts'],d['actual_genuine_strict9_numeric_success'],d['actual_clear_nine_palette_hues'],d['actual_technical_unknowns']]==[7,4,1,3]
+          assert d['photo_observation_source_taxon_ID_collisions']==0
+          assert d['source_shard_count']==1 and len(d['original_photo_worker_receipt_sha256'])==1
+          assert d['frozen_original_manifest_sha256']=='d6a45522ba61eec41ecea07f5afbc377cb05e80084a550da84107edabface0fa'
+          assert d['audited_derivative_sha256']==sha256('_precheck/mois_fortyninth_actual_original_nine_roi.csv.gz')
+          PY
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+      - name: Restore immutable cumulative original IDs, wave43 completed signed worker/audit and depth128 metadata
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p fortysixth_source fortyseventh_source fortyeighth_source baseline first second third fourth fifth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth twentieth_source twentyfirst_source twentysecond_source twentythird_source twentyfourth_source twentyfifth_source twentysixth_source twentyseventh_source twentyeighth_source twentyninth_source thirtieth_source thirtyfirst_source thirtysecond_source thirtythird_source thirtyfourth_source thirtyfifth_source thirtysixth_source thirtyseventh_source thirtyeighth_source thirtyninth_source fortieth_source fortyfirst_source fortysecond_source fortythird_source fortyfourth_source fortyfifth_source fortyninth_source global workers audit48
+          gh release download mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1 --repo "$REPO" --dir baseline --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet
+          gh run download 42913236517 --repo "$REPO" --name mois-first256-91species-appended-and-next1024-palette-source --dir first
+          gh run download 42925844766 --repo "$REPO" --name mois-real1280-wave2-cumulative-9palette-and-fresh-wave3-source --dir second
+          gh run download 42950141749 --repo "$REPO" --name mois-real2304-wave3-361spec-9palette-and-fresh-wave4-source --dir third
+          gh run download 42959597251 --repo "$REPO" --name mois-fourth-genuine-ROI9-append-and-fifth1024-new-species-photo-source --dir fourth
+          gh run download 42970701175 --repo "$REPO" --name mois-fifth1024-9roi-integrated-and-sixth4096-source --dir fifth
+          gh run download 42980109440 --repo "$REPO" --name mois-sixth4096-real-append-seventh4096-prioritized-photo-source --dir seventh
+          gh run download 42990631949 --repo "$REPO" --name mois-seventh4096-real-append-eighth4096-prioritized-photo-source --dir eighth
+          gh run download 43002995827 --repo "$REPO" --name mois-eighth4096-real-append-ninth4096-prioritized-photo-source --dir ninth
+          gh run download 43013636142 --repo "$REPO" --name mois-ninth4096-real-append-tenth4096-prioritized-photo-source --dir tenth
+          gh run download 43039164891 --repo "$REPO" --name mois-tenth4096-real-append-eleventh4096-prioritized-photo-source --dir eleventh
+          gh run download 43052143525 --repo "$REPO" --name mois-eleventh2048-verified-append-twelfth-prioritized-original-source --dir twelfth
+          gh run download 43067503631 --repo "$REPO" --name mois-twelfth1032-verified-append-thirteenth-prioritized-original-source --dir thirteenth
+          gh run download 43144382380 --repo "$REPO" --name mois-thirteenth2793-verified-append-fourteenth-prioritized-original-source --dir fourteenth
+          gh run download 43158784541 --repo "$REPO" --name mois-fourteenth4096-verified-append-fifteenth-prioritized-original-source --dir fifteenth
+          gh run download 43167862593 --repo "$REPO" --name mois-fifteenth4096-verified-append-sixteenth-prioritized-original-source --dir sixteenth
+          gh run download 43176686535 --repo "$REPO" --name mois-sixteenth4096-verified-append-seventeenth-prioritized-original-source --dir seventeenth
+          gh run download 43186769946 --repo "$REPO" --name mois-seventeenth4096-verified-append-eighteenth-prioritized-original-source --dir eighteenth
+          gh run download 43203081571 --repo "$REPO" --name mois-eighteenth4096-verified-append-nineteenth-prioritized-original-source --dir nineteenth
+          gh run download 43219459003 --repo "$REPO" --name mois-nineteenth4096-verified-append-twentieth-prioritized-original-source --dir twentieth_source
+          gh run download 43238872410 --repo "$REPO" --name mois-twentieth4096-verified-append-twentyfirst-prioritized-original-source --dir twentyfirst_source
+          gh run download 43250506421 --repo "$REPO" --name mois-twentyfirst4096-verified-append-twentysecond-prioritized-original-source --dir twentysecond_source
+          gh run download 43272394970 --repo "$REPO" --name mois-twentysecond4096-verified-append-twentythird-prioritized-original-source --dir twentythird_source
+          gh run download 43283299853 --repo "$REPO" --name mois-twentythird4096-verified-append-twentyfourth-prioritized-original-source --dir twentyfourth_source
+          gh run download 43292415124 --repo "$REPO" --name mois-twentyfourth4096-verified-append-twentyfifth-prioritized-original-source --dir twentyfifth_source
+          gh run download 43305672730 --repo "$REPO" --name mois-twentyfifth4096-verified-append-twentysixth-prioritized-original-source --dir twentysixth_source
+          gh run download 43321240718 --repo "$REPO" --name mois-twentysixth4096-verified-append-twentyseventh-prioritized-original-source --dir twentyseventh_source
+          gh run download 43326755882 --repo "$REPO" --name mois-twentyseventh4096-verified-append-twentyeighth-prioritized-original-source --dir twentyeighth_source
+          gh run download 43335062797 --repo "$REPO" --name mois-twentyeighth4096-verified-append-twentyninth-prioritized-original-source --dir twentyninth_source
+          gh run download 43347129009 --repo "$REPO" --name mois-twentyninth4096-verified-append-thirtieth-prioritized-original-source --dir thirtieth_source
+          gh run download 43352893655 --repo "$REPO" --name mois-thirtieth4096-verified-append-thirtyfirst-prioritized-original-source --dir thirtyfirst_source
+          gh run download 43360040889 --repo "$REPO" --name mois-thirtyfirst4096-verified-append-thirtysecond-prioritized-original-source --dir thirtysecond_source
+          gh run download 43366642277 --repo "$REPO" --name mois-thirtysecond4096-verified-append-thirtythird-prioritized-original-source --dir thirtythird_source
+          gh run download 43374067900 --repo "$REPO" --name mois-thirtythird4096-verified-append-thirtyfourth-prioritized-original-source --dir thirtyfourth_source
+          gh run download 43386015824 --repo "$REPO" --name mois-thirtyfourth4096-verified-append-thirtyfifth-prioritized-original-source --dir thirtyfifth_source
+          gh run download 43393099584 --repo "$REPO" --name mois-thirtyfifth4096-verified-append-thirtysixth-prioritized-original-source --dir thirtysixth_source
+          gh run download 43403005639 --repo "$REPO" --name mois-thirtysixth4096-verified-append-thirtyseventh-prioritized-original-source --dir thirtyseventh_source
+          gh run download 43409037833 --repo "$REPO" --name mois-thirtyseventh4096-verified-append-thirtyeighth-prioritized-original-source --dir thirtyeighth_source
+          gh run download 43416662413 --repo "$REPO" --name mois-thirtyeighth4096-verified-append-thirtyninth-prioritized-original-source --dir thirtyninth_source
+          gh run download 43418351166 --repo "$REPO" --name mois-thirtyninth4096-verified-append-fortieth-prioritized-original-source --dir fortieth_source
+          gh run download 43421443477 --repo "$REPO" --name mois-fortieth4096-verified-append-fortyfirst-prioritized-original-source --dir fortyfirst_source
+          gh run download 43422782831 --repo "$REPO" --name mois-fortyfirst4096-verified-append-fortysecond-prioritized-original-source --dir fortysecond_source
+          gh run download 43424655649 --repo "$REPO" --name mois-fortysecond4096-verified-append-fortythird-prioritized-original-source --dir fortythird_source
+          gh run download 43426429868 --repo "$REPO" --name mois-fortythird4096-verified-append-fortyfourth-prioritized-original-source --dir fortyfourth_source
+          gh run download 43437080777 --repo "$REPO" --name mois-fortyfourth4096-verified-append-fortyfifth-prioritized-original-source --dir fortyfifth_source
+          gh run download 43444125341 --repo "$REPO" --name mois-fortyfifth4096-verified-append-fortysixth-prioritized-original-source --dir fortysixth_source
+          gh run download 43446165798 --repo "$REPO" --name mois-fortysixth4096-verified-append-fortyseventh-prioritized-original-source --dir fortyseventh_source
+          gh run download 43448044044 --repo "$REPO" --name mois-fortyseventh4096-verified-append-fortyeighth-prioritized-original-source --dir fortyeighth_source
+          gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-fortyeighth4096-verified-append-fortyninth-prioritized-original-source --dir fortyninth_source
+          gh run download "$OLD_AUDIT_RUN" --repo "$REPO" --name mois-fortyninth28-real-original-photo-nineROI-audit --dir audit49
+          gh run download "$OLD_SOURCE_RUN" --repo "$REPO" --name mois-fortyninth28-real-original-worker-0 --dir workers/mois-fortyninth28-real-original-worker-0
+          gh run download 43448696544 --repo "$REPO" --name mois-all16-signed93m-current-unlabelled-depth128-new-photo-candidates --dir global
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          d=json.loads(Path('global/receipt.json').read_text())
+          assert d['schema']=='mois_species_first_all16_unlabelled_depth128_source_union_v1'
+          assert d['original_global_photo_metadata_population']==93209351 and d['groups_verified']==16
+          assert d['candidate_unique_original_photo_opportunities']==9814
+          f=Path('global/mois_full93m_unlabelled_depth128_original_photo_options.csv.gz')
+          assert hashlib.sha256(f.read_bytes()).hexdigest()==d['outputs_SHA256'][f.name]
+          print('MOIS_WAVE49_FROZEN_METADATA_ONLY_SOURCE_VERIFIED',flush=True)
+          PY
+      - name: Recompute wave45 signed receipts and strictly append real ROI9; prioritize unused taxa/photos
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_species_first_fortyninth_to_fiftieth \
+            --atlas fortyninth_source/updated/mois_species_first_42111_after_fortyeighth.csv.gz \
+            --source fortyninth_source/source --workers workers --audited audit49 \
+            --baseline baseline/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --first first/updated/mois_genuine_first256_strict9_append_only.parquet \
+            --second second/global_after1280/mois_real1024_wave2_original9_photo_delta.parquet \
+            --third third/cumulative/mois_wave3_actual1024_strict9_photo_delta.parquet \
+            --fourth fourth/after_wave4/mois_wave4_genuine_original1024_strict9_delta.parquet \
+            --fifth fifth/after_fifth/mois_fifth1024_real_original9_photo_delta.parquet \
+            --sixth seventh/updated/mois_sixth4096_real_original9_photo_delta.parquet \
+            --seventh eighth/updated/mois_seventh4096_real_original9_photo_delta.parquet \
+            --eighth ninth/updated/mois_eighth4096_real_original9_photo_delta.parquet \
+            --ninth tenth/updated/mois_ninth4096_real_original9_photo_delta.parquet \
+            --tenth eleventh/updated/mois_tenth4096_real_original9_photo_delta.parquet \
+            --eleventh twelfth/updated/mois_eleventh4096_real_original9_photo_delta.parquet \
+            --twelfth thirteenth/updated/mois_twelfth4096_real_original9_photo_delta.parquet \
+            --thirteenth fourteenth/updated/mois_thirteenth4096_real_original9_photo_delta.parquet \
+            --fourteenth fifteenth/updated/mois_fourteenth4096_real_original9_photo_delta.parquet \
+            --fifteenth sixteenth/updated/mois_fifteenth4096_real_original9_photo_delta.parquet \
+            --sixteenth seventeenth/updated/mois_sixteenth4096_real_original9_photo_delta.parquet \
+            --seventeenth eighteenth/updated/mois_seventeenth4096_real_original9_photo_delta.parquet \
+            --eighteenth nineteenth/updated/mois_eighteenth4096_real_original9_photo_delta.parquet \
+            --nineteenth twentieth_source/updated/mois_nineteenth4096_real_original9_photo_delta.parquet \
+            --twentieth twentyfirst_source/updated/mois_twentieth4096_real_original9_photo_delta.parquet \
+            --twentyfirst twentysecond_source/updated/mois_twentyfirst4096_real_original9_photo_delta.parquet \
+            --twentysecond twentythird_source/updated/mois_twentysecond4096_real_original9_photo_delta.parquet \
+            --twentythird twentyfourth_source/updated/mois_twentythird4096_real_original9_photo_delta.parquet \
+            --twentyfourth twentyfifth_source/updated/mois_twentyfourth4096_real_original9_photo_delta.parquet \
+            --twentyfifth twentysixth_source/updated/mois_twentyfifth4096_real_original9_photo_delta.parquet \
+            --twentysixth twentyseventh_source/updated/mois_twentysixth4096_real_original9_photo_delta.parquet \
+            --twentyseventh twentyeighth_source/updated/mois_twentyseventh4096_real_original9_photo_delta.parquet \
+            --twentyeighth twentyninth_source/updated/mois_twentyeighth4096_real_original9_photo_delta.parquet \
+            --twentyninth thirtieth_source/updated/mois_twentyninth4096_real_original9_photo_delta.parquet \
+            --thirtieth thirtyfirst_source/updated/mois_thirtieth4096_real_original9_photo_delta.parquet \
+            --thirtyfirst thirtysecond_source/updated/mois_thirtyfirst4096_real_original9_photo_delta.parquet \
+            --thirtysecond thirtythird_source/updated/mois_thirtysecond4096_real_original9_photo_delta.parquet \
+            --thirtythird thirtyfourth_source/updated/mois_thirtythird4096_real_original9_photo_delta.parquet \
+            --thirtyfourth thirtyfifth_source/updated/mois_thirtyfourth4096_real_original9_photo_delta.parquet \
+            --thirtyfifth thirtysixth_source/updated/mois_thirtyfifth4096_real_original9_photo_delta.parquet \
+            --thirtysixth thirtyseventh_source/updated/mois_thirtysixth4096_real_original9_photo_delta.parquet \
+            --thirtyseventh thirtyeighth_source/updated/mois_thirtyseventh4096_real_original9_photo_delta.parquet \
+            --thirtyeighth thirtyninth_source/updated/mois_thirtyeighth4096_real_original9_photo_delta.parquet \
+            --thirtyninth fortieth_source/updated/mois_thirtyninth4096_real_original9_photo_delta.parquet \
+            --fortieth fortyfirst_source/updated/mois_fortieth4096_real_original9_photo_delta.parquet \
+            --fortyfirst fortysecond_source/updated/mois_fortyfirst4096_real_original9_photo_delta.parquet \
+            --fortysecond fortythird_source/updated/mois_fortysecond4096_real_original9_photo_delta.parquet \
+            --fortythird fortyfourth_source/updated/mois_fortythird4096_real_original9_photo_delta.parquet \
+            --fortyfourth fortyfifth_source/updated/mois_fortyfourth4096_real_original9_photo_delta.parquet \
+            --fortyfifth fortysixth_source/updated/mois_fortyfifth4096_real_original9_photo_delta.parquet \
+            --fortysixth fortyseventh_source/updated/mois_fortysixth4096_real_original9_photo_delta.parquet \
+            --fortyseventh fortyeighth_source/updated/mois_fortyseventh4096_real_original9_photo_delta.parquet \
+            --fortyeighth fortyninth_source/updated/mois_fortyeighth4096_real_original9_photo_delta.parquet \
+            --global-options global/mois_full93m_unlabelled_depth128_original_photo_options.csv.gz \
+            --quota 4096 --output updated
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          r=json.load(open('updated/receipt.json'))
+          assert r['fortyninth_actual_independent_original_photo_attempts']==7
+          assert r['fortyninth_actual_strict9_photo_successes']==4
+          assert r['fortyninth_actual_technical_unknowns']==3
+          assert r['fortyninth_new_source_taxa_with_clear_dominant_hue9']==1
+          assert r['cumulative_original_photo_attempts']==1231221 and r['cumulative_original_numeric_photo_roi9']==467527
+          assert r['source_taxa_with_numerical_nineROI']==39882+r['fortyninth_new_source_taxa_with_first_numeric9']
+          assert r['source_taxa_with_clear_sampled_nine_palette']==39140
+          assert r['source_taxa_with_numerical_nineROI']+r['source_taxa_without_nineROI']==42111
+          assert r['prior_photo_or_observation_ID_reused'] is False
+          assert 0 <= r['fiftieth_source_distinct_new_photo_observation_taxon'] <=4096
+          for k,n in [('atlas','mois_species_first_42111_after_fortyninth.csv.gz'),('delta','mois_fortyninth4096_real_original9_photo_delta.parquet'),('next','mois_fiftieth4096_prioritized_original_photo_queue.csv')]:
+            assert r['output_sha256'][k]==sha256(Path('updated')/n)
+          print('MOIS_WAVE49_APPENDED_REAL_STRICT9_NEW_NUMERIC_TAXA_AND_WAVE46_UNUSED_SOURCE',r['fortyninth_new_source_taxa_with_first_numeric9'],r['fiftieth_source_distinct_new_photo_observation_taxon'],flush=True)
+          PY
+      - name: Freeze signed 256-photo source shards with final partial shard
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p source/shards
+          python - <<'PY'
+          import json
+          import numpy as np
+          import pandas as pd
+          from pathlib import Path
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          q=pd.read_csv('updated/mois_fiftieth4096_prioritized_original_photo_queue.csv',dtype=str,keep_default_na=False)
+          n=len(q)
+          assert 0<=n<=4096 and q.photo_id.is_unique and q.observation_id.is_unique and q.inat_taxon_id.is_unique
+          units=(n+255)//256
+          assert q.shard.eq(pd.Series((np.arange(n)//256).astype(str))).all()
+          digests={}
+          for i in range(units):
+            part=q.iloc[i*256:min(n,(i+1)*256)]
+            assert 1<=len(part)<=256
+            p=Path('source/shards')/f'shard-{i:03d}.csv'
+            part.to_csv(p,index=False,lineterminator='\n')
+            digests[str(i)]=sha256(p)
+          m={'schema':'mois_full_source_observation_sampling_cohort_v1','source_arm':'MOIS_SPECIES_FIRST_FIFTIETH_PRIORITIZED4096','colour_measured':False,'work_units':units,'worker_ids':list(range(units)),'new_photo_attempts_planned':n,'source_previous_attempts':1231221,'source_full_original_photo_IDs':93209351,'photo_shard_sha256':digests,'source_prior_no_reused_original_photo_or_observation':True}
+          Path('source/manifest.json').write_text(json.dumps(m,sort_keys=True,indent=2)+'\n')
+          print('MOIS_WAVE49_GENUINE_ORIGINAL_PHOTO_SOURCE_SHARDS_FROZEN',n,units,flush=True)
+          PY
+      - name: Dispatch only nonempty 1024-photo worker groups
+        if: steps.gate.outputs.ready == 'true'
+        id: plan
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          d=json.loads(Path('source/manifest.json').read_text())
+          assert 0<=d['work_units']<=16
+          print("has_next="+str(d["work_units"]>0).lower())
+          print("groups="+json.dumps(list(range((d["work_units"]+3)//4)) or [0],separators=(',',':')))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-fortyninth4096-verified-append-fiftieth-prioritized-original-source
+          path: |
+            updated/
+            source/
+          retention-days: 90
+          if-no-files-found: error
+  fiftieth-real-original-worker:
+    needs: append-fortyninth-and-source-fiftieth
+    if: needs.append-fortyninth-and-source-fiftieth.outputs.ready == 'true' && needs.append-fortyninth-and-source-fiftieth.outputs.has_next == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 190
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: ${{ fromJSON(needs.append-fortyninth-and-source-fiftieth.outputs.groups) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-fortyninth4096-verified-append-fiftieth-prioritized-original-source
+          path: frozen
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bootstrap frozen YOLO11 EfficientSAM original ROI-v4
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Acquire only new original photos; measure real 9-component RGB ROI
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-fiftieth-photo-provider"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work --source frozen/source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" --group "${{ matrix.group }}" --output measured
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-fiftieth28-real-original-worker-${{ matrix.group }}
+          path: measured/
+          retention-days: 90
+          if-no-files-found: warn
+  fiftieth-real-original-audit:
+    needs: [append-fortyninth-and-source-fiftieth,fiftieth-real-original-worker]
+    if: needs.append-fortyninth-and-source-fiftieth.outputs.ready == 'true' && needs.append-fortyninth-and-source-fiftieth.outputs.has_next == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mois-fortyninth4096-verified-append-fiftieth-prioritized-original-source
+          path: frozen
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-fiftieth28-real-original-worker-*
+          path: workers
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recompute source and worker receipt SHAs, strict9 sums, technical unknowns
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m scripts.analysis.mois_species_first_fiftieth_audit --source frozen/source --workers workers --output audited
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-fiftieth28-real-original-photo-nineROI-audit
+          path: audited/
+          retention-days: 90
+          if-no-files-found: warn
