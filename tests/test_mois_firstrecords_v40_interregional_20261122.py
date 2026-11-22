@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import pandas as pd
 from scripts.analysis.mois_firstrecords_v40_interregional_firstrecords_photo9_20261122 import (
-    region_curves, model_sample, strict_links, test_hue_association,
+    region_curves, model_sample, strict_links, test_hue_association as evaluate_photo_hue,
     MAIN_YEAR_MIN, YEAR_ENDPOINTS
 )
 
@@ -76,7 +76,7 @@ class FirstRecordsV40Tests(unittest.TestCase):
             "new_regions_25yr":[0,1],"new_regions_50yr":[1,1],"new_regions_100yr":[1,1],
             "any_new_regions_25yr":[0,1],"any_new_regions_50yr":[1,1],"any_new_regions_100yr":[1,1]})
         x=model_sample(curves,50)
-        result,draws=test_hue_association(x,self.flora,50,"genus_breadth",999,20261122)
+        result,draws=evaluate_photo_hue(x,self.flora,50,"genus_breadth",999,20261122)
         self.assertEqual(result["status"],"insufficient primary exchangeability or sample")
         self.assertIsNone(draws)
         self.assertEqual(len(x),2)
