@@ -1,0 +1,201 @@
+{
+  "actions_conclusion": "success",
+  "actions_run_id": 44972597899,
+  "analysis_commit": "4bab7f9cd562b53f10915b22aa4eabe9349751e0",
+  "code_and_receipt_verification": {
+    "native-footprint": {
+      "all_passed": true,
+      "artifact_id": 14734456026,
+      "artifact_zip_SHA256": "7976c3af97210c95253ea51226a65ddf6115e2f3d54a344882e7f8aa02d0a980",
+      "code_SHA256": {
+        "scripts/analysis/mois_actual_photo_cohort_season_audit_20261019.py": "8b6a7a0ba6d54bd374911831ccb73ba06d61de6a19bd16b5ae63bd54e54f2641",
+        "scripts/analysis/mois_global_hue9_community_assembly_genus_null_20261118.py": "8b073d7ac14d63a2b39035d29927883101b5dff9774f1ecac5883de681556032",
+        "scripts/analysis/mois_global_hue9_regional_pool_conditional_null_20261121.py": "0c8a9fe813afa29df8b478c96ca872be0c8fb58bedf69b9ae2dfaf085bca73fc",
+        "scripts/analysis/mois_global_photo9_whitefixed8_georegion_null_20261121.py": "63f2eddfaeef654c19618d4872ea2bd269f49397dbcc46c3899a33d471921b83",
+        "scripts/analysis/mois_native_footprint_pool_null_20261122.py": "854f5c6f9975c1249f9019f967c9bfd08de01fb888036bc2df76f29d5c0a31b0",
+        "scripts/analysis/mois_native_hue9_whitefixed8_georegion_null_20261121.py": "d139900ff149b98204f18f334292ce55c18ed9d1d7bec049ed0bdfe67347f28d",
+        "scripts/analysis/mois_nonwhite8_assembly_white_fixed_null_20261118.py": "b88f531ee686e28ff5afea4789cf33e42592967bf4737ad914b9bfa6999a993c",
+        "scripts/analysis/mois_real350399_wcvp_geographic_native_status_20261019.py": "a170d11a2a55946e881d48ffdf9dfcaba16fa2ccee0b2808bc86e76034317f0c",
+        "scripts/analysis/mois_wcvp_native_hue9_geographical_null_20261118.py": "f74280e32596bc24cbb72a021e4960602dc42c9339a77a74ca0d3c9c7b793642",
+        "tests/test_native_footprint_pool_null_20261122.py": "101956a8d2a8341f448d8f3992e3751856261e4bf61a188d28f6f31a6fb55ad3"
+      },
+      "code_files_verified": 10,
+      "receipt_SHA256": "536dc7cf51f10ff2482de3a0635d14a4a537c1eb5e8eca22c11ec745835dc36f",
+      "signed_output_members_verified": 8,
+      "source_gate_count": 10
+    },
+    "native-introduced-paired": {
+      "all_passed": true,
+      "artifact_id": 14733969589,
+      "artifact_zip_SHA256": "474b7ad2abd7411b632845e42f7a53d8801721be0b5c09f9f7919042fe9c20e4",
+      "code_SHA256": {
+        "scripts/analysis/mois_actual_photo_cohort_season_audit_20261019.py": "8b6a7a0ba6d54bd374911831ccb73ba06d61de6a19bd16b5ae63bd54e54f2641",
+        "scripts/analysis/mois_global_hue9_community_assembly_genus_null_20261118.py": "8b073d7ac14d63a2b39035d29927883101b5dff9774f1ecac5883de681556032",
+        "scripts/analysis/mois_global_hue9_regional_pool_conditional_null_20261121.py": "0c8a9fe813afa29df8b478c96ca872be0c8fb58bedf69b9ae2dfaf085bca73fc",
+        "scripts/analysis/mois_global_photo9_whitefixed8_georegion_null_20261121.py": "63f2eddfaeef654c19618d4872ea2bd269f49397dbcc46c3899a33d471921b83",
+        "scripts/analysis/mois_native_hue9_whitefixed8_georegion_null_20261121.py": "d139900ff149b98204f18f334292ce55c18ed9d1d7bec049ed0bdfe67347f28d",
+        "scripts/analysis/mois_native_intro_samecell_georegion_null_20261122.py": "ed86365bdd47e803e4ea1cdf408837275a424ac50c9401084c94eb42a5503211",
+        "scripts/analysis/mois_nonwhite8_assembly_white_fixed_null_20261118.py": "b88f531ee686e28ff5afea4789cf33e42592967bf4737ad914b9bfa6999a993c",
+        "scripts/analysis/mois_real350399_wcvp_geographic_native_status_20261019.py": "a170d11a2a55946e881d48ffdf9dfcaba16fa2ccee0b2808bc86e76034317f0c",
+        "scripts/analysis/mois_wcvp_native_hue9_geographical_null_20261118.py": "f74280e32596bc24cbb72a021e4960602dc42c9339a77a74ca0d3c9c7b793642",
+        "tests/test_native_intro_samecell_georegion_null_20261122.py": "187658a3c8f1ad593ab9f0b330233e2d401e737fbfeb89afed1955460e531ae0"
+      },
+      "code_files_verified": 10,
+      "receipt_SHA256": "c410c2b97fea287f8f622c89b568837058abb11cb4b8fd10825751e1e3d70e86",
+      "signed_output_members_verified": 8,
+      "source_gate_count": 34
+    }
+  },
+  "figures": {
+    "formats": [
+      "PNG",
+      "SVG"
+    ],
+    "original_statistic_tables_preserved": true,
+    "output_SHA256": {
+      "MOIS_NATIVE_INTRO_HUE_COMPOSITION_20261122.png": "986a70eed9749c2899ea6f8a8a0230633edc47ff0d40f71dcf0fa5173d59d0af",
+      "MOIS_NATIVE_INTRO_HUE_COMPOSITION_20261122.svg": "6d97d57608ba35dc11e8d40c9fceee51ae7b7ab30b6298b25a9f81f0a3aedd70",
+      "MOIS_NATIVE_INTRO_PAIRED_EFFECTS_20261122.png": "d5d6e709e976a4c9722f472261c9ade2494cbb07aebf8a80d443219a7836f0d9",
+      "MOIS_NATIVE_INTRO_PAIRED_EFFECTS_20261122.svg": "13520aa5f4ad872923f7ea2be8854d6f09a63fb092e8cbba20c3b0f824db3781",
+      "paired_composition_figure_data.csv": "3e7b7f7e3a99c31765beef97edf130197974381f3ef6b2d7dfed386639366e2a",
+      "paired_effect_figure_data.csv": "9644017a165d4153a5773d2df39eee0ff9b23946a904c8de784c3d4e40d8bd41"
+    },
+    "visually_reviewed": true
+  },
+  "independent_numeric_verification": {
+    "comparison_value_counts": {
+      "composition_delta_sum": 50,
+      "composition_independent_cell_weighted_mean": 852,
+      "composition_independent_percentage_point_difference": 426,
+      "composition_intro_fraction_sum": 50,
+      "composition_native_fraction_sum": 50,
+      "native_Holm4": 4,
+      "native_cell_expected_aggregation": 60,
+      "native_draw_identifiers": 59940,
+      "native_first_three_independent_shuffle_statistics": 48,
+      "native_independent_affinity": 37104,
+      "native_independent_affinity_share": 37104,
+      "native_independent_breadth": 37104,
+      "native_independent_counter": 37154,
+      "native_independent_coverage": 37104,
+      "native_independent_donor_ids": 37104,
+      "native_independent_entropy": 37154,
+      "native_independent_movable_ids": 148416,
+      "native_independent_nonwhite_donor_ids": 37104,
+      "native_paired_regional_draws": 7992,
+      "native_primary_family_raw_p": 4,
+      "native_source_species_order": 37104,
+      "native_support_movable_pairs": 4,
+      "native_support_movable_species": 4,
+      "paired_Holm2": 2,
+      "paired_all_equal_cell_weights": 36845,
+      "paired_cell_expected_aggregation": 300,
+      "paired_common8_mask": 3286,
+      "paired_coordinate_match": 113666,
+      "paired_draw_identifiers": 299700,
+      "paired_entropy_from_saved_colour_counts": 148616,
+      "paired_equal6_common_mask": 9994,
+      "paired_equal6_sector_weight": 24,
+      "paired_highrichness_common_mask": 3577,
+      "paired_intro_richness": 56833,
+      "paired_minrichness_common_mask": 9994,
+      "paired_minrichness_weights": 9994,
+      "paired_native_richness": 56833,
+      "paired_original_white_membership_fixed": 74308,
+      "paired_primary_common_mask": 9994,
+      "paired_primary_equal_weights": 9994,
+      "paired_primary_family_raw_p": 2,
+      "paired_region_common_mask": 19988,
+      "paired_richness_from_saved_colour_counts": 148616,
+      "paired_synchronous_difference": 299700,
+      "paired_weights_sum": 50,
+      "statistics_n_draws_at_or_above_observed": 300,
+      "statistics_n_draws_at_or_below_observed": 300,
+      "statistics_n_permutations": 360,
+      "statistics_null_mean": 360,
+      "statistics_null_mean_monte_carlo_se": 360,
+      "statistics_null_reference_2p5_percentile": 360,
+      "statistics_null_reference_97p5_percentile": 360,
+      "statistics_null_sd": 360,
+      "statistics_observed": 360,
+      "statistics_observed_minus_null": 360,
+      "statistics_p_rank_lower": 360,
+      "statistics_p_rank_two_sided": 360,
+      "statistics_p_rank_upper": 360
+    },
+    "maximum_absolute_numeric_error": 3.907985046680551e-14,
+    "native_footprint": {
+      "draw_rows": 59940,
+      "independent_full_species_draws": 12,
+      "native_source_pairs": 2271852,
+      "primary_family": [
+        {
+          "outcome": "photo9",
+          "p_holm4": 0.128,
+          "p_rank_two_sided": 0.032,
+          "statistic_kind": "group_statistics",
+          "statistic_name": "richness_ge30"
+        },
+        {
+          "outcome": "photo9",
+          "p_holm4": 0.156,
+          "p_rank_two_sided": 0.07,
+          "statistic_kind": "paired_contrasts",
+          "statistic_name": "south_minus_north"
+        },
+        {
+          "outcome": "whitefixed8",
+          "p_holm4": 0.156,
+          "p_rank_two_sided": 0.052,
+          "statistic_kind": "group_statistics",
+          "statistic_name": "richness_ge30"
+        },
+        {
+          "outcome": "whitefixed8",
+          "p_holm4": 0.238,
+          "p_rank_two_sided": 0.238,
+          "statistic_kind": "paired_contrasts",
+          "statistic_name": "south_minus_north"
+        }
+      ],
+      "source_species": 37104,
+      "statistic_series": 60,
+      "statistics_rows": 60
+    },
+    "native_introduced_samecell": {
+      "component_statistic_rows": 300,
+      "composition_rows": 426,
+      "draw_rows": 99900,
+      "mask_weight_rows": 56833,
+      "paired_statistic_series": 100,
+      "primary_family": [
+        {
+          "model": "genus_breadth_sixzones",
+          "outcome": "photo9",
+          "p_rank_two_sided": 0.312,
+          "p_rank_two_sided_holm2": 0.54,
+          "population": "strict",
+          "statistic_name": "both_richness_ge30_equal_cells"
+        },
+        {
+          "model": "sixzone_genus_breadth_whitefixed8",
+          "outcome": "whitefixed8",
+          "p_rank_two_sided": 0.27,
+          "p_rank_two_sided_holm2": 0.54,
+          "population": "strict",
+          "statistic_name": "both_richness_ge30_equal_cells"
+        }
+      ]
+    },
+    "numeric_comparison_tolerance": 1e-10,
+    "project_analysis_modules_imported": false,
+    "receipt_and_code_hash_validation": "handled separately by root reviewer",
+    "status": "passed"
+  },
+  "unit_tests": {
+    "existing": 20,
+    "new": 26,
+    "status": "passed",
+    "total": 46
+  }
+}
