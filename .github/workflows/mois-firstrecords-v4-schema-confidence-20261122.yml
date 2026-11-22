@@ -41,7 +41,7 @@ jobs:
               content=p.read_bytes()
               md5=hashlib.md5(content).hexdigest()
               if md5!=check:raise RuntimeError(name+" source checksum mismatch "+md5)
-              with p.open("r",encoding="utf-8-sig",newline="") as f:
+              with p.open("r",encoding="utf-8-sig",errors="replace",newline="") as f:
                   reader=csv.reader(f)
                   header=next(reader)
                   rows=[]
@@ -52,7 +52,7 @@ jobs:
               provenance["files"][name]={"rows":counts,"columns":header,"width":len(header),
                       "first4rows_first25cols":rows,
                       "original_md5":md5,"sha256":hashlib.sha256(content).hexdigest(),
-                      "source_bytes":len(content)}
+                      "source_bytes":len(content),\n                      "invalid_utf8_replacement_character_count":content.decode("utf-8-sig",errors="replace").count(chr(0xfffd))}
               print("MOIS_FIRSTRECORDS_V40_ORIGINAL_FILE_VERIFIED",name,counts,md5,flush=True)
           (out/"schema_audit.json").write_text(json.dumps(provenance,indent=2,ensure_ascii=False)+"\n")
           print("MOIS_FIRSTRECORDS_V40_SCHEMA_OK",json.dumps(provenance,ensure_ascii=False),flush=True)
