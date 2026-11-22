@@ -42,14 +42,23 @@ jobs:
               md5=hashlib.md5(content).hexdigest()
               if md5!=check:raise RuntimeError(name+" source checksum mismatch "+md5)
               with p.open("r",encoding="utf-8-sig",errors="replace",newline="") as f:
-                  reader=csv.reader(f)
-                  header=next(reader)
+                  delimiter=";" if name=="FirstRecords_dataset_public_v4.0.csv" else ","
+                  reader=csv.DictReader(f,delimiter=delimiter)
+                  header=list(reader.fieldnames)
                   rows=[]
                   counts=0
+                  values={k:collections.Counter() for k in (
+                      ("confidenceFirstRecordEvent","occurrenceStatus","establishmentMeans",
+                       "degreeOfEstablishment","accessRights","habitat") if delimiter==";" else
+                      ("taxaGroup","GBIFstatus","GBIFmatchType","GBIFtaxonRank","phylum","kingdom")
+                      if "taxonomy" in name else ("continent","region"))}
                   for row in reader:
                       counts+=1
-                      if len(rows)<4:rows.append(row[:25])
+                      if len(rows)<4:rows.append([row.get(k) for k in header[:25]])
+                      for k,ctr in values.items():ctr[str(row.get(k))]+=1
+              status_counts={k:ctr.most_common(25) for k,ctr in values.items()}
               provenance["files"][name]={"rows":counts,"columns":header,"width":len(header),
+                      "frequency_audit":status_counts,"delimiter":delimiter,
                       "first4rows_first25cols":rows,
                       "original_md5":md5,"sha256":hashlib.sha256(content).hexdigest(),
                       "source_bytes":len(content),
