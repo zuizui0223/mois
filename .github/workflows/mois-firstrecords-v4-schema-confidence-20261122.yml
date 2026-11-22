@@ -1,0 +1,67 @@
+name: "MOIS ecology: FirstRecords 2026 v4.0 source schema and confidence"
+on:
+  push:
+    branches: [analysis/mois-global-floral-colour-assembly-null-20261118]
+    paths:
+      - .github/workflows/mois-firstrecords-v4-schema-confidence-20261122.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-public-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify all three original 2026 v4.0 FirstRecords public tables
+        run: |
+          set -euo pipefail
+          mkdir -p results/v4source
+          python - <<'PY'
+          import csv,json,urllib.request,hashlib,pathlib,collections
+          base="https://zenodo.org/records/18759840/files/"
+          expected={
+            "FirstRecords_dataset_public_v4.0.csv":"cbba8f2c2c518519674fd4f0540809d4",
+            "FirstRecords_taxonomy_table_public_v4.0.csv":"d3e21741364b33fabb3cef3b249543bd",
+            "FirstRecords_location_table_public_v4.0.csv":"cb69dd1ad613cbfe24db316b89f5884a"}
+          out=pathlib.Path("results/v4source")
+          provenance={"version":"4.0","released":"2026-02-25","zenodo":"https://zenodo.org/records/18759840",
+                      "source_DOI":"10.5281/zenodo.18759840","files":{},
+                      "primary_source_metadata_not_modified":True,
+                      "v3_1_historical_study_not_overwritten":True}
+          for name,check in expected.items():
+              url=base+name+"?download=1"
+              p=out/name
+              req=urllib.request.Request(url,headers={"User-Agent":"MOIS-ecology-firstrecords-source-audit/1.0"})
+              with urllib.request.urlopen(req,timeout=130) as r, p.open("wb") as f:
+                  while (chunk:=r.read(1024*1024)): f.write(chunk)
+              content=p.read_bytes()
+              md5=hashlib.md5(content).hexdigest()
+              if md5!=check:raise RuntimeError(name+" source checksum mismatch "+md5)
+              with p.open("r",encoding="utf-8-sig",newline="") as f:
+                  reader=csv.reader(f)
+                  header=next(reader)
+                  rows=[]
+                  counts=0
+                  for row in reader:
+                      counts+=1
+                      if len(rows)<4:rows.append(row[:25])
+              provenance["files"][name]={"rows":counts,"columns":header,"width":len(header),
+                      "first4rows_first25cols":rows,
+                      "original_md5":md5,"sha256":hashlib.sha256(content).hexdigest(),
+                      "source_bytes":len(content)}
+              print("MOIS_FIRSTRECORDS_V40_ORIGINAL_FILE_VERIFIED",name,counts,md5,flush=True)
+          (out/"schema_audit.json").write_text(json.dumps(provenance,indent=2,ensure_ascii=False)+"\n")
+          print("MOIS_FIRSTRECORDS_V40_SCHEMA_OK",json.dumps(provenance,ensure_ascii=False),flush=True)
+          PY
+      - name: Archive audit only (do not republish entire source data)
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mois-firstrecords-v40-schema-20261122
+          path: results/v4source/schema_audit.json
+          retention-days: 60
+          if-no-files-found: error
