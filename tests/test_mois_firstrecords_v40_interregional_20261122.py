@@ -58,6 +58,7 @@ class FirstRecordsV40Tests(unittest.TestCase):
         ],columns=["locationID","taxonID","taxon","firstRecordEvent","verbatimFirstRecordEvent",
                    "confidenceFirstRecordEvent","occurrenceStatus","establishmentMeans",
                    "degreeOfEstablishment","accessRights"])
+        r["location"]=r.locationID.map({"L1":"Europe mainland","L2":"Island independent region"})
         matched,_,audit=strict_links(r,tax,loc,self.flora)
         self.assertEqual(len(matched),2)
         self.assertEqual(int(matched.year.min()),1900)
