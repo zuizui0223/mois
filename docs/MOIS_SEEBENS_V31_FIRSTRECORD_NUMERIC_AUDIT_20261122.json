@@ -1,0 +1,22 @@
+{
+  "artifact_id": 14750372364,
+  "analysis_run": 45013263655,
+  "analysis_commit": "28dfc3db4402da9d8a1ce0961fc7a48f1af82cce",
+  "artifact_zip_sha256": "5c597c36c5729d4304578b65cc35697f5519c18022144f239ae363d2e03acdf3",
+  "receipt_member_checks_passed": 3,
+  "recomputed_rank_p": {
+    "established_all_genus_breadth": 0.02,
+    "established_all_genus_only": 0.038,
+    "established_no_bronze_genus_breadth": 0.212,
+    "allstatus_all_genus_breadth": 0.06
+  },
+  "strict_sample": {
+    "species": 3045,
+    "genera": 631,
+    "countries": 41,
+    "dated_species_country_rows": 6435,
+    "country_genus_groups": 1885
+  },
+  "null_references_not_effect_CI": true,
+  "status": "independently_recomputed"
+}
