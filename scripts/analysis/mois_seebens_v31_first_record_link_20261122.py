@@ -57,7 +57,7 @@ def sources(gbif,first_records):
           "Seebens 77,375 original records schema changed")
     return s,f
 
-def link(s,f):
+def link(s,f,min_matches=100):
     f=f.copy()
     f["LifeForm"]=f.LifeForm.fillna("").str.strip()
     f["TaxonName"]=f.TaxonName.fillna("").str.strip()
@@ -71,7 +71,7 @@ def link(s,f):
     s=s.copy();s["genus"]=s.species.str.split().str[0]
     x=plant.merge(s[["key","species","genus","source_hue9","hue_status","occupied_grid_cells"]],
                   left_on="TaxonName",right_on="species",validate="many_to_one")
-    guard(len(x)>100,"Insufficient exact plant species matches")
+    guard(len(x)>=min_matches,"Insufficient exact plant species matches")
     duplicates=int(x.duplicated(["TaxonName","Region"]).sum())
     x=x.sort_values(["TaxonName","Region","year","original_exact"],
                     ascending=[True,True,True,False],kind="stable")

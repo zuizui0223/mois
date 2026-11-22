@@ -17,7 +17,7 @@ class FirstRecords(unittest.TestCase):
                         "FirstRecord_orig":["1800","1900-1910","2000"],
                         "PresentStatus":["established"]*3,"Phylum":["Tracheophyta"]*3,
                         "Source":["x"]*3,"DataUsage":["Free"]*3})
-        _,x,audit=link(s,f)
+        _,x,audit=link(s,f,min_matches=1)
         self.assertEqual(int(x.original_exact.sum()),2)
         self.assertEqual(audit["MOIS_matched_country_original_exact_year"],2)
         self.assertEqual(dataset(x)[0].shape[0],2)
