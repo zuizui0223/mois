@@ -42,7 +42,8 @@ jobs:
           name="GlobalAlienSpeciesFirstRecordDatabase_v3.1_freedata.xlsx"
           files=[v for v in meta["files"] if v["key"]==name]
           assert len(files)==1
-          with urllib.request.urlopen(files[0]["links"]["content"],timeout=150) as r, open("source/SEEBENS_v31.xlsx","wb") as o:
+          url=files[0].get("links",{}).get("content") or "https://zenodo.org/records/10039630/files/"+name+"?download=1"
+          with urllib.request.urlopen(url,timeout=150) as r, open("source/SEEBENS_v31.xlsx","wb") as o:
               while (buf:=r.read(1024*1024)): o.write(buf)
           digest=hashlib.sha256(pathlib.Path("source/SEEBENS_v31.xlsx").read_bytes()).hexdigest()
           assert digest=="7897fbd88d300f48d63039767c5d99b4ddc4799cc88604be861456b5ef6ecbd4", digest
