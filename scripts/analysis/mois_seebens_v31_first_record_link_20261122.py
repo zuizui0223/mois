@@ -20,6 +20,9 @@ ALIASES={"United States":"US","United States of America":"US",
          "South Korea":"KR","North Korea":"KP","Czech Republic":"CZ",
          "Iran":"IR","Vietnam":"VN","Tanzania":"TZ","Bolivia":"BO",
          "Venezuela":"VE","Laos":"LA","Taiwan":"TW","Kosovo":None}
+CONFIRMED_ESTABLISHED={"established","established invasive","invasive",
+                       "naturalised, invasive","naturalized, invasive",
+                       "naturalised","naturalized"}
 PERIOD_EDGES=[1500,1800,1900,1950,2000,2024]
 PERIOD_NAMES=["1500–1799","1800–1899","1900–1949","1950–1999","2000–2023"]
 
@@ -96,8 +99,12 @@ def link(s,f,min_matches=100):
                                                    x.loc[x.iso2.isna(),"Region"].value_counts().head(20).items()]}
     return s,x,report
 
-def dataset(x, quality="all"):
+def dataset(x, quality="all", status="all"):
     y=x.loc[x.iso2.notna()&x.valid_year&x.original_exact].copy()
+    if status=="established":
+        y=y.loc[y.PresentStatus.fillna("").str.strip().str.lower().isin(CONFIRMED_ESTABLISHED)]
+    elif status!="all":
+        raise ValueError("Unexpected alien establishment status population")
     if quality=="no_bronze":
         y=y.loc[y.source_hue9!="bronze"]
     elif quality=="consensus_only":
@@ -173,15 +180,19 @@ def main():
     s,f=sources(a.gbif,a.seebens)
     s,x,audit=link(s,f)
     out.mkdir(parents=True)
-    year=x.loc[x.iso2.notna()&x.valid_year].copy()
+    year=x.loc[x.iso2.notna()&x.valid_year &
+               x.PresentStatus.fillna("").str.strip().str.lower().isin(CONFIRMED_ESTABLISHED)].copy()
     year["period"]=pd.cut(year.year,PERIOD_EDGES,labels=PERIOD_NAMES,right=False)
     years=year.groupby(["period","source_hue9","original_exact"],observed=True).agg(
         n_species_country=("key","size"),n_species=("key","nunique"),
         n_countries=("iso2","nunique")).reset_index()
     years.to_csv(out/"historical_hue_cohort_counts.csv",index=False)
     stats={};frames=[]
-    for sample in ("all","no_bronze","consensus_only"):
-        y,_=dataset(x,sample)
+    for sample in ("established_all","established_no_bronze","established_consensus_only",
+                   "allstatus_all","allstatus_no_bronze"):
+        status="established" if sample.startswith("established_") else "all"
+        quality=sample.split("_",1)[1]
+        y,_=dataset(x,quality,status=status)
         print("MOIS_TEMPORAL_SUBSET",sample, len(y),y.key.nunique(),y.site_genus.nunique(),flush=True)
         for model in ("genus_breadth","genus_only"):
             r,draw=permutations(y,s,a.permutations,model,20261122+(0 if model=="genus_breadth" else 137))
@@ -207,9 +218,11 @@ def main():
              "photographic_hues_not_independently_botanically_confirmed":True,
              "no_time_varying_pheno_change_tested":True,
              "no_causal_post_introduction_selection_or_adaptive_radiation_tested":True,
-             "main_primary_sample":"all_genus_breadth","main_primary_outcome":"white label x first-record calendar year within country-genus",
-             "sensitivities":["all_genus_only","no_bronze_genus_breadth",
-                              "consensus_only_genus_breadth"],
+             "main_primary_sample":"established_all_genus_breadth","main_primary_outcome":"white label x first-record calendar year within country-genus",
+             "status_primary_is_curated_explicit_established_or_invasive_only":True,
+             "excluded_from_primary": ["casual","alien-unspecified","missing-status","absent","extinct","in-captivity","cryptogenic"],
+             "sensitivities":["established_all_genus_only","established_no_bronze_genus_breadth",
+                              "established_consensus_only_genus_breadth","allstatus_all_genus_breadth"],
              "temporal_results":stats,"n_permutations":a.permutations}
     (out/"temporal_linkage_summary.json").write_text(json.dumps(summary,indent=2,ensure_ascii=False,allow_nan=False)+"\n")
     members={p.name:digest(p) for p in sorted(out.iterdir())}
@@ -217,7 +230,7 @@ def main():
         {"status":"complete","source_sha256":{"seebens":SOURCE_SHA,"MOIS":GBIF_SHA},
          "script_SHA256":digest(__file__),"outputs_sha256":members},indent=2)+"\n")
     print("MOIS_FIRSTRECORD_LINK_COMPLETE",json.dumps({"source_audit":audit,
-          "temporal_primary":stats["all_genus_breadth"]},ensure_ascii=False),flush=True)
+          "temporal_primary":stats["established_all_genus_breadth"]},ensure_ascii=False),flush=True)
 
 if __name__=="__main__":
     main()

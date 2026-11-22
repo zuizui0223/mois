@@ -21,4 +21,6 @@ class FirstRecords(unittest.TestCase):
         self.assertEqual(int(x.original_exact.sum()),2)
         self.assertEqual(audit["MOIS_matched_country_original_exact_year"],2)
         self.assertEqual(dataset(x)[0].shape[0],2)
+        x.loc[x.key.eq("a"),"PresentStatus"]="casual"
+        self.assertEqual(len(dataset(x,status="established")[0]),0)
 if __name__=="__main__":unittest.main()
