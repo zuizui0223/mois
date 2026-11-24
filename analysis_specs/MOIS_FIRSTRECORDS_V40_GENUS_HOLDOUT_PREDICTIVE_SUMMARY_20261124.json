@@ -1,0 +1,592 @@
+{
+  "source_zip_SHA256": "afa9cbe259ca13d039692e4aa0a0e117045655a3f3fd6ee8e89ddd01b22f41e2",
+  "status": "completed",
+  "primary": {
+    "sample": "main_all_50y",
+    "n_species": 2813,
+    "n_genera": 1294,
+    "observed_event_rate": 0.2819054390330608,
+    "mean_scores_by_model": {
+      "history_only": {
+        "brier": 0.19208168602896372,
+        "logloss": 0.5699587218977082,
+        "AUC": 0.6311634599777758
+      },
+      "history_white": {
+        "brier": 0.19219261296933524,
+        "logloss": 0.5702635331279606,
+        "AUC": 0.6306390695816113
+      },
+      "history_all9": {
+        "brier": 0.19244105394589472,
+        "logloss": 0.5710798514349488,
+        "AUC": 0.6358539447891827
+      }
+    },
+    "paired_predictions": {
+      "history_white": {
+        "CV_genus_repeats": 5,
+        "n_species": 2813,
+        "n_genera": 1294,
+        "history_minus_photo_model_positive_means_photo_improves": true,
+        "delta_logloss": -0.00034031065528072337,
+        "delta_brier": -0.00012613773360630015,
+        "delta_AUC_on_mean_oof_predictions": -0.0005243903961644758,
+        "delta_logloss_genus_cluster_bootstrap": {
+          "cluster": "source genus",
+          "draws": 3000,
+          "point": -0.00034031065528072337,
+          "bootstrap_percentile_interval_95pct": [
+            -0.0005798930409518024,
+            -0.00010038075124164966
+          ],
+          "conditional_on_fitted_oof_models": true,
+          "no_full_training_uncertainty_or_causal_effect_claimed": true
+        },
+        "delta_brier_genus_cluster_bootstrap": {
+          "cluster": "source genus",
+          "draws": 3000,
+          "point": -0.00012613773360630015,
+          "bootstrap_percentile_interval_95pct": [
+            -0.00022249219000165771,
+            -3.3651424932049705e-05
+          ],
+          "conditional_on_fitted_oof_models": true,
+          "no_full_training_uncertainty_or_causal_effect_claimed": true
+        }
+      },
+      "history_all9": {
+        "CV_genus_repeats": 5,
+        "n_species": 2813,
+        "n_genera": 1294,
+        "history_minus_photo_model_positive_means_photo_improves": true,
+        "delta_logloss": -0.0014375178403524416,
+        "delta_brier": -0.00045682910808089825,
+        "delta_AUC_on_mean_oof_predictions": 0.004690484811406881,
+        "delta_logloss_genus_cluster_bootstrap": {
+          "cluster": "source genus",
+          "draws": 3000,
+          "point": -0.0014375178403524416,
+          "bootstrap_percentile_interval_95pct": [
+            -0.0035060019057350242,
+            0.0006439039336168183
+          ],
+          "conditional_on_fitted_oof_models": true,
+          "no_full_training_uncertainty_or_causal_effect_claimed": true
+        },
+        "delta_brier_genus_cluster_bootstrap": {
+          "cluster": "source genus",
+          "draws": 3000,
+          "point": -0.00045682910808089825,
+          "bootstrap_percentile_interval_95pct": [
+            -0.0013398844886397024,
+            0.0004286901710115711
+          ],
+          "conditional_on_fitted_oof_models": true,
+          "no_full_training_uncertainty_or_causal_effect_claimed": true
+        }
+      }
+    },
+    "region_profile": [
+      {
+        "sample": "main_all_50y",
+        "first_continent": "Africa",
+        "n_species": 164,
+        "n_genera": 129,
+        "mean_first_year": 1896.2926829268292,
+        "observed_recorded_additional_region_50y_rate": 0.40853658536585363,
+        "white_photo_label_fraction": 0.5853658536585366,
+        "history_only_oof_logloss": 0.6732630900236285,
+        "history_only_oof_brier": 0.2397118333654396,
+        "history_white_oof_logloss": 0.6735096617126276,
+        "history_white_oof_brier": 0.2398472810762156,
+        "history_all9_oof_logloss": 0.6748616741402655,
+        "history_all9_oof_brier": 0.24051682696877494
+      },
+      {
+        "sample": "main_all_50y",
+        "first_continent": "Asia",
+        "n_species": 593,
+        "n_genera": 412,
+        "mean_first_year": 1901.4215851602023,
+        "observed_recorded_additional_region_50y_rate": 0.41652613827993257,
+        "white_photo_label_fraction": 0.6053962900505903,
+        "history_only_oof_logloss": 0.6763422085939282,
+        "history_only_oof_brier": 0.24166425168097455,
+        "history_white_oof_logloss": 0.6765672743892762,
+        "history_white_oof_brier": 0.24177067225126617,
+        "history_all9_oof_logloss": 0.6777155084241876,
+        "history_all9_oof_brier": 0.2422185905517259
+      },
+      {
+        "sample": "main_all_50y",
+        "first_continent": "Europe",
+        "n_species": 278,
+        "n_genera": 203,
+        "mean_first_year": 1876.3309352517986,
+        "observed_recorded_additional_region_50y_rate": 0.2805755395683453,
+        "white_photo_label_fraction": 0.5863309352517986,
+        "history_only_oof_logloss": 0.5898400419501096,
+        "history_only_oof_brier": 0.19993366442714708,
+        "history_white_oof_logloss": 0.5899434847113108,
+        "history_white_oof_brier": 0.19999645649842523,
+        "history_all9_oof_logloss": 0.5933207375296247,
+        "history_all9_oof_brier": 0.2012801690666312
+      },
+      {
+        "sample": "main_all_50y",
+        "first_continent": "MULTIPLE_CONTINENTS",
+        "n_species": 14,
+        "n_genera": 14,
+        "mean_first_year": 1896.7857142857142,
+        "observed_recorded_additional_region_50y_rate": 0.5,
+        "white_photo_label_fraction": 0.5,
+        "history_only_oof_logloss": 0.8555243848590874,
+        "history_only_oof_brier": 0.3275675300183404,
+        "history_white_oof_logloss": 0.8594418211411806,
+        "history_white_oof_brier": 0.3294128642853201,
+        "history_all9_oof_logloss": 0.8583073834623219,
+        "history_all9_oof_brier": 0.3286510971406939
+      },
+      {
+        "sample": "main_all_50y",
+        "first_continent": "North America",
+        "n_species": 1481,
+        "n_genera": 864,
+        "mean_first_year": 1900.3463875759621,
+        "observed_recorded_additional_region_50y_rate": 0.21269412559081702,
+        "white_photo_label_fraction": 0.613099257258609,
+        "history_only_oof_logloss": 0.5155399862404366,
+        "history_only_oof_brier": 0.16673390284744669,
+        "history_white_oof_logloss": 0.515934500476268,
+        "history_white_oof_brier": 0.16684902839705346,
+        "history_all9_oof_logloss": 0.5161287858363506,
+        "history_all9_oof_brier": 0.16676271263190706
+      },
+      {
+        "sample": "main_all_50y",
+        "first_continent": "Oceania",
+        "n_species": 283,
+        "n_genera": 203,
+        "mean_first_year": 1902.3109540636042,
+        "observed_recorded_additional_region_50y_rate": 0.2791519434628975,
+        "white_photo_label_fraction": 0.5795053003533569,
+        "history_only_oof_logloss": 0.5496655120940518,
+        "history_only_oof_brier": 0.18308726824940724,
+        "history_white_oof_logloss": 0.5500736934397691,
+        "history_white_oof_brier": 0.1832841332930952,
+        "history_all9_oof_logloss": 0.5535121394344764,
+        "history_all9_oof_brier": 0.1844729673994203
+      }
+    ],
+    "historical_cohort_profile": [
+      {
+        "sample": "main_all_50y",
+        "first_year_25bin": "0",
+        "n_species": 164,
+        "n_genera": 142,
+        "recorded_50y_added_region_fraction": 0.22560975609756098,
+        "white_photo_label_fraction": 0.6463414634146342,
+        "baseline_mean_oof_pred": 0.22675549023815608
+      },
+      {
+        "sample": "main_all_50y",
+        "first_year_25bin": "1",
+        "n_species": 310,
+        "n_genera": 249,
+        "recorded_50y_added_region_fraction": 0.2645161290322581,
+        "white_photo_label_fraction": 0.6387096774193548,
+        "baseline_mean_oof_pred": 0.26671989890789505
+      },
+      {
+        "sample": "main_all_50y",
+        "first_year_25bin": "2",
+        "n_species": 293,
+        "n_genera": 245,
+        "recorded_50y_added_region_fraction": 0.378839590443686,
+        "white_photo_label_fraction": 0.590443686006826,
+        "baseline_mean_oof_pred": 0.37684015286425077
+      },
+      {
+        "sample": "main_all_50y",
+        "first_year_25bin": "3",
+        "n_species": 627,
+        "n_genera": 447,
+        "recorded_50y_added_region_fraction": 0.3444976076555024,
+        "white_photo_label_fraction": 0.6108452950558214,
+        "baseline_mean_oof_pred": 0.3429519741727319
+      },
+      {
+        "sample": "main_all_50y",
+        "first_year_25bin": "4",
+        "n_species": 551,
+        "n_genera": 386,
+        "recorded_50y_added_region_fraction": 0.32123411978221417,
+        "white_photo_label_fraction": 0.604355716878403,
+        "baseline_mean_oof_pred": 0.3213298501006421
+      },
+      {
+        "sample": "main_all_50y",
+        "first_year_25bin": "5",
+        "n_species": 481,
+        "n_genera": 368,
+        "recorded_50y_added_region_fraction": 0.20997920997921,
+        "white_photo_label_fraction": 0.5904365904365905,
+        "baseline_mean_oof_pred": 0.21053292526049447
+      },
+      {
+        "sample": "main_all_50y",
+        "first_year_25bin": "6",
+        "n_species": 387,
+        "n_genera": 300,
+        "recorded_50y_added_region_fraction": 0.17829457364341086,
+        "white_photo_label_fraction": 0.5684754521963824,
+        "baseline_mean_oof_pred": 0.1802477400195245
+      }
+    ],
+    "repeat_metric_rows": [
+      {
+        "sample": "main_all_50y",
+        "seed": 20261124,
+        "model": "history_only",
+        "brier": 0.19145028331824895,
+        "logloss": 0.5687390879490161,
+        "AUC": 0.6414340204512253
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261124,
+        "model": "history_white",
+        "brier": 0.1917278093044085,
+        "logloss": 0.5694934364551886,
+        "AUC": 0.6390258824116964
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261124,
+        "model": "history_all9",
+        "brier": 0.19242734330811784,
+        "logloss": 0.5715537572943677,
+        "AUC": 0.6385426941180876
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261125,
+        "model": "history_only",
+        "brier": 0.19271161334669762,
+        "logloss": 0.5720146429984824,
+        "AUC": 0.6316466482713846
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261125,
+        "model": "history_white",
+        "brier": 0.19274941865121242,
+        "logloss": 0.5721371637853815,
+        "AUC": 0.6310251832245016
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261125,
+        "model": "history_all9",
+        "brier": 0.1926640510452293,
+        "logloss": 0.5721749224563639,
+        "AUC": 0.634395952205561
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261126,
+        "model": "history_only",
+        "brier": 0.19330591952696247,
+        "logloss": 0.5731146793377438,
+        "AUC": 0.633500430749254
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261126,
+        "model": "history_white",
+        "brier": 0.1933844852868566,
+        "logloss": 0.5732918646677576,
+        "AUC": 0.6334186508184235
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261126,
+        "model": "history_all9",
+        "brier": 0.19382632132935526,
+        "logloss": 0.5745848403938528,
+        "AUC": 0.6343176057832769
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261127,
+        "model": "history_only",
+        "brier": 0.19246091053501366,
+        "logloss": 0.5704737343375305,
+        "AUC": 0.6430021974454697
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261127,
+        "model": "history_white",
+        "brier": 0.1924925195674608,
+        "logloss": 0.570538787304659,
+        "AUC": 0.6433021612375613
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261127,
+        "model": "history_all9",
+        "brier": 0.19282277518280705,
+        "logloss": 0.5716367859591935,
+        "AUC": 0.6417764348944353
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261128,
+        "model": "history_only",
+        "brier": 0.19262682443092383,
+        "logloss": 0.5711662255424164,
+        "AUC": 0.6398134044173647
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261128,
+        "model": "history_white",
+        "brier": 0.19283200701593978,
+        "logloss": 0.5717486712286064,
+        "AUC": 0.6380076910591437
+      },
+      {
+        "sample": "main_all_50y",
+        "seed": 20261128,
+        "model": "history_all9",
+        "brier": 0.19309920583274168,
+        "logloss": 0.5727456532631734,
+        "AUC": 0.6368630841646585
+      }
+    ],
+    "source_generation": "Pinned species x region aggregation 2026-11-22; first records not true introductions"
+  },
+  "leave_one_continent_out": {
+    "exclude_NorthAmerica": {
+      "n_species": 1332,
+      "n_genera": 751,
+      "observed_event_rate": 0.3588588588588589,
+      "paired_predictions": {
+        "history_white": {
+          "CV_genus_repeats": 3,
+          "n_species": 1332,
+          "n_genera": 751,
+          "history_minus_photo_model_positive_means_photo_improves": true,
+          "delta_logloss": -0.00121941849997147,
+          "delta_brier": -0.0005353937466520297,
+          "delta_AUC_on_mean_oof_predictions": -0.0008010543541101534,
+          "delta_logloss_genus_cluster_bootstrap": {
+            "cluster": "source genus",
+            "draws": 3000,
+            "point": -0.00121941849997147,
+            "bootstrap_percentile_interval_95pct": [
+              -0.002380477652433123,
+              -0.00014895395758846217
+            ],
+            "conditional_on_fitted_oof_models": true,
+            "no_full_training_uncertainty_or_causal_effect_claimed": true
+          },
+          "delta_brier_genus_cluster_bootstrap": {
+            "cluster": "source genus",
+            "draws": 3000,
+            "point": -0.0005353937466520297,
+            "bootstrap_percentile_interval_95pct": [
+              -0.0010425676191885584,
+              -7.712167531744776e-05
+            ],
+            "conditional_on_fitted_oof_models": true,
+            "no_full_training_uncertainty_or_causal_effect_claimed": true
+          }
+        },
+        "history_all9": {
+          "CV_genus_repeats": 3,
+          "n_species": 1332,
+          "n_genera": 751,
+          "history_minus_photo_model_positive_means_photo_improves": true,
+          "delta_logloss": -0.003697472272217678,
+          "delta_brier": -0.0016292410239167254,
+          "delta_AUC_on_mean_oof_predictions": 0.0012334277287292528,
+          "delta_logloss_genus_cluster_bootstrap": {
+            "cluster": "source genus",
+            "draws": 3000,
+            "point": -0.003697472272217678,
+            "bootstrap_percentile_interval_95pct": [
+              -0.007065830978935631,
+              -0.00047126827679718354
+            ],
+            "conditional_on_fitted_oof_models": true,
+            "no_full_training_uncertainty_or_causal_effect_claimed": true
+          },
+          "delta_brier_genus_cluster_bootstrap": {
+            "cluster": "source genus",
+            "draws": 3000,
+            "point": -0.0016292410239167254,
+            "bootstrap_percentile_interval_95pct": [
+              -0.003007893384401641,
+              -0.00027070007723586215
+            ],
+            "conditional_on_fitted_oof_models": true,
+            "no_full_training_uncertainty_or_causal_effect_claimed": true
+          }
+        }
+      }
+    },
+    "exclude_Asia": {
+      "n_species": 2220,
+      "n_genera": 1103,
+      "observed_event_rate": 0.24594594594594596,
+      "paired_predictions": {
+        "history_white": {
+          "CV_genus_repeats": 3,
+          "n_species": 2220,
+          "n_genera": 1103,
+          "history_minus_photo_model_positive_means_photo_improves": true,
+          "delta_logloss": -0.00035316418133107407,
+          "delta_brier": -0.0001141793155134834,
+          "delta_AUC_on_mean_oof_predictions": -0.001486864390090159,
+          "delta_logloss_genus_cluster_bootstrap": {
+            "cluster": "source genus",
+            "draws": 3000,
+            "point": -0.00035316418133107407,
+            "bootstrap_percentile_interval_95pct": [
+              -0.0007162028203389873,
+              -1.4420029733309977e-05
+            ],
+            "conditional_on_fitted_oof_models": true,
+            "no_full_training_uncertainty_or_causal_effect_claimed": true
+          },
+          "delta_brier_genus_cluster_bootstrap": {
+            "cluster": "source genus",
+            "draws": 3000,
+            "point": -0.0001141793155134834,
+            "bootstrap_percentile_interval_95pct": [
+              -0.0002498834830364939,
+              8.409306877436174e-06
+            ],
+            "conditional_on_fitted_oof_models": true,
+            "no_full_training_uncertainty_or_causal_effect_claimed": true
+          }
+        },
+        "history_all9": {
+          "CV_genus_repeats": 3,
+          "n_species": 2220,
+          "n_genera": 1103,
+          "history_minus_photo_model_positive_means_photo_improves": true,
+          "delta_logloss": -0.0014315122419436821,
+          "delta_brier": -0.0004704080670660291,
+          "delta_AUC_on_mean_oof_predictions": 0.002066183517796305,
+          "delta_logloss_genus_cluster_bootstrap": {
+            "cluster": "source genus",
+            "draws": 3000,
+            "point": -0.0014315122419436821,
+            "bootstrap_percentile_interval_95pct": [
+              -0.0037025329096102323,
+              0.00104725270972617
+            ],
+            "conditional_on_fitted_oof_models": true,
+            "no_full_training_uncertainty_or_causal_effect_claimed": true
+          },
+          "delta_brier_genus_cluster_bootstrap": {
+            "cluster": "source genus",
+            "draws": 3000,
+            "point": -0.0004704080670660291,
+            "bootstrap_percentile_interval_95pct": [
+              -0.0014113358119571754,
+              0.00047923053372587586
+            ],
+            "conditional_on_fitted_oof_models": true,
+            "no_full_training_uncertainty_or_causal_effect_claimed": true
+          }
+        }
+      }
+    },
+    "exclude_Africa": {
+      "n_species": 2649,
+      "n_genera": 1249,
+      "observed_event_rate": 0.2740656851642129,
+      "paired_predictions": {
+        "history_white": {
+          "CV_genus_repeats": 3,
+          "n_species": 2649,
+          "n_genera": 1249,
+          "history_minus_photo_model_positive_means_photo_improves": true,
+          "delta_logloss": -0.00023841539349749683,
+          "delta_brier": -9.093105126048166e-05,
+          "delta_AUC_on_mean_oof_predictions": -0.0011002092976281075,
+          "delta_logloss_genus_cluster_bootstrap": {
+            "cluster": "source genus",
+            "draws": 3000,
+            "point": -0.00023841539349749683,
+            "bootstrap_percentile_interval_95pct": [
+              -0.0004992979479860301,
+              2.6981830927985277e-05
+            ],
+            "conditional_on_fitted_oof_models": true,
+            "no_full_training_uncertainty_or_causal_effect_claimed": true
+          },
+          "delta_brier_genus_cluster_bootstrap": {
+            "cluster": "source genus",
+            "draws": 3000,
+            "point": -9.093105126048166e-05,
+            "bootstrap_percentile_interval_95pct": [
+              -0.00019065349634734912,
+              1.304716374085823e-05
+            ],
+            "conditional_on_fitted_oof_models": true,
+            "no_full_training_uncertainty_or_causal_effect_claimed": true
+          }
+        },
+        "history_all9": {
+          "CV_genus_repeats": 3,
+          "n_species": 2649,
+          "n_genera": 1249,
+          "history_minus_photo_model_positive_means_photo_improves": true,
+          "delta_logloss": -0.0013434902537069083,
+          "delta_brier": -0.00046913480717726346,
+          "delta_AUC_on_mean_oof_predictions": 0.0021413253224344952,
+          "delta_logloss_genus_cluster_bootstrap": {
+            "cluster": "source genus",
+            "draws": 3000,
+            "point": -0.0013434902537069083,
+            "bootstrap_percentile_interval_95pct": [
+              -0.0036341461185068545,
+              0.000993412403554029
+            ],
+            "conditional_on_fitted_oof_models": true,
+            "no_full_training_uncertainty_or_causal_effect_claimed": true
+          },
+          "delta_brier_genus_cluster_bootstrap": {
+            "cluster": "source genus",
+            "draws": 3000,
+            "point": -0.00046913480717726346,
+            "bootstrap_percentile_interval_95pct": [
+              -0.0014442051753233876,
+              0.00043788211247849744
+            ],
+            "conditional_on_fitted_oof_models": true,
+            "no_full_training_uncertainty_or_causal_effect_claimed": true
+          }
+        }
+      }
+    }
+  },
+  "method": "5 random 5-fold genus-group splits for main; 3 repeat splits for LOCO; L2 regularized categorical logistic regression with controls firstrecord 25y cohort, first continent and interaction",
+  "time_outcome": "at least one additional original firstrecord location in 1-50y after recorded first",
+  "risk": "true first introduction / geography / survey effort / distance not observed",
+  "source_photo9_not_independently_verified_petal_colour": true,
+  "observational_and_informal_exploratory": true,
+  "post_outcome_GBIF_range_area_not_used_as_predictor": true,
+  "programming_versions": {
+    "python": "3.13.5",
+    "pandas": "2.2.3",
+    "numpy": "2.3.5",
+    "sklearn": "1.8.0"
+  }
+}
