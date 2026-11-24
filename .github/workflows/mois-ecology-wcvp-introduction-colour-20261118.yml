@@ -1,0 +1,84 @@
+name: "MOIS Ecology: within-genus WCVP introduced species colour filtering"
+on:
+  push:
+    branches:
+      - analysis/mois-ecology-moisture-temperature-interactions-20261118
+    paths:
+      - scripts/analysis/mois_wcvp_introduction_colour_filter_20261118.py
+      - .github/workflows/mois-ecology-wcvp-introduction-colour-20261118.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-ecology-wcvp-introduction-colour-20261118
+  cancel-in-progress: false
+jobs:
+  true-WCVP-accepted-species-introduction-colour:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install stats, CSV and signed Parquet readers
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "numpy>=1.26,<3" "pandas>=2.1,<3" "pyarrow>=17,<25" \
+            "scikit-learn>=1.5,<1.9" "scipy>=1.11,<2" "statsmodels>=0.14,<1"
+      - name: Restore signed 37,104 accepted species environment source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p source/WCVP
+          curl --fail --silent --show-error --location --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14219399376/zip" \
+            --output source/ENV.zip
+          echo "d8b97528188d9f8d63cb802d5b3f6e8f7f251937fd30af42aeae47e43ebad1fc  source/ENV.zip" | sha256sum -c
+      - name: Restore original Kew WCVP exact accepted-name regional native and introduced distribution
+        env:
+          GH_TOKEN: __GHTOKEN__
+        run: |
+          set -euo pipefail
+          tag="mois-real350399-kew-wcvp-native-tdwg3-source-v1"
+          for f in \
+             mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz \
+             mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz \
+             mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json; do
+             curl -fsSL --retry 3 \
+               -H "Authorization: Bearer $GH_TOKEN" \
+               "https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/$f" \
+               --output "source/WCVP/$f"
+          done
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path("source/WCVP")
+          z=json.loads((p/"mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json").read_text())
+          for fn,digest in z["data_files_sha256"].items():
+              if fn.endswith(".gz"):
+                  assert hashlib.sha256((p/fn).read_bytes()).hexdigest()==digest,fn
+          print("MOIS_WCVP_RELEASE_SOURCE_FILE_SIGNATURES_PASS",flush=True)
+          PY
+      - name: Test colour-linked documented introduction propensity with native-range and genus controls
+        run: |
+          python scripts/analysis/mois_wcvp_introduction_colour_filter_20261118.py \
+            --env source/ENV.zip \
+            --wcvp source/WCVP \
+            --out results/mois_wcvp_species_intro_filter_20261118
+      - name: Publish authenticated numerical model coefficients and validation
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-WCVP-native-range-introduction-photo-colour-genus-20261118
+          path: results/mois_wcvp_species_intro_filter_20261118/
+          if-no-files-found: error
+          retention-days: 30

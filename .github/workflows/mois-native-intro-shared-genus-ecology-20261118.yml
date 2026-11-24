@@ -1,0 +1,68 @@
+name: "MOIS Ecology: native vs introduced photo-white among truly shared genera"
+on:
+  push:
+    branches:
+      - analysis/mois-ecology-moisture-temperature-interactions-20261118
+    paths:
+      - scripts/analysis/mois_native_intro_common_genus_ecology_20261118.py
+      - .github/workflows/mois-native-intro-shared-genus-ecology-20261118.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-native-intro-shared-genus-ecology-20261118
+  cancel-in-progress: false
+jobs:
+  verify-common-genera-real:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install numerical and Parquet tools
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "numpy>=1.26,<3" "pandas>=2.1,<3" "pyarrow>=17,<25" \
+            "statsmodels>=0.14,<1" "scipy>=1.11,<2"
+      - name: Regression and 500-km block bootstrap identity smoke test
+        run: |
+          python scripts/analysis/mois_native_intro_common_genus_ecology_20261118.py --selftest
+      - name: Verify older actual common-genera species-genus source and newer paired-climate source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          curl --fail --silent --show-error --location --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14230412217/zip" \
+            --output source/signed_common_genera.zip
+          curl --fail --silent --show-error --location --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14389295373/zip" \
+            --output source/signed_samecell_climate.zip
+          echo "ba725090afbd732c9dacc8e098161aad2bf88042994f5c683db465519969356a  source/signed_common_genera.zip" | sha256sum -c
+          echo "3efaf6ee359aca4a49713d55f5bbadd0c86467ccd4d27c300f1e06936245759a  source/signed_samecell_climate.zip" | sha256sum -c
+      - name: Run actual 37,104-source same-cell WCVP shared genus test and current NPP/moisture adjustment
+        run: |
+          python scripts/analysis/mois_native_intro_common_genus_ecology_20261118.py \
+            --common source/signed_common_genera.zip \
+            --paired source/signed_samecell_climate.zip \
+            --out results/mois_native_intro_common_genus_ecology_20261118
+      - name: Save signed ecological estimates and all-source checksums, not copyrighted photographs
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-native-intro-actual-shared-genus-photo-white-ecology-20261118
+          path: results/mois_native_intro_common_genus_ecology_20261118/
+          retention-days: 30
+          if-no-files-found: error
