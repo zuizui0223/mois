@@ -1,0 +1,342 @@
+{
+  "source_recording_opportunity_artifact_SHA256": "ee212ebd94d374e31d5511f22f0042f20f45618b47961faf8bce8fd45124e26e",
+  "main": {
+    "status": "completed",
+    "n_species": 2799,
+    "n_genera": 1293,
+    "n_source_earlier_record_species": 1486,
+    "n_added_region_event_species": 786,
+    "n_repeated_cv": 5,
+    "cv_split": "5 folds held out entire genus, no genus leakage",
+    "scores": {
+      "historical_cohort_continent": {
+        "OOF_mean_probability_logloss": 0.569388455789445,
+        "OOF_mean_probability_brier": 0.19180876389248266,
+        "OOF_mean_probability_AUC": 0.6313981385624484
+      },
+      "history_prior25": {
+        "OOF_mean_probability_logloss": 0.5696112145909932,
+        "OOF_mean_probability_brier": 0.1918909461619294,
+        "OOF_mean_probability_AUC": 0.6328827633107448
+      },
+      "history_prior25_earlier_record": {
+        "OOF_mean_probability_logloss": 0.5436023571951705,
+        "OOF_mean_probability_brier": 0.18118192026411936,
+        "OOF_mean_probability_AUC": 0.6914976318054782
+      },
+      "history_prior25_earlier_record_white": {
+        "OOF_mean_probability_logloss": 0.5439102349192088,
+        "OOF_mean_probability_brier": 0.18130645068390183,
+        "OOF_mean_probability_AUC": 0.6912994922317911
+      },
+      "history_prior25_earlier_record_all9": {
+        "OOF_mean_probability_logloss": 0.5451098894448578,
+        "OOF_mean_probability_brier": 0.18171979363821927,
+        "OOF_mean_probability_AUC": 0.6921618891960526
+      }
+    },
+    "paired_comparisons": {
+      "historical_prior25_vs_no_effort": {
+        "baseline": "historical_cohort_continent",
+        "added": "history_prior25",
+        "positive_delta_means_additional_feature_improves": true,
+        "delta_logloss": -0.00025067301771912844,
+        "delta_AUC_on_meanOOF": 0.0014846247482963593,
+        "genus_cluster_bootstrap_conditional_on_fitted_OOF": {
+          "cluster": "source genus",
+          "draws": 3000,
+          "point": -0.00025067301771912844,
+          "bootstrap_percentile_interval_95pct": [
+            -0.0008024138143971544,
+            0.00028848554796243286
+          ],
+          "conditional_on_fitted_oof_models": true,
+          "no_full_training_uncertainty_or_causal_effect_claimed": true
+        }
+      },
+      "earlier_record_vs_history_prior25": {
+        "baseline": "history_prior25",
+        "added": "history_prior25_earlier_record",
+        "positive_delta_means_additional_feature_improves": true,
+        "delta_logloss": 0.026071344927761836,
+        "delta_AUC_on_meanOOF": 0.05861486849473341,
+        "genus_cluster_bootstrap_conditional_on_fitted_OOF": {
+          "cluster": "source genus",
+          "draws": 3000,
+          "point": 0.026071344927761836,
+          "bootstrap_percentile_interval_95pct": [
+            0.01742557313871905,
+            0.03443625069700541
+          ],
+          "conditional_on_fitted_oof_models": true,
+          "no_full_training_uncertainty_or_causal_effect_claimed": true
+        }
+      },
+      "white_vs_earlier_record_baseline": {
+        "baseline": "history_prior25_earlier_record",
+        "added": "history_prior25_earlier_record_white",
+        "positive_delta_means_additional_feature_improves": true,
+        "delta_logloss": -0.0003422210359346337,
+        "delta_AUC_on_meanOOF": -0.0001981395736870839,
+        "genus_cluster_bootstrap_conditional_on_fitted_OOF": {
+          "cluster": "source genus",
+          "draws": 3000,
+          "point": -0.0003422210359346337,
+          "bootstrap_percentile_interval_95pct": [
+            -0.0006650980024524324,
+            -2.7825540359610595e-05
+          ],
+          "conditional_on_fitted_oof_models": true,
+          "no_full_training_uncertainty_or_causal_effect_claimed": true
+        }
+      },
+      "all9_vs_earlier_record_baseline": {
+        "baseline": "history_prior25_earlier_record",
+        "added": "history_prior25_earlier_record_all9",
+        "positive_delta_means_additional_feature_improves": true,
+        "delta_logloss": -0.0018748777137325991,
+        "delta_AUC_on_meanOOF": 0.0006642573905744076,
+        "genus_cluster_bootstrap_conditional_on_fitted_OOF": {
+          "cluster": "source genus",
+          "draws": 3000,
+          "point": -0.0018748777137325991,
+          "bootstrap_percentile_interval_95pct": [
+            -0.0036861293154329235,
+            -5.0056496548993366e-05
+          ],
+          "conditional_on_fitted_oof_models": true,
+          "no_full_training_uncertainty_or_causal_effect_claimed": true
+        }
+      }
+    },
+    "historical_source_firstrecord_completeness_groups": [
+      {
+        "earlier_record_flag": "earlier-any-source",
+        "n_species": 1486,
+        "n_additional_record_species": 548,
+        "added_region_record_fraction": 0.36877523553162855,
+        "first_year_median": 1901.0
+      },
+      {
+        "earlier_record_flag": "no-earlier-source",
+        "n_species": 1313,
+        "n_additional_record_species": 238,
+        "added_region_record_fraction": 0.18126428027418126,
+        "first_year_median": 1899.0
+      }
+    ],
+    "repeat_metrics": [
+      {
+        "seed": 20261124,
+        "model": "historical_cohort_continent",
+        "n_species": 2799,
+        "logloss": 0.5694392802607923,
+        "brier": 0.191802186187124,
+        "AUC": 0.6388560236326474
+      },
+      {
+        "seed": 20261124,
+        "model": "history_prior25",
+        "n_species": 2799,
+        "logloss": 0.5697635013647819,
+        "brier": 0.19191460673471197,
+        "AUC": 0.637378035138015
+      },
+      {
+        "seed": 20261124,
+        "model": "history_prior25_earlier_record",
+        "n_species": 2799,
+        "logloss": 0.5440960431618017,
+        "brier": 0.1813961242645921,
+        "AUC": 0.6932110492991483
+      },
+      {
+        "seed": 20261124,
+        "model": "history_prior25_earlier_record_white",
+        "n_species": 2799,
+        "logloss": 0.5444183699698784,
+        "brier": 0.18153411265477293,
+        "AUC": 0.692612522421057
+      },
+      {
+        "seed": 20261124,
+        "model": "history_prior25_earlier_record_all9",
+        "n_species": 2799,
+        "logloss": 0.5455016250957619,
+        "brier": 0.18184229044707492,
+        "AUC": 0.6934796595665073
+      },
+      {
+        "seed": 20261125,
+        "model": "historical_cohort_continent",
+        "n_species": 2799,
+        "logloss": 0.5699762478581781,
+        "brier": 0.19185009449157517,
+        "AUC": 0.6361007143137039
+      },
+      {
+        "seed": 20261125,
+        "model": "history_prior25",
+        "n_species": 2799,
+        "logloss": 0.5702604472891928,
+        "brier": 0.19195042730514686,
+        "AUC": 0.6358513807831792
+      },
+      {
+        "seed": 20261125,
+        "model": "history_prior25_earlier_record",
+        "n_species": 2799,
+        "logloss": 0.5439483968651986,
+        "brier": 0.18109310256972794,
+        "AUC": 0.6928014976444461
+      },
+      {
+        "seed": 20261125,
+        "model": "history_prior25_earlier_record_white",
+        "n_species": 2799,
+        "logloss": 0.5444555983875404,
+        "brier": 0.1812994915253622,
+        "AUC": 0.6925834493097665
+      },
+      {
+        "seed": 20261125,
+        "model": "history_prior25_earlier_record_all9",
+        "n_species": 2799,
+        "logloss": 0.5461155179769782,
+        "brier": 0.1819080476737704,
+        "AUC": 0.6912217532602967
+      },
+      {
+        "seed": 20261126,
+        "model": "historical_cohort_continent",
+        "n_species": 2799,
+        "logloss": 0.5714421443393776,
+        "brier": 0.19270660543637422,
+        "AUC": 0.6371252254746187
+      },
+      {
+        "seed": 20261126,
+        "model": "history_prior25",
+        "n_species": 2799,
+        "logloss": 0.5716142284804593,
+        "brier": 0.19278281351518328,
+        "AUC": 0.6370800357472864
+      },
+      {
+        "seed": 20261126,
+        "model": "history_prior25_earlier_record",
+        "n_species": 2799,
+        "logloss": 0.5452305709570567,
+        "brier": 0.18203482382703182,
+        "AUC": 0.6940917749640063
+      },
+      {
+        "seed": 20261126,
+        "model": "history_prior25_earlier_record_white",
+        "n_species": 2799,
+        "logloss": 0.5451822844795593,
+        "brier": 0.18203497692980006,
+        "AUC": 0.6941195840269799
+      },
+      {
+        "seed": 20261126,
+        "model": "history_prior25_earlier_record_all9",
+        "n_species": 2799,
+        "logloss": 0.5457647280446514,
+        "brier": 0.18216248262884924,
+        "AUC": 0.6949617562181698
+      },
+      {
+        "seed": 20261127,
+        "model": "historical_cohort_continent",
+        "n_species": 2799,
+        "logloss": 0.5714433399371808,
+        "brier": 0.1925325831880713,
+        "AUC": 0.6344286944024149
+      },
+      {
+        "seed": 20261127,
+        "model": "history_prior25",
+        "n_species": 2799,
+        "logloss": 0.5717230436085032,
+        "brier": 0.19264642886217542,
+        "AUC": 0.6342984974257656
+      },
+      {
+        "seed": 20261127,
+        "model": "history_prior25_earlier_record",
+        "n_species": 2799,
+        "logloss": 0.546062082596497,
+        "brier": 0.18196518154265676,
+        "AUC": 0.6899532807742044
+      },
+      {
+        "seed": 20261127,
+        "model": "history_prior25_earlier_record_white",
+        "n_species": 2799,
+        "logloss": 0.5463610332075465,
+        "brier": 0.18205238328534323,
+        "AUC": 0.6895781744361398
+      },
+      {
+        "seed": 20261127,
+        "model": "history_prior25_earlier_record_all9",
+        "n_species": 2799,
+        "logloss": 0.5490079107197811,
+        "brier": 0.18303657725748876,
+        "AUC": 0.6867207932155999
+      },
+      {
+        "seed": 20261128,
+        "model": "historical_cohort_continent",
+        "n_species": 2799,
+        "logloss": 0.5705810867551527,
+        "brier": 0.1924170744388215,
+        "AUC": 0.6371312297041242
+      },
+      {
+        "seed": 20261128,
+        "model": "history_prior25",
+        "n_species": 2799,
+        "logloss": 0.5707742434963397,
+        "brier": 0.19248508847309012,
+        "AUC": 0.6361266273042021
+      },
+      {
+        "seed": 20261128,
+        "model": "history_prior25_earlier_record",
+        "n_species": 2799,
+        "logloss": 0.5444416460199138,
+        "brier": 0.1816178852730744,
+        "AUC": 0.6923132589820113
+      },
+      {
+        "seed": 20261128,
+        "model": "history_prior25_earlier_record_white",
+        "n_species": 2799,
+        "logloss": 0.5450725587356162,
+        "brier": 0.18187026727160205,
+        "AUC": 0.6912912759177305
+      },
+      {
+        "seed": 20261128,
+        "model": "history_prior25_earlier_record_all9",
+        "n_species": 2799,
+        "logloss": 0.5467633463319581,
+        "brier": 0.1824438008885096,
+        "AUC": 0.6899864620425251
+      }
+    ]
+  },
+  "earlier_any_firstrecord_can_include_imputed_casual_or_uncertain": true,
+  "source_earliest_strict_not_true_first_record": true,
+  "source_recording_opportunity_is_proxy_not_real_effort": true,
+  "photo9_unverified_perianth": true,
+  "recording_differences_not_causal_biological_dispersal": true,
+  "software": {
+    "python": "3.13.5",
+    "sklearn": "1.8.0",
+    "pandas": "2.2.3",
+    "numpy": "2.3.5"
+  }
+}
