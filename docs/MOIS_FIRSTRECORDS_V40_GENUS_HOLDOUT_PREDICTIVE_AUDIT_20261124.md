@@ -66,3 +66,12 @@
 解析スクリプト：`scripts/analysis/mois_firstrecords_v40_genus_holdout_predictive_audit_20261124.py`。
 検証テスト：`tests/test_mois_firstrecords_v40_genus_holdout_20261124.py`（ローカル3件合格）。
 数値出力：`summary.json`、属保持予測`species_genus_holdout_probability_predictions.csv.gz`、大陸・25年区間の母集団表、5×5 CV反復表、入力・コードSHA receipt。**基準モデルのデータはsource artifactとSHAで固定**。PR #206はDraftのまま、mainは更新しない。
+
+## GitHub CIでの独立再現検証（2026-11-24）
+
+- [GitHub Actions #45385326207](https://github.com/zuizui0223/mois/actions/runs/45385326207) **SUCCESS**。固定ソースZIP全体SHAが一致し、3つのmethod契約テストに合格。再実行した5反復×5属保持予測とLOCO分析を成果物として保存。
+- [検証済み数値artifact #14916012271](https://github.com/zuizui0223/mois/actions/runs/45385326207/artifacts/14916012271)、ZIP SHA256 `e04a16f9ac544d70f570bf1ce5c51f6c12b49d76be61a9d384c264c6945ad2d6`。内部6ファイルのSHA一致（全数値要約、3集計CSV、各種OOF予測CSV.gz、receipt）。
+- 独立したPython 3.13による計算とGitHub Python 3.12.16/scikit-learn1.8.0の再計算で、全3モデルのLog loss・Brier・AUCと2色条件の改善値が**絶対誤差1e−10以下で一致**（最大約3.5e−15）。
+- [独立GLM感度解析](../analysis_specs/MOIS_FIRSTRECORDS_V40_GENUS_HOLDOUT_GLM_SENSITIVITY_20261124.json)を別データモデルで計算。属クラスター頑健ORは1.019、95%CI [0.849,1.225]、p=.837。変化の無効果や同等性を証明したものではない。
+- [再計算検証JSON](../analysis_specs/MOIS_FIRSTRECORDS_V40_GENUS_HOLDOUT_CI_REPRODUCIBILITY_20261124.json)に、ソース・成果物・CI状態・数値許容値を保存。元写真ラベル・GBIF・WCVPの一次データは一切変更せず、PRはDraft、main未変更。
+
