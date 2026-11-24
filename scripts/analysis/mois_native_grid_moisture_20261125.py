@@ -14,7 +14,7 @@ def run(root,out):
   q=d.loc[d[f'{mode}_native_n_photo9_species'].ge(30)].reset_index(drop=True)
   assert len(q)==count
   for cohort in ['all_native30','native100','native30_intro_lt30']:
-   s=q.copy() if cohort=='all_native30' else q.loc[q[f'{mode}_native_n_photo9_species'].ge(100)] if cohort=='native100' else q.loc[q[f'{mode}_introduced_n_photo9_species'].lt(30)].reset_index(drop=True)
+   s=q.copy() if cohort=='all_native30' else q.loc[q[f'{mode}_native_n_photo9_species'].ge(100)] if cohort=='native100' else q[f'{mode}_introduced_n_photo9_species'].lt(30)].reset_index(drop=True)
    x=pd.DataFrame({'log_current_precip':np.log1p(s.present_precip_mm),'current_temp':s.present_temperature_C,'LGM_warming':s.threeGCM_delta_temperature_C_median,'LGM_rain':s.threeGCM_delta_log_precip_median,'NPP':s.NPP_2001_2023_mean_kgC_m2_yr,'NDVI':s.MODIS_NDVI_2001_2021_mean,'log_woody_AGB':np.log1p(s.ESA_AGB_woody_Mg_ha_2020),'abs_lat':s.lat.abs(),'log_native_species':np.log1p(s[f'{mode}_native_n_photo9_species']),'log_all_species':np.log1p(s.n_accepted_species)})
    x=(x-x.mean())/x.std(ddof=1);assert np.isfinite(x).all().all()
    y=s[f'{mode}_native_white_species_fraction']
