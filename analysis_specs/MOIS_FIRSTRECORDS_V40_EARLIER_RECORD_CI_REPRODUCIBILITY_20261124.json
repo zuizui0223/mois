@@ -1,0 +1,35 @@
+{
+  "schema": "mois_v4_early_source_record_history_5x5_grouped_cv_independent_reproduction",
+  "timestamp": "2026-11-24",
+  "ci_run_id": 45389608238,
+  "ci_conclusion": "success",
+  "tests_3_passed": true,
+  "artifact_id": 14917779360,
+  "artifact_zip_sha256": "1b629a78394a7cb05126bd76fa7511eebfcb5d332c0f18e2d4e05ec2a94170a0",
+  "original_source_zip_SHA256": "ee212ebd94d374e31d5511f22f0042f20f45618b47961faf8bce8fd45124e26e",
+  "original_source_zip_SHA256_verified": true,
+  "member_SHA256_valid_count": 4,
+  "local_vs_CI_max_absolute_numeric_difference": 1.3918866059725588e-12,
+  "n_source_species": 2799,
+  "n_source_genera": 1293,
+  "n_historical_earlier_source_records": 1486,
+  "event_species": 786,
+  "metrics_logloss": {
+    "base_history_prior25": 0.5696112145908226,
+    "plus_earlier_any_source": 0.5436023571956955,
+    "plus_white": 0.5439102349192165,
+    "plus_photo9": 0.5451098894462497
+  },
+  "crossvalidated_signed_logloss_improvement": {
+    "previous_record_flag": 0.026071344927012352,
+    "white_after_source_history": -0.0003422210353161668,
+    "nine_hues_after_source_history": -0.001874877714421281
+  },
+  "limitations": [
+    "historical earlier records may be imputed, casual, unconfirmed or previously non-established",
+    "earliest eligible record is not earliest documented record or true introduction",
+    "first-record accumulation is not biological expansion, dispersal or radiation",
+    "photographic hues are not botanical petal colors",
+    "bootstrap bounds are conditional on fitted OOF predictions"
+  ]
+}

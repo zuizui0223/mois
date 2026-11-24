@@ -59,3 +59,11 @@
 - 初期コード：`scripts/analysis/mois_firstrecords_v40_historical_effort_audit_20261124.py`、`tests/test_mois_firstrecords_v40_historical_effort_20261124.py`、`.github/workflows/mois-firstrecords-v40-historical-opportunity-20261124.yml`。後段のモデルもsourceのSHAを固定。
 
 主計量は**初記録された追加地域の有無**であり、実際の環境選択・個体の拡散速度・生物間相互作用・種分化・外来群集への長期選択を計測した結果ではない。PR #206 Draftに保存し、mainは変更しない。
+
+### 独立GitHub実行の完了確認（2026-11-24）
+
+- [5×5属保持・初記録史追加のGitHub Actions #45389608238](https://github.com/zuizui0223/mois/actions/runs/45389608238) は**SUCCESS**。方法とソース契約テスト3/3通過、前段の完全署名ZIP SHA256 `ee212ebd94d374e31d5511f22f0042f20f45618b47961faf8bce8fd45124e26e` を同一バイト照合。
+- [成果物 #14917779360](https://github.com/zuizui0223/mois/actions/runs/45389608238/artifacts/14917779360)：ZIP SHA256 `1b629a78394a7cb05126bd76fa7511eebfcb5d332c0f18e2d4e05ec2a94170a0`、内部CSV/JSON4件のSHA256照合成功。全2,799種の属外OOF、5×5反復指標、最古原資料記録の有無別記録率、サマリを保存。
+- ローカル（Python 3.13）とCI（Python 3.12）の全モデルLog loss/Brier/AUCとLog loss・AUCのペア増分で、最大絶対数値差 **1.392×10^-12**。群別サンプル数は両環境一致。
+- [CI署名付き数値監査JSON](../analysis_specs/MOIS_FIRSTRECORDS_V40_EARLIER_RECORD_CI_REPRODUCIBILITY_20261124.json)を本PRに保存。現在の解析は**完了、Draft PR継続、main未マージ**。
+
