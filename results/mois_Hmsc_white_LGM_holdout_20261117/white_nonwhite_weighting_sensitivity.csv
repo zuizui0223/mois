@@ -1,0 +1,7 @@
+region,weighting,n,n_500km_blocks,mean_diff_logloss,CI95_lower,CI95_upper,loo_min,loo_max
+Europe_temperate,equal_species_cells,2860,10,-0.0004547216,-0.0139203869,0.0401535790,,
+Europe_temperate,equal_species,79,10,-0.0359174136,-0.0486816865,-0.0075172814,-0.0417881685,-0.0235294221
+North_America_temperate,equal_species_cells,1893,11,-0.0239881798,-0.0699896299,-0.0016816750,,
+North_America_temperate,equal_species,75,11,-0.0002567887,-0.0506144817,0.0278445777,-0.0110334948,0.0081839021
+East_Asia_temperate,equal_species_cells,1740,9,-0.0150651571,-0.0410206720,-0.0003257755,,
+East_Asia_temperate,equal_species,77,9,0.0145473343,-0.0207254230,0.0258226118,-0.0003546265,0.0215563766
