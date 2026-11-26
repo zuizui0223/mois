@@ -1,0 +1,147 @@
+name: "MOIS Paleo: independent Neotoma fossil API age and taxonomy gate"
+on:
+  push:
+    branches:
+      - analysis/mois-global-floral-colour-assembly-null-20261118
+    paths:
+      - .github/workflows/mois-neotoma-fossil-source-gate-20261119.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-official-fossil-record-endpoints:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Read official Neotoma OpenAPI and bounded real taxon/age record examples
+        run: |
+          python - <<'PY'
+          import hashlib,json,time,urllib.parse,urllib.request,datetime,pathlib
+          base='https://api.neotomadb.org'
+          endpoints=[
+            '/swagger.json',
+            '/v2.0/data/taxa?'+urllib.parse.urlencode({'taxonname':'Betula','limit':5}),
+            '/v2.0/data/occurrences?'+urllib.parse.urlencode({'taxonname':'Betula','ageyoung':19000,'ageold':26000,'limit':5}),
+            '/v2.0/data/occurrences?'+urllib.parse.urlencode({'taxonname':'Pinus','ageyoung':19000,'ageold':26000,'limit':5}),
+          ]
+          out=pathlib.Path('results/mois_neotoma_source_gate_20261119')
+          out.mkdir(parents=True,exist_ok=True)
+          entries=[]
+          for i,path in enumerate(endpoints):
+            url=base+path
+            err=None
+            for attempt in range(3):
+              try:
+                req=urllib.request.Request(url,headers={'User-Agent':'MOIS-science-source-audit/1.0 (public academic source check)','Accept':'application/json'})
+                with urllib.request.urlopen(req,timeout=25) as response:
+                    raw=response.read(15_000_000+1)
+                    status=response.status
+                if len(raw)>15_000_000:raise ValueError('Source response exceeds bounded 15MB')
+                parsed=json.loads(raw)
+                err=None
+                break
+              except Exception as ex:
+                err=str(ex)
+                time.sleep(attempt+1)
+            if err:
+              entries.append({'url':url,'error':err,'retries':3})
+              continue
+            check=hashlib.sha256(raw).hexdigest()
+            (out/f'neotoma_response_{i}.json').write_bytes(raw)
+            keys=list(parsed.keys()) if isinstance(parsed,dict) else []
+            top={k:len(v) for k,v in parsed.items() if isinstance(v,list)} if isinstance(parsed,dict) else {}
+            entries.append({'url':url,'http_status':status,'sha256':check,
+              'json_type':type(parsed).__name__,'keys':keys[:25],
+              'top_list_lengths':top,'bytes':len(raw)})
+            if i==0:
+              paths=parsed.get('paths',{})
+              audit={}
+              for ep in ('/v2.0/data/taxa','/v2.0/data/occurrences'):
+                get=paths.get(ep,{}).get('get',{})
+                audit[ep]=[v.get('$ref',v.get('name')) for v in get.get('parameters',[])]
+              (out/'official_openapi_taxon_age_contract.json').write_text(json.dumps(audit,indent=2)+'\n')
+          receipt={'source':'Neotoma official public OpenAPI v2.0',
+             'queried_at_UTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+             'probe_scope':'two common fossil genera, age 19000-26000 calibrated yr BP',
+             'not_all_MOIS_species':True,
+             'no_palaeofossil_taxon_matching_or_validation_complete':True,
+             'no_refugia_inference':True,'requests':entries}
+          (out/'receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          print('MOIS_NEOTOMA_REAL_SOURCE_GATE',json.dumps(receipt),flush=True)
+          assert entries and entries[0].get('http_status')==200,'Neotoma official API unavailable or schema unreadable'
+          assert any(e.get('http_status')==200 for e in entries[1:]),'No Neotoma taxon or occurrence endpoint responded'
+          PY
+      - name: Re-query with canonical Neotoma taxon IDs and verify every returned fossil
+        run: |
+          python - <<'PY'
+          import json,urllib.parse,urllib.request,hashlib,pathlib,datetime,time
+          out=pathlib.Path('results/mois_neotoma_source_gate_20261119')
+          out.mkdir(parents=True,exist_ok=True)
+          def get(path,tag):
+              url='https://api.neotomadb.org'+path
+              req=urllib.request.Request(url,headers={'Accept':'application/json','User-Agent':'MOIS-official-fossil-id-check/1.0'})
+              with urllib.request.urlopen(req,timeout=35) as res:
+                  raw=res.read(8_000_001)
+                  status=res.status
+              if len(raw)>8_000_000: raise ValueError('too large')
+              result=json.loads(raw)
+              if result.get('status')!='success' or not isinstance(result.get('data'),list):
+                  raise ValueError('Unexpected Neotoma return '+str(result)[:200])
+              (out/f'{tag}.json').write_bytes(raw)
+              return result['data'],{'url':url,'sha256':hashlib.sha256(raw).hexdigest(),'status':status,'n_returned':len(result['data'])}
+          results=[]
+          failures=[]
+          for genus in ('Betula','Pinus'):
+              taxa,source=get('/v2.0/data/taxa?'+urllib.parse.urlencode({'taxonname':genus,'limit':25}),genus+'_taxon_lookup')
+              ids=[int(t['taxonid']) for t in taxa if t.get('taxonname')==genus]
+              if len(ids)!=1:
+                  failures.append(genus+': expected one exact genus taxon ID, got '+str(ids))
+                  continue
+              ident=ids[0]
+              rows,record=get('/v2.0/data/occurrences?'+urllib.parse.urlencode({
+                  'taxonid':ident,'ageyoung':19000,'ageold':26000,'limit':25
+              }),genus+'_taxonid_occurrences_19_26ka')
+              returned_ids=sorted(set(str(x.get('sample',{}).get('taxonid')) for x in rows))
+              returned_names=sorted(set(str(x.get('sample',{}).get('taxonname')) for x in rows))
+              ages=[x.get('age',{}).get('age') for x in rows]
+              id_ok=all(x.get('sample',{}).get('taxonid')==ident for x in rows)
+              # Neotoma age range queries can include samples lacking an
+              # independently evaluable central age. Exclude them, not the
+              # entire taxon or the otherwise correct taxonid filter.
+              dated=[v for v in ages if v is not None]
+              age_ok=all(19000<=float(v)<=26000 for v in dated)
+              if rows and not id_ok:
+                  failures.append(genus+': taxonid filtering failed')
+              if dated and not age_ok:
+                  failures.append(genus+': nonnull central age outside requested window')
+              results.append({'query_genus':genus,'taxonid':ident,'lookup':source,
+                  'occurrence_query':record,'all_records_exact_taxonid':id_ok,
+                  'all_available_central_ages_19to26ka':age_ok,
+                  'n_missing_central_ages_excluded':len(ages)-len(dated),
+                  'n_usable_records_with_central_age':len(dated),
+                  'missing_central_ages_not_used_for_LGM_presence':True,
+                  'distinct_returned_taxonids':returned_ids,
+                  'distinct_returned_names':returned_names,'sample_ages':ages[:25],
+                  'datasettypes':sorted(set(str(x.get('site',{}).get('datasettype')) for x in rows)),
+                  'not_species_level':True})
+              time.sleep(.5)
+          audit={'official_taxonid_filter_bounded_probe_20261119':True,
+                 'queried_at_UTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                 'query_genera':['Betula','Pinus'],'results':results,
+                 'failures':failures,'example_genus_fossils_not_MOIS_species_persistence':True}
+          (out/'id_filter_audit.json').write_text(json.dumps(audit,indent=2)+'\\n')
+          print('MOIS_NEOTOMA_TAXONID_FILTER_AUDIT',json.dumps(audit),flush=True)
+          if failures or len(results)<2:raise ValueError('Neotoma filtered occurrence endpoint cannot be trusted')
+          PY
+      - name: Preserve audited official fossil source responses
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-neotoma-official-age-taxonomy-source-gate-20261119
+          path: results/mois_neotoma_source_gate_20261119/
+          retention-days: 30
+          if-no-files-found: warn

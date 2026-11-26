@@ -1,0 +1,58 @@
+name: "MOIS Ecology: same-cell native introduced 9-hue gradients spatial bootstrap"
+on:
+  push:
+    branches:
+      - analysis/mois-global-floral-colour-assembly-null-20261118
+    paths:
+      - scripts/analysis/mois_native_intro_samecell_hue9_geography_bootstrap_20261118.py
+      - .github/workflows/mois-native-introduced-samecell-hue9-geography-bootstrap-20261118.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-native-intro-samecell-nine-hue-geographic-20261118
+  cancel-in-progress: false
+jobs:
+  matched-native-vs-intro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install source-compatible numerical libraries
+        run: |
+          python -m pip install --disable-pip-version-check "pandas>=2.1,<3" "numpy>=1.26,<3"
+          python -m py_compile scripts/analysis/mois_native_intro_samecell_hue9_geography_bootstrap_20261118.py
+      - name: Restore exact 18,577-grid WCVP status hue9 null signed previous artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          curl -fLsS --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14400177816/zip" \
+            -o source/native_and_introduced_original_hue9.zip
+          echo "cbe1eef381e3e1a0062dbf5134b047f947338b7c499d2ecc0cd22ee8855909fd  source/native_and_introduced_original_hue9.zip" | sha256sum -c
+      - name: Estimate same-cell native introduced Shannon and white contrasts within geographical gradients
+        run: |
+          python scripts/analysis/mois_native_intro_samecell_hue9_geography_bootstrap_20261118.py \
+            --source source/native_and_introduced_original_hue9.zip \
+            --out results/mois_native_intro_9hue_geographic_paired_bootstrap_20261118
+      - name: Upload signed numerical 500km bootstrap results only
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-native-intro-hue9-samecell-geographic-paired-bootstrap-20261118
+          path: results/mois_native_intro_9hue_geographic_paired_bootstrap_20261118/
+          if-no-files-found: error
+          retention-days: 30

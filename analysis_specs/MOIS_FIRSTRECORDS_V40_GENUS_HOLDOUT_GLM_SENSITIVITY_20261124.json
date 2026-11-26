@@ -1,0 +1,17 @@
+{
+  "model": "Binomial logistic with first-25-year-by-initial-continent fixed effects",
+  "source_zip_sha256": "afa9cbe259ca13d039692e4aa0a0e117045655a3f3fd6ee8e89ddd01b22f41e2",
+  "source_n": 2813,
+  "source_genus": 1294,
+  "event_n": 793,
+  "white_label_coef_logodds": 0.01929282057527156,
+  "white_label_or": 1.0194801296726268,
+  "white_label_or_95pct_cluster_robust_ci": [
+    0.8486099341118366,
+    1.2247555596731248
+  ],
+  "two_sided_p": 0.8366936132676439,
+  "estimated_se": 0.0935978731410776,
+  "interpretation": "exploratory sensitivity, cluster by genus; no true first introduction, flower organ, space/effort measurement; not equivalence test",
+  "code": "glm(any_new_regions_50yr ~ white_photo_label + C(first_cohort_continent), family=Binomial()).fit(cov_type=\"cluster\",cov_kwds={\"groups\":genus})"
+}

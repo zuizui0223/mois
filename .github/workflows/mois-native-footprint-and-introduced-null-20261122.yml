@@ -1,0 +1,111 @@
+name: "MOIS ecology: native footprints and paired introduced floras"
+on:
+  push:
+    branches:
+      - analysis/mois-global-floral-colour-assembly-null-20261118
+    paths:
+      - scripts/analysis/mois_native_footprint_pool_null_20261122.py
+      - scripts/analysis/mois_native_intro_samecell_georegion_null_20261122.py
+      - tests/test_native_footprint_pool_null_20261122.py
+      - tests/test_native_intro_samecell_georegion_null_20261122.py
+      - .github/workflows/mois-native-footprint-and-introduced-null-20261122.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-native-footprint-and-introduced-null-20261122
+  cancel-in-progress: false
+jobs:
+  conditional-colour-null:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        analysis: [native-footprint, native-introduced-paired]
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PYTHONUNBUFFERED: '1'
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install the frozen numerical and geography dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            'numpy==2.1.3' 'pandas==2.2.3' 'pyarrow==19.0.1' \
+            'pyproj==3.7.1' 'geopandas==1.1.1' 'shapely==2.2.0' \
+            'pyogrio==0.13.0' 'pytest>=8,<10'
+          python -m py_compile \
+            scripts/analysis/mois_native_footprint_pool_null_20261122.py \
+            scripts/analysis/mois_native_intro_samecell_georegion_null_20261122.py
+      - name: Verify fixed species labels, native strata, same-cell masks and direct contrasts
+        run: |
+          python -m pytest -q \
+            tests/test_native_georegion_null_20261121.py \
+            tests/test_native_footprint_pool_null_20261122.py \
+            tests/test_native_intro_samecell_georegion_null_20261122.py
+      - name: Recover and verify the original sources and canonical 999-draw reference
+        run: |
+          set -euo pipefail
+          mkdir -p source/WCVP
+          for item in \
+            '14166701658 GBIF 422f6d6489e61c6e57c5d51db614e47f613039781a901e3fd3481c13b2b085c2' \
+            '14219399376 ENV d8b97528188d9f8d63cb802d5b3f6e8f7f251937fd30af42aeae47e43ebad1fc' \
+            '14400177816 NATIVE cbe1eef381e3e1a0062dbf5134b047f947338b7c499d2ecc0cd22ee8855909fd' \
+            '14710329666 NATIVE999 c031cf8fe3f80d6cf868ee20477fdb4c550b836435b79ae16d75e771c564f951'; do
+            read -r artifact label digest <<< "$item"
+            curl --fail --silent --show-error --location --retry 3 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact/zip" \
+              -o "source/$label.zip"
+            echo "$digest  source/$label.zip" | sha256sum -c
+          done
+          tag='mois-real350399-kew-wcvp-native-tdwg3-source-v1'
+          for fn in \
+            'mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' \
+            'mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz' \
+            'mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json'; do
+            curl --fail --silent --show-error --location --retry 3 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              "https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/$fn" \
+              -o "source/WCVP/$fn"
+          done
+          echo 'a3af69d99e389c20eac4d8bc2c5ab4a586a58c401d65743d9dbac1189baaaf9c  source/WCVP/mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json' | sha256sum -c
+          curl --fail --silent --show-error --location --retry 3 \
+            'https://raw.githubusercontent.com/tdwg/wgsrpd/52da7828aba9d461dd133c27b3bd7a4407161f54/geojson/level3.geojson' \
+            -o source/TDWG3.geojson
+          echo 'c172bcf6aba20e19477adc60aebf0023068f0175dca8480f0760b090dcf64840  source/TDWG3.geojson' | sha256sum -c
+      - name: Test strict-native donor pools, native occupancy and native geographic affinity
+        if: matrix.analysis == 'native-footprint'
+        run: |
+          python -m scripts.analysis.mois_native_footprint_pool_null_20261122 \
+            --gbif source/GBIF.zip --env source/ENV.zip \
+            --wcvp source/WCVP --tdwg source/TDWG3.geojson \
+            --native999-reference source/NATIVE999.zip \
+            --permutations 999 --out results/native-footprint
+      - name: Compare paired native and introduced floras under common species permutations
+        if: matrix.analysis == 'native-introduced-paired'
+        run: |
+          python -m scripts.analysis.mois_native_intro_samecell_georegion_null_20261122 \
+            --gbif source/GBIF.zip --env source/ENV.zip \
+            --wcvp source/WCVP --tdwg source/TDWG3.geojson \
+            --native-reference source/NATIVE.zip \
+            --native999-reference source/NATIVE999.zip \
+            --permutations 999 --out results/native-introduced-paired
+      - name: Preserve complete draws, cell expectations, input audits and receipts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-${{ matrix.analysis }}-999-permutations-20261122
+          path: results/${{ matrix.analysis }}/
+          retention-days: 60
+          if-no-files-found: error
