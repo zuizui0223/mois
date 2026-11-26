@@ -1,0 +1,99 @@
+name: MOIS full COL XR 26852 accepted species 9-fraction trait bridge and global ISEA3H SQL
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_gbif_colxr_nine_colour_traits_bridge.py
+      - tests/test_mois_gbif_colxr_nine_colour_traits_bridge.py
+      - .github/workflows/mois-gbif-colxr-full-traits-and-grid-sql.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-colxr-full26852-real-original9-trait-and-sql
+  cancel-in-progress: false
+jobs:
+  actual-26852-colxr-accepted-species-nine-colour-traits:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      ATLAS_RUN: '42925844766'
+      MATCH_RUN: '42932546397'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test signed taxonomic identity, numeric nine-fraction composition and polymorphic hue states
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_nine_colour_traits_bridge.py -v
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_sql_isea3h_requests.py -v
+      - name: Fetch frozen full-source original colour atlas and authentic COL XR accepted names
+        run: |
+          set -euo pipefail
+          mkdir -p input
+          gh run download "$ATLAS_RUN" --repo "$REPO" \
+            --name mois-real1280-wave2-cumulative-9palette-and-fresh-wave3-source \
+            --dir input
+          gh run download "$MATCH_RUN" --repo "$REPO" \
+            --name mois-global-full-nine-hue-species-GBIF-COLXR-batch-name-reconciliation \
+            --dir input
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          root=Path('input')
+          path=root/'global_after1280/mois_global_42111_species_first_after1280.csv.gz'
+          expected='e1438342218275078620cdd503d3a4b5e774eaa7c6cce0c160e8969eab875c52'
+          assert hashlib.sha256(path.read_bytes()).hexdigest()==expected
+          receipt=json.loads((root/'receipt.json').read_text())
+          assert receipt['successful_exact_accepted_colxr_species']==26852
+          assert receipt['actual_requested_nominal_taxa']==28309
+          print('MOIS_GENUINE_26852_COLXR_ACCEPTED_AND_ORIGINAL9_ATLAS_SOURCE_VERIFIED',flush=True)
+          PY
+      - name: Join all accepted species identities with fractional 9-palette ROI traits and classify single vs multi
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_nine_colour_traits_bridge \
+            --atlas input/global_after1280/mois_global_42111_species_first_after1280.csv.gz \
+            --accepted input/mois_gbif_colxr_exact_accepted_species_hue_roster.csv.gz \
+            --output full_traits
+          python - <<'PY'
+          import json
+          d=json.load(open('full_traits/receipt.json'))
+          assert d['GBIF_COLXR_exact_accepted_species_with_numeric9']==26852
+          assert d['sampled_single_hue_species']==14435
+          assert d['sampled_multicolour_species']==12417
+          assert len(d['nine_colour_components_preserved'])==9
+          print('MOIS_COLXR_REAL9_FRACTIONS_ALL26852_LINK_QC_VERIFIED',flush=True)
+          PY
+      - name: Prepare all accepted species global ISEA3H cell SQL requests without uploading any photos or starting a GBIF download
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_sql_isea3h_requests \
+            --source input/mois_gbif_colxr_exact_accepted_species_hue_roster.csv.gz \
+            --chunk-size 250 --output full_global_sql
+          python - <<'PY'
+          import json,math
+          d=json.load(open('full_global_sql/receipt.json'))
+          assert d['source_colxr_species_key_count']==26852
+          assert d['sql_request_count']==math.ceil(26852/250)
+          assert d['user_authenticated_GBIF_download_submitted'] is False
+          print('MOIS_GLOBAL_26852_SPECIES_ISEA3H_SQL_PREPARED_NO_AUTHENTICATED_DOWNLOAD',
+                d['sql_request_count'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-26852-COLXR-accepted-species-real9-fraction-traits-and-global-ISEA3H-SQL
+          path: |
+            full_traits/
+            full_global_sql/
+          retention-days: 90
+          if-no-files-found: warn

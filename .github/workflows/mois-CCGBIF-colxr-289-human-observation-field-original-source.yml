@@ -1,0 +1,146 @@
+name: MOIS GBIF COL XR 289 zero-ROI taxa field-first CC still image source metadata
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/acquisition/mois_CCGBIF_colxr_field_photo_direct_search.py
+      - tests/test_mois_CCGBIF_colxr_field_photo_direct_search.py
+      - .github/workflows/mois-CCGBIF-colxr-289-human-observation-field-original-source.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-zero9-GBIF-289-exact-accepted-human-observation-CC-original-source
+  cancel-in-progress: false
+jobs:
+  lookup-actual-CC-field-observation-media:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: [0,1,2,3]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_RUN: '43538257066'
+      PRIOR_SOURCE_DIGEST: 'sha256:a67b59520d871a3e2e0a80ac49c6f5851f29b514854e6bfddd35743e37c3f120'
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: No-network regressions, botanical name, CC still media and field vs specimen gate
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_CCGBIF_colxr_field_photo_direct_search.py -v
+          python -m py_compile scripts/acquisition/mois_CCGBIF_colxr_field_photo_direct_search.py
+      - name: Restore verified actual GBIF v2 COL XR 289 accepted from frozen 304-source taxa
+        run: |
+          set -euo pipefail
+          test "$(gh run view "$SOURCE_RUN" --repo "$REPO" --json conclusion --jq .conclusion)" = success
+          digest="$(gh api "repos/$REPO/actions/runs/$SOURCE_RUN/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.name=="mois-zero9-304taxa-CC-other-GBIF-original-image-URL-and-host-screen") | .digest')"
+          test "$digest" = "$PRIOR_SOURCE_DIGEST"
+          mkdir -p signed
+          gh run download "$SOURCE_RUN" --repo "$REPO" \
+            --name mois-zero9-304taxa-CC-other-GBIF-original-image-URL-and-host-screen \
+            --dir signed
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.acquisition.mois_zero9_gbif_other_cc_media_pilot import source_sha
+          d=json.loads(Path('signed/receipt.json').read_text())
+          assert d['schema']=='mois_zero9_304taxa_noninat_CC_GBIF_source_union_v1'
+          assert d['official_COL_XR_exact_accepted_taxa_count']==289
+          assert d['source_zero9_nominal_taxa_total']==2229
+          file=Path('signed/mois_CC_noninat_GBIF_304taxa_exact_name_status.csv')
+          assert source_sha(file)==d['outputs_sha256'][file.name]
+          print('MOIS_SIGNED_289_EXACT_ACCEPTED_GBIF_CC_FIELD_SOURCE_TAXA',flush=True)
+          PY
+      - name: Actually search public GBIF COL XR HUMAN_OBSERVATION still CC media for one disjoint taxon group
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_CCGBIF_colxr_field_photo_direct_search group \
+            --union signed --group "${{ matrix.group }}" --pace 0.30 \
+            --output "fields_${{ matrix.group }}"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('fields_${{ matrix.group }}/receipt.json').read_text())
+          assert d['schema']=='mois_noninat_GBIF_COLXR_HUMAN_OBSERVATION_CC_289taxa_source_v1'
+          assert d['stratum']==${{ matrix.group }}
+          assert d['source_accepted_species_queried']>0
+          assert d['image_pixels_downloaded']==0 and d['numeric9_ROI_measured']==0
+          print('MOIS_GBIF_HUMAN_OBSERVATION_NONINAT_CC_MEDIA_ACTUAL_SOURCE_GROUP',
+                json.dumps({k:d[k] for k in (
+                    'stratum','source_accepted_species_queried',
+                    'successful_GBIF_field_API_taxa',
+                    'source_taxa_with_human_observation_CC_still_media',
+                    'licensed_noninat_field_still_image_URL_metadata')},
+                    sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-zero9-GBIF-289-exact-field-CC-media-group${{ matrix.group }}
+          path: fields_${{ matrix.group }}/
+          retention-days: 90
+          if-no-files-found: warn
+  authenticate-four-field-source-strata:
+    needs: lookup-actual-CC-field-observation-media
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Confirm no-network taxon/field source regressions
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_CCGBIF_colxr_field_photo_direct_search.py -v
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-zero9-GBIF-289-exact-field-CC-media-group*
+          path: sources
+          merge-multiple: false
+      - name: Audit four genuine API-queried groups, exact CC field-image URLs and unknowns
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_CCGBIF_colxr_field_photo_direct_search combine \
+            --root sources/mois-zero9-GBIF-289-exact-field-CC-media-group0/fields_0 \
+            --root sources/mois-zero9-GBIF-289-exact-field-CC-media-group1/fields_1 \
+            --root sources/mois-zero9-GBIF-289-exact-field-CC-media-group2/fields_2 \
+            --root sources/mois-zero9-GBIF-289-exact-field-CC-media-group3/fields_3 \
+            --output human_field_source
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('human_field_source/receipt.json').read_text())
+          assert d['schema']=='mois_GBIF_COLXR_289taxa_field_original_CC_media_union_v1'
+          assert d['source_accepted_species_without_iNat_numeric_ROI']==289
+          assert d['new_image_pixels_downloaded']==0
+          assert d['new_nine_fraction_ROI9_measurements']==0
+          assert not d['image_content_verified_flower_only']
+          assert d['source_external_image_sha_duplicate_vs_old_iNaturalist_unverified']
+          print('MOIS_GBIF_COLXR_289TAXA_REAL_HUMAN_OBSERVATION_CC_SOURCE',
+                json.dumps({k:d[k] for k in (
+                   'source_taxa_with_actual_human_observation_CC_still_image',
+                   'noninat_public_CC_human_observation_media_URLs_unique',
+                   'noninat_human_observation_photo_hosts',
+                   'taxa_with_metadata_API_errors')},
+                   sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-zero9-289-accepted-GBIF-human-field-CC-photo-original-source
+          path: human_field_source/
+          retention-days: 90
+          if-no-files-found: error

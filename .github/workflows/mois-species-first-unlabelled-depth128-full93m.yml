@@ -1,0 +1,184 @@
+name: MOIS regenerate depth128 new authentic original-photo options for 2977 unlabelled taxa from full93m
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/acquisition/mois_species_first_unlabelled_depth128.py
+      - tests/test_mois_species_first_unlabelled_depth128.py
+      - .github/workflows/mois-species-first-unlabelled-depth128-full93m.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-93m-original-photo-source-unlabelled-depth128
+  cancel-in-progress: false
+jobs:
+  sixteen-signed-source-groups:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: ['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15']
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      GROUP: ${{ matrix.group }}
+      BASE_TAG: mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1
+      MASTER_TAG: mois-complete-93209351-original-photo-target-tiers-v1
+      ATLAS_RUN: '43446165798'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit-test 128 independent observation candidates only for currently unlabelled taxa
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_species_first_unlabelled_depth128.py -v
+          python -m py_compile scripts/acquisition/mois_species_first_unlabelled_depth128.py
+      - name: Restore signed 93m source metadata tiers, old image IDs and latest authenticated unlabelled taxa
+        run: |
+          set -euo pipefail
+          mkdir -p frozen tiers atlas
+          gh release download "$BASE_TAG" --repo "$REPO" --dir frozen \
+            --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet
+          gh run download "$ATLAS_RUN" --repo "$REPO" \
+            --name mois-fortysixth4096-verified-append-fortyseventh-prioritized-original-source --dir atlas
+          gh release download "$MASTER_TAG" --repo "$REPO" --dir frozen \
+            --pattern mois_all_original_photo_target_tiers_receipt.json \
+            --pattern "group-$GROUP-receipt.json"
+          for tier in $(seq -w 0 13); do
+            gh release download "$MASTER_TAG" --repo "$REPO" --dir tiers \
+              --pattern "tier-$tier-group-$GROUP.tar"
+          done
+          test "$(find tiers -maxdepth 1 -type f -name "tier-??-group-$GROUP.tar" | wc -l)" -eq 14
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          files={
+             'frozen/mois_1181146_unique_original_photo_continuous9_by_arm.parquet':
+               '3fbd0f0ec7eb347b3bbc7ab509ec9312ec6d797ed932dcf7bb425959898c3835',
+             'atlas/updated/mois_species_first_42111_after_fortysixth.csv.gz':
+               '48a29bfb93ea7289422425fc099fc677c08850479eeb866e2d5fce3d01cf0591'}
+          for path,hash in files.items():
+              assert Path(path).is_file() and sha256(path)==hash,path
+          print('MOIS_DEPTH128_CURRENT_42111_UNLABELLED_ATLAS_AND_1181146_FROZEN',flush=True)
+          PY
+      - name: Scan every SHA-signed current source group and preserve up to 128 unattempted-base independent photos/taxon, NO actual images
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_species_first_unlabelled_depth128 \
+            --registry frozen/mois_all_original_photo_target_tiers_receipt.json \
+            --group-receipt "frozen/group-$GROUP-receipt.json" \
+            --archives tiers \
+            --base-photos frozen/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --current-atlas atlas/updated/mois_species_first_42111_after_fortysixth.csv.gz \
+            --group "$((10#$GROUP))" --limit 128 --output "depth128_group$GROUP"
+          python - <<'PY'
+          import json,os,pandas as pd
+          from pathlib import Path
+          n=int(os.environ['GROUP'])
+          root=Path(f"depth128_group{n:02d}")
+          d=json.loads((root/'receipt.json').read_text())
+          assert d['schema']=='mois_species_first_93m_current_unlabelled_depth128_original_photo_source_v1'
+          assert d['source_group']==n and d['source_max_observations_per_taxon']==128
+          assert d['new_original_photo_downloads']==0 and d['new_nine_palette_ROIs']==0
+          first=pd.read_csv(root/f"mois_unlabelled_depth128_group{n:02d}_first_photos.csv",dtype=str)
+          assert first.inat_taxon_id.is_unique and first.photo_id.is_unique and first.observation_id.is_unique
+          assert first.inat_taxon_id.map(lambda s:int(s)%128//8==n).all()
+          print('MOIS_SIGNED_DEPTH128_UNLABELLED_GROUP_CANDIDATES',n,d['source_target_unlabelled_taxa'],d['candidate_original_photos_all_depth'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-full93m-unlabelled-depth128-group-${{ matrix.group }}
+          path: depth128_group${{ matrix.group }}/
+          retention-days: 90
+          if-no-files-found: warn
+  global-depth128-combine:
+    needs: sixteen-signed-source-groups
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-full93m-unlabelled-depth128-group-*
+          path: groups
+          merge-multiple: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify all16 source signed 93m groups and produce deterministic colour-blind fresh original-photo pool
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib,pandas as pd
+          roots=Path('groups');frames=[];firsts=[];receipts=[]
+          for i in range(16):
+              folder=roots/f'mois-full93m-unlabelled-depth128-group-{i:02d}'
+              receipt=folder/'receipt.json'
+              assert receipt.is_file(),('missing signed 93m group',i)
+              r=json.loads(receipt.read_text())
+              assert r['schema']=='mois_species_first_93m_current_unlabelled_depth128_original_photo_source_v1'
+              assert r['source_group']==i and r['new_original_photo_downloads']==0 and r['source_max_observations_per_taxon']==128
+              pre=f'mois_unlabelled_depth128_group{i:02d}'
+              original=folder/(pre+'_original_photo_options.csv.gz')
+              first=folder/(pre+'_first_photos.csv')
+              for path in (original,first):
+                  assert hashlib.sha256(path.read_bytes()).hexdigest()==r['outputs_SHA256'][path.name],path
+              a=pd.read_csv(original,compression='gzip',dtype=str,keep_default_na=False)
+              b=pd.read_csv(first,dtype=str,keep_default_na=False)
+              assert len(a)==r['candidate_original_photos_all_depth']
+              assert len(b)==r['target_taxa_with_one_or_more_eligible_original_photo']
+              assert a.inat_taxon_id.map(lambda x:int(x)%128//8==i).all()
+              assert a.groupby('inat_taxon_id').size().max()<=128 if len(a) else True
+              frames.append(a);firsts.append(b);receipts.append(r)
+          all_=pd.concat(frames,ignore_index=True)
+          first=pd.concat(firsts,ignore_index=True)
+          assert all_.photo_id.is_unique and all_.observation_id.is_unique
+          assert first.photo_id.is_unique and first.inat_taxon_id.is_unique and first.observation_id.is_unique
+          assert set(first.photo_id).issubset(set(all_.photo_id))
+          assert sum(r['source_target_unlabelled_taxa'] for r in receipts)==2977
+          out=Path('global_depth128');out.mkdir()
+          a=out/'mois_full93m_unlabelled_depth128_original_photo_options.csv.gz'
+          b=out/'mois_full93m_unlabelled_depth128_one_first_photo_per_taxon.csv.gz'
+          all_.to_csv(a,index=False,compression='gzip')
+          first.to_csv(b,index=False,compression='gzip')
+          d={
+             'schema':'mois_species_first_all16_unlabelled_depth128_source_union_v1',
+             'original_global_photo_metadata_population':93209351,
+             'source_fixed_nominal_taxa':42111,
+             'signed_photo_coloured_at_wave46':39134,
+             'prior_unequivocally_unlabelled_taxa':2977,
+             'groups_verified':16,
+             'target_unlabelled_taxa_with_eligible_source_photo':len(first),
+             'candidate_unique_original_photo_opportunities':len(all_),
+             'source_depth_per_nominal_taxon_max':128,
+             'baseline_original_photo_attempts_excluded':1181146,
+             'later_original_photo_IDs_must_be_excluded_before_acquisition':True,
+             'only_original_photo_metadata_scanned':True,
+             'new_RGB_image_downloads':0,
+             'new_nine_fraction_ROI_measurements':0,
+             'GBIF_occurrence_rows_downloaded':0,
+             'outputs_SHA256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (a,b)},
+             'original_metadata_group_receipts_SHA256':{str(r['source_group']):r['source_signed_full93m_original_group_receipt_SHA256'] for r in receipts}}
+          (out/'receipt.json').write_text(json.dumps(d,indent=2,sort_keys=True)+'\n')
+          print('MOIS_SIGNED_FULL93M_DEEPER_UNLABELLED_SOURCE_READY',json.dumps({k:d[k] for k in ('prior_unequivocally_unlabelled_taxa','target_unlabelled_taxa_with_eligible_source_photo','candidate_unique_original_photo_opportunities','new_RGB_image_downloads')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-all16-signed93m-current-unlabelled-depth128-new-photo-candidates
+          path: global_depth128/
+          retention-days: 90
+          if-no-files-found: error

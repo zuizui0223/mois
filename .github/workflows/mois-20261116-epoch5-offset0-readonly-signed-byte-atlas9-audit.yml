@@ -1,0 +1,97 @@
+name: MOIS epoch5 offset0 terminal ZIP SHA and atlas nine-vector independent audit
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-20261116-epoch5-offset0-readonly-signed-byte-atlas9-audit.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-epoch5-offset0-readonly-audit-once
+  cancel-in-progress: false
+jobs:
+  verify-actual-zip-bytes-and-prior-atlas:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify a completed one-source and deliberately skipped downstream stages
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          repo="zuizui0223/mois"; rid=43772102468
+          get=lambda p:json.loads(subprocess.check_output(["gh","api",p]))
+          r=get(f"repos/{repo}/actions/runs/{rid}")
+          assert (r["status"],r["conclusion"])==("completed","success")
+          j={x["name"]:x["conclusion"] for x in get(f"repos/{repo}/actions/runs/{rid}/jobs?per_page=100")["jobs"]}
+          assert j=={"source-only-first128":"success","pixel-worker-only-if-novel-original":"skipped",
+                     "independent-strict9-audit":"skipped","formal-append-after-audit":"skipped"},j
+          arts=get(f"repos/{repo}/actions/runs/{rid}/artifacts?per_page=100")["artifacts"]
+          assert len(arts)==1 and arts[0]["id"]==14184518712 and not arts[0]["expired"]
+          assert arts[0]["name"]=="mois-20261116-epoch5-offset0-signed-1231345-ID-source"
+          assert arts[0]["digest"]=="sha256:4ae4073f17810f9f78af720e7241ea1bfbced4745c2d8266e677659d242cd510"
+          print("MOIS_EPOCH5_OFFSET0_TERMINAL_SUCCESS_SOURCE_ONLY_NO_PIXEL",flush=True)
+          PY
+      - name: Download actual Github ZIP bytes and rehash source receipt CSV, taxa status, and photo identities
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/actions/artifacts/14184518712/zip" \
+            -o source.zip
+          echo "4ae4073f17810f9f78af720e7241ea1bfbced4745c2d8266e677659d242cd510  source.zip" | sha256sum -c -
+          mkdir -p source
+          unzip -q source.zip -d source
+          python - <<'PY'
+          from pathlib import Path
+          import csv,json,hashlib
+          p=Path("source")
+          h=lambda f:hashlib.sha256((p/f).read_bytes()).hexdigest()
+          assert sorted(x.name for x in p.iterdir())==["receipt.json","source_candidates.csv","source_taxon_status.csv"]
+          r=json.loads((p/"receipt.json").read_bytes())
+          assert h("source_status_SHA256") if False else True
+          assert h("source_taxon_status.csv")==r["source_status_SHA256"]
+          assert h("source_candidates.csv")==r["source_candidates_SHA256"]
+          with (p/"source_taxon_status.csv").open(newline="") as f: rows=list(csv.DictReader(f))
+          with (p/"source_candidates.csv").open(newline="") as f: photos=list(csv.DictReader(f))
+          assert len(rows)==len({x["inat_taxon_id"] for x in rows})==128
+          assert all(x["status"]=="source_queried" and str(x["accepted_unused_photo"])=="0" for x in rows)
+          assert not photos
+          assert (r["hash_disjoint_taxon_offset"],r["searched_zero_numeric_taxa"],
+                  r["source_API_error_count"],r["new_independent_original_photo_candidates"],
+                  r["old_original_photo_attempt_ID_count"],r["old_original_photo_obs_ID_overlap"],
+                  r["original_pixels_fetched"],r["strict9_numeric_photos"])==(0,128,0,0,1231345,0,0,0)
+          assert r["old_all_image_raw_SHA_disjointness_proven"] is False
+          assert r["recent_known_original_image_raw_SHA_count"]==101
+          assert r["created_utc_lower_bound"]=="2026-11-15T21:27:57+00:00"
+          print("MOIS_EPOCH5_SIGNED_SOURCE_RECEIPT_SHA256",h("receipt.json"),flush=True)
+          print("MOIS_EPOCH5_SIGNED_SOURCE_STATUS_SHA256",h("source_taxon_status.csv"),flush=True)
+          print("MOIS_EPOCH5_EMPTY_CANDIDATES_SHA256",h("source_candidates.csv"),flush=True)
+          print("MOIS_EPOCH5_128_ID_UNIQUE_API0_NEWPHOTO0_VALIDATED",flush=True)
+          PY
+      - name: Recheck true 42,111-taxon signed atlas nine fractions and all-missing unknowns
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          mkdir -p atlas
+          gh run download 43755422537 --repo "$REPO" \
+            --name mois-20261116-epoch4-offset2048-genuine-original-42111-taxonomy-append --dir atlas
+          echo "20c4692a821b2cfbaf41e1f32bf0817e718165870fe1e1ee5e60a461b94ae8ee  atlas/mois_42111_post20261114_new_independent_original_photo9.csv.gz" | sha256sum -c -
+          python - <<'PY'
+          import numpy as np,pandas as pd
+          a=pd.read_csv("atlas/mois_42111_post20261114_new_independent_original_photo9.csv.gz",dtype={"inat_taxon_id":str})
+          ok=a.after_strict9.gt(0)
+          hues=("white","yellow","orange","red","pink","magenta","purple","blue","bronze")
+          c=["observed_mean_"+h for h in hues]
+          v=a.loc[ok,c].to_numpy(float)
+          assert len(a)==42111 and a.inat_taxon_id.is_unique
+          assert int(ok.sum())==39912 and int((~ok).sum())==2199
+          assert np.isfinite(v).all() and (v>=0).all() and (abs(v.sum(axis=1)-1)<=0.001).all()
+          assert a.loc[~ok,c].isna().all().all()
+          print("MOIS_EPOCH5_ATLAS_42111_NUMERIC_39912_UNKNOWN_2199_ALL_NINE_PASSED",flush=True)
+          PY

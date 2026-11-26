@@ -1,0 +1,91 @@
+name: MOIS actual wave3 newly labelled 9-colour GBIF COL XR incremental species keys
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_gbif_colxr_new_hue_incremental.py
+      - tests/test_mois_gbif_colxr_new_hue_incremental.py
+      - .github/workflows/mois-gbif-colxr-incremental-wave3-names.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-gbif-colxr-wave3-photo-hue-new-species-increment
+  cancel-in-progress: false
+jobs:
+  wave3-names-and-true-nine-fractions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PHOTO_RUN: '42950141749'
+      GBIF_RUN: '42932546397'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regression-test incremental COL XR name identity and nine colour bounds
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_new_hue_incremental.py -v
+          python -m unittest discover -s tests -p test_mois_gbif_colxr_nine_colour_traits_bridge.py -v
+      - name: Restore only signed 42,111 photo-hue atlas after wave3 plus old 28,309 COL XR names
+        run: |
+          set -euo pipefail
+          mkdir -p photo older
+          gh run download "$PHOTO_RUN" --repo "$REPO" \
+            --name mois-real2304-wave3-361spec-9palette-and-fresh-wave4-source --dir photo
+          gh run download "$GBIF_RUN" --repo "$REPO" \
+            --name mois-global-full-nine-hue-species-GBIF-COLXR-batch-name-reconciliation --dir older
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.analysis.mois_gbif_colxr_batch_match import source_sha
+          photo=Path('photo/cumulative/mois_species_first_42111_after2304.csv.gz')
+          expected='4369818640dd557530274077610bd91637e8e86f3a6094dbeb12b5fd857aa697'
+          assert source_sha(photo)==expected,('photo original SHA',source_sha(photo))
+          previous=json.load(open('older/receipt.json'))
+          assert previous['actual_requested_nominal_taxa']==28309
+          assert previous['successful_exact_accepted_colxr_species']==26852
+          assert previous['palette_count_in_source']==9
+          print('MOIS_REAL42111_AFTER2304_AND_PREVIOUS26852_COLXR_SOURCE_VERIFIED',flush=True)
+          PY
+      - name: Match only new coloured source taxa to actual GBIF COL XR and append clean accepted keys
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_colxr_new_hue_incremental \
+            --atlas photo/cumulative/mois_species_first_42111_after2304.csv.gz \
+            --prior-matches older/mois_28312_named_hue_taxa_gbif_colxr_match.csv.gz \
+            --batch-size 200 --pause 1.0 \
+            --output gbif_after_wave3
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('gbif_after_wave3/receipt.json').read_text())
+          assert d['schema']=='mois_incremental_actual_wave3_photo9_gbif_colxr_match_v1'
+          assert d['previous_named_hue_taxa']==28309
+          assert d['new_named_hue_taxa_matched']>0
+          assert d['new_named_hue_taxa_matched']<=279
+          assert d['cumulative_exact_accepted_colxr_species']>=26852
+          assert d['cumulative_preserved_nine_fraction_traits']==d['cumulative_exact_accepted_colxr_species']
+          assert d['GBIF_SQL_ISEA3H_request_files_prepared']>=108
+          assert not d['GBIF_authenticated_download_submitted']
+          print('MOIS_WAVE3_NEW_ACTUAL_GBIF_COLXR_ACCEPTED_NAME_DELTA',json.dumps({
+            k:d[k] for k in ('new_named_hue_taxa_matched','new_exact_accepted_colxr_species',
+                            'cumulative_exact_accepted_colxr_species',
+                            'GBIF_SQL_ISEA3H_request_files_prepared')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-gbif-colxr-new-wave3-photo-hue-names-and-9fraction-species-traits
+          path: gbif_after_wave3/
+          retention-days: 90
+          if-no-files-found: warn

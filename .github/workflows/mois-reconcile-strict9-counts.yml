@@ -1,0 +1,64 @@
+name: MOIS signed ROI9 per-taxon counter reconciliation
+
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_reconcile_strict9_counts.py
+      - tests/test_mois_reconcile_strict9_counts.py
+      - .github/workflows/mois-reconcile-strict9-counts.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: mois-strict9-count-reconcile-analysis/mois-species-first-palette9-20261111
+  cancel-in-progress: false
+
+jobs:
+  repair-signed-taxonomic-counts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned dependencies and run fail-closed counter tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_reconcile_strict9_counts.py -v
+
+      - name: Fetch only the 3 immutable SHA-pinned archived artifact ZIPs
+        run: |
+          set -euo pipefail
+          mkdir -p pinned
+          for item in '13776829802 baseline' '14102611429 current' '14102518161 colxr'; do
+            set -- $item
+            curl --fail --location --silent --show-error --retry 2 \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/$1/zip" \
+              --output "pinned/$2.zip"
+          done
+
+      - name: Reconcile source counters and accepted COL XR trait rows
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_reconcile_strict9_counts \
+            --baseline pinned/baseline.zip \
+            --current pinned/current.zip \
+            --colxr pinned/colxr.zip \
+            --output corrected
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-42111-strict9-per-taxon-count-repaired-20261114
+          path: corrected/
+          retention-days: 90
+          if-no-files-found: error

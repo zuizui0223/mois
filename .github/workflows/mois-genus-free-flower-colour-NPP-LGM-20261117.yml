@@ -1,0 +1,92 @@
+name: MOIS genus-free floral white and nine hue species vs NPP LGM
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-genus-free-flower-colour-NPP-LGM-20261117.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-GBIF-37104-species-genus-free-photo9-NPP-LGM-20261117
+  cancel-in-progress: false
+
+jobs:
+  genus-free-species-ecogeography:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: "1"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify actual genus-free design, original nine-colour and species HC3 tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 \
+            pyarrow==19.0.1 statsmodels==0.14.4 scipy==1.15.2
+          python -m py_compile scripts/analysis/mois_genus_free_photo_white_NPP_LGM_20261117.py
+          python -m unittest discover -s tests -p 'test_mois_genus_free_photo_white_NPP_LGM_20261117.py' -v
+      - name: Restore signed original photo9 mean vectors and true 37104 accepted GBIF species NPP/LGM
+        run: |
+          set -euo pipefail
+          mkdir -p sources
+          for entry in \
+            '14238869787 MAIN 1da364ff63c506f9e2c06d1d71c9609a2c48fec7a428a21ba2c3c4c6ff8f4800' \
+            '14157705123 TRAITS abcd3aee766c85a92b86a8f93f8ed696bbe49d0f6cf2f64e5f75b457abf78e6a'; do
+            set -- $entry
+            curl --fail --location --silent --show-error --retry 3 --retry-delay 5 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/$1/zip" \
+              --output "sources/$2.zip"
+            echo "$3  sources/$2.zip" | sha256sum -c -
+          done
+      - name: Fit without genus FE clusters weights or genus-composition preprocessing
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_genus_free_photo_white_NPP_LGM_20261117 \
+            --main sources/MAIN.zip --traits sources/TRAITS.zip \
+            --output MOIS_GBIF_photo_colour_genus_free
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('MOIS_GBIF_photo_colour_genus_free/receipt.json').read_text())
+          assert d['source_37104_accepted_species']==37104
+          assert d['source_GBIF_species_cells']==5493931
+          assert d['no_genus_in_models']
+          assert d['original_photo_modal_vs_mean9_discrepancies']==2466
+          results=d['results']
+          assert results['n_complete_main']>30000
+          for lab in ('all_source_modal','all_mean9_top',
+                      'modal_mean9_agree_only','consensus_3plus_independent_observations'):
+              x=results['base'][lab]
+              assert x['full_10ecology_photo_status']['status']=='fitted'
+              assert 'NPP' in x['full_10ecology_photo_status']['effects']
+          assert len(results['nine_hue_exploratory'])==9
+          print('MOIS_GENUS_FREE_TRUE_PHOTO_COLOUR_NPP_LGM_COMPLETE',
+            json.dumps({
+              'N':results['n_complete_main'],
+              'modal_NPP':results['base']['all_source_modal']['full_10ecology_photo_status']['effects']['NPP'],
+              'modal_LGM':results['base']['all_source_modal']['full_10ecology_photo_status']['effects']['LGM_warming'],
+              'mean9_NPP':results['base']['all_mean9_top']['full_10ecology_photo_status']['effects']['NPP'],
+              'mean9_LGM':results['base']['all_mean9_top']['full_10ecology_photo_status']['effects']['LGM_warming'],
+              'agree_NPP':results['base']['modal_mean9_agree_only']['full_10ecology_photo_status']['effects']['NPP'],
+              'high_confidence_NPP':results['base']['consensus_3plus_independent_observations']['full_10ecology_photo_status']['effects']['NPP']
+            },sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-true-GBIF-photo9-genus-free-floral-colour-NPP-LGM-HC3-mean9-modal-QA
+          path: MOIS_GBIF_photo_colour_genus_free/
+          retention-days: 90
+          if-no-files-found: warn

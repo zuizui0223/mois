@@ -1,0 +1,173 @@
+name: MOIS zero9 other-provider GBIF CC still-image source breadth 304 taxa
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/acquisition/mois_zero9_gbif_other_cc_media_pilot.py
+      - scripts/acquisition/mois_zero9_gbif_other_cc_media_union.py
+      - tests/test_mois_zero9_gbif_other_cc_media_pilot.py
+      - tests/test_mois_zero9_gbif_other_cc_media_union.py
+      - .github/workflows/mois-zero9-gbif-other-cc-media-304taxa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-zero9-other-CC-media-304-source-taxonomic-pilot
+  cancel-in-progress: false
+jobs:
+  actual-GBIF-CC-media-pilot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: [0, 1, 2, 3]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_RUN: '43448044044'
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Confirm source-only name match and photo-media license/URL tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_zero9_gbif_other_cc_media_pilot.py -v
+          python -m unittest discover -s tests -p test_mois_zero9_gbif_other_cc_media_union.py -v
+      - name: Retrieve immutable 42111 source taxon atlas (2229 zero numeric ROI), not image pixels
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh run download "$SOURCE_RUN" --repo "$REPO" \
+            --name mois-fortyseventh4096-verified-append-fortyeighth-prioritized-original-source \
+            --dir source
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.acquisition.mois_zero9_gbif_other_cc_media_pilot import source_sha, BASELINE
+          p=Path('source/updated/mois_species_first_42111_after_fortyseventh.csv.gz')
+          d=json.loads(Path('source/updated/receipt.json').read_text())
+          assert d['source_taxa_total']==42111 and d['source_taxa_without_nineROI']==2229
+          assert source_sha(p)==d['output_sha256']['atlas']==BASELINE
+          print('MOIS_OTHER_PROVIDER_NONINAT_CC_ORIGINAL_SOURCE_42111_SHA_VERIFIED',flush=True)
+          PY
+      - name: Query public GBIF v2 COL XR and licensed image metadata for 64 NEW source taxa
+        run: |
+          set -euo pipefail
+          group="${{ matrix.group }}"
+          offset="$((48+64*group))"
+          python -m scripts.acquisition.mois_zero9_gbif_other_cc_media_pilot \
+            --atlas source/updated/mois_species_first_42111_after_fortyseventh.csv.gz \
+            --sample 64 --offset "$offset" --pages 2 --page-limit 30 \
+            --pace 0.30 --output "pilot_$offset"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          offset=48+64*int('${{ matrix.group }}')
+          report=json.loads((Path(f'pilot_{offset}')/'receipt.json').read_text())
+          assert report['schema']=='mois_zero9_exact_colxr_gbif_other_provider_cc_image_metadata_pilot_v1'
+          assert report['sample_source_fixed_hash_offset']==offset
+          assert report['selected_zero9_binomial_taxa_sample']==64
+          assert report['original_source_zero_numeric_taxa_total']==2229
+          assert report['original_photo_pixels_downloaded']==0
+          assert report['nine_fraction_flower_colour_measurements']==0
+          assert report['photo_candidate_urls_not_verified_to_show_flowers']
+          assert report['official_colxr_exact_accepted_species_count']>=1
+          print('MOIS_ZERO9_NEW64_OTHER_CC_PROVIDER_ACTUAL_API',json.dumps({
+             k:report[k] for k in ('selected_zero9_binomial_taxa_sample',
+                'official_colxr_exact_accepted_species_count',
+                'selected_taxa_with_noninat_CC_stillimages',
+                'noninat_CC_candidate_media_metadata')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-zero9-GBIF-external-CC-64taxa-group-${{ matrix.group }}
+          path: pilot_*/
+          retention-days: 90
+          if-no-files-found: warn
+  dedup-and-audit-all-304:
+    needs: actual-GBIF-CC-media-pilot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      PRIOR_48_RUN: '43452202520'
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install and test five signed result aggregation
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_zero9_gbif_other_cc_media_union.py -v
+      - name: Restore earlier authentic 48 and four disjoint new 64-taxon GBIF results
+        run: |
+          set -euo pipefail
+          mkdir -p sources/initial48
+          gh run download "$PRIOR_48_RUN" --repo "$REPO" \
+            --name mois-zero9-other-provider-gbif-colxr-CC-still-photo-metadata-pilot \
+            --dir sources/initial48
+          for group in 0 1 2 3; do
+            gh run download "$GITHUB_RUN_ID" --repo "$REPO" \
+              --name "mois-zero9-GBIF-external-CC-64taxa-group-$group" \
+              --dir "sources/group$group"
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.acquisition.mois_zero9_gbif_other_cc_media_pilot import BASELINE,SCHEMA
+          for group in range(4):
+              off=48+64*group
+              d=json.loads((Path(f'sources/group{group}')/f'pilot_{off}'/'receipt.json').read_text())
+              assert d['schema']==SCHEMA and d['sample_source_fixed_hash_offset']==off
+              assert d['source_signed_original_atlas_sha256']==BASELINE
+              assert d['original_photo_pixels_downloaded']==0
+          print('MOIS_304_TAXA_NONOVERLAP_SOURCE_V2_COLXR_BYTES_SIGNED',flush=True)
+          PY
+      - name: Compute exact 304-taxon source union and quarantine any globally duplicated image URLs
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_zero9_gbif_other_cc_media_union \
+            --root sources/initial48 \
+            --root sources/group0/pilot_48 \
+            --root sources/group1/pilot_112 \
+            --root sources/group2/pilot_176 \
+            --root sources/group3/pilot_240 \
+            --output metadata_only
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('metadata_only/receipt.json').read_text())
+          assert d['stratified_hash_draw_taxa']==304
+          assert d['source_zero9_nominal_taxa_total']==2229
+          assert d['photo_pixels_downloaded']==0 and d['new_strict9_numerical_photo_measurements']==0
+          assert d['floral_organ_visible_independently_verified'] is False
+          assert d['external_media_raw_image_sha_overlap_with_prior_1231244_not_verified']
+          print('MOIS_304_GBIF_NONINAT_CC_PHOTO_SOURCE_HOSTS_READY',
+                json.dumps({k:d[k] for k in (
+                    'official_COL_XR_exact_accepted_taxa_count',
+                    'distinct_taxa_with_unique_external_photo_url',
+                    'eligible_unique_external_URL_metadata_count',
+                    'duplicate_URL_rows_held_for_review','image_hosts_seen')},
+                    sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-zero9-304taxa-CC-other-GBIF-original-image-URL-and-host-screen
+          path: metadata_only/
+          retention-days: 90
+          if-no-files-found: error

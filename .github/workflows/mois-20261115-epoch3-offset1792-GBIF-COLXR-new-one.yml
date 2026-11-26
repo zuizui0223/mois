@@ -1,0 +1,111 @@
+name: MOIS epoch3 offset1792 genuine9 newly covered one COL XR exact name
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-20261115-epoch3-offset1792-GBIF-COLXR-new-one.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-colxr-new-1792-single-attempt
+  cancel-in-progress: false
+jobs:
+  gbif-colxr-one-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Enforce signed source pixel audit formal atlas and prior GBIF provenance
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          test "$(gh api repos/$REPO/actions/runs/43702087793 --jq .conclusion)" = success
+          test "$(gh api repos/$REPO/actions/runs/43566923701 --jq .conclusion)" = success
+          test "$(gh run list --repo "$REPO" --workflow mois-20261115-epoch3-offset1792-GBIF-COLXR-new-one.yml --limit 100 --json databaseId --jq "[.[] | select(.databaseId < $GITHUB_RUN_ID)] | length")" = 0
+          mkdir -p original/source original/worker original/audit original/atlas previous
+          gh run download 43702087793 --repo "$REPO" --name mois-20261115-epoch3-offset1792-signed-1231341-ID-disjoint-source --dir original/source
+          gh run download 43702087793 --repo "$REPO" --name mois-20261115-epoch3-offset1792-genuine-FCP-ROI9-pixel-terminal --dir original/worker
+          gh run download 43702087793 --repo "$REPO" --name mois-20261115-epoch3-offset1792-independent-strict9-audit --dir original/audit
+          gh run download 43702087793 --repo "$REPO" --name mois-20261115-epoch3-offset1792-genuine-original-42111-taxonomy-append --dir original/atlas
+          gh run download 43566923701 --repo "$REPO" --name mois-remaining18-new8-only-official-COLXR-name-and-numeric9-accepted-traits --dir previous
+      - name: Only new Linzia rosenii GBIF v2 COL XR, preserving existing 37103 identities
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          import pandas as pd,numpy as np
+          from scripts.analysis.mois_gbif_colxr_new_hue_incremental import classify_new_rows,combine_names
+          from scripts.analysis.mois_gbif_colxr_nine_palette_name_pilot import PALETTE,NAME_RULE,COL_XR
+          from scripts.analysis.mois_gbif_colxr_nine_colour_traits_bridge import build_traits
+          from scripts.analysis.mois_gbif_colxr_batch_match import source_sha
+          p=Path('original'); h=lambda f: hashlib.sha256(Path(f).read_bytes()).hexdigest()
+          src=json.loads((p/'source/receipt.json').read_text())
+          worker=json.loads((p/'worker/shard_000/receipt.json').read_text())
+          audit=json.loads((p/'audit/receipt.json').read_text())
+          formal=json.loads((p/'atlas/receipt.json').read_text())
+          assert src['hash_disjoint_taxon_offset']==1792 and src['new_independent_original_photo_candidates']==1 and src['source_API_error_count']==0
+          assert h(p/'source/receipt.json')=='3bc8f86ce2f4ba95df625119200de824a822c5e684f179f3c6503c5f3c932267'
+          assert h(p/'source/manifest.json')==src['source_manifest_SHA256']=='4f1e2324dfb5c03b8f7b8e66f692218d9531ba6fe6587edc0347564aedf71b43'
+          assert h(p/'source/shards/shard-000.csv')==src['source_shard_SHA256']
+          assert h(p/'source/source_taxon_status.csv')==src['source_status_SHA256']
+          assert h(p/'source/source_candidates.csv')==src['source_candidates_SHA256']
+          assert worker['attempted']==worker['downloaded']==worker['classifiable']==1
+          assert h(p/'worker/shard_000/receipt.json')==audit['source_and_worker_sha256']['worker_receipt_sha256']=='8ffefe8b076714b538bd6255fd455d5dc5a5ff54fdb159aa9beb7222727f83fd'
+          assert h(p/'worker/shard_000/photos.csv')==audit['source_and_worker_sha256']['worker_terminal_sha256']=='17c514825ce07037d766d2cb28abbfced01da95725d8c0179726b94964415df9'
+          assert h(p/'audit/receipt.json')==formal['audit_receipt_sha256']=='90a354f7eeb8bf7bdeeab4f8a1b605bafb5a3721a9ddb911732e447d31ace74d'
+          assert h(p/'audit/new_real_original_nine_photo9_delta.parquet')==audit['verified_delta_sha256']=='537aa3b8419411ec82cecfc6a9768cfb313d65364a4b85afc1edb2953211cfb9'
+          assert (audit['new_strict9_numeric_photos'],audit['new_numeric_first_taxa'],audit['new_clear_dominant_hue_taxa'],audit['new_technical_unknowns'])==(1,1,1,0)
+          assert (formal['cumulative_photo_attempts'],formal['cumulative_genuine_numeric_photos'],formal['cumulative_numeric_taxa'],formal['cumulative_clear_sampled_photo_taxa'],formal['zero_numeric_remaining'])==(1231342,467566,39912,39173,2199)
+          photo=pd.read_csv(p/'worker/shard_000/photos.csv',dtype=str,keep_default_na=False)
+          assert len(photo)==1 and photo.photo_id.iloc[0]=='763768595' and photo.observation_id.iloc[0]=='821d0884-737a-4644-8f8e-6e36c278b9fb' and photo.image_sha256.iloc[0]=='581ab6b386ab9a2667121a6250ee3d409f5bd5cac914c0777bdab3e0527d1d84'
+          fractions=photo[['flower_fraction_'+x for x in PALETTE]].astype(float).to_numpy()
+          assert np.isfinite(fractions).all() and (fractions>=0).all() and abs(fractions.sum()-1)<0.001
+          atlaspath=p/'atlas/mois_42111_post20261114_new_independent_original_photo9.csv.gz'
+          assert source_sha(atlaspath)==formal['derived_atlas_sha256']=='7a2cd8cab556f4ec3f7496d0bc62e77dc9ec82f834ccf0cbd1ce25a315afe5ee'
+          atlas=pd.read_csv(atlaspath,dtype={'inat_taxon_id':str})
+          assert len(atlas)==42111 and atlas.inat_taxon_id.is_unique
+          num=atlas.after_strict9.gt(0); v=atlas.loc[num,['observed_mean_'+x for x in PALETTE]].to_numpy(float)
+          assert num.sum()==39912 and np.isfinite(v).all() and (v>=0).all() and (abs(v.sum(axis=1)-1)<0.001).all()
+          assert atlas.loc[~num,['observed_mean_'+x for x in PALETTE]].isna().all().all()
+          one=atlas.loc[atlas.inat_taxon_id.eq('589227')]
+          assert len(one)==1 and one.species.iloc[0]=='Linzia rosenii' and one.after_strict9.iloc[0]==1 and one.dominant_hue9.iloc[0]=='white'
+          oldreceipt=json.loads(Path('previous/receipt.json').read_text())
+          assert oldreceipt['cumulative_exact_accepted_COLXR_species']==37103 and h('previous/receipt.json')=='1a15163d1d87b9b2daf462c0e6894d279ea4a422f4189761da857468739fc90b'
+          oldpath=Path('previous/current_all_photo9_COLXR_names.csv.gz')
+          assert source_sha(oldpath)==oldreceipt['signed_outputs_SHA256'][oldpath.name]=='4b3ab782cb7eb347008855a40f2317efef17a21094109f7a3021985f9f4e740d'
+          prior=pd.read_csv(oldpath,dtype=str,keep_default_na=False)
+          assert len(prior)==39168 and prior.inat_taxon_id.is_unique and prior.COL_XR_checklistKey.eq(COL_XR).all()
+          assert prior.status.eq('colxr_exact_accepted_species').sum()==37103
+          accepted_old=prior.loc[prior.status.eq('colxr_exact_accepted_species')]
+          assert accepted_old.key.is_unique and accepted_old.key.ne('').all()
+          for atlascol,priorcol in [('species','species'),('dominant_hue9','source_hue9'),('hue_status','hue_status')]:
+            assert (atlas.set_index('inat_taxon_id').reindex(prior.inat_taxon_id)[atlascol].fillna('').astype(str).to_numpy()==prior[priorcol].to_numpy()).all()
+          added=atlas.loc[atlas.dominant_hue9.isin(PALETTE)&atlas.species.str.match(NAME_RULE)&~atlas.inat_taxon_id.isin(prior.inat_taxon_id)]
+          assert len(added)==1 and added.inat_taxon_id.iloc[0]=='589227'
+          matched=classify_new_rows(added,batch_size=1,pause=1.0)
+          full,accepted=combine_names(prior,matched)
+          traits=build_traits(atlas,accepted,verify_counts=False)
+          assert len(traits)==len(accepted) and accepted.key.is_unique
+          out=Path('match_one');out.mkdir()
+          hashes={}
+          for name,df in [('new_one_COLXR_name_match.csv.gz',matched),('current_all_photo9_COLXR_names.csv.gz',full),('current_exact_accepted_COLXR_species.csv.gz',accepted),('current_exact_accepted_COLXR_numeric9_traits.csv.gz',traits)]:
+            f=out/name;df.to_csv(f,index=False,compression='gzip',float_format='%.7f');hashes[name]=source_sha(f)
+          report={'schema':'mois_epoch3_offset1792_new1_COLXR_exact_v1','photo_ID':'763768595','observation_UUID':'821d0884-737a-4644-8f8e-6e36c278b9fb','source_taxon_id':'589227','source_taxon_name':'Linzia rosenii','new_name_status':str(matched.status.iloc[0]),'new_taxon_accepted_key':str(matched.key.iloc[0]),'new_exact_accepted_COLXR_species':int(matched.status.eq('colxr_exact_accepted_species').sum()),'previous_exact_accepted_COLXR_species':37103,'cumulative_exact_accepted_COLXR_species':len(accepted),'current_accepted_numeric9_traits':len(traits),'official_GBIF_occurrence_download_submitted':False,'GBIF_occurrence_records_downloaded':0,'previous_149_SQL_prepared_unsubmitted':True,'full_history_raw_sha_census_completed':False,'provider_photo_size':'large','atlas_byte_sha256':source_sha(atlaspath),'prior_colxr_byte_sha256':source_sha(oldpath),'outputs_byte_SHA256':hashes}
+          (out/'receipt.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
+          print('MOIS_EPOCH3_SINGLE_NEW_OFFICIAL_COLXR_NAME_RESULT',json.dumps(report,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-epoch3-offset1792-one-new-official-COLXR-accepted
+          path: match_one/
+          retention-days: 90
+          if-no-files-found: warn

@@ -1,0 +1,142 @@
+name: MOIS append 11 verified post-snapshot CC originals into 42111 nine-colour taxa
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_postsnapshot_five_original_ROI9_incremental.py
+      - tests/test_mois_postsnapshot_five_original_ROI9_incremental.py
+      - .github/workflows/mois-postsnapshot-real11-verified-ROI9-append.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-five-postsnapshot-real-original11-cumulative-42111-atlas-exact-once
+  cancel-in-progress: false
+jobs:
+  authenticate-and-append-source-signed-real-originals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      BASE_ATLAS_RUN: '43470118921'
+      OLD_HISTORY_RUN: '43546479575'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Authenticate five independent original photo ROI9 delta logic before real source loading
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_postsnapshot_five_original_ROI9_incremental.py -v
+      - name: Verify immutable prior full 42111 atlas plus 1231244 original photo/observation IDs
+        run: |
+          set -euo pipefail
+          mkdir -p old current audit0 audit64 audit128 audit192 audit256
+          test "$(gh api "repos/$REPO/actions/runs/$BASE_ATLAS_RUN" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/$BASE_ATLAS_RUN/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.name=="mois-fiftysixth4096-verified-append-fiftyseventh-prioritized-original-source") | .digest')" = 'sha256:83ad6be61d001e8abeaca5b5d233700c86da35fa33195a0e22fd93ca561e7782'
+          gh run download "$BASE_ATLAS_RUN" --repo "$REPO" \
+            --name mois-fiftysixth4096-verified-append-fiftyseventh-prioritized-original-source --dir current
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_HISTORY_RUN/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.name=="mois-postsnapshot-two-CC-photos-full-1231244-ID-source") | .digest')" = 'sha256:ac558f06e5a0f75cf0fab2d0a37e3f17b2fe3428f788cccb801b5a01dd2b81ac'
+          gh run download "$OLD_HISTORY_RUN" --repo "$REPO" \
+            --name mois-postsnapshot-two-CC-photos-full-1231244-ID-source --dir old
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          from scripts.acquisition.mois_zero9_recent_inat_new_created_photo_source import ATLAS_SHA
+          a=Path('current/updated/mois_species_first_42111_after_fiftysixth.csv.gz')
+          r=json.loads(Path('current/updated/receipt.json').read_text())
+          h=Path('old/historical_1231244_original_photo_observation_taxon_ID_registry.csv.gz')
+          assert sha256(a)==ATLAS_SHA==r['output_sha256']['atlas']
+          assert sha256(h)==json.loads(Path('old/gate_receipt.json').read_text())['historical_full_registry_sha256']
+          print('MOIS_REAL11_SIGNED_ATLAS_AND_FULL_1231244_PREVIOUS_PHOTO_OBS_HISTORY_RESTORED',flush=True)
+          PY
+      - name: Verify 5 completed ORIGINAL image worker/audit GH zip SHA, restore only their terminal measurements
+        run: |
+          set -euo pipefail
+          python - <<'PY' > signed_artifacts.json
+          import json
+          src={
+           0:(43546479575,'mois-postsnapshot-independent-real-ROI9-audit','sha256:0885d6b4e6ea67b6244b848e875eafffcdcc384187f8e39178d20f0285200ba6'),
+           64:(43547488039,'mois-offset64-new-original-independent-real-ROI9-audit','sha256:d0e6e1b6a5185b56488ed8c7bb616d92f16b3cf455de66fe7e42bb82b2306ceb'),
+           128:(43549151536,'mois-offset128-new-original-independent-ROI9-audit','sha256:31ff7f3dcb82bd6ec619d68cd094651e3f9f9ed237cd0568402b1d5808410d13'),
+           192:(43552009899,'mois-offset192-new-original-independent-ROI9-audit','sha256:4a2e1bbedf779bb6251fcb61c47db26618f02feacfaaa413c02e94bbefd557fd'),
+           256:(43554225937,'mois-offset256-new-original-independent-ROI9-audit','sha256:19eb3903b776015fc197b8adfbe7c24fdfcb3d0f0e57440ebad0defe8e04f0c3')
+          }
+          print(json.dumps({str(k):v for k,v in src.items()}))
+          PY
+          python - <<'PY'
+          import json,subprocess
+          src=json.load(open('signed_artifacts.json'))
+          for offset,(run,name,digest) in src.items():
+              actual=json.loads(subprocess.check_output([
+                  'gh','api',f'repos/zuizui0223/mois/actions/runs/{run}/artifacts?per_page=100']))
+              candidate=[a for a in actual.get('artifacts',[]) if a['name']==name]
+              assert len(candidate)==1 and candidate[0]['digest']==digest and not candidate[0]['expired'],(offset,name)
+              status=json.loads(subprocess.check_output([
+                  'gh','api',f'repos/zuizui0223/mois/actions/runs/{run}']))
+              assert status['conclusion']=='success'
+          print('MOIS_FIVE_REAL_ORIGINAL_FCP_WORKER_INDEPENDENT_AUDIT_ZIP_SHA_VERIFIED',flush=True)
+          PY
+          gh run download 43546479575 --repo "$REPO" \
+            --name mois-postsnapshot-independent-real-ROI9-audit --dir audit0
+          gh run download 43547488039 --repo "$REPO" \
+            --name mois-offset64-new-original-independent-real-ROI9-audit --dir audit64
+          gh run download 43549151536 --repo "$REPO" \
+            --name mois-offset128-new-original-independent-ROI9-audit --dir audit128
+          gh run download 43552009899 --repo "$REPO" \
+            --name mois-offset192-new-original-independent-ROI9-audit --dir audit192
+          gh run download 43554225937 --repo "$REPO" \
+            --name mois-offset256-new-original-independent-ROI9-audit --dir audit256
+      - name: Append 11 unique genuine original photos, 3 strict9 taxa, and 2 clear photo hue taxa
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_postsnapshot_five_original_ROI9_incremental \
+            --atlas current/updated/mois_species_first_42111_after_fiftysixth.csv.gz \
+            --history old/historical_1231244_original_photo_observation_taxon_ID_registry.csv.gz \
+            --audit 0 audit0 --audit 64 audit64 --audit 128 audit128 --audit 192 audit192 --audit 256 audit256 \
+            --output appended
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          d=json.loads(Path('appended/receipt.json').read_text())
+          assert d['schema']=='mois_post20261028_five_true_new_original_photo_ROI9_42111_append_v1'
+          assert d['cumulative_iNaturalist_original_photo_attempts']==1231255
+          assert d['cumulative_iNaturalist_original_numeric_ROI9']==467539
+          assert d['cumulative_nominal_taxa_with_numeric_nineROI']==39885
+          assert d['cumulative_nominal_taxa_with_clear_photo_hue']==39147
+          assert d['nominal_taxa_without_numeric_nineROI']==2226
+          assert d['new_genuine_original_photo_attempts']==11
+          assert d['new_nine_fraction_numeric_photo_ROI']==3
+          assert d['new_clear_nine_palette_photo_labels']==2
+          assert d['new_technical_unknowns']==8
+          assert d['historical_original_photo_and_observation_ID_overlap']==0
+          assert d['raw_image_SHA_overlap_with_historical_1231244_not_fully_verifiable'] is True
+          for k,v in d['outputs_SHA256'].items():
+              path={'updated_atlas':'mois_42111_taxa_after_post_snapshot_5_signed_waves.csv.gz',
+                    'real_original_photo_delta':'mois_new11_iNat_original_photo9_audited_delta.parquet',
+                    'new_gbif_colxr_name_candidates':'mois_new2_clear9_source_taxa_for_GBIF_COLXR.csv'}[k]
+              assert sha256(Path('appended')/path)==v
+          print('MOIS_TRUE_NEW11_PHOTO_SOURCE_42111_ATLAS_REAL_ROI9_DELTA_QC',
+                json.dumps({k:d[k] for k in (
+                    'new_genuine_original_photo_attempts',
+                    'new_nine_fraction_numeric_photo_ROI',
+                    'new_clear_nine_palette_photo_labels',
+                    'cumulative_nominal_taxa_with_numeric_nineROI',
+                    'cumulative_nominal_taxa_with_clear_photo_hue')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append
+          path: appended/
+          retention-days: 90
+          if-no-files-found: error

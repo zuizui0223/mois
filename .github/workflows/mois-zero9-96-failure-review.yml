@@ -1,0 +1,53 @@
+name: MOIS inspect 96 repeatedly failed ROI9 taxa using signed photo IDs
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_zero9_failure_review.py
+      - tests/test_mois_zero9_failure_review.py
+      - .github/workflows/mois-zero9-96-failure-review.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-zero9-96-source-only-photo-review
+  cancel-in-progress: false
+jobs:
+  true-original-photo-source-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      RELEASE_TAG: mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned dependencies and run blind-source selection tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_zero9_failure_review.py -v
+      - name: Restore signed original source photo index (never download image pixels)
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          gh release download "$RELEASE_TAG" --repo "$REPO" --dir source             --pattern 'mois_1181146_unique_original_photo_continuous9_by_arm.parquet'
+          for item in '13776829802 initial' '14110802184 repaired'; do
+            set -- $item
+            curl --fail --location --silent --show-error --retry 2               --header "Authorization: Bearer $GH_TOKEN"               --header 'Accept: application/vnd.github+json'               "https://api.github.com/repos/$REPO/actions/artifacts/$1/zip"               --output "source/$2.zip"
+          done
+      - name: Recover real failed photo IDs and prepare unlabeled botanical review
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_zero9_failure_review             --repaired-zip source/repaired.zip             --initial-zip source/initial.zip             --original-parquet source/mois_1181146_unique_original_photo_continuous9_by_arm.parquet             --max-per-taxon 3             --output output
+          test "$(python -c "import json;d=json.load(open('output/receipt.json'));print(d['review_primary_taxa'])")" = 96
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-96-zero9-real-source-photo-botanical-review-20261114
+          path: output/
+          retention-days: 90
+          if-no-files-found: error

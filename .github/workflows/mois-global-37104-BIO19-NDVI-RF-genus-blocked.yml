@@ -1,0 +1,70 @@
+name: MOIS global 37104 real BIO19 weather MODIS NDVI RandomForest genus-heldout
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-global-37104-BIO19-NDVI-RF-genus-blocked.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-actual-37104-species-RF-BIO19-MODIS-NDVI-genus-independent-v1
+  cancel-in-progress: false
+jobs:
+  species-level-within-genus-disjoint-RF:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '2'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned species RF dependencies and 9-hue/NDVI schema regression tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 \
+            pyarrow==19.0.1 scikit-learn==1.6.1
+          python -m unittest discover -s tests -p test_mois_global_photo9_random_forest_20261116.py -v
+      - name: Reuse actual verified 37104 accepted species worldclim19 weather + NDVI feature artifact
+        run: |
+          set -euo pipefail
+          mkdir -p inputs
+          curl --fail --location --silent --show-error --retry 2 \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14219565387/zip' \
+            --output inputs/real_BIO19_weather_NDVI.zip
+          echo 'e08e81d1c2afd1a2ee5312f3ebc4aeb5ab7678988c2453a2a9c63d28c82eb17a  inputs/real_BIO19_weather_NDVI.zip' | sha256sum -c -
+      - name: Train real white and 9-colour Random Forest 3-way genus-disjoint holdout; test NDVI gain and grouped importance
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global_photo9_random_forest_20261116 \
+            --features inputs/real_BIO19_weather_NDVI.zip \
+            --output rf_results
+          python - <<'PY'
+          import json,pandas as pd
+          d=json.load(open('rf_results/receipt.json'))
+          s=pd.read_csv('rf_results/RF_model_comparison_summary.csv')
+          out=pd.read_csv('rf_results/RF_all_species_out_of_genus_predictions.csv.gz')
+          require=lambda c,m:None if c else (_ for _ in ()).throw(AssertionError(m))
+          require(d['training_species']>30000,"missing verified training species")
+          require(d['no_species_by_grid_pseudoreplication'],"model training leaked source photo cells")
+          require(out.key.nunique()==d['training_species'],"OOF unique source species lost")
+          require(s.model.nunique()==2 and len(s)>=5,"binary/nine RF comparisons missing")
+          require(d['RANDOM_FOREST_IMPORTANCE_IS_CAUSAL_EFFECT'] is False,"incorrect causal claim")
+          require(d['actual_biomass_or_NPP_raster_integrated'] is False,"false biomass claim")
+          print('MOIS_FULL_BIO19_WEATHER_REAL_NDVI_RF_SPECIES_GENUS_HOLDOUT_SUCCESS',
+                d['NDVI_additional_out_of_genus_auc_mean'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-37104-global-BIO19-weather-NDVI-real-RF-genus-independent-CV
+          path: rf_results/
+          retention-days: 90
+          if-no-files-found: warn

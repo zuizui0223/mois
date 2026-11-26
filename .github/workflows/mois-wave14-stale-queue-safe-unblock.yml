@@ -1,0 +1,90 @@
+name: MOIS safe stale-zero-job wave14 queue cleanup and corrected depth32 dispatch
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-wave14-stale-queue-safe-unblock.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: mois-wave14-orphaned-zero-job-queue-single-cleanup
+  cancel-in-progress: false
+jobs:
+  clean-orphan-and-dispatch-corrected-wave14:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      BRANCH: analysis/mois-species-first-palette9-20261111
+      OLD_STALE_RUN: '43095236635'
+      CORRECTED_WORKFLOW: mois-species-first-thirteenth-append-fourteenth.yml
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require frozen original-pixel wave13 source and corrected wave14 workflow
+        run: |
+          set -euo pipefail
+          case "$(gh run view 43067503631 --repo "$REPO" --json conclusion --jq .conclusion)" in
+            success) ;;
+            *) echo "Prior wave13 must remain full source-audit SUCCESS"; exit 1;;
+          esac
+          case "$(gh run view 43142713882 --repo "$REPO" --json conclusion --jq .conclusion)" in
+            success) ;;
+            *) echo "Depth32 full signed93m source needs 16/16 SUCCESS before wave14"; exit 1;;
+          esac
+          grep -Fq "mois-all16-signed93m-current-unlabelled-depth32-new-photo-candidates" \
+            .github/workflows/mois-species-first-thirteenth-append-fourteenth.yml
+          grep -Fq 'source_prior_no_reused_original_photo_or_observation' \
+            scripts/analysis/mois_species_first_thirteenth_to_fourteenth.py || true
+          echo "MOIS_WAVE14_PRIOR_PIXEL_AND_NEW_107222_META_SOURCE_GATES_OK"
+      - name: Cancel ONLY the older known queued zero-job wave14 run, never a running worker
+        run: |
+          set -euo pipefail
+          old="$OLD_STALE_RUN"
+          state="$(gh api "repos/$REPO/actions/runs/$old" --jq .status)"
+          jobs="$(gh api "repos/$REPO/actions/runs/$old/jobs?per_page=1" --jq .total_count)"
+          echo "MOIS_STALE_WAVE14_PRECHECK id=$old status=$state jobs=$jobs"
+          if [ "$state" = queued ] && [ "$jobs" = 0 ]; then
+             gh run cancel "$old" --repo "$REPO"
+             echo "MOIS_REQUESTED_CANCEL_OF_ZERO_JOB_STALLED_WAVE14 $old"
+          elif [ "$state" = completed ]; then
+             conclusion="$(gh api "repos/$REPO/actions/runs/$old" --jq .conclusion)"
+             if [ "$conclusion" != cancelled ]; then
+                echo "Refusing cleanup: old wave14 completed with $conclusion, analyze source before any resubmission"
+                exit 1
+             fi
+          else
+             echo "Refusing to cancel wave14 if run is not queued with zero jobs"
+             exit 1
+          fi
+          cancelled=false
+          for attempt in $(seq 1 12); do
+             state="$(gh api "repos/$REPO/actions/runs/$old" --jq .status)"
+             conclusion="$(gh api "repos/$REPO/actions/runs/$old" --jq .conclusion)"
+             if [ "$state" = completed ] && [ "$conclusion" = cancelled ]; then
+                cancelled=true
+                break
+             fi
+             sleep 3
+          done
+          if [ "$cancelled" != true ]; then
+             echo "GitHub Actions did not confirm cancellation of old zero-job wave14; abort any source dispatch"
+             exit 1
+          fi
+          echo "MOIS_OLD_STALE_ZERO_JOB_WAVE14_CANCEL_CONFIRMED id=$old"
+      - name: Dispatch exactly one corrected source-SHA-gated wave14 with refreshed depth32, unless already active
+        run: |
+          set -euo pipefail
+          active="$(gh run list --repo "$REPO" --workflow "$CORRECTED_WORKFLOW" \
+             --branch "$BRANCH" --limit 40 \
+             --json databaseId,status \
+             --jq "[.[] | select(.databaseId != 43095236635) | select(.status == \"queued\" or .status == \"in_progress\" or .status == \"waiting\" or .status == \"pending\")] | length")"
+          echo "MOIS_WAVE14_CORRECTED_ACTIVE_WORKERS_OR_PENDING_RUNS=$active"
+          if [ "$active" != 0 ]; then
+             echo "Already queued/in-progress corrected wave14; do not dispatch duplicate"
+             exit 0
+          fi
+          gh workflow run "$CORRECTED_WORKFLOW" --repo "$REPO" --ref "$BRANCH"
+          echo "MOIS_CORRECTED_DEPTH32_WAVE14_WORKFLOW_DISPATCH_SUBMITTED"

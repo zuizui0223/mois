@@ -1,0 +1,89 @@
+name: "MOIS QA: 16 priority species flowering-annotated original CC photos (after first48)"
+on:
+  push:
+    branches:
+      - analysis/mois-species-first-palette9-20261111
+    paths:
+      - scripts/acquisition/mois_20261120_flowering_annotated_16_photo_QA.py
+      - .github/workflows/mois-20261120-first16-flowering-annotated-original-photo-QA.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-20261120-first16-independent-flowering-photo-proof
+  cancel-in-progress: true
+jobs:
+  flower-annotated-real-photo-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PYTHONUNBUFFERED: "1"
+      OPENBLAS_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install source-verified image + Parquet readers
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            "numpy>=1.26,<3" "pandas>=2.1,<3" "pyarrow>=17,<25" \
+            "Pillow>=11,<13"
+          python -m py_compile scripts/acquisition/mois_20261120_flowering_annotated_16_photo_QA.py
+      - name: Pin 199 WCVP-native priority genera target list to permanent Git blob
+        run: |
+          set -euo pipefail
+          mkdir -p inputs old/history old/new11 old/new64 old/new18
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://raw.githubusercontent.com/zuizui0223/mois/5490acde18199e6507bd613853521e5f48aa7b49/analysis_specs/MOIS_NATIVE_PHOTO9_199_GENERA_QA_QUEUE_20261119.csv" \
+            -o inputs/targets_199.csv
+          test "$(git hash-object inputs/targets_199.csv)" = "efc85eb9cc9fa842d630d69ab1962fa7a5029ab1"
+      - name: Verify original accepted species taxonomy and prior48 true original image SHA artifacts
+        run: |
+          set -euo pipefail
+          for spec in \
+            '14219399376 ENV d8b97528188d9f8d63cb802d5b3f6e8f7f251937fd30af42aeae47e43ebad1fc' \
+            '14541906843 prior48 a6c96f5e2db118bef282688a237d720362d651a16a611ca01907ad12c5cb0998'; do
+            set -- $spec
+            curl --fail --silent --show-error --location --retry 3 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$1/zip" \
+              -o "inputs/$2.zip"
+            echo "$3  inputs/$2.zip" | sha256sum -c
+          done
+      - name: Restore source historical 1,231,337 photo identity census and recent frozen deltas
+        run: |
+          set -euo pipefail
+          gh run download 43546479575 --repo "$GITHUB_REPOSITORY" \
+            --name mois-postsnapshot-two-CC-photos-full-1231244-ID-source \
+            --dir old/history
+          gh run download 43561529394 --repo "$GITHUB_REPOSITORY" \
+            --name mois-five-postsnapshot11-real-original-iNat-photo9-42111-taxa-append \
+            --dir old/new11
+          gh run download 43562522326 --repo "$GITHUB_REPOSITORY" \
+            --name mois-new1909-fresh-original-real-ROI9-42111-taxonomy-appended \
+            --dir old/new64
+          gh run download 43566369683 --repo "$GITHUB_REPOSITORY" \
+            --name mois-postsnap-remaining18-genuine-ROI9-cumulative-atlas \
+            --dir old/new18
+      - name: Fetch source-verified flowering 12/13 observations and genuine original CC images
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_20261120_flowering_annotated_16_photo_QA \
+            --targets inputs/targets_199.csv \
+            --source-env inputs/ENV.zip \
+            --prior48 inputs/prior48.zip \
+            --out results/mois_20261120_first16_flowering_original_QA \
+            --pace 0.8
+      - name: Always archive source/annotation audit including failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-first16-flowering12-13-new-original-CC-QA-20261120
+          path: results/mois_20261120_first16_flowering_original_QA/
+          retention-days: 30
+          if-no-files-found: warn

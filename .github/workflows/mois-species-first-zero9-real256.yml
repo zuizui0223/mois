@@ -1,0 +1,135 @@
+name: MOIS first 256 genuinely new zero9 taxa original-photo ROI-v4 measurement
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-species-first-zero9-real256.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-zero9-first256-original-frozenROI
+  cancel-in-progress: false
+jobs:
+  original-ROI9-new-species-measurement:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      SOURCE_RUN: '42846819580'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore SHA-verified global never-measured first-photo opportunity registry (NO image yet)
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1
+          mkdir -p upstream source/shards
+          gh run download "$SOURCE_RUN" --repo "$REPO" \
+            --name mois-global-16groups-full93m-zero9-next-first-photo-and-fallbacks \
+            --dir upstream
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,pandas as pd
+          from scripts.acquisition.mois_full_index_real_original_photo_measure import sha
+          rec=json.loads(Path('upstream/receipt.json').read_text())
+          assert rec['schema']=='mois_all16_zero9_source_first_photo_disjoint_v1'
+          assert rec['source_groups_signed']==16 and rec['new_RGB_image_downloads']==0
+          assert rec['source_zero9_taxa_with_first_new_photo']==11634
+          q=pd.read_csv('upstream/mois_global_species_first_zero9_first_photo_queue.csv.gz',dtype=str,keep_default_na=False)
+          assert len(q)==11634 and q.photo_id.is_unique and q.observation_id.is_unique and q.inat_taxon_id.is_unique
+          assert q.photo_url_large.str.startswith('https://inaturalist-open-data.s3.amazonaws.com/photos/').all()
+          assert q.photo_license.str.lower().str.startswith('cc').all()
+          # Uniform deterministic source-label-blind spread across the 11,634 unmeasured taxa.
+          q['study_rank']=q.inat_taxon_id.map(lambda x:hashlib.sha256(('MOIS-ZERO9-PHOTO-FIRST256|'+x).encode()).hexdigest())
+          q=q.sort_values('study_rank',kind='stable').head(256).copy().drop(columns='study_rank')
+          q['measurement_id']='MOIS-ZERO9-'+q.photo_id
+          q['image_filename']=q.measurement_id+'.jpg'
+          q['shard']='0'
+          file=Path('source/shards/shard-000.csv')
+          q.to_csv(file,index=False,lineterminator='\n')
+          src={'schema':'mois_full_source_observation_sampling_cohort_v1',
+               'source_arm':'MOIS_ZERO9_NEW_TAXON_ONCE_ORIGINAL_FIRST256',
+               'colour_measured':False,'work_units':1,'worker_ids':[0],
+               'source_group':0,'source_tier':None,'source_photo_frame':93209351,
+               'source_zero9_first_photo_total':11634,
+               'new_photo_attempts_planned':256,
+               'one_original_observation_per_taxon':True,
+               'source_selection_probability':None,
+               'photo_shard_sha256':{'0':sha(file)},
+               'source_global_original_metadata_run':42846819580,
+               'source_only_no_photo_colours_inferred':True}
+          Path('source/manifest.json').write_text(json.dumps(src,indent=2,sort_keys=True)+'\n')
+          print('MOIS_ZERO9_FIRST256_NEW_ORIGINAL_PHOTOS_FROZEN',len(q),src['photo_shard_sha256']['0'],flush=True)
+          PY
+      - name: Bootstrap exactly prior authentic FCP frozen YOLO11 and EfficientSAM pixel ROI-v4
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/fcp"
+          git -C "$RUNNER_TEMP/fcp" remote add origin https://github.com/zuizui0223/fcp.git
+          git -C "$RUNNER_TEMP/fcp" fetch -q --no-tags --depth=1 origin 74bf69a52cd68bfc7dbe6158f4a681235caa6ca0
+          git -C "$RUNNER_TEMP/fcp" checkout -q --detach FETCH_HEAD
+          python -m pip install -q scipy==1.15.2 Pillow==11.1.0 ultralytics==8.4.112 onnxruntime==1.23.2 scikit-image==0.25.2
+          cd "$RUNNER_TEMP/fcp"
+          bash scripts/acquisition/bootstrap_fcp_original_roi_v4.sh --full --sam-dir "$RUNNER_TEMP/sam"
+      - name: Actually download 256 original photographs and measure frozen nine-component ROI colours
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$RUNNER_TEMP/fcp"
+          export FCP_PROVIDER_GLOBAL_RATE_FILE="$RUNNER_TEMP/mois-zero9-photo-rate"
+          python -m scripts.acquisition.mois_full_index_real_original_photo_measure work \
+            --source source --runtime "$RUNNER_TEMP/fcp" --sam "$RUNNER_TEMP/sam" \
+            --group 0 --output measured
+      - name: Verify actual image terminal and count truly NEW source taxa with measured 9 fractions
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import numpy as np,pandas as pd,json
+          from scripts.acquisition.mois_full_index_real_original_photo_measure import HUES,sha
+          source=pd.read_csv('source/shards/shard-000.csv',dtype=str)
+          measured=pd.read_csv('measured/shard_000/photos.csv',dtype=str)
+          assert len(source)==len(measured)==256 and measured.photo_id.is_unique
+          assert set(measured.photo_id)==set(source.photo_id)
+          palette=['white','yellow','orange','red','pink','magenta','purple','blue','bronze']
+          cols=['flower_fraction_'+p for p in palette]
+          assert set(cols)<=set(measured.columns)
+          success=measured.morph.isin(HUES)
+          arr=measured[cols].apply(pd.to_numeric,errors='coerce').to_numpy(float)
+          valid=(np.isfinite(arr).all(axis=1)&(arr>=0).all(axis=1)&(arr<=1.00001).all(axis=1)&(abs(arr.sum(axis=1)-1)<0.001))
+          strict=success.to_numpy(bool)&valid
+          assert int(strict.sum())<=int(success.sum())
+          result=measured.copy()
+          result['strict9_original_photo_numeric']=strict
+          for col in cols:
+              result.loc[~strict,col]=''
+          result.to_csv('measured/zero9_first256_true_original_photo9_and_unknowns.csv',index=False)
+          counts={'original_photo_attempts':256,
+                  'genuine_four_hue_ROI_classified':int(success.sum()),
+                  'genuine_strict9_numeric_success':int(strict.sum()),
+                  'new_named_taxa_with_first_strict9':int(result.loc[strict,'inat_taxon_id'].nunique()),
+                  'new_named_taxa_still_without_strict9':int((~strict).sum()),
+                  'technical_unknowns_not_imputed':True,
+                  'source_frozen_shard_sha256':sha(Path('source/shards/shard-000.csv')),
+                  'actual_terminal_receipt_SHA256':sha(Path('measured/shard_000/receipt.json')),
+                  'gbif_distribution_not_yet_downloaded':True}
+          Path('measured/zero9_first256_source_measurement_summary.json').write_text(json.dumps(counts,indent=2,sort_keys=True)+'\n')
+          print('MOIS_ZERO9_REAL256_NEW_SPECIES_RGB9_RESULT',json.dumps(counts,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-zero9-first256-genuine-original-photo-nineROI-measured
+          path: |
+            source/manifest.json
+            source/shards/shard-000.csv
+            measured/
+          retention-days: 90
+          if-no-files-found: warn

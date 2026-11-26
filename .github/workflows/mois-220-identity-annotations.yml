@@ -1,0 +1,49 @@
+name: MOIS 220 cached photo identities to 211 observation units
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/analysis/mois_220_identity_annotations.py
+      - scripts/analysis/mois_220_identity_replay.py
+      - tests/test_mois_220_identity_annotations.py
+      - tests/test_mois_220_identity_replay.py
+      - .github/workflows/mois-220-identity-annotations.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-220-source-identity-annotation-audit
+  cancel-in-progress: false
+jobs:
+  canonical-identities-cached-no-api-or-images:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test ID aliases and preserve distinction between annotations and photo truth
+        run: python -m unittest discover -s tests -p 'test_mois_220_identity*.py' -v
+      - name: Retrieve fixed source and successful numeric API cache; never repeat iNat calls
+        run: |
+          set -euo pipefail
+          for item in '14111328732 source' '14113167546 metadata'; do
+            set -- $item
+            curl --fail --location --silent --show-error \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/$1/zip" \
+              --output "$2.zip"
+          done
+      - name: Reconcile 220 photo rows and retain partial annotation coverage explicitly
+        run: python -m scripts.analysis.mois_220_identity_replay --source source.zip --metadata metadata.zip --output output
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-220-photos-211-observation-units-cached-annotations-20261114
+          path: output/
+          retention-days: 90
+          if-no-files-found: error

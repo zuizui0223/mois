@@ -1,0 +1,99 @@
+name: MOIS next offset128 disjoint 64 zeroROI taxa post-snapshot iNaturalist source only
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-zero9-postsnapshot-offset128-next64-source-only.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-new-inat-created-postsnapshot-disjoint-offset128-source-meta-only
+  cancel-in-progress: false
+jobs:
+  inspect-only-new-inat-photographic-opportunities:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      ATLAS_RUN: '43470118921'
+      ATLAS_ART_SHA: 'sha256:83ad6be61d001e8abeaca5b5d233700c86da35fa33195a0e22fd93ca561e7782'
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests of post-snapshot creation date, exact taxon, original image URL and CC licensing
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m unittest discover -s tests -p test_mois_zero9_recent_inat_new_created_photo_source.py -v
+          python -m py_compile scripts/acquisition/mois_zero9_recent_inat_new_created_photo_source.py
+      - name: Verify immutable atlas and 2-new-pixel prior audited terminal before next taxon exploration
+        run: |
+          set -euo pipefail
+          test "$(gh run view "$ATLAS_RUN" --repo "$REPO" --json conclusion --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43547488039" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43547488039/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-offset64-new-original-independent-real-ROI9-audit") | .digest')" = 'sha256:d0e6e1b6a5185b56488ed8c7bb616d92f16b3cf455de66fe7e42bb82b2306ceb'
+          test "$(gh api "repos/$REPO/actions/runs/43546479575" --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/43546479575/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-postsnapshot-independent-real-ROI9-audit") | .digest')" = 'sha256:0885d6b4e6ea67b6244b848e875eafffcdcc384187f8e39178d20f0285200ba6'
+          test "$(gh api "repos/$REPO/actions/runs/$ATLAS_RUN/artifacts?per_page=100" \
+             --jq '.artifacts[] | select(.name=="mois-fiftysixth4096-verified-append-fiftyseventh-prioritized-original-source") | .digest')" = "$ATLAS_ART_SHA"
+          mkdir -p old_atlas
+          gh run download "$ATLAS_RUN" --repo "$REPO" \
+            --name mois-fiftysixth4096-verified-append-fiftyseventh-prioritized-original-source \
+            --dir old_atlas
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import pandas as pd
+          from scripts.acquisition.mois_zero9_recent_inat_new_created_photo_source import source_sha,ATLAS_SHA
+          p=Path('old_atlas/updated/mois_species_first_42111_after_fiftysixth.csv.gz')
+          assert source_sha(p)==ATLAS_SHA
+          d=pd.read_csv(p,dtype={'inat_taxon_id':str})
+          assert len(d)==42111 and d.inat_taxon_id.is_unique
+          assert int(d.after_strict9.eq(0).sum())==2229
+          print('MOIS_FROZEN_93M_AFTER56_ORIGINAL_ID_ATLAS_INPUT_SHA_VERIFIED',flush=True)
+          PY
+      - name: Public iNaturalist v1 API fresh after-snapshot photo metadata, one photo/64 zeroROI source taxa
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_zero9_recent_inat_new_created_photo_source \
+            --atlas old_atlas/updated/mois_species_first_42111_after_fiftysixth.csv.gz \
+            --sample 64 --offset 128 --pace .75 --limit 20 \
+            --output post_snapshot_inat
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import pandas as pd
+          from scripts.acquisition.mois_zero9_recent_inat_new_created_photo_source import source_sha
+          receipt=json.loads(Path('post_snapshot_inat/receipt.json').read_text())
+          assert receipt['schema']=='mois_new_inaturalist_created_after_20261027_zero9_photo_source_pilot_v1'
+          assert receipt['sampled_zero_ROI9_source_taxa']==64
+          assert receipt['source_deterministic_hash_offset']==128
+          assert receipt['original_source_zero_ROI9_taxa']==2229
+          assert receipt['old_photo_ID_1_231_244_ledger_disjointness_verified'] is False
+          assert receipt['original_photo_pixels_downloaded']==0
+          assert receipt['genuine_nine_fraction_ROI_measured']==0
+          p=Path('post_snapshot_inat/new_post20261027_inat_zeroROI_photo_candidates.csv')
+          rows=pd.read_csv(p,dtype=str)
+          if not rows.empty:
+             assert len(rows)==rows.photo_id.nunique()==rows.observation_id.nunique()==rows.inat_taxon_id.nunique()
+             assert rows.photo_url_large.str.startswith('https://inaturalist-open-data.s3.amazonaws.com/photos/').all()
+          assert source_sha(p)==receipt['output_sha256'][p.name]
+          print('MOIS_GENUINE_NEW_INAT_POST93M_SOURCE_OPPORTUNITY',
+                json.dumps({k:receipt[k] for k in (
+                    'sampled_zero_ROI9_source_taxa',
+                    'source_taxa_with_new_post_snapshot_API_photo_opportunities',
+                    'source_taxa_API_errors')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-new-inat-post20261027-zero9-offset128-64taxa-source-only
+          path: post_snapshot_inat/
+          retention-days: 90
+          if-no-files-found: warn

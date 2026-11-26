@@ -1,0 +1,76 @@
+name: MOIS wave46 frozen original-photo audit-only recovery
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-species-first-fortysixth-signed-audit-recover.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-wave46-frozen-originals-independent-audit-only
+  cancel-in-progress: false
+jobs:
+  independent-audit-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      OLD_RUN: '43444125341'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pin immutable source and real-image worker; prohibit reacquisition
+        id: gate
+        run: |
+          set -euo pipefail
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_RUN" --jq .status)" = completed
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name=="append-fortyfifth-and-source-fortysixth" and .conclusion=="success")] | length')" = 1
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_RUN/jobs?per_page=100" --jq '[.jobs[] | select(.name=="fortysixth-real-original-worker (0)" and .conclusion=="success")] | length')" = 1
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortyfifth4096-verified-append-fortysixth-prioritized-original-source") | .digest')" = 'sha256:1c2ac5cd2bcf004b8a6582226a221eff77b325e5af3b8a870464b1442d98dbd4'
+          test "$(gh api "repos/$REPO/actions/runs/$OLD_RUN/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="mois-fortysixth28-real-original-worker-0") | .digest')" = 'sha256:a171749ee22d2f7fce90bde47adb46f484d9a0be84f9feffdf217fb0d1116e9a'
+          # No image retrieval, image processing, or mutation of immutable source.
+          gh run download "$OLD_RUN" --repo "$REPO" --name mois-fortyfifth4096-verified-append-fortysixth-prioritized-original-source --dir frozen
+          gh run download "$OLD_RUN" --repo "$REPO" --name mois-fortysixth28-real-original-worker-0 --dir workers/mois-fortysixth28-real-original-worker-0
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('frozen/source/manifest.json').read_text())
+          assert m['source_arm']=='MOIS_SPECIES_FIRST_FORTYSIXTH___PRIORITIZED4096'
+          assert m['source_previous_attempts']==1231181
+          assert m['new_photo_attempts_planned']==13 and m['work_units']==1
+          assert m['source_prior_no_reused_original_photo_or_observation'] is True
+          print('MOIS_WAVE46_EXACT_IMMUTABLE_ARM_TYPO_RETAINED_AND_SOURCE_VERIFIED',flush=True)
+          PY
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - name: Re-audit source-photo and original worker receipts, strict9 and unknown with no photo work
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3
+          python -m scripts.analysis.mois_species_first_fortysixth_audit --source frozen/source --workers workers --output audited
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          x=json.loads(Path('audited/receipt.json').read_text())
+          assert x['schema']=='mois_species_first_fortysixth_authentic_originalROI9_audit_v1'
+          assert x['actual_independent_original_photo_attempts']==13
+          assert x['actual_genuine_strict9_numeric_success'] + x['actual_technical_unknowns']==13
+          assert x['photo_observation_source_taxon_ID_collisions']==0
+          assert x['source_shard_count']==1
+          assert x['audited_derivative_sha256']==sha256('audited/mois_fortysixth_actual_original_nine_roi.csv.gz')
+          print('MOIS_WAVE46_RECOVERED_SIGNED_TERMINAL', json.dumps(x,sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          name: mois-fortysixth28-real-original-photo-nineROI-audit-recovery
+          path: audited/
+          retention-days: 90
+          if-no-files-found: error

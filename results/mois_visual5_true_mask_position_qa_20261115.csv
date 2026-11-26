@@ -1,0 +1,6 @@
+photo_id,species,original_candidate_label9,mask_pixels,image_area_percent,detector_boxes,mask_bbox_xyxy_semicolon,AI_visual_mask_QA,reason_en,photo_author,photo_license,exact_12_anchors_match,old_source_photo_bytes_match,main_atlas_promoted,botanical_expert_confirmed
+164665576,Aristolochia macroura,white,11198,1.6011,1,186;114;298;230,off_target_leaf,"mask on adjacent leaf, not tubular perianth",robertomsalas_ibone,CC BY-NC,true,true,false,false
+111641760,Aristolochia macrocarpa,white,1068,0.1557,2,507;0;781;30,off_target_top_edge,"detected small strips at top image edge, not maroon flower",Carel Jongkind,CC BY-NC,true,true,false,false
+255188296,Artabotrys zeylanicus,white,20028,2.5467,2,0;0;1024;167,off_target_bright_background,mask on bright bokeh/background at upper corners; green perianth not selected,Radha Veach,CC BY-NC,true,true,false,false
+446129531,Bignonia sciuripabulum,white,1281,0.1629,2,602;66;663;777,off_target_fragment,"two tiny detections near right edge, no representative purple corolla coverage",Geovane Siqueira,CC BY-NC,true,true,false,false
+487988985,Libidibia parvifolia,bronze,48784,6.9752,18,173;112;1024;574,flower_clusters_mixed_organs,inflorescences partly selected; mustard/bronze pixels and dark floral material may explain bronze dominance,Filipe Gomes,CC BY-NC,true,true,false,false

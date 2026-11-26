@@ -1,0 +1,95 @@
+name: MOIS species-first next ORIGINAL photo-ID candidates group00 (source only)
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-species-first-next-source-group00.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-queue-without-image-reacquisition:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      ROI_TAG: mois-original-1181146-exact-photo-crossarm-451643-strict9-taxongap-20261027-v1
+      TAXON_TAG: mois-full-93209351-FCP-U100-complete-42111-original-photo-source-v1
+      CANDIDATE_TAG: mois-global93m-FCP-U100-14tier-original-source-group00-v1
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned original strict9 reader
+        run: |
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1
+          python -m unittest discover -s tests -p test_mois_species_first_palette9.py -v
+      - name: Get already-signed original numeric pixels + one of 16 frozen original photo candidate groups
+        run: |
+          set -euo pipefail
+          mkdir -p input
+          gh release download "$ROI_TAG" --repo "$REPO" --dir input \
+            --pattern mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --pattern mois_42111_original_taxon_9palette_before_after.csv.gz
+          gh release download "$TAXON_TAG" --repo "$REPO" --dir input \
+            --pattern full42111_nominal_taxa_original_U100_source_eligibility.csv
+          gh release download "$CANDIDATE_TAG" --repo "$REPO" --dir input \
+            --pattern exact_100_full93m_original_photo_observation_candidates.csv \
+            --pattern fcp_U100_full93m_group_source_receipt.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.analysis.mois_species_first_palette9 import sha256
+          p=Path('input')
+          expected={
+            'mois_1181146_unique_original_photo_continuous9_by_arm.parquet':'3fbd0f0ec7eb347b3bbc7ab509ec9312ec6d797ed932dcf7bb425959898c3835',
+            'mois_42111_original_taxon_9palette_before_after.csv.gz':'ea602238f3cd152fdd2e36e9ce4bcbc77b795a35dce802e9305f6f6cddd77fb8',
+            'full42111_nominal_taxa_original_U100_source_eligibility.csv':'6adab400c72932ab1079cdb66632018e90b14f20af2aaf53d6a8521dd8eb8441'}
+          for name,digest in expected.items():
+              assert sha256(p/name)==digest,(name,sha256(p/name))
+          rec=json.loads((p/'fcp_U100_full93m_group_source_receipt.json').read_text())
+          assert rec['original_taxon_modulo_source_group']==0,rec
+          assert rec['full_original_photo_source_IDs']==93209351,rec
+          assert sha256(p/'exact_100_full93m_original_photo_observation_candidates.csv')==rec['U100_complete_original_photo_candidate_SHA256']
+          print('MOIS_FCP_SOURCE_CANDIDATE_GROUP00_AUTHENTIC')
+          PY
+      - name: Keep genuinely usable original photos; independent observation/source IDs only
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import pandas as pd
+          x=pd.read_csv('input/exact_100_full93m_original_photo_observation_candidates.csv',dtype=str)
+          assert x.photo_id.is_unique and x.observation_id.is_unique
+          eligible=(x.photo_source_disposition.eq('supported') &
+                    x.photo_license.fillna('').ne('') &
+                    x.photo_url_large.fillna('').str.startswith('https://inaturalist-open-data.s3.amazonaws.com/photos/'))
+          y=x.loc[eligible].copy()
+          y.to_csv('input/eligible_original_photo_candidates.csv',index=False)
+          print('MOIS_GROUP00_CANDIDATE_PHOTO_ROWS',len(x),'ELIGIBLE',len(y),'TAXA',y.inat_taxon_id.nunique())
+          PY
+      - name: Choose at most one new photo and new observation per still-needed taxon, not previously processed images
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_species_first_palette9 \
+            --photos input/mois_1181146_unique_original_photo_continuous9_by_arm.parquet \
+            --source-taxa input/full42111_nominal_taxa_original_U100_source_eligibility.csv \
+            --coverage input/mois_42111_original_taxon_9palette_before_after.csv.gz \
+            --candidates input/eligible_original_photo_candidates.csv \
+            --quota 4096 --output next_group00
+          python - <<'PY'
+          import pandas as pd
+          d=pd.read_csv('next_group00/mois_species_first_next_original_photo_queue.csv',dtype=str)
+          assert d.inat_taxon_id.is_unique and d.photo_id.is_unique and d.observation_id.is_unique
+          assert d.hue_status.isin(['no_strict9','mixed_image_unresolved','provisional_single','multicolour_candidate']).all()
+          print('MOIS_NEXT_SOURCE_QUEUE_GROUP00',len(d),'distinct newly targeted taxa',d.hue_status.value_counts().to_dict())
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-species-first-next-photo-source-group00-not-measured
+          path: next_group00/
+          retention-days: 90
+          if-no-files-found: warn

@@ -1,0 +1,134 @@
+name: MOIS CCGBIF actual occurrence basis audit - field photos vs herbarium for 217 zero-ROI taxa
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - scripts/acquisition/mois_CCGBIF_noninat_field_vs_specimen.py
+      - tests/test_mois_CCGBIF_noninat_field_vs_specimen.py
+      - .github/workflows/mois-zero9-CCGBIF-217taxa-observation-type.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-CCGBIF-217taxa-external-media-field-vs-herbarium
+  cancel-in-progress: false
+jobs:
+  actual-gbif-occurrence-provenance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        group: [0,1,2,3]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: zuizui0223/mois
+      UNION_RUN: '43538257066'
+      UNION_DIGEST: 'sha256:a67b59520d871a3e2e0a80ac49c6f5851f29b514854e6bfddd35743e37c3f120'
+      PYTHONUNBUFFERED: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test no-network field versus preserved specimen interpretation
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_CCGBIF_noninat_field_vs_specimen.py -v
+          python -m py_compile scripts/acquisition/mois_CCGBIF_noninat_field_vs_specimen.py
+      - name: Restore SHA-signed original GBIF CC-media URL and COL XR species source
+        run: |
+          set -euo pipefail
+          test "$(gh run view "$UNION_RUN" --repo "$REPO" --json conclusion --jq .conclusion)" = success
+          test "$(gh api "repos/$REPO/actions/runs/$UNION_RUN/artifacts?per_page=100" \
+             --jq '.artifacts[] | select(.name=="mois-zero9-304taxa-CC-other-GBIF-original-image-URL-and-host-screen") | .digest')" = "$UNION_DIGEST"
+          mkdir -p signed
+          gh run download "$UNION_RUN" --repo "$REPO" \
+            --name mois-zero9-304taxa-CC-other-GBIF-original-image-URL-and-host-screen \
+            --dir signed
+      - name: Confirm actual GBIF occurrence ID and media URL for two photos/taxon; categorize provenance
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_CCGBIF_noninat_field_vs_specimen group \
+            --union signed --group "${{ matrix.group }}" --pace 0.30 \
+            --output "basis_${{ matrix.group }}"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('basis_${{ matrix.group }}/receipt.json')
+          d=json.loads(p.read_text())
+          assert d['schema']=='mois_CCGBIF_noninat_occurrence_basis_two_photos_per_taxon_source_v1'
+          assert d['stratum_index']==${{ matrix.group }}
+          assert d['GBIF_occurrence_metadata_requests_completed']>0
+          assert d['distinct_zero_numeric_taxa_sampled']>0
+          assert d['raw_original_images_downloaded']==0
+          assert d['new_nine_palette_ROI_measured']==0
+          print('MOIS_CCGBIF_RECORD_TYPE_REAL_SOURCE_G${{ matrix.group }}',
+                json.dumps({k:d[k] for k in (
+                  'GBIF_occurrence_metadata_requests_completed',
+                  'distinct_zero_numeric_taxa_sampled',
+                  'GBIF_basis_record_type_counts','potential_field_photo_taxa')},
+                  sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-CCGBIF-signed-observation-basis-group${{ matrix.group }}
+          path: basis_${{ matrix.group }}/
+          retention-days: 90
+          if-no-files-found: warn
+  union-source-provenance:
+    needs: actual-gbif-occurrence-provenance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Independently verify four GBIF source categories without retrieving flower pixels
+        run: |
+          set -euo pipefail
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_CCGBIF_noninat_field_vs_specimen.py -v
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mois-CCGBIF-signed-observation-basis-group*
+          path: responses
+          merge-multiple: false
+      - name: Preserve 217-species observation URL checks, prioritize field photos and quarantine herbarium
+        run: |
+          set -euo pipefail
+          python -m scripts.acquisition.mois_CCGBIF_noninat_field_vs_specimen combine \
+            --root responses/mois-CCGBIF-signed-observation-basis-group0 \
+            --root responses/mois-CCGBIF-signed-observation-basis-group1 \
+            --root responses/mois-CCGBIF-signed-observation-basis-group2 \
+            --root responses/mois-CCGBIF-signed-observation-basis-group3 \
+            --output consolidated
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('consolidated/receipt.json')
+          d=json.loads(p.read_text())
+          assert d['schema']=='mois_noninat_CC_GBIF_field_photo_basis_audit_union_v1'
+          assert d['source_304_taxa_with_CC_images']==217
+          assert d['actual_GBIF_occurrence_metadata_calls']>0
+          assert d['original_images_downloaded']==0 and d['numeric9_ROI_measured']==0
+          print('MOIS_CCGBIF_ACTUAL_FIELD_VS_HERBARIUM_CLASSIFICATIONS',
+                json.dumps({k:d[k] for k in (
+                    'actual_GBIF_occurrence_metadata_calls',
+                    'source_taxa_examined',
+                    'field_image_candidates_not_botanically_verified',
+                    'field_photo_candidate_source_taxa',
+                    'preserved_specimen_record_count')},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-CCGBIF-field-vs-herbarium-217taxa-actual-occurrence-source-audit
+          path: consolidated/
+          retention-days: 90
+          if-no-files-found: error

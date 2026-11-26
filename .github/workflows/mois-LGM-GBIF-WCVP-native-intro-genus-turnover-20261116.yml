@@ -1,0 +1,104 @@
+name: MOIS GBIF-only WCVP native introduced genus Jaccard vs LGM climate
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-LGM-GBIF-WCVP-native-intro-genus-turnover-20261116.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-GBIF-native-intro-genus-turnover-LGM-climate-20261116
+  cancel-in-progress: false
+
+jobs:
+  native-introduced-genera-not-floral-phenotype:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUNBUFFERED: "1"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned spatial stack, compile, test pure GBIF genus metrics
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 \
+            statsmodels==0.14.4 scipy==1.15.2 rasterio==1.4.3 pyproj==3.7.1 \
+            shapely==2.0.7 geopandas==1.0.1
+          python -m py_compile scripts/analysis/mois_lgm_gbif_native_intro_genus_turnover_20261116.py
+          python -m unittest discover -s tests -p 'test_mois_lgm_gbif_native_intro_genus_turnover_20261116.py' -v
+      - name: Download exact prior signed full GBIF species range + current climate-LGM + WCVP summaries
+        run: |
+          set -euo pipefail
+          mkdir -p sources/WCVP
+          for artifact in \
+            '14166701658 GBIF 422f6d6489e61c6e57c5d51db614e47f613039781a901e3fd3481c13b2b085c2' \
+            '14219399376 ENV d8b97528188d9f8d63cb802d5b3f6e8f7f251937fd30af42aeae47e43ebad1fc' \
+            '14225733755 LGM db3b5b4fa2133194963be9233411bb6bb50bc86393d1dc50d996cc4cc78b25ab' \
+            '14228652073 NATIVE b72b7358ed5382d625583ad61b90952e4e77377296fe90ae677bf9481aa80a7f' \
+            '14227246751 SPATIAL e209257adbc185b4855f3b8d76aeaa50d2e2afe8a1feeb0f76013366e57c4d16' \
+            '14230412217 COMMON ba725090afbd732c9dacc8e098161aad2bf88042994f5c683db465519969356a'; do
+            set -- $artifact
+            curl --fail --location --silent --show-error --retry 3 --retry-delay 4 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/$1/zip" \
+              -o "sources/$2.zip"
+            echo "$3  sources/$2.zip" | sha256sum -c -
+          done
+      - name: Get source-authenticated Kew WCVP broad-native ranges, original TDWG3 polygons
+        run: |
+          set -euo pipefail
+          tag='mois-real350399-kew-wcvp-native-tdwg3-source-v1'
+          for fn in \
+            'mois350399_wcvp_source_taxon_exact_name_resolution.csv.gz' \
+            'mois350399_wcvp_accepted_native_distribution_TDWG3.csv.gz' \
+            'mois350399_wcvp_TDWG3_source_only_taxon_native_receipt.json'; do
+            curl --fail --location --silent --show-error --retry 3 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              "https://github.com/zuizui0223/mois/releases/download/$tag/$fn" \
+              -o "sources/WCVP/$fn"
+          done
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://raw.githubusercontent.com/tdwg/wgsrpd/52da7828aba9d461dd133c27b3bd7a4407161f54/geojson/level3.geojson" \
+            -o sources/TDWG3.geojson
+          echo 'c172bcf6aba20e19477adc60aebf0023068f0175dca8480f0760b090dcf64840  sources/TDWG3.geojson' | sha256sum -c -
+      - name: Calculate taxon-only genus overlap, then test LGM history after 500km spatial control
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_lgm_gbif_native_intro_genus_turnover_20261116 \
+            --gbif sources/GBIF.zip --env sources/ENV.zip \
+            --lgm sources/LGM.zip --native sources/NATIVE.zip \
+            --spatial sources/SPATIAL.zip --common sources/COMMON.zip \
+            --wcvp sources/WCVP --tdwg sources/TDWG3.geojson \
+            --output MOIS_GBIF_genus_turnover
+          python - <<'PY'
+          import json
+          r=json.load(open('MOIS_GBIF_genus_turnover/receipt.json'))
+          assert r['result']['GBIF_accepted_species']==37104
+          assert r['result']['genus_turnover_computed_from_GBIF_WCVP_no_flower_colour']
+          assert not r['result']['LGM_refugia_inferred']
+          for mode in ('strict','moderate'):
+              z=r['result']['regional_models'][mode]
+              assert z['n_matched_cells']>3000
+              assert z['models']['genus_turnover_one_minus_jaccard']['500km']['n_cells_model']>2500
+          print('MOIS_TRUE_GBIF_WCVP_GENUS_TURNOVER_TEST_COMPLETE',
+                json.dumps({k:v['models']['genus_turnover_one_minus_jaccard']['500km']
+                  for k,v in r['result']['regional_models'].items()},sort_keys=True),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-GBIF-WCVP-genus-Jaccard-turnover-LGM-500km-block
+          path: MOIS_GBIF_genus_turnover/
+          retention-days: 90
+          if-no-files-found: warn

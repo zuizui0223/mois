@@ -1,0 +1,96 @@
+name: MOIS global GBIF 37104 accepted photo9 species and WorldClim BIO1 BIO12
+
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-global-37104-GBIF-WorldClim-BIO1-BIO12-20261116.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mois-GBIF37104-WorldClim21-10m-BIO1-BIO12-unique-one-shot-20261116
+  cancel-in-progress: false
+
+jobs:
+  global-GBIF-real-species-climate-grid:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned geospatial tools and run WorldClim ocean-no-data model tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q numpy==2.1.3 pandas==2.2.3 pyarrow==19.0.1 \
+            pyproj==3.7.1 rasterio==1.4.3 statsmodels==0.14.4 scipy==1.15.2
+          python -m unittest discover -s tests -p test_mois_global_worldclim_hue_20261116.py -v
+      - name: Download exact two source verified GBIF 37104 global and photographic traits artifact ZIPs
+        run: |
+          set -euo pipefail
+          mkdir -p sources
+          for artifact in '14166701658 GBIF 422f6d6489e61c6e57c5d51db614e47f613039781a901e3fd3481c13b2b085c2' \
+                          '14192037667 PHOTO 63a260c0a9c68d5c7198c6f4a821bd391eae25954a31cf060e6b1fbac544e313'; do
+            set -- $artifact
+            curl --fail --location --silent --show-error --retry 2 \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/zuizui0223/mois/actions/artifacts/$1/zip" \
+              --output "sources/$2.zip"
+            echo "$3  sources/$2.zip" | sha256sum -c -
+          done
+      - name: Download WorldClim v2.1 official 1970-2000 10 arc-minute BIO19 rasters, no credentials
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 3 --retry-delay 3 \
+            --max-time 500 \
+            'https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_bio.zip' \
+            --output sources/wc2.1_10m_bio.zip
+          python - <<'PY'
+          import zipfile,hashlib
+          from pathlib import Path
+          p=Path('sources/wc2.1_10m_bio.zip')
+          assert 1_000_000<p.stat().st_size<100_000_000
+          with zipfile.ZipFile(p) as z:
+              assert sum(n.endswith('.tif') for n in z.namelist())==19
+              assert 'wc2.1_10m_bio_1.tif' in z.namelist()
+              assert 'wc2.1_10m_bio_12.tif' in z.namelist()
+          print('MOIS_WORLDCLIM21_10M_BIO_SOURCE',p.stat().st_size,hashlib.sha256(p.read_bytes()).hexdigest())
+          PY
+      - name: Estimate 25-point averaged annual temperature and rainfall for ALL recorded species
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global_worldclim_hue_20261116 \
+            --GBIF-global-zip sources/GBIF.zip \
+            --photo9-global-zip sources/PHOTO.zip \
+            --WorldClim-bio10m-zip sources/wc2.1_10m_bio.zip \
+            --output MOIS_climate
+          python - <<'PY'
+          import json,pandas as pd
+          r=json.load(open('MOIS_climate/receipt.json'))
+          assert r['accepted_COLXR_37104_species']==37104
+          assert r['GBIF_species_100km_pairs']==5493931
+          assert r['GBIF_valid_occurrence_count']==396142825
+          assert r['within_cell_climate_subsamples']==25
+          assert r['species_primary_climate_coverage_75percent']>10000
+          assert r['methodological_boundaries']['source_photo9_is_true_local_petal_colour'] is False
+          x=pd.read_csv('MOIS_climate/COLXR_37104_species_GBIF_grid_WorldClim_species_climate.csv.gz',dtype={'key':str})
+          assert len(x)==37104 and x.key.is_unique
+          print('MOIS_WORLDCLIM37104_REAL_GBIF_CLIMATE_PROVENANCE_AND_TRAITS_VERIFIED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mois-global-37104-GBIF-native-uncertain-WorldClim2p1-BIO1-BIO12-20261116
+          path: MOIS_climate/
+          retention-days: 90
+          if-no-files-found: warn

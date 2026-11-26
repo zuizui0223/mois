@@ -1,0 +1,108 @@
+name: MOIS epoch8 final 21 read-only independent terminal SHA recovery
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths:
+      - .github/workflows/mois-20261119-epoch8-offset2176-readonly-final-audit.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mois-epoch8-offset2176-readonly-after-signed-source-only
+  cancel-in-progress: false
+jobs:
+  independently-verify-final-2197-source-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Rehash all immutable source ZIP bytes, internal receipts and disjoint taxonomy without sourcing a photo again
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/mois_verified audit
+          python - <<'PY'
+          import os,json,subprocess,time,hashlib,zipfile,csv,io
+          from pathlib import Path
+          repo="zuizui0223/mois"
+          def get(route):
+            for n in range(5):
+              try:
+                return json.loads(subprocess.check_output(["gh","api",route],stderr=subprocess.PIPE))
+              except subprocess.CalledProcessError:
+                if n==4:raise
+                time.sleep(2*(n+1))
+          old=get(f"repos/{repo}/actions/runs/44375274312")
+          assert (old["status"],old["conclusion"],old["head_branch"])==("completed","failure","analysis/mois-species-first-palette9-20261111")
+          jobs={j["name"]:j["conclusion"] for j in get(f"repos/{repo}/actions/runs/44375274312/jobs?per_page=100")["jobs"]}
+          assert jobs["source-only-first128"]=="success" and jobs["independent-final-byte-audit"]=="failure"
+          assert all(jobs[n]=="skipped" for n in ("pixel-worker-only-if-novel-original","independent-strict9-audit","formal-append-after-audit"))
+          art={a["id"]:a for a in get(f"repos/{repo}/actions/runs/44375274312/artifacts?per_page=100")["artifacts"]}
+          finalsha="ee3348942a5f1c4455783c097dd28a666201347fdf15a4e6751742f6afa88931"
+          assert len(art)==1 and art[14460963430]["digest"]=="sha256:"+finalsha and not art[14460963430]["expired"]
+          expected=[
+          (0, 14400002460, "2c88f44781e6f53b0ef33a72bd353c6abbd8cb223e15fdd09c4a3fadc744fd9e"),
+          (128, 14403982782, "9871cc7677400205f0c2e79ccf9fb49ba8cb38e8ae1b0f1979d10238ca239470"),
+          (256, 14404457828, "4caa58596d9bd9be8e676801279af01c694d23d0cca25a0a652b6f560395d958"),
+          (384, 14407887198, "21b59d080bd98de4975dccbb3c54f12832594d3c329c6470eb04cc88d6433566"),
+          (512, 14409618707, "6421bc22193167f97b383091bf5550a879308224c2369738cbef94007fd2f53f"),
+          (640, 14415992331, "d0bc47d2b05caaf78f25717844bd9ea3763e94d201b923dd2511d1c3195b647b"),
+          (768, 14418046010, "f348f3dbc4504efce7d5208b69dfba058d6d0ed4aabe6f8a0b752809d7b56919"),
+          (896, 14420949834, "eb15cac0bb89436d900f3f2cb9cc69d25cca8232509cfe6dba5224ca3df5ec1e"),
+          (1024, 14428593193, "86bab8dc138421be03470e2e55e80b8832d2f0c16b9f37003be86cc21763efd6"),
+          (1152, 14431030548, "26718dd109a02faccd23e7294485594a1610411dc43a8a5c6a2accc2311c4169"),
+          (1280, 14433646347, "c8a0feb237b41480eb56f7668895f17f1d4cf4c4b146e29914faef0497225e49"),
+          (1408, 14437289063, "828096ecb857e48878718f2a0b2843ca5e4727021bb7e7ebbebaf3d34f3d7059"),
+          (1536, 14439091393, "415c6f1d2075d41612cc59ff2d2215c06975cc703e30b9713224e31f77a9a68a"),
+          (1664, 14440065636, "cf6ef77f1e87264eef94eaf76345e7fef425c18a4c73c98e5161e0c8f959c0aa"),
+          (1792, 14443567563, "d8392cf143b17eacc5a05724f64ba4ab05aa5f83f6eb00ed8e70def151e2dfcf"),
+          (1920, 14454878851, "ae8d26c6ddad4d06390d02787d664a34c179e3b03a1402e1281d19cbb82a9548"),
+          (2048, 14460306980, "c58abab9bb9238e35ca9a51e66c3b8e85dd89c616997e48545af7ddfd060abf0"),
+          (2176, 14460963430, "ee3348942a5f1c4455783c097dd28a666201347fdf15a4e6751742f6afa88931"),
+          ]
+          assert len(expected)==18 and [off for off,_,_ in expected]==list(range(0,2177,128))
+          all_taxa=set(); receipts=[]; bytes_checked=0
+          for off,aid,sha in expected:
+            p=Path(f"/tmp/mois_verified/{off}.zip")
+            subprocess.run(["curl","--fail","--silent","--show-error","--location","--retry","5","--retry-all-errors","--retry-delay","2","-H","Authorization: Bearer "+os.environ["GH_TOKEN"], "-H","Accept: application/vnd.github+json",f"https://api.github.com/repos/{repo}/actions/artifacts/{aid}/zip","-o",str(p)],check=True)
+            actual=hashlib.sha256(p.read_bytes()).hexdigest()
+            assert actual==sha,(off,actual,sha)
+            with zipfile.ZipFile(p) as z:
+              assert all(".." not in n.split("/") for n in z.namelist())
+              r=json.loads(z.read("receipt.json"))
+              h=lambda n:hashlib.sha256(z.read(n)).hexdigest()
+              assert r["hash_disjoint_taxon_offset"]==off
+              n=21 if off==2176 else 128
+              assert r["searched_zero_numeric_taxa"]==n and r["source_API_error_count"]==0 and r["old_original_photo_obs_ID_overlap"]==0
+              assert r["old_all_image_raw_SHA_disjointness_proven"] is False
+              assert h("source_taxon_status.csv")==r["source_status_SHA256"]
+              assert h("source_candidates.csv")==r["source_candidates_SHA256"]
+              if "manifest.json" in z.namelist():
+                assert h("manifest.json")==r["source_manifest_SHA256"]
+              else:
+                assert r["new_independent_original_photo_candidates"]==0
+              rows=list(csv.DictReader(io.StringIO(z.read("source_taxon_status.csv").decode("utf-8"))))
+              ids={x["inat_taxon_id"] for x in rows}
+              assert len(rows)==len(ids)==n and not ids.intersection(all_taxa)
+              assert all(x["status"]=="source_queried" for x in rows)
+              all_taxa.update(ids)
+              if off==2176:
+                assert (r["new_independent_original_photo_candidates"],r["old_original_photo_attempt_ID_count"],r["original_pixels_fetched"],r["strict9_numeric_photos"])==(0,1231356,0,0)
+                assert h("source_candidates.csv")=="01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+              receipts.append({"offset":off,"artifact_id":aid,"ZIP_byte_SHA256":actual,"receipt_byte_SHA256":h("receipt.json"),"status_csv_byte_SHA256":h("source_taxon_status.csv"),"candidates_csv_byte_SHA256":h("source_candidates.csv"),"taxa":len(ids),"source_candidate_count":r["new_independent_original_photo_candidates"]})
+              bytes_checked+=p.stat().st_size
+              print("INDEPENDENT_SOURCE_ZIP_BYTE_AND_RECEIPT_SHA256",off,aid,actual,h("receipt.json"),h("source_taxon_status.csv"),flush=True)
+          assert len(all_taxa)==2197 and sum(i["taxa"] for i in receipts)==2197
+          latest=receipts[-1]
+          recovery={"status":"independent_readonly_terminal_success","source_run":44375274312,"source_run_attempt":2,"failure_was_only_final_audit_128_vs_21":True,"source_artifact":14460963430,"source_ZIP_byte_SHA256":finalsha,"source_receipt_byte_SHA256":latest["receipt_byte_SHA256"],"source_status_byte_SHA256":latest["status_csv_byte_SHA256"],"source_candidates_byte_SHA256":latest["candidates_csv_byte_SHA256"],"final_source_candidate_count":0,"final_original_pixels_fetched":0,"final_strict9_numeric_photos":0,"prior_source_ZIP_count":18,"all_epoch8_disjoint_taxa":2197,"bytes_sha256_checked":bytes_checked,"historical_full_raw_image_SHA_disjointness_proven":False,"formal_atlas_increment":0,"prior_cumulative_original_attempts":1231356,"prior_cumulative_strict9_photos":467568,"prior_cumulative_numeric_taxa":39914,"prior_cumulative_clear_taxa":39174,"prior_cumulative_accepted_GBIF_taxa":37105,"source_lineage":receipts}
+          Path("audit/receipt.json").write_text(json.dumps(recovery,indent=2,sort_keys=True)+"\n")
+          print("MOIS_EPOCH8_COMPLETE_2197_EXCLUSIVE_TAXA_SIGNED_READONLY_TERMINAL_SUCCESS",json.dumps({k:v for k,v in recovery.items() if k!="source_lineage"},sort_keys=True),flush=True)
+          PY
+      - name: Upload immutable independent audit receipt without repeating source APIs
+        uses: actions/upload-artifact@v4
+        with:
+          name: mois-20261119-epoch8-offset2176-readonly-2197-taxa-audit
+          path: audit/
+          if-no-files-found: error
+          retention-days: 90

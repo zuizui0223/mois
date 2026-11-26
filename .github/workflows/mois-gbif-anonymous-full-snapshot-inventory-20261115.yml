@@ -1,0 +1,51 @@
+name: MOIS NO AUTH full GBIF November2026 snapshot S3 inventory for 37104 species
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-gbif-anonymous-full-snapshot-inventory-20261115.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inventory-every-public-parquet-object:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      AWS_EC2_METADATA_DISABLED: 'true'
+      AWS_ACCESS_KEY_ID: ''
+      AWS_SECRET_ACCESS_KEY: ''
+      GBIF_USERNAME: ''
+      GBIF_PASSWORD: ''
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install public S3 and CSV reader; run full-listing sharding regression tests
+        run: |
+          set -euo pipefail
+          python -m pip install -q boto3==1.40.0 botocore==1.40.0 pandas==2.2.3 numpy==2.1.3
+          python -m unittest discover -s tests -p test_mois_gbif_anonymous_snapshot_inventory.py -v
+      - name: Read entire November-2026 GBIF public S3 Parquet manifest without credentials
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_gbif_anonymous_snapshot_inventory \
+            --output inventory --partitions 16
+          python - <<'PY'
+          import pandas as pd,json
+          d=json.load(open('inventory/receipt.json'))
+          x=pd.read_csv('inventory/GBIF_2026-11-01_all_anonymous_parquet_objects.csv.gz')
+          assert d['record_files_inventory_complete'] and d['no_AWS_account_used'] and d['no_GBIF_account_used']
+          assert len(x)==d['Parquet_file_count'] and x.key.is_unique
+          assert x.bytes.sum()==d['total_Parquet_compressed_bytes']
+          assert set(x.partition)==set(range(16))
+          print('MOIS_ANONYMOUS_GBIF_S3_ALL_FILE_OBJECTS_CERTIFIED',d['Parquet_file_count'],d['total_Parquet_compressed_GB_decimal'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-GBIF-20261101-noauth-S3-full-Parquet-manifest-16-shards
+          path: inventory/
+          retention-days: 90
+          if-no-files-found: error

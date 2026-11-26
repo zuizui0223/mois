@@ -1,0 +1,58 @@
+name: MOIS real ESA woody biomass 2020 versus nine flower photo hues within genus
+
+on:
+  push:
+    branches: [analysis/mois-species-first-palette9-20261111]
+    paths: [.github/workflows/mois-global-woody-AGB-2020-photo-hue-genus-assoc.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  compare-genus-equal-source-AGB-habitat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install numerical AGB source reader
+        run: |
+          python -m pip install -q pandas==2.2.3 numpy==2.1.3 pyarrow==19.0.1 statsmodels==0.14.4 scipy==1.15.2
+      - name: Verify 37104 accepted species remote woody AGB photo9 NDVI source ZIP
+        run: |
+          mkdir -p input
+          curl --fail --location --silent --show-error --retry 2 \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/zuizui0223/mois/actions/artifacts/14219399376/zip' \
+            --output input/agb37k.zip
+          echo 'd8b97528188d9f8d63cb802d5b3f6e8f7f251937fd30af42aeae47e43ebad1fc  input/agb37k.zip' | sha256sum -c -
+      - name: Compute recorded-range woody biomass and white/photo nine hue genus-fixed effect association
+        run: |
+          set -euo pipefail
+          python -m scripts.analysis.mois_global_AGB_white_genus_association_20261116 \
+            --biomass input/agb37k.zip --output agb_hue
+          python - <<'PY'
+          import json,pandas as pd
+          r=json.load(open('agb_hue/receipt.json'))
+          assert r['accepted_species_universe']==37104
+          assert r['species_with_all_real_AGB_NDVI_climate']==36753
+          assert r['genera_white_and_nonwhite_comparison']>2000
+          assert r['biomass_measures_surrounding_woody_vegetation_Mg_ha_not_flower_size_or_species_individual_mass']
+          print('MOIS_ESACCI_WOODY_BIOMASS_2020_WHITE_SPECIES_GENUS_FE_CI_VERIFIED',r['conditional_source_models'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mois-37104-real-ESA-woody-AGB-2020-photo9-genus-conditional-and-NDVI
+          path: agb_hue/
+          retention-days: 90
+          if-no-files-found: error
